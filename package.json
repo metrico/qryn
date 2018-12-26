@@ -1,0 +1,26 @@
+{
+  "name": "cLoki",
+  "version": "1.0.1",
+  "description": "Loki API with Clickhouse Backend",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/lmangani/cloki.git"
+  },
+  "author": "lorenzo.mangani@gmail.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lmangani/cloki/issues"
+  },
+  "homepage": "https://github.com/lmangani/cloki#readme",
+  "dependencies": {
+    "@apla/clickhouse": "^1.5.3",
+    "fastify": "^1.13.3",
+    "record-cache": "^1.1.0",
+    "short-hash": "^1.0.0"
+  }
+}
