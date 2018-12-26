@@ -35,7 +35,6 @@ var onStale = function(data){
 	     });
  	     value.list.forEach(function(row){
 		if (!row.record) return;
-		//console.log('WRITING SAMPLES',row.record);
 		clickStream.write ( row.record );
              });
 	     clickStream.end ();
@@ -50,7 +49,6 @@ var onStale_labels = function(data){
 	     });
  	     value.list.forEach(function(row){
 		if (!row.record) return;
-		//console.log('WRITING LABELS',row.record);
 		clickStream.write ( row.record );
              });
 	     clickStream.end ();
@@ -90,12 +88,12 @@ var initialize = function(dbName){
 
 	  	ch.query(ts_table, function(err,data){
 			if (err) return err;
-			console.log('Timeseries Table ready!');
+			if (debug) console.log('Timeseries Table ready!');
 			return true;
 		});
 	  	ch.query(sm_table, function(err,data){
 			if (err) return err;
-			console.log('Samples Table ready!');
+			if (debug) console.log('Samples Table ready!');
 			return true;
 		});
 	});
@@ -131,22 +129,21 @@ fastify.get('/', (request, reply) => {
 	}
 */
 fastify.post('/api/prom/push', (req, res) => {
-  console.log('POST /api/prom/push');
+  if (debug) console.log('POST /api/prom/push');
   if (debug) console.log('QUERY: ', req.query);
   if (debug) console.log('BODY: ', req.body);
   if (req.body.streams) {
 	req.body.streams.forEach(function(stream){
-		var finger = fingerPrint(labels);
-		console.log('LABELS',stream.labels,finger);
-		labels.add(finger,stream.labels);
 		try {
 			var JSON_labels = toJSON(stream.labels.replace('=',':'));
-			console.log('JSON',JSON_labels);
+			// Calculate Fingerprint
+			var finger = fingerPrint(JSON_labels);
+			if (debug) console.log('LABELS',stream.labels,finger);
+			labels.add(finger,stream.labels);
 			// Store Fingerprint
  			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels)]);
 			for(var key in JSON_labels) {
-			   console.log(key, JSON_labels[key]);
-			   console.log('Storing label',key, JSON_labels[key]);
+			   if (debug) console.log('Storing label',key, JSON_labels[key]);
 			   labels.add('_LABELS_',key); labels.add(key, JSON_labels[key]);
 			}
 		} catch(e) { console.log(e) }
@@ -175,16 +172,16 @@ fastify.post('/api/prom/push', (req, res) => {
 	regexp: a regex to filter the returned results, will eventually be rolled into the query language
 */
 fastify.get('/api/prom/query', (req, res) => {
-  console.log('GET /api/prom/query');
+  if (debug) console.log('GET /api/prom/query');
   if (debug) console.log('QUERY: ', req.query);
   var params = req.query;
   var resp = { "streams": [] };
-  var finger = fingerPrint("{"+req.query.query+"}");
+  var JSON_labels = toJSON(req.query.query.replace('=',':'));
+  var finger = fingerPrint(JSON_labels);
   var select_query = "SELECT fingerprint, timestamp_ms, string"
 		+ " FROM samples"
 		+ " WHERE fingerprint IN ("+finger+")"
 		+ " ORDER BY fingerprint, timestamp_ms"
-  console.log(finger,req.query.query,select_query)
   var stream = ch.query(select_query);
   // or collect records yourself
 	var rows = [];
@@ -198,11 +195,16 @@ fastify.get('/api/prom/query', (req, res) => {
 	  // TODO: handler error
 	});
 	stream.on ('end', function () {
-	  console.log('RESPONSE:',rows);
+	  if (debug) console.log('RESPONSE:',rows);
+	  var entries = [];
+	  rows.forEach(function(row){
+		entries.push({ "timestamp": row[1], "line": row[2] })
+	  });
+  	  resp.streams.push( { "labels": JSON.stringify(JSON_labels), "entries": entries }  );
+  	  res.send(resp);
+
 	});
 
-  resp.streams.push( { "labels": "{foo=\"bar\"}", "entries": [ { "timestamp": new Date().toISOString(), "line": "abc" } ] }  );
-  res.send(resp);
 });
 
 
@@ -221,7 +223,7 @@ fastify.get('/api/prom/query', (req, res) => {
 */
 
 fastify.get('/api/prom/label', (req, res) => {
-  console.log('GET /api/prom/label');
+  if (debug) console.log('GET /api/prom/label');
   if (debug) console.log('QUERY: ', req.query);
   var all_labels = labels.get('_LABELS_');
   var resp = { "values": all_labels };
@@ -243,7 +245,7 @@ fastify.get('/api/prom/label', (req, res) => {
 	}
 */
 fastify.get('/api/prom/label/:name/values', (req, res) => {
-  console.log('GET /api/prom/label/'+req.params.name+'/values');
+  if (debug) console.log('GET /api/prom/label/'+req.params.name+'/values');
   if (debug) console.log('QUERY LABEL: ', req.params.name);
   var all_values = labels.get(req.params.name);
   var resp = { "values": all_values };
