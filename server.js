@@ -28,28 +28,51 @@ const toJSON = require('jsonic');
 var recordCache = require('record-cache');
 var onStale = function(data){
  	for (let [key, value] of data.records.entries()) {
-	     var statement = "INSERT INTO time_series (date, fingerprint, labels)";
-	     var clickStream = clickhouse.query (statement, {inputFormat: 'TSV'}, function (err) {
+	     var statement = "INSERT INTO samples(fingerprint, timestamp_ms, value, string)";
+	     var clickStream = ch.query (statement, {inputFormat: 'TSV'}, function (err) {
 	       if (err) console.log('ERROR BULK',err);
-	       if (debug) console.log ('Insert complete for',key);
+	       if (debug) console.log ('Insert Samples complete for',key);
 	     });
  	     value.list.forEach(function(row){
 		if (!row.record) return;
-		// console.log(row.record);
+		//console.log('WRITING SAMPLES',row.record);
+		clickStream.write ( row.record );
+             });
+	     clickStream.end ();
+        }
+}
+var onStale_labels = function(data){
+ 	for (let [key, value] of data.records.entries()) {
+	     var statement = "INSERT INTO time_series(date, fingerprint, labels)";
+	     var clickStream = ch.query (statement, {inputFormat: 'TSV'}, function (err) {
+	       if (err) console.log('ERROR BULK',err);
+	       if (debug) console.log ('Insert Labels complete for',key);
+	     });
+ 	     value.list.forEach(function(row){
+		if (!row.record) return;
+		//console.log('WRITING LABELS',row.record);
 		clickStream.write ( row.record );
              });
 	     clickStream.end ();
         }
 }
 
-var cache = recordCache({
+// Flushing to Clickhouse
+var bulk = recordCache({
   maxSize: 5000,
   maxAge: 2000,
   onStale: onStale
 })
+var bulk_labels = recordCache({
+  maxSize: 100,
+  maxAge: 500,
+  onStale: onStale_labels
+})
+
+// In-Memory LRU for quick lookups
 var labels = recordCache({
   maxSize: 50000,
-  maxAge: 3600000,
+  maxAge: 0,
   onStale: false
 })
 
@@ -119,6 +142,8 @@ fastify.post('/api/prom/push', (req, res) => {
 		try {
 			var JSON_labels = toJSON(stream.labels.replace('=',':'));
 			console.log('JSON',JSON_labels);
+			// Store Fingerprint
+ 			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels)]);
 			for(var key in JSON_labels) {
 			   console.log(key, JSON_labels[key]);
 			   console.log('Storing label',key, JSON_labels[key]);
@@ -128,7 +153,8 @@ fastify.post('/api/prom/push', (req, res) => {
 
 		if (stream.entries) {
 			stream.entries.forEach(function(entry){
-				console.log('INSERT',finger,entry);
+				var values = [ finger, new Date(entry.timestamp).getTime(), entry.value || 0, entry.line || "" ];
+				bulk.add(finger,values);
 			})
 		}
 	});
@@ -153,6 +179,28 @@ fastify.get('/api/prom/query', (req, res) => {
   if (debug) console.log('QUERY: ', req.query);
   var params = req.query;
   var resp = { "streams": [] };
+  var finger = fingerPrint("{"+req.query.query+"}");
+  var select_query = "SELECT fingerprint, timestamp_ms, string"
+		+ " FROM samples"
+		+ " WHERE fingerprint IN ("+finger+")"
+		+ " ORDER BY fingerprint, timestamp_ms"
+  console.log(finger,req.query.query,select_query)
+  var stream = ch.query(select_query);
+  // or collect records yourself
+	var rows = [];
+	stream.on ('metadata', function (columns) {
+	  // do something with column list
+	});
+	stream.on ('data', function (row) {
+	  rows.push (row);
+	});
+	stream.on ('error', function (err) {
+	  // TODO: handler error
+	});
+	stream.on ('end', function () {
+	  console.log('RESPONSE:',rows);
+	});
+
   resp.streams.push( { "labels": "{foo=\"bar\"}", "entries": [ { "timestamp": new Date().toISOString(), "line": "abc" } ] }  );
   res.send(resp);
 });
