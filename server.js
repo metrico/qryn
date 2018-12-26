@@ -22,6 +22,7 @@ var fingerPrint = function(text,hex){
 	if (hex) return shortHash(text);
 	else return parseInt(shortHash(text), 16);
 }
+const toJSON = require('jsonic');
 
 /* Cache Helper */
 var recordCache = require('record-cache');
@@ -48,7 +49,7 @@ var cache = recordCache({
 })
 var labels = recordCache({
   maxSize: 50000,
-  maxAge: 3600,
+  maxAge: 3600000,
   onStale: false
 })
 
@@ -109,7 +110,30 @@ fastify.get('/', (request, reply) => {
 fastify.post('/api/prom/push', (req, res) => {
   console.log('POST /api/prom/push');
   if (debug) console.log('QUERY: ', req.query);
-  res.sendStatus(200);
+  if (debug) console.log('BODY: ', req.body);
+  if (req.body.streams) {
+	req.body.streams.forEach(function(stream){
+		var finger = fingerPrint(labels);
+		console.log('LABELS',stream.labels,finger);
+		labels.add(finger,stream.labels);
+		try {
+			var JSON_labels = toJSON(stream.labels.replace('=',':'));
+			console.log('JSON',JSON_labels);
+			for(var key in JSON_labels) {
+			   console.log(key, JSON_labels[key]);
+			   console.log('Storing label',key, JSON_labels[key]);
+			   labels.add('_LABELS_',key); labels.add(key, JSON_labels[key]);
+			}
+		} catch(e) { console.log(e) }
+
+		if (stream.entries) {
+			stream.entries.forEach(function(entry){
+				console.log('INSERT',finger,entry);
+			})
+		}
+	});
+  }
+  res.send(200);
 });
 
 
@@ -151,8 +175,9 @@ fastify.get('/api/prom/query', (req, res) => {
 fastify.get('/api/prom/label', (req, res) => {
   console.log('GET /api/prom/label');
   if (debug) console.log('QUERY: ', req.query);
-  var resp = { "values": [] };
-  resp.values.push("foo");
+  var all_labels = labels.get('_LABELS_');
+  var resp = { "values": all_labels };
+  // resp.values.push("foo");
   res.send(resp);
 });
 
@@ -171,9 +196,10 @@ fastify.get('/api/prom/label', (req, res) => {
 */
 fastify.get('/api/prom/label/:name/values', (req, res) => {
   console.log('GET /api/prom/label/'+req.params.name+'/values');
-  if (debug) console.log('QUERY: ', req.query);
-  var resp = { "values": [] };
-  resp.values.push("bar");
+  if (debug) console.log('QUERY LABEL: ', req.params.name);
+  var all_values = labels.get(req.params.name);
+  var resp = { "values": all_values };
+  //resp.values.push("bar");
   res.send(resp);
 });
 
