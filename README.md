@@ -3,17 +3,31 @@
 # cLoki
 #### like Loki, but for Clickhouse.
 
-Super experimental [Loki](https://github.com/grafana/loki) emulator based on [PromHouse](https://github.com/Percona-Lab/PromHouse) schema
+Super experimental [Loki](https://github.com/grafana/loki) emulator based on [PromHouse](https://github.com/Percona-Lab/PromHouse) schema. Do not use this!
 
+##### Just.. Why?
+The only purpose of this project is to research and understand inner aspects of the original implementation.
+
+------------
+
+##### API
 Loki API Functions are loosely implemented as documented by the [Loki API](https://github.com/grafana/loki/blob/master/docs/api.md) reference.
 
-* Do NOT try this, ever.
+* [x] /api/prom/push
+* [x] /api/prom/query
+* [x] /api/prom/label
+* [x] /api/prom/label/_name_/values
 
-Status
-* [x] Hash Fingerprinting (NOT compatible with Prometheus)
-* [x] Push API
-* [ ] Query API
-* [ ] Labels API
+##### Status
+* [x] Basic Writes
+  * [ ] Label Fingerprints
+  * [ ] Sample Series
+* [x] Basic Fingerprinting
+* [ ] Basic Search
+  * [ ] Labels
+  * [ ] Samples
+
+--------------
 
 ### Database Schema
 ```
