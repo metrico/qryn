@@ -78,16 +78,17 @@ SELECT DISTINCT fingerprint, labels FROM loki.time_series
 ##### SAMPLES
 ```
 SELECT fingerprint, timestamp_ms, string
-			FROM loki.samples
-			WHERE fingerprint IN (7975981685167825999) AND timestamp_ms >= 1514730532900 AND timestamp_ms <= 1514730532902
-			ORDER BY fingerprint, timestamp_ms
+	FROM loki.samples
+	WHERE fingerprint IN (7975981685167825999) AND timestamp_ms >= 1514730532900 
+	AND timestamp_ms <= 1514730532902
+	ORDER BY fingerprint, timestamp_ms
 ```
 ```
 SELECT fingerprint, timestamp_ms, value
-				FROM loki.samples
-				ANY INNER JOIN 7975981685167825999 USING fingerprint
-				WHERE timestamp_ms >= 1514730532900 AND timestamp_ms <= 1514730532902
-				ORDER BY fingerprint, timestamp_ms
+	FROM loki.samples
+	ANY INNER JOIN 7975981685167825999 USING fingerprint
+	WHERE timestamp_ms >= 1514730532900 AND timestamp_ms <= 1514730532902
+	ORDER BY fingerprint, timestamp_ms
 ```			
 
 
