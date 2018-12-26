@@ -1,5 +1,7 @@
+<img src='https://user-images.githubusercontent.com/1423657/50455638-a8c41580-094f-11e9-8b43-dd0a9ae0f622.png' width=100>
+
 # cLoki
-###### like Loki, but for Clickhouse.
+#### like Loki, but for Clickhouse.
 
 Super experimental [Loki](https://github.com/grafana/loki) emulator based on [PromHouse](https://github.com/Percona-Lab/PromHouse) schema
 
@@ -9,7 +11,7 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 
 Status
 * [x] Hash Fingerprinting (NOT compatible with Prometheus)
-* [ ] Push API
+* [x] Push API
 * [ ] Query API
 * [ ] Labels API
 
