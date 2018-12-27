@@ -21,11 +21,11 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 ##### Status
 * [x] Basic Writes
   * [x] Label Fingerprints
-  * [ ] Sample Series
+  * [x] Sample Series
 * [x] Basic Fingerprinting
-* [ ] Basic Search
-  * [x] Labels  _(exact-match only)_
-  * [x] Samples  _(exact-match only)_
+* [x] Basic Search
+  * [x] Labels  _(wildcard)_
+  * [x] Samples  _(wildcard)_
 
 --------------
 
