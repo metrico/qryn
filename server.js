@@ -96,8 +96,38 @@ var initialize = function(dbName){
 			if (debug) console.log('Samples Table ready!');
 			return true;
 		});
+		reloadFingerprints();
 	});
 };
+var reloadFingerprints = function(){
+  if (debug) console.log('Reloading Fingerprints...');
+  var select_query = "SELECT DISTINCT fingerprint, labels FROM time_series";
+  var stream = ch.query(select_query);
+  // or collect records yourself
+	var rows = [];
+	stream.on ('metadata', function (columns) {
+	  // do something with column list
+	});
+	stream.on ('data', function (row) {
+	  rows.push (row);
+	});
+	stream.on ('error', function (err) {
+	  // TODO: handler error
+	});
+	stream.on ('end', function () {
+	  rows.forEach(function(row){
+		var JSON_labels = toJSON(row[1].replace('=',':'));
+		labels.add(row[0],JSON.stringify(JSON_labels));
+		for (var key in JSON_labels){
+			console.log('Adding key',row);
+			labels.add('_LABELS_',key);
+			labels.add(key,JSON_labels[key]);
+		};
+	  });
+	  if (debug) console.log('Reloaded fingerprints:',rows.length+1);
+	});
+
+}
 
 initialize(process.env.CLICKHOUSE_TSDB || 'loki');
 
