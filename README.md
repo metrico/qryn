@@ -35,7 +35,8 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 CREATE TABLE time_series (
     date Date,
     fingerprint UInt64,
-    labels String
+    labels String,
+    name String
 )
 ENGINE = ReplacingMergeTree
     PARTITION BY date
@@ -75,8 +76,8 @@ CREATE DATABASE IF NOT EXISTS loki
 ```
 ##### TABLES
 ```
-CREATE TABLE IF NOT EXISTS loki.time_series (date Date,fingerprint UInt64,labels String) ENGINE = ReplacingMergeTree PARTITION BY date ORDER BY fingerprint;
-CREATE TABLE IF NOT EXISTS loki.samples (fingerprint UInt64,timestamp_ms Int64,value Float64,string String) ENGINE = MergeTree PARTITION BY toDate(timestamp_ms / 1000) ORDER BY (fingerprint, timestamp_ms);
+CREATE TABLE IF NOT EXISTS loki.time_series (date Date,fingerprint UInt64,labels String, name String) ENGINE = ReplacingMergeTree PARTITION BY date ORDER BY fingerprint;
+CREATE TABLE IF NOT EXISTS loki.samples (fingerprint UInt64,timestamp_ms Int64,value Float64,string String) ENGINE = MergeTree PARTITION BY toRelativeHourNum(toDateTime(timestamp_ms / 1000)) ORDER BY (fingerprint, timestamp_ms);
 ```
 
 #### SELECT
@@ -104,7 +105,7 @@ SELECT fingerprint, timestamp_ms, value
 #### INSERT
 ##### FINGERPRINTS
 ```
-INSERT INTO loki.time_series (date, fingerprint, labels) VALUES (?, ?, ?) 
+INSERT INTO loki.time_series (date, fingerprint, labels, name) VALUES (?, ?, ?, ?) 
 ```
 ##### SAMPLES
 ```
