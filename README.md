@@ -24,8 +24,8 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
   * [x] Sample Series
 * [x] Basic Fingerprinting
 * [x] Basic Search
-  * [x] Labels  _(wildcard)_
-  * [x] Samples  _(wildcard)_
+  * [x] Labels  _(single key)_
+  * [x] Samples  _(by Fingerprint match)_
 
 --------------
 
