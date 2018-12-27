@@ -224,9 +224,14 @@ fastify.post('/api/prom/push', (req, res) => {
   if (debug) console.log('POST /api/prom/push');
   if (debug) console.log('QUERY: ', req.query);
   if (debug) console.log('BODY: ', req.body);
+  var streams;
   if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/json') > -1) {
-    if (req.body.streams) {
-	req.body.streams.forEach(function(stream){
+	streams = req.body.streams;
+  } else if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/protobuf') > -1) {
+	streams = messages.PushRequest.decode(req.body)
+  }
+  if (streams) {
+	streams.forEach(function(stream){
 		try {
 			var JSON_labels = toJSON(stream.labels.replace('=',':'));
 			// Calculate Fingerprint
@@ -248,7 +253,6 @@ fastify.post('/api/prom/push', (req, res) => {
 			})
 		}
 	});
-    }
   }
   res.send(200);
 });
