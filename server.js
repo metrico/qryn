@@ -107,6 +107,11 @@ const fastify = require('fastify')({
   logger: false
 })
 
+fastify.register(require('fastify-url-data'), (err) => {
+  if (err) throw err
+})
+
+
 // Declare a route
 fastify.get('/', (request, reply) => {
   reply.send({ hello: 'loki' })
@@ -137,8 +142,8 @@ fastify.post('/api/prom/push', (req, res) => {
 		try {
 			var JSON_labels = toJSON(stream.labels.replace('=',':'));
 			// Calculate Fingerprint
-			var finger = fingerPrint(JSON_labels);
-			if (debug) console.log('LABELS',stream.labels,finger);
+			var finger = fingerPrint(JSON.stringify(JSON_labels));
+			if (debug) console.log('LABELS FINGERPRINT',stream.labels,finger);
 			labels.add(finger,stream.labels);
 			// Store Fingerprint
  			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels)]);
@@ -173,11 +178,14 @@ fastify.post('/api/prom/push', (req, res) => {
 */
 fastify.get('/api/prom/query', (req, res) => {
   if (debug) console.log('GET /api/prom/query');
-  if (debug) console.log('QUERY: ', req.query);
+  if (debug) console.log('QUERY: ', req.query );
   var params = req.query;
   var resp = { "streams": [] };
+  if (!req.query.query) { res.send(resp);return; }
+
   var JSON_labels = toJSON(req.query.query.replace('=',':'));
-  var finger = fingerPrint(JSON_labels);
+  var finger = fingerPrint(JSON.stringify(JSON_labels));
+  if (debug) console.log('LABELS FINGERPRINT: ', finger,JSON_labels);
   var select_query = "SELECT fingerprint, timestamp_ms, string"
 		+ " FROM samples"
 		+ " WHERE fingerprint IN ("+finger+")"
@@ -253,10 +261,8 @@ fastify.get('/api/prom/label/:name/values', (req, res) => {
   res.send(resp);
 });
 
-
-
 // Run the server!
-fastify.listen(process.env.PORT || 3000, (err, address) => {
+fastify.listen(process.env.PORT || 3100, (err, address) => {
   if (err) throw err
   fastify.log.info(`server listening on ${address}`)
 })
