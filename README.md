@@ -3,7 +3,9 @@
 # cLoki
 #### like Loki, but for Clickhouse.
 
-Super experimental [Loki](https://github.com/grafana/loki) emulator based on [PromHouse](https://github.com/Percona-Lab/PromHouse) schema. Do not use this!
+Super experimental [Loki](https://github.com/grafana/loki) emulator based on [PromHouse](https://github.com/Percona-Lab/PromHouse) schema. Do not use this for anything serious!
+
+![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
 
 ##### Just.. Why?
 The only purpose of this project is to research and understand inner aspects of the original implementation.
