@@ -181,7 +181,7 @@ var scanFingerprints = function(JSON_labels,client){
 		  if (debug) console.log('RESPONSE:',rows);
 		  var entries = [];
 		  rows.forEach(function(row){
-			entries.push({ "timestamp": row[1], "line": row[2] })
+			entries.push({ "timestamp": new Date(parseInt(row[1])).toISOString(), "line": row[2] })
 		  });
 	  	  resp.streams.push( { "labels": JSON.stringify(JSON_labels), "entries": entries }  );
 
@@ -203,6 +203,9 @@ fastify.register(require('fastify-url-data'), (err) => {
   if (err) throw err
 })
 
+fastify.addContentTypeParser('application/protobuf', function (req, done) {
+    done()
+})
 
 fastify.get('/', (request, reply) => {
   reply.send({ hello: 'loki' })
