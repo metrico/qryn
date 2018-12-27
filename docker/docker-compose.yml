@@ -91,7 +91,7 @@ services:
       - infinity
 
   cloki:
-    image: qxip/cloki
+    image: qxip/cloki:master
     container_name: loki
     restart: unless-stopped
     expose:
