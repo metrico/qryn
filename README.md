@@ -20,12 +20,12 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 
 ##### Status
 * [x] Basic Writes
-  * [ ] Label Fingerprints
+  * [x] Label Fingerprints
   * [ ] Sample Series
 * [x] Basic Fingerprinting
 * [ ] Basic Search
-  * [ ] Labels
-  * [ ] Samples
+  * [x] Labels  _(exact-match only)_
+  * [x] Samples  _(exact-match only)_
 
 --------------
 
@@ -51,7 +51,21 @@ ENGINE = MergeTree
     ORDER BY (fingerprint, timestamp_ms);
 ```
 
-### Usage Examples
+### API Examples
+```
+# curl --header "Content-Type: application/json"   --request POST   --data '{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","line":"zzz"}]}   http://localhost:3100/api/prom/push
+
+# curl 'localhost:3100/api/prom/query?query={__name__="up"}'
+{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"}]}]}root@de4 ~ #
+
+# curl 'localhost:3100/api/prom/label'
+{"values":["__name__"]}
+
+# curl 'localhost:3100/api/prom/label/__name__/values'
+{"values":["up"]}
+```
+
+### Query Examples
 ```
 SELECT * FROM time_series WHERE fingerprint = 7975981685167825999;
 ```
