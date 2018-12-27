@@ -4,7 +4,7 @@
  * Some Rights Reserved.
  */
 
-var debug = process.env.DEBUG || true;
+var debug = process.env.DEBUG || false;
 
 /* DB Helper */
 const ClickHouse = require('@apla/clickhouse');
@@ -128,6 +128,58 @@ var reloadFingerprints = function(){
 	});
 
 }
+var scanFingerprints = function(JSON_labels,client){
+	if (debug) console.log('Scanning Fingerprints...',JSON_labels);
+	var resp = { "streams": [] };
+	var conditions = [];
+	for (var key in JSON_labels){
+		conditions.push("labels like '%" +key+ "%" +JSON_labels[key] +"%'");
+  	}
+  	var finger_search = "select DISTINCT fingerprint from time_series where "+conditions.join(' OR ');
+  	if (debug) console.log('QUERY',finger_search);
+
+  	var stream = ch.query(finger_search);
+	var finger_rows = [];
+	stream.on ('data', function (row) {
+	   finger_rows.push(row[0]);
+	});
+	stream.on ('error', function (err) {
+	   // client.send(resp);
+	});
+	stream.on ('end', function () {
+
+		if (!finger_rows[0]) { client.send(resp); return; }
+
+	  	if (debug) console.log('FOUND FINGERPRINTS: ', finger_rows);
+	  	var select_query = "SELECT fingerprint, timestamp_ms, string"
+			+ " FROM samples"
+			+ " WHERE fingerprint IN ("+finger_rows.join(',')+")"
+			+ " ORDER BY fingerprint, timestamp_ms"
+	  	var stream = ch.query(select_query);
+	  	// or collect records yourself
+		var rows = [];
+			stream.on ('metadata', function (columns) {
+		  // do something with column list
+		});
+		stream.on ('data', function (row) {
+		  rows.push (row);
+		});
+		stream.on ('error', function (err) {
+		  // TODO: handler error
+		});
+		stream.on ('end', function () {
+		  if (debug) console.log('RESPONSE:',rows);
+		  var entries = [];
+		  rows.forEach(function(row){
+			entries.push({ "timestamp": row[1], "line": row[2] })
+		  });
+	  	  resp.streams.push( { "labels": JSON.stringify(JSON_labels), "entries": entries }  );
+
+	  	  client.send(resp);
+
+		});
+	});
+}
 
 initialize(process.env.CLICKHOUSE_TSDB || 'loki');
 
@@ -214,34 +266,10 @@ fastify.get('/api/prom/query', (req, res) => {
   if (!req.query.query) { res.send(resp);return; }
 
   var JSON_labels = toJSON(req.query.query.replace('=',':'));
-  var finger = fingerPrint(JSON.stringify(JSON_labels));
-  if (debug) console.log('LABELS FINGERPRINT: ', finger,JSON_labels);
-  var select_query = "SELECT fingerprint, timestamp_ms, string"
-		+ " FROM samples"
-		+ " WHERE fingerprint IN ("+finger+")"
-		+ " ORDER BY fingerprint, timestamp_ms"
-  var stream = ch.query(select_query);
-  // or collect records yourself
-	var rows = [];
-	stream.on ('metadata', function (columns) {
-	  // do something with column list
-	});
-	stream.on ('data', function (row) {
-	  rows.push (row);
-	});
-	stream.on ('error', function (err) {
-	  // TODO: handler error
-	});
-	stream.on ('end', function () {
-	  if (debug) console.log('RESPONSE:',rows);
-	  var entries = [];
-	  rows.forEach(function(row){
-		entries.push({ "timestamp": row[1], "line": row[2] })
-	  });
-  	  resp.streams.push( { "labels": JSON.stringify(JSON_labels), "entries": entries }  );
-  	  res.send(resp);
 
-	});
+  // var finger = fingerPrint(JSON.stringify(JSON_labels));
+  // Extract Fingerprints for Search Tags
+  scanFingerprints(JSON_labels,res);
 
 });
 
