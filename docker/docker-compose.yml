@@ -100,6 +100,9 @@ services:
       - "3100:3100"
     environment:
       - CLICKHOUSE_SERVER=clickhouse-seed
+      - DEBUG=true
+    depends_on:
+      - clickhouse-seed
     labels:
       org.label-schema.group: "monitoring"
 
