@@ -224,7 +224,8 @@ fastify.post('/api/prom/push', (req, res) => {
   if (debug) console.log('POST /api/prom/push');
   if (debug) console.log('QUERY: ', req.query);
   if (debug) console.log('BODY: ', req.body);
-  if (req.body.streams) {
+  if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/json') > -1) {
+    if (req.body.streams) {
 	req.body.streams.forEach(function(stream){
 		try {
 			var JSON_labels = toJSON(stream.labels.replace('=',':'));
@@ -247,6 +248,7 @@ fastify.post('/api/prom/push', (req, res) => {
 			})
 		}
 	});
+    }
   }
   res.send(200);
 });
@@ -266,7 +268,7 @@ fastify.post('/api/prom/push', (req, res) => {
 fastify.get('/api/prom/query', (req, res) => {
   if (debug) console.log('GET /api/prom/query');
   if (debug) console.log('QUERY: ', req.query );
-  console.log( req.urlData().query.replace('query=',' ') );
+  // console.log( req.urlData().query.replace('query=',' ') );
   var params = req.query;
   var resp = { "streams": [] };
   if (!req.query.query) { res.send(resp);return; }
