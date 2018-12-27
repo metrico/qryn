@@ -16,6 +16,11 @@ const clickhouse_options = {
 var clickhouse = new ClickHouse(clickhouse_options);
 var ch;
 
+/* ProtoBuf Helper */
+var fs = require('fs');
+var protoBuff = require("protocol-buffers");
+var messages = protoBuff(fs.readFileSync('lib/loki.proto'))
+
 /* Fingerprinting */
 var shortHash = require("short-hash")
 var fingerPrint = function(text,hex){
@@ -261,6 +266,7 @@ fastify.post('/api/prom/push', (req, res) => {
 fastify.get('/api/prom/query', (req, res) => {
   if (debug) console.log('GET /api/prom/query');
   if (debug) console.log('QUERY: ', req.query );
+  console.log( req.urlData().query.replace('query=',' ') );
   var params = req.query;
   var resp = { "streams": [] };
   if (!req.query.query) { res.send(resp);return; }
