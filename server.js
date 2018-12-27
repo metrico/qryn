@@ -35,7 +35,7 @@ const toJSON = require('jsonic');
 var recordCache = require('record-cache');
 var onStale = function(data){
  	for (let [key, value] of data.records.entries()) {
-	     var statement = "INSERT INTO samples(fingerprint, timestamp_ms, value, string)";
+	     var statement = "INSERT INTO samples(fingerprint, timestamp_ms, value, string, name)";
 	     var clickStream = ch.query (statement, {inputFormat: 'TSV'}, function (err) {
 	       if (err) console.log('ERROR BULK',err);
 	       if (debug) console.log ('Insert Samples complete for',key);
@@ -92,7 +92,7 @@ var initialize = function(dbName){
 		clickhouse_options.queryOptions.database = dbName;
 		ch = new ClickHouse(clickhouse_options);
 		var ts_table = "CREATE TABLE IF NOT EXISTS "+dbName+".time_series (date Date,fingerprint UInt64,labels String) ENGINE = ReplacingMergeTree PARTITION BY date ORDER BY fingerprint"
-		var sm_table = "CREATE TABLE IF NOT EXISTS "+dbName+".samples (fingerprint UInt64,timestamp_ms Int64,value Float64,string String) ENGINE = MergeTree PARTITION BY toDate(timestamp_ms / 1000) ORDER BY (fingerprint, timestamp_ms)"
+		var sm_table = "CREATE TABLE IF NOT EXISTS "+dbName+".samples (fingerprint UInt64,timestamp_ms Int64,value Float64,string String, name String) ENGINE = MergeTree PARTITION BY toRelativeHourNum(toDateTime(timestamp_ms / 1000)) ORDER BY (fingerprint, timestamp_ms)"
 
 	  	ch.query(ts_table, function(err,data){
 			if (err) return err;
@@ -241,7 +241,7 @@ fastify.post('/api/prom/push', (req, res) => {
 			if (debug) console.log('LABELS FINGERPRINT',stream.labels,finger);
 			labels.add(finger,stream.labels);
 			// Store Fingerprint
- 			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels)]);
+ 			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels));
 			for(var key in JSON_labels) {
 			   if (debug) console.log('Storing label',key, JSON_labels[key]);
 			   labels.add('_LABELS_',key); labels.add(key, JSON_labels[key]);
@@ -250,7 +250,7 @@ fastify.post('/api/prom/push', (req, res) => {
 
 		if (stream.entries) {
 			stream.entries.forEach(function(entry){
-				var values = [ finger, new Date(entry.timestamp).getTime(), entry.value || 0, entry.line || "" ];
+				var values = [ finger, new Date(entry.timestamp).getTime(), entry.value || 0, entry.line || "", entry['__name__'] || '' ];
 				bulk.add(finger,values);
 			})
 		}
