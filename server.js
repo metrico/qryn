@@ -4,6 +4,8 @@
  * Some Rights Reserved.
  */
 
+/* TODO: split into modules and prioritize performance! contributors help yourselves :) */
+
 var debug = process.env.DEBUG || false;
 
 /* DB Helper */
@@ -327,7 +329,7 @@ fastify.get('/api/prom/label/:name/values', (req, res) => {
 });
 
 // Run API Service
-fastify.listen(process.env.PORT || 3100, (err, address) => {
+fastify.listen(process.env.PORT || 3100, process.env.HOST || '0.0.0.0', (err, address) => {
   if (err) throw err
   console.log('cLoki API up');
   fastify.log.info(`server listening on ${address}`)
