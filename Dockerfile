@@ -2,13 +2,14 @@
 FROM node:8
 
 # BUILD FORCE
-ENV BUILD 703022
+ENV BUILD 703023
+ENV PORT 3100
 
 COPY . /app
 WORKDIR /app
 RUN npm install
 
 # Expose Ports
-EXPOSE 80
+EXPOSE 3100
 
 CMD [ "npm", "start" ]
