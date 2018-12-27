@@ -77,6 +77,7 @@ var labels = recordCache({
 /* Function Helpers */
 var databaseName;
 var initialize = function(dbName){
+	console.log('Initializing DB...');
 	var dbQuery = "CREATE DATABASE IF NOT EXISTS "+dbName;
 	clickhouse.query(dbQuery, function (err, data) {
 		if (err) return err;
@@ -100,7 +101,7 @@ var initialize = function(dbName){
 	});
 };
 var reloadFingerprints = function(){
-  if (debug) console.log('Reloading Fingerprints...');
+  console.log('Reloading Fingerprints...');
   var select_query = "SELECT DISTINCT fingerprint, labels FROM time_series";
   var stream = ch.query(select_query);
   // or collect records yourself
@@ -119,7 +120,7 @@ var reloadFingerprints = function(){
 		var JSON_labels = toJSON(row[1].replace('=',':'));
 		labels.add(row[0],JSON.stringify(JSON_labels));
 		for (var key in JSON_labels){
-			console.log('Adding key',row);
+			if (debug) console.log('Adding key',row);
 			labels.add('_LABELS_',key);
 			labels.add(key,JSON_labels[key]);
 		};
@@ -194,7 +195,6 @@ fastify.register(require('fastify-url-data'), (err) => {
 })
 
 
-// Declare a route
 fastify.get('/', (request, reply) => {
   reply.send({ hello: 'loki' })
 })
@@ -266,9 +266,6 @@ fastify.get('/api/prom/query', (req, res) => {
   if (!req.query.query) { res.send(resp);return; }
 
   var JSON_labels = toJSON(req.query.query.replace('=',':'));
-
-  // var finger = fingerPrint(JSON.stringify(JSON_labels));
-  // Extract Fingerprints for Search Tags
   scanFingerprints(JSON_labels,res);
 
 });
@@ -293,7 +290,6 @@ fastify.get('/api/prom/label', (req, res) => {
   if (debug) console.log('QUERY: ', req.query);
   var all_labels = labels.get('_LABELS_');
   var resp = { "values": all_labels };
-  // resp.values.push("foo");
   res.send(resp);
 });
 
@@ -315,12 +311,12 @@ fastify.get('/api/prom/label/:name/values', (req, res) => {
   if (debug) console.log('QUERY LABEL: ', req.params.name);
   var all_values = labels.get(req.params.name);
   var resp = { "values": all_values };
-  //resp.values.push("bar");
   res.send(resp);
 });
 
-// Run the server!
+// Run API Service
 fastify.listen(process.env.PORT || 3100, (err, address) => {
   if (err) throw err
+  console.log('cLoki API up');
   fastify.log.info(`server listening on ${address}`)
 })
