@@ -89,7 +89,7 @@ var initialize = function(dbName){
 	console.log('Initializing DB...');
 	var dbQuery = "CREATE DATABASE IF NOT EXISTS "+dbName;
 	clickhouse.query(dbQuery, function (err, data) {
-		if (err) return err;
+		if (err) console.error(err);
 		databaseName = dbName;
 		clickhouse_options.queryOptions.database = dbName;
 		ch = new ClickHouse(clickhouse_options);
@@ -138,7 +138,7 @@ var reloadFingerprints = function(){
 	});
 
 }
-var scanFingerprints = function(JSON_labels,client){
+var scanFingerprints = function(JSON_labels,client,params){
 	if (debug) console.log('Scanning Fingerprints...',JSON_labels);
 	var resp = { "streams": [] };
 	var conditions = [];
@@ -164,7 +164,11 @@ var scanFingerprints = function(JSON_labels,client){
 	  	var select_query = "SELECT fingerprint, timestamp_ms, string"
 			+ " FROM samples"
 			+ " WHERE fingerprint IN ("+finger_rows.join(',')+")"
-			+ " ORDER BY fingerprint, timestamp_ms"
+			if (params.start && params.end) {
+				select_query += " AND timestamp_ms BETWEEN "+params.start/1000000 +" AND "+params.end/1000000
+			}
+			select_query += " ORDER BY fingerprint, timestamp_ms"
+		if (debug) console.log('SEARCH QUERY',select_query)
 	  	var stream = ch.query(select_query);
 	  	// or collect records yourself
 		var rows = [];
@@ -204,6 +208,7 @@ fastify.register(require('fastify-url-data'), (err) => {
 })
 
 fastify.addContentTypeParser('application/protobuf', function (req, done) {
+    console.log('GOT PROTOBUF!')
     done()
 })
 
@@ -285,7 +290,7 @@ fastify.get('/api/prom/query', (req, res) => {
   if (!req.query.query) { res.send(resp);return; }
 
   var JSON_labels = toJSON(req.query.query.replace('=',':'));
-  scanFingerprints(JSON_labels,res);
+  scanFingerprints(JSON_labels,res,params);
 
 });
 
