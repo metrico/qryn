@@ -126,7 +126,9 @@ var reloadFingerprints = function(){
 	});
 	stream.on ('end', function () {
 	  rows.forEach(function(row){
-		var JSON_labels = toJSON(row[1].replace('=',':'));
+		try {
+			var JSON_labels = toJSON(row[1].replace(/=/g,':'));
+		} catch(e) { console.error(e); return }
 		labels.add(row[0],JSON.stringify(JSON_labels));
 		for (var key in JSON_labels){
 			if (debug) console.log('Adding key',row);
@@ -245,7 +247,9 @@ fastify.post('/api/prom/push', (req, res) => {
   if (streams) {
 	streams.forEach(function(stream){
 		try {
-			var JSON_labels = toJSON(stream.labels.replace('=',':'));
+			try {
+				var JSON_labels = toJSON(stream.labels.replace(/=/g,':'));
+			} catch(e) { console.error(e); return; }
 			// Calculate Fingerprint
 			var finger = fingerPrint(JSON.stringify(JSON_labels));
 			if (debug) console.log('LABELS FINGERPRINT',stream.labels,finger);
@@ -288,8 +292,11 @@ fastify.get('/api/prom/query', (req, res) => {
   var params = req.query;
   var resp = { "streams": [] };
   if (!req.query.query) { res.send(resp);return; }
+  try {
+	  var queries = req.query.query.replace(/=/g,':');
+	  var JSON_labels = toJSON(queries);
+  } catch(e){ console.error(e, queries); res.send(resp); }
 
-  var JSON_labels = toJSON(req.query.query.replace('=',':'));
   scanFingerprints(JSON_labels,res,params);
 
 });
