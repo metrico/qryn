@@ -65,26 +65,6 @@ ENGINE = MergeTree
 {"values":["up"]}
 ```
 
-### Query Examples
-```
-SELECT * FROM time_series WHERE fingerprint = 7975981685167825999;
-```
-```
-┌date┬fingerprint┬labels┐
-│ 2017-12-31 │ 7975981685167825999 │ {"__name__":"up","instance":"promhouse_clickhouse_exporter_1:9116","job":"clickhouse"} │
-└┴┴┘
-```
-```
-SELECT * FROM samples WHERE fingerprint = 7975981685167825999 LIMIT 3;
-```
-```
-┌fingerprint┬timestamp_ms┬value┐
-│ 7975981685167825999 │ 1514730532900 │     0 │
-│ 7975981685167825999 │ 1514730533901 │     1 │
-│ 7975981685167825999 │ 1514730534901 │     1 │
-└┴┴┘
-```
-
 ### Raw Queries
 
 #### CREATE
