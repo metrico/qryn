@@ -26,6 +26,8 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 * [x] Basic Writes
   * [x] Label Fingerprints
   * [x] Sample Series
+  * [x] JSON Support
+  * [ ] ProtoBuf Support
 * [x] Basic Fingerprinting
 * [ ] Stream Selector rules _()_
   * [x] = exactly equal.
