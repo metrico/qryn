@@ -29,7 +29,7 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 * [x] Basic Fingerprinting
 * [ ] Stream Selector rules _()_
   * [x] = exactly equal.
-  * [ ] != not equal.
+  * [x] != not equal.
   * [ ] =~ regex-match.
   * [ ] !~ do not regex-match.
 * [x] Basic Search
