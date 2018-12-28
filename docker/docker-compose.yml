@@ -9,7 +9,6 @@ services:
     image: prom/prometheus:latest
     container_name: prometheus
     volumes:
-      - ./prometheus/:/etc/prometheus/
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -108,7 +107,7 @@ services:
 
   promtail:
     container_name: promtail
-    image: grafana/promtail:make-images-static-26a87c9
+    image: grafana/promtail:master
     volumes:
       - ./loki/promtail-docker-config.yaml:/etc/promtail/promtail-docker-config.yaml
       - /var/log:/var/log
