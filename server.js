@@ -84,6 +84,16 @@ var labels = recordCache({
 })
 
 /* Function Helpers */
+var labelParser = function(labels){
+	// Label Parser
+	var rx = /\"?\b(\w+)\"?(!?=~?)("[^"\n]*?")/g;
+	var matches, output = [];
+	while (matches = rx.exec(labels)) {
+	    if(matches.length >3) output.push([matches[1],matches[2],matches[3].replace(/['"]+/g, '')]);
+	}
+	return output;
+}
+
 var databaseName;
 var initialize = function(dbName){
 	console.log('Initializing DB...');
@@ -140,13 +150,23 @@ var reloadFingerprints = function(){
 	});
 
 }
-var scanFingerprints = function(JSON_labels,client,params){
+var scanFingerprints = function(JSON_labels,client,params,label_rules){
 	if (debug) console.log('Scanning Fingerprints...',JSON_labels);
 	var resp = { "streams": [] };
 	var conditions = [];
-	for (var key in JSON_labels){
-		conditions.push("labels like '%" +key+ "%" +JSON_labels[key] +"%'");
-  	}
+	// for (var key in JSON_labels){
+	//	conditions.push("labels like '%" +key+ "%" +JSON_labels[key] +"%'");
+  	// }
+	if (debug) console.log('Parsing Rules...',label_rules);
+	label_rules.forEach(function(rule){
+		if (debug) console.log('Parsing Rule...',rule);
+		if (rule[1] == '='){
+			conditions.push("labels like '%" +rule[0]+ "%" +rule[2] +"%'");
+		} else if (rule[1] == '!='){
+			conditions.push("labels not like '%" +rule[0]+ "%" + fule[2] +"%'");
+		}
+	});
+
   	var finger_search = "select DISTINCT fingerprint from time_series where "+conditions.join(' OR ');
   	if (debug) console.log('QUERY',finger_search);
 
@@ -189,7 +209,7 @@ var scanFingerprints = function(JSON_labels,client,params){
 		  rows.forEach(function(row){
 			entries.push({ "timestamp": new Date(parseInt(row[1])).toISOString(), "line": row[2] })
 		  });
-	  	  resp.streams.push( { "labels": JSON.stringify(JSON_labels), "entries": entries }  );
+	  	  resp.streams.push( { "labels": JSON.stringify(JSON_labels).replace(/:/g,'='), "entries": entries }  );
 
 	  	  client.send(resp);
 
@@ -293,11 +313,13 @@ fastify.get('/api/prom/query', (req, res) => {
   var resp = { "streams": [] };
   if (!req.query.query) { res.send(resp);return; }
   try {
+
+	  var label_rules = labelParser(req.query.query);
 	  var queries = req.query.query.replace(/=/g,':');
 	  var JSON_labels = toJSON(queries);
   } catch(e){ console.error(e, queries); res.send(resp); }
 
-  scanFingerprints(JSON_labels,res,params);
+  scanFingerprints(JSON_labels,res,params,label_rules);
 
 });
 
