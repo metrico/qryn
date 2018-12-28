@@ -27,9 +27,13 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
   * [x] Label Fingerprints
   * [x] Sample Series
 * [x] Basic Fingerprinting
-* [ ] Stream Selector rules
+* [ ] Stream Selector rules _()_
+  * [x] = exactly equal.
+  * [ ] != not equal.
+  * [ ] =~ regex-match.
+  * [ ] !~ do not regex-match.
 * [x] Basic Search
-  * [x] Labels  _(single key)_
+  * [x] Labels  _(single key, multi key, AND logic)_
   * [x] Samples  _(by Fingerprint match)_
 
 --------------
