@@ -115,7 +115,9 @@ fastify.post('/api/prom/push', (req, res) => {
 
 		if (stream.entries) {
 			stream.entries.forEach(function(entry){
-				var values = [ finger, new Date(entry.timestamp).getTime(), entry.value || 0, entry.line || "" ];
+				if (debug) console.log('BULK ROW',entry,finger);
+				if ( !entry && (!entry.timestamp||!entry.ts) && (!entry.value||!entry.line)) { console.error('no bulkable data',entry); return; }
+				var values = [ finger, new Date(entry.timestamp||entry.ts).getTime(), entry.value || 0, entry.line || "" ];
 				bulk.add(finger,values);
 			})
 		}
