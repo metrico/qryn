@@ -90,7 +90,7 @@ fastify.post('/api/prom/push', (req, res) => {
 	streams.forEach(function(stream){
 		try {
 			try {
-				var JSON_labels = toJSON(stream.labels.replace(/=/g,':'));
+				var JSON_labels = toJSON(stream.labels.replace(/\!?=/g,':'));
 			} catch(e) { console.error(e); return; }
 			// Calculate Fingerprint
 			var finger = fingerPrint(JSON.stringify(JSON_labels));
@@ -138,7 +138,7 @@ fastify.get('/api/prom/query', (req, res) => {
   try {
 
 	  var label_rules = labelParser(req.query.query);
-	  var queries = req.query.query.replace(/=/g,':');
+	  var queries = req.query.query.replace(/\!?=/g,':');
 	  var JSON_labels = toJSON(queries);
   } catch(e){ console.error(e, queries); res.send(resp); }
 
