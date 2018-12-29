@@ -129,6 +129,7 @@ var reloadFingerprints = function(){
 var scanFingerprints = function(JSON_labels,client,params,label_rules){
 	if (debug) console.log('Scanning Fingerprints...',JSON_labels);
 	var resp = { "streams": [] };
+	if (!JSON_labels) return resp;
 	var conditions = [];
 	// for (var key in JSON_labels){
 	//	conditions.push("labels like '%" +key+ "%" +JSON_labels[key] +"%'");
