@@ -61,6 +61,7 @@ var labels = recordCache({
 })
 
 /* Initialize */
+var databaseName;
 var initialize = function(dbName){
 	console.log('Initializing DB...');
 	var dbQuery = "CREATE DATABASE IF NOT EXISTS "+dbName;

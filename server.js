@@ -27,7 +27,6 @@ var labels = DATABASE.cache.labels; // in-memory labels
 /* Function Helpers */
 var labelParser = UTILS.labelParser;
 
-var databaseName;
 var init = DATABASE.init;
 var reloadFingerprints = DATABASE.reloadFingerprints;
 var scanFingerprints = DATABASE.scanFingerprints;
@@ -56,6 +55,7 @@ fastify.get('/', (request, reply) => {
   reply.send({ hello: 'loki' })
 })
 
+
 /* Write Handler */
 /*
     Accepts JSON formatted requests when the header Content-Type: application/json is sent.
@@ -72,6 +72,7 @@ fastify.get('/', (request, reply) => {
 	    ]
 	}
 */
+
 fastify.post('/api/prom/push', (req, res) => {
   if (debug) console.log('POST /api/prom/push');
   if (debug) console.log('QUERY: ', req.query);
@@ -124,6 +125,7 @@ fastify.post('/api/prom/push', (req, res) => {
 	direction: forward or backward, useful when specifying a limit
 	regexp: a regex to filter the returned results, will eventually be rolled into the query language
 */
+
 fastify.get('/api/prom/query', (req, res) => {
   if (debug) console.log('GET /api/prom/query');
   if (debug) console.log('QUERY: ', req.query );
@@ -178,6 +180,7 @@ fastify.get('/api/prom/label', (req, res) => {
 	  ]
 	}
 */
+
 fastify.get('/api/prom/label/:name/values', (req, res) => {
   if (debug) console.log('GET /api/prom/label/'+req.params.name+'/values');
   if (debug) console.log('QUERY LABEL: ', req.params.name);
