@@ -141,7 +141,7 @@ fastify.get('/api/prom/query', (req, res) => {
 	  var queries = req.query.query.replace(/\!?=/g,':');
 	  var JSON_labels = toJSON(queries);
   } catch(e){ console.error(e, queries); res.send(resp); }
-
+  if (debug) console.log('SCAN LABELS',JSON_labels,label_rules,params)
   scanFingerprints(JSON_labels,res,params,label_rules);
 
 });
