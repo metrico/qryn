@@ -1,4 +1,4 @@
-# Homer7, heplify-server, Prometheus, Grafana Stack
+# Grafana + cLoki + Prometheus & Co
 
 #### BETA VERSION! PLEASE REPORT BUGS AND IMPROVEMENTS
 
@@ -12,8 +12,6 @@ docker-compose up
 
 to bring up:  
 
-* [Adminer]      localhost:8080 (root/homerSeven) //select System->PostgresSQL
-* [Homer]        localhost:9080 (admin/sipcapture)
 * [Grafana]      localhost:3000 (admin/admin)
 * [Prometheus]   localhost:9090 (admin/admin)
 * [Alertmanager] localhost:9093 (admin/admin)
