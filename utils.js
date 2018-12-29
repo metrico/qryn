@@ -17,8 +17,8 @@ var fingerPrint = function(text,hex){
         else return parseInt(shortHash(text), 16);
 }
 
-
+const toJSON = require('jsonic');
 
 module.exports.fingerPrint = fingerPrint;
 module.exports.labelParser = labelParser;
-
+module.exports.toJSON = toJSON;

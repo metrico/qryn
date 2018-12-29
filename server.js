@@ -18,6 +18,7 @@ var messages = protoBuff(fs.readFileSync('lib/loki.proto'))
 
 /* Fingerprinting */
 var fingerPrint = UTILS.fingerPrint;
+var toJSON = UTILS.toJSON;
 
 // Database Bulk Helpers */
 var bulk = DATABASE.cache.bulk; // samples
