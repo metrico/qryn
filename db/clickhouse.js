@@ -1,3 +1,10 @@
+/*
+ * cLoki DB Adapter for Clickhouse
+ * (C) 2018-2019 QXIP BV
+ */
+
+var debug = process.env.DEBUG || false;
+
 /* DB Helper */
 const ClickHouse = require('@apla/clickhouse');
 const clickhouse_options = {
