@@ -4,6 +4,7 @@
  */
 
 var debug = process.env.DEBUG || false;
+const toJSON = require('jsonic');
 
 /* DB Helper */
 const ClickHouse = require('@apla/clickhouse');

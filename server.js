@@ -77,6 +77,7 @@ fastify.post('/api/prom/push', (req, res) => {
   if (debug) console.log('POST /api/prom/push');
   if (debug) console.log('QUERY: ', req.query);
   if (debug) console.log('BODY: ', req.body);
+  if (!req.body) return;
   var streams;
   if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/json') > -1) {
 	streams = req.body.streams;
