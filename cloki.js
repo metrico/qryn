@@ -13,8 +13,17 @@ var UTILS = require('./lib/utils');
 
 /* ProtoBuf Helper */
 var fs = require('fs');
-var protoBuff = require("protocol-buffers");
-var messages = protoBuff(fs.readFileSync('lib/loki.proto'))
+//var protoBuff = require("protocol-buffers");
+//var messages = protoBuff(fs.readFileSync('lib/loki.proto'))
+
+var protobuf = require("protobufjs");
+var pushDecode;
+protobuf.load("lib/loki.proto", function(err, root) {
+    if (err)
+        throw err;
+	console.log('Loading Decoder...');
+	pushDecode = root.lookupType("logproto.PushRequest");
+});
 
 /* Fingerprinting */
 var fingerPrint = UTILS.fingerPrint;
@@ -44,13 +53,34 @@ fastify.register(require('fastify-url-data'), (err) => {
   if (err) throw err
 })
 
+fastify.addContentTypeParser('application/x-protobuf', { parseAs: 'buffer' }, function (req, payload, done) {
+  // console.log('protobuf',payload.toString());
+  try {
+  	var decoded = pushDecode.decode(payload);
+	done(decoded)
+  } catch(e){
+	console.error(e);
+  	done()
+  }
+});
+
+/*
 fastify.addContentTypeParser('application/x-protobuf', function (req, done) {
-  var data = ''
-  req.on('data', chunk => { data += chunk })
+  var buffer = Buffer.alloc(parseInt(req.headers['content-length']));
+  req.on('data', chunk => { buffer = Buffer.concat([buffer, chunk]) })
   req.on('end', () => {
-    done(messages.PushRequest.decode(data))
+    try {
+        console.log('protobuf',buffer);
+	var decoded = pushDecode.decode(buffer);
+	done(decoded)
+    } catch(e) {
+        console.error('protobuf',e);
+	done()
+    }
   })
 })
+
+*/
 
 /*
 fastify.addContentTypeParser('*', function (req, done) {
@@ -85,7 +115,7 @@ fastify.post('/api/prom/push', (req, res) => {
   if (debug) console.log('QUERY: ', req.query);
   if (debug) console.log('BODY: ', req.body);
   if (!req.body) {
-	 console.error('No Request Body!', req);
+	 console.error('No Request Body!', req.headers);
 	 return;
   }
   var streams;
