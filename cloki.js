@@ -48,7 +48,7 @@ fastify.addContentTypeParser('application/x-protobuf', function (req, done) {
   var data = ''
   req.on('data', chunk => { data += chunk })
   req.on('end', () => {
-    done(data)
+    done(messages.PushRequest.decode(data))
   })
 })
 
@@ -92,7 +92,8 @@ fastify.post('/api/prom/push', (req, res) => {
   if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/json') > -1) {
 	streams = req.body.streams;
   } else if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/x-protobuf') > -1) {
-	streams = messages.PushRequest.decode(req.body)
+	// streams = messages.PushRequest.decode(req.body)
+	streams = req.body;
 	if (debug) console.log('GOT protoBuf',streams);
   }
   if (streams) {
