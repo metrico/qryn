@@ -1,11 +1,11 @@
 {
-  "name": "cLoki",
-  "version": "1.0.5",
+  "name": "cloki",
+  "version": "1.0.6",
   "description": "Loki API with Clickhouse Backend",
-  "main": "server.js",
+  "main": "cloki.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node cloki.js"
   },
   "repository": {
     "type": "git",
@@ -25,5 +25,16 @@
     "protocol-buffers": "^4.1.0",
     "record-cache": "^1.1.0",
     "short-hash": "^1.0.0"
-  }
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "keywords": [
+    "loki",
+    "logs",
+    "grafana",
+    "clickhouse",
+    "grep",
+    "prometheus"
+  ]
 }

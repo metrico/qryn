@@ -8,8 +8,8 @@
 
 var debug = process.env.DEBUG || false;
 
-var DATABASE = require('./db/clickhouse');
-var UTILS = require('./utils');
+var DATABASE = require('./lib/db/clickhouse');
+var UTILS = require('./lib/utils');
 
 /* ProtoBuf Helper */
 var fs = require('fs');
