@@ -45,12 +45,18 @@ fastify.register(require('fastify-url-data'), (err) => {
 })
 
 fastify.addContentTypeParser('application/x-protobuf', function (req, done) {
-    done()
+  var data = ''
+  req.on('data', chunk => { data += chunk })
+  req.on('end', () => {
+    done(data)
+  })
 })
 
+/*
 fastify.addContentTypeParser('*', function (req, done) {
   done()
 })
+*/
 
 fastify.get('/', (request, reply) => {
   reply.send({ hello: 'loki' })
@@ -78,13 +84,16 @@ fastify.post('/api/prom/push', (req, res) => {
   if (debug) console.log('POST /api/prom/push');
   if (debug) console.log('QUERY: ', req.query);
   if (debug) console.log('BODY: ', req.body);
-  if (!req.body) return;
+  if (!req.body) {
+	 console.error('No Request Body!', req);
+	 return;
+  }
   var streams;
   if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/json') > -1) {
 	streams = req.body.streams;
   } else if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/x-protobuf') > -1) {
 	streams = messages.PushRequest.decode(req.body)
-	if (debug) console.log('protoBuf',streams);
+	if (debug) console.log('GOT protoBuf',streams);
   }
   if (streams) {
 	streams.forEach(function(stream){
