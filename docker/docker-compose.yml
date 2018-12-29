@@ -90,7 +90,7 @@ services:
       - infinity
 
   cloki:
-    image: qxip/cloki:modular
+    image: qxip/cloki:master
     container_name: loki
     restart: unless-stopped
     expose:
@@ -99,7 +99,7 @@ services:
       - "3100:3100"
     environment:
       - CLICKHOUSE_SERVER=clickhouse-seed
-      - DEBUG=true
+#      - DEBUG=true
     depends_on:
       - clickhouse-seed
     labels:
