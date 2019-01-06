@@ -40,6 +40,12 @@ const fastify = require('fastify')({
   logger: false
 })
 
+const path = require('path')
+fastify.register(require('fastify-static'), {
+  root: path.join(__dirname, 'web'),
+  prefix: '/', // optional: default '/'
+})
+
 fastify.register(require('fastify-url-data'), (err) => {
   if (err) throw err
 })
@@ -58,8 +64,8 @@ fastify.addContentTypeParser('*', function (req, done) {
 })
 */
 
-fastify.get('/', (request, reply) => {
-  reply.send({ hello: 'loki' })
+fastify.get('/hello', (request, reply) => {
+  reply.send({ hello: 'cloki' })
 })
 
 
