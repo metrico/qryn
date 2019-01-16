@@ -5,9 +5,11 @@
 # cLoki
 #### like Loki, but for Clickhouse.
 
-Super experimental [Loki](https://github.com/grafana/loki) API emulator based on [PromHouse](https://github.com/Percona-Lab/PromHouse) schema for Clickhouse. Compatible with Grafana Explore and [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki)
+Super experimental, fully functional [Loki](https://github.com/grafana/loki) API emulator with NodeJS and [Clickhouse](https://clickhouse.yandex/). 
 
-*Do not use this for anything serious!*
+Compatible with Grafana Explore and [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki)
+
+*Do not use this for anything serious.. yet!*
 
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
 
