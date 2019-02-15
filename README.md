@@ -69,7 +69,8 @@ ENGINE = MergeTree
 
 ### API Examples
 ```
-# curl --header "Content-Type: application/json"   --request POST   --data '{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","line":"zzz"}]}   http://localhost:3100/api/prom/push
+# curl --header "Content-Type: application/json" --request POST \
+  --data '{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","line":"zzz"}]} \ http://localhost:3100/api/prom/push
 
 # curl 'localhost:3100/api/prom/query?query={__name__="up"}'
 {"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"}]}]}root@de4 ~ #
