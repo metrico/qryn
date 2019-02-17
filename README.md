@@ -5,7 +5,7 @@
 # cLoki
 #### like Loki, but for Clickhouse.
 
-Super experimental, fully functional [Loki](https://github.com/grafana/loki) API emulator made with NodeJS and [Clickhouse](https://clickhouse.yandex/). 
+Super experimental, fully functional [Loki](https://github.com/grafana/loki) API emulator made with NodeJS, [Fastify](https://github.com/fastify/fastify) and [Clickhouse](https://clickhouse.yandex/). 
 
 * Compatible with Grafana Explore and [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) for data ingestion
 
