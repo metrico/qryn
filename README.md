@@ -5,14 +5,13 @@
 # cLoki
 #### like Loki, but for Clickhouse.
 
-Super experimental, fully functional [Loki](https://github.com/grafana/loki) API emulator made with NodeJS, [Fastify](https://github.com/fastify/fastify) and [Clickhouse](https://clickhouse.yandex/). 
+Super experimental, fully functional [Loki](https://github.com/grafana/loki) API emulator made with NodeJS, [Fastify](https://github.com/fastify/fastify) and [Clickhouse](https://clickhouse.yandex/), 100% Compatible with [Grafana Explore](http://docs.grafana.org/features/explore/) and [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) for logs ingestion
 
-* Compatible with Grafana Explore and [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) for data ingestion
-
-*Do not use this for anything serious.. yet!*
+*Beta Stage, Contributions Welcome! Do not use this for anything serious.. yet!*
 
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
 
+### Project Background
 ##### Just.. Why?
 The *Loki API* is brilliantly simple and appealing - its misteriously assembled backend, not so much. **cLoki** implements the same API functionality buffered by a fast bulking **LRU** sitting on top of **Clickhouse** and relying on its *columnar search and insert performance alongside solid distribuion and clustering capabilities* for stored data.
 
@@ -23,6 +22,7 @@ The *Loki API* is brilliantly simple and appealing - its misteriously assembled 
 
 ------------
 
+### Project Status
 ##### API
 Loki API Functions are loosely implemented as documented by the [Loki API](https://github.com/grafana/loki/blob/master/docs/api.md) reference.
 
@@ -49,6 +49,21 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 
 --------------
 
+### API Examples
+```
+# curl --header "Content-Type: application/json" --request POST \
+  --data '{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","line":"zzz"}]} \ http://localhost:3100/api/prom/push
+
+# curl 'localhost:3100/api/prom/query?query={__name__="up"}'
+{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"}]}]}root@de4 ~ #
+
+# curl 'localhost:3100/api/prom/label'
+{"values":["__name__"]}
+
+# curl 'localhost:3100/api/prom/label/__name__/values'
+{"values":["up"]}
+```
+
 ### Database Schema
 ```
 CREATE TABLE time_series (
@@ -70,21 +85,6 @@ CREATE TABLE samples (
 ENGINE = MergeTree
     PARTITION BY toDate(timestamp_ms / 1000)
     ORDER BY (fingerprint, timestamp_ms);
-```
-
-### API Examples
-```
-# curl --header "Content-Type: application/json" --request POST \
-  --data '{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","line":"zzz"}]} \ http://localhost:3100/api/prom/push
-
-# curl 'localhost:3100/api/prom/query?query={__name__="up"}'
-{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"}]}]}root@de4 ~ #
-
-# curl 'localhost:3100/api/prom/label'
-{"values":["__name__"]}
-
-# curl 'localhost:3100/api/prom/label/__name__/values'
-{"values":["up"]}
 ```
 
 ### Raw Queries
