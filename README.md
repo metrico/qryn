@@ -19,6 +19,28 @@ The *Loki API* is brilliantly simple and appealing - its misteriously assembled 
 
 *The current purpose of this project is to research and understand inner aspects of the original implementation.*
 
+------------
+### Setup & Usage
+Clone this repository, install and run using Node 8.x (or higher)
+```
+npm install
+npm start
+```
+#### Configuration
+The following ENV Variables can be used to control cLoki parameters and backend settings.
+
+|ENV   	|Default   	|Usage   	|
+|---	|---	    |---		|
+| CLICKHOUSE_SERVER | localhost   	| Clickhouse Server address  		|
+| CLICKHOUSE_PORT  	| 8123  	    | Clickhouse Server port  		|
+| CLICKHOUSE_DB  	| default  	    | Clickhouse Database Name  		|
+| CLICKHOUSE_TSDB  	| loki  	    | Clickhouse TS Database Name  		|
+| BULK_MAXAGE  		| 2000  	    | Max Age for Bulk Inserts  		|
+| BULK_MAXSIZE  	| 5000  	    | Max Size for Bulk Inserts  		|
+| BULK_MAXCACHE  	| 50000  	    | Max Labels in Memory Cache  		|
+| HOST 				| 0.0.0.0 	    | cLOKi API IP  		|
+| PORT  			| 3100 	        | cLOKi API PORT  		|
+| DEBUG  			| false  	    | Debug Mode  		|
 
 ------------
 
