@@ -72,26 +72,26 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 --------------
 
 ### API Examples
-##### Insert Labels & Logs
+###### INSERT Labels & Logs
 ```
 # curl --header "Content-Type: application/json" --request POST \
   --data '{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","line":"zzz"}]} \ http://localhost:3100/api/prom/push
 ```
-##### Query Logs
+###### QUERY Logs
 ```
 # curl 'localhost:3100/api/prom/query?query={__name__="up"}'
 ```
 ```json
 {"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"}]}]}root@de4 ~ #
 ```
-##### Query Labels
+###### QUERY Labels
 ```
 # curl 'localhost:3100/api/prom/label'
 ```
 ```json
 {"values":["__name__"]}
 ```
-##### Query Label Values
+###### QUERY Label Values
 ```
 # curl 'localhost:3100/api/prom/label/__name__/values'
 ```
