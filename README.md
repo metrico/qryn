@@ -20,8 +20,8 @@ The *Loki API* is brilliantly simple and appealing - its misteriously assembled 
 *The current purpose of this project is to research and understand inner aspects of the original implementation.*
 
 ------------
-### Setup & Usage
-Clone this repository, install and run using Node 8.x (or higher)
+### Setup
+Clone this repository, install and run using Node 8.x *(or higher)*
 ```
 npm install
 npm start
@@ -72,19 +72,35 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 --------------
 
 ### API Examples
+##### Insert Labels & Logs
 ```
 # curl --header "Content-Type: application/json" --request POST \
   --data '{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","line":"zzz"}]} \ http://localhost:3100/api/prom/push
-
+```
+##### Query Logs
+```
 # curl 'localhost:3100/api/prom/query?query={__name__="up"}'
+```
+```json
 {"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"}]}]}root@de4 ~ #
-
+```
+##### Query Labels
+```
 # curl 'localhost:3100/api/prom/label'
+```
+```json
 {"values":["__name__"]}
-
+```
+##### Query Label Values
+```
 # curl 'localhost:3100/api/prom/label/__name__/values'
+```
+```json
 {"values":["up"]}
 ```
+
+--------------
+
 
 ### Database Schema
 ```
@@ -112,22 +128,22 @@ ENGINE = MergeTree
 ### Raw Queries
 
 #### CREATE
-##### DATABASE
+###### DATABASE
 ```
 CREATE DATABASE IF NOT EXISTS loki
 ```
-##### TABLES
+###### TABLES
 ```
 CREATE TABLE IF NOT EXISTS loki.time_series (date Date,fingerprint UInt64,labels String, name String) ENGINE = ReplacingMergeTree PARTITION BY date ORDER BY fingerprint;
 CREATE TABLE IF NOT EXISTS loki.samples (fingerprint UInt64,timestamp_ms Int64,value Float64,string String) ENGINE = MergeTree PARTITION BY toRelativeHourNum(toDateTime(timestamp_ms / 1000)) ORDER BY (fingerprint, timestamp_ms);
 ```
 
 #### SELECT
-##### FINGERPRINTS
+###### FINGERPRINTS
 ```
 SELECT DISTINCT fingerprint, labels FROM loki.time_series
 ```
-##### SAMPLES
+###### SAMPLES
 ```
 SELECT fingerprint, timestamp_ms, string
 	FROM loki.samples
@@ -143,13 +159,12 @@ SELECT fingerprint, timestamp_ms, value
 	ORDER BY fingerprint, timestamp_ms
 ```			
 
-
 #### INSERT
-##### FINGERPRINTS
+###### FINGERPRINTS
 ```
 INSERT INTO loki.time_series (date, fingerprint, labels, name) VALUES (?, ?, ?, ?) 
 ```
-##### SAMPLES
+###### SAMPLES
 ```
 INSERT INTO loki.samples (fingerprint, timestamp_ms, value, string) VALUES (?, ?, ?, ?)
 ```
