@@ -42,8 +42,10 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | BULK_MAXAGE  		| 2000  	    | Max Age for Bulk Inserts  		|
 | BULK_MAXSIZE  	| 5000  	    | Max Size for Bulk Inserts  		|
 | BULK_MAXCACHE  	| 50000  	    | Max Labels in Memory Cache  		|
-| HOST 				| 0.0.0.0 	    | cLOKi API IP  		|
-| PORT  			| 3100 	        | cLOKi API PORT  		|
+| HOST 			| 0.0.0.0 	    | cLOKi API IP  		|
+| PORT  		| 3100 	            | cLOKi API PORT  		|
+| CLOKI_LOGIN           | false             | Basic HTTP Username           |
+| CLOKI_PASSWORD        | false             | Basic HTTP Password           |
 | DEBUG  			| false  	    | Debug Mode  		|
 
 ------------
