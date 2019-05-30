@@ -49,7 +49,10 @@ fastify.register(require('fastify-url-data'), (err) => {
   if (err) throw err
 })
 
-fastify.register(require('fastify-basic-auth'), { validate })
+/* Enable Simple Authentication */
+if (process.env.CLOKI_LOGIN && process.env.CLOKI_PASSWORD){
+  fastify.register(require('fastify-basic-auth'), { validate })
+}
 
 function validate (username, password, req, reply, done) {
     if (username === process.env.CLOKI_LOGIN && password === process.env.CLOKI_PASSWORD) {
@@ -70,12 +73,6 @@ fastify.addContentTypeParser('application/x-protobuf', function (req, done) {
 fastify.after(() => {
     fastify.addHook('preHandler', fastify.basicAuth)
 })
-
-/*
-fastify.addContentTypeParser('*', function (req, done) {
-  done()
-})
-*/
 
 fastify.get('/hello', (request, reply) => {
   reply.send({ hello: 'cloki' })
