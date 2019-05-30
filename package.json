@@ -1,6 +1,6 @@
 {
   "name": "cloki",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Loki API with Clickhouse Backend",
   "main": "cloki.js",
   "scripts": {
@@ -18,7 +18,7 @@
   },
   "homepage": "https://github.com/lmangani/cloki#readme",
   "dependencies": {
-    "@apla/clickhouse": "^1.5.3",
+    "@apla/clickhouse": "^1.6.0",
     "fastify": "^1.14.3",
     "fastify-static": "^1.1.0",
     "fastify-url-data": "^2.2.0",
