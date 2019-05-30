@@ -6,6 +6,9 @@
 /* TODO: split into modules and prioritize performance! contributors help yourselves :) */
 
 var debug = process.env.DEBUG || false;
+var http_user = process.env.CLOKI_LOGIN || false;
+var http_pass = process.env.CLOKI_PASSWORD || false;
+
 
 var DATABASE = require('./lib/db/clickhouse');
 var UTILS = require('./lib/utils');
@@ -50,12 +53,12 @@ fastify.register(require('fastify-url-data'), (err) => {
 })
 
 /* Enable Simple Authentication */
-if (process.env.CLOKI_LOGIN && process.env.CLOKI_PASSWORD){
+if (http_user && http_password){
   fastify.register(require('fastify-basic-auth'), { validate })
 }
 
 function validate (username, password, req, reply, done) {
-    if (username === process.env.CLOKI_LOGIN && password === process.env.CLOKI_PASSWORD) {
+    if (username === http_user && password === http_password) {
         done()
     } else {
         done(new Error('Unauthorized!: Wrong username/password.'))
