@@ -49,12 +49,26 @@ fastify.register(require('fastify-url-data'), (err) => {
   if (err) throw err
 })
 
+fastify.register(require('fastify-basic-auth'), { validate })
+
+function validate (username, password, req, reply, done) {
+    if (username === process.env.CLOKI_LOGIN && password === process.env.CLOKI_PASSWORD) {
+        done()
+    } else {
+        done(new Error('Unauthorized!: Wrong username/password.'))
+    }
+}
+
 fastify.addContentTypeParser('application/x-protobuf', function (req, done) {
   var data = ''
   req.on('data', chunk => { data += chunk })
   req.on('end', () => {
     done(messages.PushRequest.decode(data))
   })
+})
+
+fastify.after(() => {
+    fastify.addHook('preHandler', fastify.basicAuth)
 })
 
 /*
