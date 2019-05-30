@@ -1,7 +1,6 @@
 /*
  * Loki API to Clickhouse Gateway
  * (C) 2018-2019 QXIP BV
- * Some Rights Reserved.
  */
 
 /* TODO: split into modules and prioritize performance! contributors help yourselves :) */
