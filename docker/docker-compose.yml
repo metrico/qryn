@@ -99,7 +99,9 @@ services:
       - "3100:3100"
     environment:
       - CLICKHOUSE_SERVER=clickhouse-seed
-#      - DEBUG=true
+      - CLOKI_LOGIN=false
+      - CLOKI_PASSWORD=false
+#     - DEBUG=true
     depends_on:
       - clickhouse-seed
     labels:
