@@ -21,11 +21,15 @@ The *Loki API* is brilliantly simple and appealing - its misteriously assembled 
 
 ------------
 ### Setup
-Clone this repository, install and run using Node 8.x *(or higher)*
+##### Manual
+Clone this repository, install with `npm`and run using `nodejs` 8.x *(or higher)*
 ```
 npm install
 npm start
 ```
+##### Docker
+For a fully working demo, check the [docker-compose](https://github.com/lmangani/cLoki/tree/master/docker) example
+
 #### Configuration
 The following ENV Variables can be used to control cLoki parameters and backend settings.
 
