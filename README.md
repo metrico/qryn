@@ -7,15 +7,14 @@
 
 Super experimental, fully functional [Loki](https://github.com/grafana/loki) API emulator made with NodeJS, [Fastify](https://github.com/fastify/fastify) and [Clickhouse](https://clickhouse.yandex/), 100% Compatible with [Grafana Explore](http://docs.grafana.org/features/explore/) and [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) for logs ingestion
 
-*Beta Stage, Contributions Welcome! Do not use this for anything serious.. yet!*
+:fire: *Beta Stage, Contributions Welcome! :octocat: Do not use this for anything serious.. yet!*
 
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
 
 ### Project Background
-##### Why
+
 The *Loki API* is brilliantly simple and appealing - its misteriously assembled *Cortex* backend, not so much. We wanted to leverage this concept over a true and fully open-source solution end-to-end. Also, we love **Clickhouse** . 
 
-##### How
 **cLoki** implements the same API functionality as Loki, buffered by a fast bulking **LRU** sitting on top of **Clickhouse** and relying on its *columnar search and insert performance alongside solid distribuion and clustering capabilities* for stored data. Just like Loki, cLoki does not parse or index incoming logs, but rather groups log streams using the same label system as with Prometheus. 
 
 <img src="https://user-images.githubusercontent.com/1423657/54091852-5ce91000-4385-11e9-849d-998c1e5d3243.png" width=700>
@@ -24,13 +23,13 @@ The *Loki API* is brilliantly simple and appealing - its misteriously assembled 
 
 ------------
 ### Setup
-##### Manual
+##### :busstop: Manual
 Clone this repository, install with `npm`and run using `nodejs` 8.x *(or higher)*
 ```
 npm install
 npm start
 ```
-##### Docker
+##### :busstop: Docker
 For a fully working demo, check the [docker-compose](https://github.com/lmangani/cLoki/tree/master/docker) example
 
 #### Configuration
@@ -51,7 +50,7 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | CLOKI_PASSWORD        | false             | Basic HTTP Password           |
 | DEBUG  			| false  	    | Debug Mode  		|
 
-#### Log Streams
+#### :fuelpump: Log Streams 
 The ideal companion for parsing and shipping log streams to **cLoki** is [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) with extensive interpolation capabilities.
 
 ------------
