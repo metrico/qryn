@@ -51,6 +51,9 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | CLOKI_PASSWORD        | false             | Basic HTTP Password           |
 | DEBUG  			| false  	    | Debug Mode  		|
 
+#### Log Streams
+The ideal companion for parsing and shipping log streams to **cLoki** is [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) with extensive interpolation capabilities.
+
 ------------
 
 ### Project Status
