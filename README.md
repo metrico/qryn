@@ -12,8 +12,13 @@ Super experimental, fully functional [Loki](https://github.com/grafana/loki) API
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
 
 ### Project Background
-##### Just.. Why?
-The *Loki API* is brilliantly simple and appealing - its misteriously assembled backend, not so much. **cLoki** implements the same API functionality buffered by a fast bulking **LRU** sitting on top of **Clickhouse** and relying on its *columnar search and insert performance alongside solid distribuion and clustering capabilities* for stored data.
+##### Why
+The *Loki API* is brilliantly simple and appealing - its misteriously assembled 'Cortex' backend, not so much. 
+
+##### How
+**cLoki** implements the same API functionality as Loki, buffered by a fast bulking **LRU** sitting on top of **Clickhouse** and relying on its *columnar search and insert performance alongside solid distribuion and clustering capabilities* for stored data.
+
+Just like Loki, cLoki does not parse or index incoming logs, but rather groups log streams using the same label system as with Prometheus. 
 
 <img src="https://user-images.githubusercontent.com/1423657/54091852-5ce91000-4385-11e9-849d-998c1e5d3243.png" width=700>
 
