@@ -181,3 +181,8 @@ INSERT INTO loki.time_series (date, fingerprint, labels, name) VALUES (?, ?, ?, 
 INSERT INTO loki.samples (fingerprint, timestamp_ms, value, string) VALUES (?, ?, ?, ?)
 ```
 
+------------
+
+#### Acknowledgements
+cLoki is not affiliated or endorsed by Grafana Labs. All rights belong to their respective owners.
+
