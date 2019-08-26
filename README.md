@@ -41,6 +41,7 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | CLICKHOUSE_PORT  	| 8123  	    | Clickhouse Server port  		|
 | CLICKHOUSE_DB  	| default  	    | Clickhouse Database Name  		|
 | CLICKHOUSE_TSDB  	| loki  	    | Clickhouse TS Database Name  		|
+| CLICKHOUSE_AUTH  	| default:  	    | Clickhouse Authentication (user:password) |
 | BULK_MAXAGE  		| 2000  	    | Max Age for Bulk Inserts  		|
 | BULK_MAXSIZE  	| 5000  	    | Max Size for Bulk Inserts  		|
 | BULK_MAXCACHE  	| 50000  	    | Max Labels in Memory Cache  		|
