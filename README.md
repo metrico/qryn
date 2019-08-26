@@ -85,26 +85,26 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 
 ### API Examples
 ###### INSERT Labels & Logs
-```
+```console
 # curl --header "Content-Type: application/json" --request POST \
   --data '{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","line":"zzz"}]} \ http://localhost:3100/api/prom/push
 ```
 ###### QUERY Logs
-```
+```console
 # curl 'localhost:3100/api/prom/query?query={__name__="up"}'
 ```
 ```json
 {"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"}]}]}root@de4 ~ #
 ```
 ###### QUERY Labels
-```
+```console
 # curl 'localhost:3100/api/prom/label'
 ```
 ```json
 {"values":["__name__"]}
 ```
 ###### QUERY Label Values
-```
+```console
 # curl 'localhost:3100/api/prom/label/__name__/values'
 ```
 ```json
@@ -115,7 +115,7 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 
 
 ### Database Schema
-```
+```sql
 CREATE TABLE time_series (
     date Date,
     fingerprint UInt64,
@@ -141,29 +141,29 @@ ENGINE = MergeTree
 
 #### CREATE
 ###### DATABASE
-```
+```sql
 CREATE DATABASE IF NOT EXISTS loki
 ```
 ###### TABLES
-```
+```sql
 CREATE TABLE IF NOT EXISTS loki.time_series (date Date,fingerprint UInt64,labels String, name String) ENGINE = ReplacingMergeTree PARTITION BY date ORDER BY fingerprint;
 CREATE TABLE IF NOT EXISTS loki.samples (fingerprint UInt64,timestamp_ms Int64,value Float64,string String) ENGINE = MergeTree PARTITION BY toRelativeHourNum(toDateTime(timestamp_ms / 1000)) ORDER BY (fingerprint, timestamp_ms);
 ```
 
 #### SELECT
 ###### FINGERPRINTS
-```
+```sql
 SELECT DISTINCT fingerprint, labels FROM loki.time_series
 ```
 ###### SAMPLES
-```
+```sql
 SELECT fingerprint, timestamp_ms, string
 	FROM loki.samples
 	WHERE fingerprint IN (7975981685167825999) AND timestamp_ms >= 1514730532900 
 	AND timestamp_ms <= 1514730532902
 	ORDER BY fingerprint, timestamp_ms
 ```
-```
+```sql
 SELECT fingerprint, timestamp_ms, value
 	FROM loki.samples
 	ANY INNER JOIN 7975981685167825999 USING fingerprint
@@ -173,11 +173,11 @@ SELECT fingerprint, timestamp_ms, value
 
 #### INSERT
 ###### FINGERPRINTS
-```
+```sql
 INSERT INTO loki.time_series (date, fingerprint, labels, name) VALUES (?, ?, ?, ?) 
 ```
 ###### SAMPLES
-```
+```sql
 INSERT INTO loki.samples (fingerprint, timestamp_ms, value, string) VALUES (?, ?, ?, ?)
 ```
 
