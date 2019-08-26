@@ -9,7 +9,6 @@ var debug = process.env.DEBUG || false;
 var http_user = process.env.CLOKI_LOGIN || false;
 var http_pass = process.env.CLOKI_PASSWORD || false;
 
-
 var DATABASE = require('./lib/db/clickhouse');
 var UTILS = require('./lib/utils');
 
@@ -53,15 +52,21 @@ fastify.register(require('fastify-url-data'), (err) => {
 })
 
 /* Enable Simple Authentication */
-if (http_user && http_password){
-  fastify.register(require('fastify-basic-auth'), { validate })
+if (http_user && http_pass){
+	// Convert user:pass pairs to Array
+	if (http_user) http_user = http_user.split(/ |;/)
+	if (http_pass) http_pass = http_pass.split(/ |;/)
+	// Register Validator
+  	fastify.register(require('fastify-basic-auth'), { validate })
 }
 
 function validate (username, password, req, reply, done) {
-    if (username === http_user && password === http_password) {
-        done()
+    // Authenticate Pair
+    var found = http_user.indexOf(username);
+    if (found > -1) {
+    	if (http_pass[found] == password){ done(); }
     } else {
-        done(new Error('Unauthorized!: Wrong username/password.'))
+	 done(new Error('Unauthorized!: Wrong username/password.'))
     }
 }
 
@@ -111,7 +116,6 @@ fastify.post('/api/prom/push', (req, res) => {
   if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/json') > -1) {
 	streams = req.body.streams;
   } else if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/x-protobuf') > -1) {
-	// streams = messages.PushRequest.decode(req.body)
 	streams = req.body;
 	if (debug) console.log('GOT protoBuf',streams);
   }
@@ -119,18 +123,18 @@ fastify.post('/api/prom/push', (req, res) => {
 	streams.forEach(function(stream){
 		try {
 			try {
-				var JSON_labels = toJSON(stream.labels.replace(/\!?=/g,':'));
+			 var JSON_labels = toJSON(stream.labels.replace(/\!?=/g,':'));
 			} catch(e) { console.error(e); return; }
-			// Calculate Fingerprint
-			var finger = fingerPrint(JSON.stringify(JSON_labels));
-			if (debug) console.log('LABELS FINGERPRINT',stream.labels,finger);
-			labels.add(finger,stream.labels);
-			// Store Fingerprint
- 			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels), JSON_labels['__name__']||'' ]);
-			for(var key in JSON_labels) {
+			 // Calculate Fingerprint
+			 var finger = fingerPrint(JSON.stringify(JSON_labels));
+			 if (debug) console.log('LABELS FINGERPRINT',stream.labels,finger);
+			 labels.add(finger,stream.labels);
+			 // Store Fingerprint
+ 			 bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels), JSON_labels['__name__']||'' ]);
+			 for(var key in JSON_labels) {
 			   if (debug) console.log('Storing label',key, JSON_labels[key]);
 			   labels.add('_LABELS_',key); labels.add(key, JSON_labels[key]);
-			}
+			 }
 		} catch(e) { console.log(e) }
 
 		if (stream.entries) {
@@ -162,16 +166,15 @@ fastify.post('/api/prom/push', (req, res) => {
 fastify.get('/api/prom/query', (req, res) => {
   if (debug) console.log('GET /api/prom/query');
   if (debug) console.log('QUERY: ', req.query );
-  // console.log( req.urlData().query.replace('query=',' ') );
   var params = req.query;
   var resp = { "streams": [] };
   if (!req.query.query) { res.send(resp);return; }
   try {
-
-	  var label_rules = labelParser(req.query.query);
-	  var queries = req.query.query.replace(/\!?=/g,':');
-	  var JSON_labels = toJSON(queries);
+    var label_rules = labelParser(req.query.query);
+    var queries = req.query.query.replace(/\!?=/g,':');
+    var JSON_labels = toJSON(queries);
   } catch(e){ console.error(e, queries); res.send(resp); }
+	
   if (debug) console.log('SCAN LABELS',JSON_labels,label_rules,params)
   scanFingerprints(JSON_labels,res,params,label_rules);
 
