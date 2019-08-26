@@ -8,6 +8,7 @@
 var debug = process.env.DEBUG || false;
 var http_user = process.env.CLOKI_LOGIN || false;
 var http_pass = process.env.CLOKI_PASSWORD || false;
+var http_realm = process.env.CLOKI_REALM || false;
 
 var DATABASE = require('./lib/db/clickhouse');
 var UTILS = require('./lib/utils');
@@ -56,6 +57,7 @@ if (http_user && http_pass){
 	// Convert user:pass pairs to Array
 	if (http_user) http_user = http_user.split(/ |;/)
 	if (http_pass) http_pass = http_pass.split(/ |;/)
+	if (http_realm) http_realm = http_realm.split(/ |;/)
 	// Register Validator
   	fastify.register(require('fastify-basic-auth'), { validate })
 }
@@ -64,7 +66,13 @@ function validate (username, password, req, reply, done) {
     // Authenticate Pair
     var found = http_user.indexOf(username);
     if (found > -1) {
-    	if (http_pass[found] == password){ done(); }
+    	if (http_pass[found] == password){ 
+		fastify.decorate('http_auth', {
+		  user: username,
+		  realm: http_realm[found] || false
+		})
+		done(); 
+	}
     } else {
 	 done(new Error('Unauthorized!: Wrong username/password.'))
     }
@@ -83,6 +91,7 @@ fastify.after(() => {
 })
 
 fastify.get('/hello', (request, reply) => {
+  if (debug) console.log('AUTH: ', fastify.http_auth);
   reply.send({ hello: 'cloki' })
 })
 
@@ -108,6 +117,7 @@ fastify.post('/api/prom/push', (req, res) => {
   if (debug) console.log('POST /api/prom/push');
   if (debug) console.log('QUERY: ', req.query);
   if (debug) console.log('BODY: ', req.body);
+  if (debug) console.log('AUTH: ', fastify.http_auth);
   if (!req.body) {
 	 console.error('No Request Body!', req);
 	 return;
@@ -166,6 +176,7 @@ fastify.post('/api/prom/push', (req, res) => {
 fastify.get('/api/prom/query', (req, res) => {
   if (debug) console.log('GET /api/prom/query');
   if (debug) console.log('QUERY: ', req.query );
+  if (debug) console.log('AUTH: ', fastify.http_auth);
   var params = req.query;
   var resp = { "streams": [] };
   if (!req.query.query) { res.send(resp);return; }
@@ -198,6 +209,7 @@ fastify.get('/api/prom/query', (req, res) => {
 fastify.get('/api/prom/label', (req, res) => {
   if (debug) console.log('GET /api/prom/label');
   if (debug) console.log('QUERY: ', req.query);
+  if (debug) console.log('AUTH: ', fastify.http_auth);
   var all_labels = labels.get('_LABELS_');
   var resp = { "values": all_labels };
   res.send(resp);
@@ -220,6 +232,7 @@ fastify.get('/api/prom/label', (req, res) => {
 fastify.get('/api/prom/label/:name/values', (req, res) => {
   if (debug) console.log('GET /api/prom/label/'+req.params.name+'/values');
   if (debug) console.log('QUERY LABEL: ', req.params.name);
+  if (debug) console.log('AUTH: ', fastify.http_auth);
   var all_values = labels.get(req.params.name);
   var resp = { "values": all_values };
   res.send(resp);
