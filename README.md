@@ -47,8 +47,9 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | BULK_MAXCACHE  	| 50000  	    | Max Labels in Memory Cache  		|
 | HOST 			| 0.0.0.0 	    | cLOKi API IP  		|
 | PORT  		| 3100 	            | cLOKi API PORT  		|
-| CLOKI_LOGIN           | false             | Basic HTTP Username           |
-| CLOKI_PASSWORD        | false             | Basic HTTP Password           |
+| CLOKI_LOGIN           | false             | user1;user2           |
+| CLOKI_PASSWORD        | false             | pass1;pass2           |
+| CLOKI_REALM           | false             | realm1;realm1           |
 | DEBUG  			| false  	    | Debug Mode  		|
 
 #### :fuelpump: Log Streams 
