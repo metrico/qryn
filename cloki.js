@@ -55,6 +55,9 @@ fastify.register(require('fastify-url-data'), (err) => {
 /* Enable Simple Authentication */
 if (http_user && http_password){
   fastify.register(require('fastify-basic-auth'), { validate })
+  fastify.after(() => {
+    fastify.addHook('preHandler', fastify.basicAuth)
+  })
 }
 
 function validate (username, password, req, reply, done) {
@@ -73,9 +76,6 @@ fastify.addContentTypeParser('application/x-protobuf', function (req, done) {
   })
 })
 
-fastify.after(() => {
-    fastify.addHook('preHandler', fastify.basicAuth)
-})
 
 fastify.get('/hello', (request, reply) => {
   reply.send({ hello: 'cloki' })
