@@ -3,6 +3,7 @@
 [![Codefresh build status]( https://g.codefresh.io/api/badges/pipeline/lmangani/lmangani%2FcLoki%2FcLoki?branch=master&key=eyJhbGciOiJIUzI1NiJ9.NTkxMzIxNGZlNjQxOWIwMDA2OWY1ZjU4.s1Y7vvE73ZWAIGYb4YCkATleW61RZ8sKypOc8Vae1c0&type=cf-1)]( https://g.codefresh.io/pipelines/cLoki/builds?repoOwner=lmangani&repoName=cLoki&serviceName=lmangani%2FcLoki&filter=trigger:build~Build;branch:master;pipeline:5cdf4a833a13130275ac87a8~cLoki)
 
 # cLoki
+
 #### like Loki, but for Clickhouse.
 
 Super experimental, fully functional [Loki](https://github.com/grafana/loki) API emulator made with NodeJS, [Fastify](https://github.com/fastify/fastify) and [Clickhouse](https://clickhouse.yandex/)<br/>
@@ -18,12 +19,13 @@ The *Loki API* is brilliantly simple and appealing - its misteriously assembled 
 
 **cLoki** implements the same API functionality as Loki, buffered by a fast bulking **LRU** sitting on top of **Clickhouse** and relying on its *columnar search and insert performance alongside solid distribuion and clustering capabilities* for stored data. Just like Loki, cLoki does not parse or index incoming logs, but rather groups log streams using the same label system as Prometheus. 
 
-<img src="https://user-images.githubusercontent.com/1423657/54091852-5ce91000-4385-11e9-849d-998c1e5d3243.png" width=700>
+<img src="https://user-images.githubusercontent.com/1423657/54091852-5ce91000-4385-11e9-849d-998c1e5d3243.png" width=700 />
 
 *The current purpose of this project is to research and understand inner aspects of the original implementation.*
 
 ------------
 ### Setup
+
 ##### :busstop: Manual
 Clone this repository, install with `npm`and run using `nodejs` 8.x *(or higher)*
 ```
@@ -52,13 +54,16 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | CLOKI_PASSWORD        | false             | Basic HTTP Password           |
 | DEBUG  			| false  	    | Debug Mode  		|
 
-#### :fuelpump: Log Streams 
+#### :fuelpump: Log Streams
+
 The ideal companion for parsing and shipping log streams to **cLoki** is [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) with extensive interpolation capabilities.
 
 ------------
 
 ### Project Status
+
 ##### API
+
 Loki API Functions are loosely implemented as documented by the [Loki API](https://github.com/grafana/loki/blob/master/docs/api.md) reference.
 
 * [x] /api/prom/push
@@ -67,6 +72,7 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 * [x] /api/prom/label/_name_/values
 
 ##### Status
+
 * [x] Basic Writes
   * [x] Label Fingerprints
   * [x] Sample Series
@@ -85,37 +91,66 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 --------------
 
 ### API Examples
+
 ###### INSERT Labels & Logs
+
 ```console
-# curl --header "Content-Type: application/json" --request POST \
-  --data '{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","line":"zzz"}]} \ http://localhost:3100/api/prom/push
-```
+curl -i -XPOST -H Content-Type: application/json http://localhost:3100/api/prom/push --data '{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","line":"zzz"}]}]}'
+
 ###### QUERY Logs
+
 ```console
-# curl 'localhost:3100/api/prom/query?query={__name__="up"}'
+# curl localhost:3100/api/prom/query?query='{__name__="up"}'
 ```
+
 ```json
-{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"},{"timestamp":"1545840006944","line":"zzz"}]}]}root@de4 ~ #
+{
+    "streams": [
+        {
+            "labels": "{\"__name__\":\"up\"}",
+            "entries": [
+                {
+                    "timestamp":"1545840006944",
+                    "line":"zzz"
+                },
+                {
+                    "timestamp":"1545840006944",
+                    "line":"zzz"
+                },
+                {
+                    "timestamp": "1545840006944",
+                    "line":"zzz"
+                }
+            ]
+        }
+    ]
+}
 ```
+
 ###### QUERY Labels
+
 ```console
-# curl 'localhost:3100/api/prom/label'
+# curl localhost:3100/api/prom/label
 ```
+
 ```json
 {"values":["__name__"]}
 ```
+
 ###### QUERY Label Values
+
 ```console
 # curl 'localhost:3100/api/prom/label/__name__/values'
 ```
+
 ```json
 {"values":["up"]}
 ```
 
 --------------
 
-
 ### Database Schema
+
 ```sql
 CREATE TABLE time_series (
     date Date,
@@ -141,35 +176,55 @@ ENGINE = MergeTree
 ### Raw Queries
 
 #### CREATE
+
 ###### DATABASE
+
 ```sql
 CREATE DATABASE IF NOT EXISTS loki
 ```
+
 ###### TABLES
+
 ```sql
-CREATE TABLE IF NOT EXISTS loki.time_series (date Date,fingerprint UInt64,labels String, name String) ENGINE = ReplacingMergeTree PARTITION BY date ORDER BY fingerprint;
-CREATE TABLE IF NOT EXISTS loki.samples (fingerprint UInt64,timestamp_ms Int64,value Float64,string String) ENGINE = MergeTree PARTITION BY toRelativeHourNum(toDateTime(timestamp_ms / 1000)) ORDER BY (fingerprint, timestamp_ms);
+CREATE TABLE IF NOT EXISTS loki.time_series (
+    date Date,
+    fingerprint UInt64,
+    labels String,
+    name String
+) ENGINE = ReplacingMergeTree PARTITION BY date ORDER BY fingerprint;
+
+CREATE TABLE IF NOT EXISTS loki.samples (
+    fingerprint UInt64,
+    timestamp_ms Int64,
+    value Float64,
+    string String
+) ENGINE = MergeTree PARTITION BY toRelativeHourNum(toDateTime(timestamp_ms / 1000)) ORDER BY (fingerprint, timestamp_ms);
 ```
 
 #### SELECT
+
 ###### FINGERPRINTS
+
 ```sql
 SELECT DISTINCT fingerprint, labels FROM loki.time_series
 ```
+
 ###### SAMPLES
+
 ```sql
 SELECT fingerprint, timestamp_ms, string
-	FROM loki.samples
-	WHERE fingerprint IN (7975981685167825999) AND timestamp_ms >= 1514730532900 
-	AND timestamp_ms <= 1514730532902
-	ORDER BY fingerprint, timestamp_ms
+FROM loki.samples
+WHERE fingerprint IN (7975981685167825999) AND timestamp_ms >= 1514730532900 
+AND timestamp_ms <= 1514730532902
+ORDER BY fingerprint, timestamp_ms
 ```
+
 ```sql
 SELECT fingerprint, timestamp_ms, value
-	FROM loki.samples
-	ANY INNER JOIN 7975981685167825999 USING fingerprint
-	WHERE timestamp_ms >= 1514730532900 AND timestamp_ms <= 1514730532902
-	ORDER BY fingerprint, timestamp_ms
+FROM loki.samples
+ANY INNER JOIN 7975981685167825999 USING fingerprint
+WHERE timestamp_ms >= 1514730532900 AND timestamp_ms <= 1514730532902
+ORDER BY fingerprint, timestamp_ms
 ```			
 
 #### INSERT
@@ -186,4 +241,3 @@ INSERT INTO loki.samples (fingerprint, timestamp_ms, value, string) VALUES (?, ?
 
 #### Acknowledgements
 cLoki is not affiliated or endorsed by Grafana Labs. All rights belong to their respective owners.
-
