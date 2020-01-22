@@ -96,6 +96,7 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 
 ```console
 curl -i -XPOST -H Content-Type: application/json http://localhost:3100/api/prom/push --data '{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","line":"zzz"}]}]}'
+```
 
 ###### QUERY Logs
 
