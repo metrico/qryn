@@ -99,8 +99,8 @@ fastify.get('/hello', (request, reply) => {
 	}
 */
 
-fastify.post('/api/prom/push', (req, res) => {
-  if (debug) console.log('POST /api/prom/push');
+fastify.post('/loki/api/v1/push', (req, res) => {
+  if (debug) console.log('POST /loki/api/v1/push');
   if (debug) console.log('QUERY: ', req.query);
   if (debug) console.log('BODY: ', req.body);
   if (!req.body) {
@@ -159,8 +159,8 @@ fastify.post('/api/prom/push', (req, res) => {
 	regexp: a regex to filter the returned results, will eventually be rolled into the query language
 */
 
-fastify.get('/api/prom/query', (req, res) => {
-  if (debug) console.log('GET /api/prom/query');
+fastify.get('/loki/api/v1/query_range', (req, res) => {
+  if (debug) console.log('GET /loki/api/v1/query_range');
   if (debug) console.log('QUERY: ', req.query );
   // console.log( req.urlData().query.replace('query=',' ') );
   var params = req.query;
@@ -192,8 +192,8 @@ fastify.get('/api/prom/query', (req, res) => {
 	}
 */
 
-fastify.get('/api/prom/label', (req, res) => {
-  if (debug) console.log('GET /api/prom/label');
+fastify.get('/loki/api/v1/label', (req, res) => {
+  if (debug) console.log('GET /loki/api/v1/label');
   if (debug) console.log('QUERY: ', req.query);
   var all_labels = labels.get('_LABELS_');
   var resp = { "values": all_labels };
@@ -214,7 +214,7 @@ fastify.get('/api/prom/label', (req, res) => {
 	}
 */
 
-fastify.get('/api/prom/label/:name/values', (req, res) => {
+fastify.get('/loki/api/v1/label/:name/values', (req, res) => {
   if (debug) console.log('GET /api/prom/label/'+req.params.name+'/values');
   if (debug) console.log('QUERY LABEL: ', req.params.name);
   var all_values = labels.get(req.params.name);
