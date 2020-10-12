@@ -177,17 +177,6 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
 
 });
 
-/* Label Value Handler (test) */
-fastify.get('/loki/api/v1/query', (req, res) => {
-  if (debug) console.log('GET /loki/api/v1/query_range');
-  if (debug) console.log('QUERY: ', req.query );
-  // console.log( req.urlData().query.replace('query=',' ') );
-  var all_values = labels.get(req.query.__name__);
-  var resp = { "values": all_values };
-  if (debug) console.log('LABEL',req.query.__name__,'VALUES', all_values);
-  res.send(resp);
-});
-
 
 /* Label Handlers */
 /*
@@ -202,6 +191,17 @@ fastify.get('/loki/api/v1/query', (req, res) => {
 	  ]
 	}
 */
+
+/* Label Value Handler via query (test) */
+fastify.get('/loki/api/v1/query', (req, res) => {
+  if (debug) console.log('GET /loki/api/v1/query');
+  if (debug) console.log('QUERY: ', req.query );
+  // console.log( req.urlData().query.replace('query=',' ') );
+  var all_values = labels.get(req.query.__name__);
+  var resp = { "values": all_values };
+  if (debug) console.log('LABEL',req.query.__name__,'VALUES', all_values);
+  res.send(resp);
+});
 
 fastify.get('/loki/api/v1/label', (req, res) => {
   if (debug) console.log('GET /loki/api/v1/label');
@@ -230,6 +230,14 @@ fastify.get('/loki/api/v1/label/:name/values', (req, res) => {
   if (debug) console.log('QUERY LABEL: ', req.params.name);
   var all_values = labels.get(req.params.name);
   var resp = { "values": all_values };
+  res.send(resp);
+});
+
+/* Series Placeholder - we do not track this as of yet */
+fastify.get('/loki/api/v1/series', (req, res) => {
+  if (debug) console.log('GET /api/v1/series/'+req.params.name+'/values');
+  if (debug) console.log('QUERY SERIES: ', req.params);
+  var resp = { "status": "success", "data": []};
   res.send(resp);
 });
 
