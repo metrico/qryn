@@ -177,6 +177,17 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
 
 });
 
+/* Label Value Handler (test) */
+fastify.get('/loki/api/v1/query', (req, res) => {
+  if (debug) console.log('GET /loki/api/v1/query_range');
+  if (debug) console.log('QUERY: ', req.query );
+  // console.log( req.urlData().query.replace('query=',' ') );
+  var all_values = labels.get(req.query.__name__);
+  var resp = { "values": all_values };
+  if (debug) console.log('LABEL',req.query.__name__,'VALUES', all_values);
+  res.send(resp);
+});
+
 
 /* Label Handlers */
 /*
