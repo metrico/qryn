@@ -126,7 +126,7 @@ fastify.post('/loki/api/v1/push', (req, res) => {
 			if (debug) console.log('LABELS FINGERPRINT',stream.labels,finger);
 			labels.add(finger,stream.labels);
 			// Store Fingerprint
- 			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels), JSON_labels['__name__']||'' ]);
+ 			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels), JSON_labels['name']||'' ]);
 			for(var key in JSON_labels) {
 			   if (debug) console.log('Storing label',key, JSON_labels[key]);
 			   labels.add('_LABELS_',key); labels.add(key, JSON_labels[key]);
@@ -199,9 +199,9 @@ fastify.get('/loki/api/v1/query', (req, res) => {
   var query = req.query.query.replace(/\!?=/g,':');
 
   // console.log( req.urlData().query.replace('query=',' ') );
-  var all_values = labels.get(query.__name__);
+  var all_values = labels.get(query.name);
   var resp = { "values": all_values };
-  if (debug) console.log('LABEL',query.__name__,'VALUES', all_values);
+  if (debug) console.log('LABEL',query.name,'VALUES', all_values);
   res.send(resp);
 });
 
