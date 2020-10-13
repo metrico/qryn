@@ -1,6 +1,6 @@
 {
   "name": "cloki",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Loki API with Clickhouse Backend",
   "main": "cloki.js",
   "scripts": {
@@ -19,14 +19,15 @@
   "homepage": "https://github.com/lmangani/cloki#readme",
   "dependencies": {
     "@apla/clickhouse": "^1.6.0",
-    "fastify": "^1.14.3",
+    "fastify": "^1.14.6",
+    "fastify-basic-auth": "^0.4.0",
     "fastify-static": "^1.1.0",
     "fastify-url-data": "^2.2.0",
     "jsonic": "^0.3.1",
-    "protocol-buffers": "^4.1.0",
+    "protocol-buffers": "^4.2.0",
+    "protocol-buffers-encodings": "^1.1.1",
     "record-cache": "^1.1.0",
-    "short-hash": "^1.0.0",
-    "fastify-basic-auth": "^0.4.0"
+    "short-hash": "^1.0.0"
   },
   "directories": {
     "lib": "lib"

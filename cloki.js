@@ -16,7 +16,7 @@ var UTILS = require('./lib/utils');
 /* ProtoBuf Helper */
 var fs = require('fs');
 var protoBuff = require("protocol-buffers");
-var messages = protoBuff(fs.readFileSync('lib/loki.proto'))
+var messages = protoBuff(fs.readFileSync('lib/loki.proto'));
 
 /* Fingerprinting */
 var fingerPrint = UTILS.fingerPrint;
@@ -71,6 +71,7 @@ function validate (username, password, req, reply, done) {
 fastify.addContentTypeParser('application/x-protobuf', function (req, done) {
   var data = ''
   req.on('data', chunk => { data += chunk })
+  req.on('error', (error) => { console.log(error) })
   req.on('end', () => {
     done(messages.PushRequest.decode(data))
   })
@@ -200,7 +201,11 @@ fastify.get('/loki/api/v1/query', (req, res) => {
 
   // console.log( req.urlData().query.replace('query=',' ') );
   var all_values = labels.get(query.name);
-  var resp = { "values": all_values };
+  if (!all_values || all_values.length == 0) {
+	var resp = {"status":"success","data":{"resultType":"streams","result":[]}};
+  } else {
+  	var resp = { "values": all_values };
+  }
   if (debug) console.log('LABEL',query.name,'VALUES', all_values);
   res.send(resp);
 });
