@@ -169,12 +169,15 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
   if (!req.query.query) { res.send(resp);return; }
   try {
 
-	  var label_rules = labelParser(req.query.query);
-	  var queries = req.query.query.replace(/\!?=/g,':');
+	  var label_parser = labelParser(req.query.query);
+	  var label_rules = label_parser.labels;
+	  var label_regex = label_parser.regex;
+	  var query = /\{(.*?)\}/g.exec(req.query.query)[1] || req.query.query;
+	  var queries = query.replace(/\!?=/g,':');
 	  var JSON_labels = toJSON(queries);
   } catch(e){ console.error(e, queries); res.send(resp); }
   if (debug) console.log('SCAN LABELS',JSON_labels,label_rules,params)
-  scanFingerprints(JSON_labels,res,params,label_rules);
+  scanFingerprints(JSON_labels,res,params,label_rules,label_regex);
 
 });
 
