@@ -66,10 +66,10 @@ The ideal companion for parsing and shipping log streams to **cLoki** is [paStas
 
 Loki API Functions are loosely implemented as documented by the [Loki API](https://github.com/grafana/loki/blob/master/docs/api.md) reference.
 
-* [x] /api/prom/push
-* [x] /api/prom/query
-* [x] /api/prom/label
-* [x] /api/prom/label/_name_/values
+* [x] /loki/api/v1/push
+* [x] /loki/api/v1/query
+* [x] /loki/api/v1/label
+* [x] /loki/api/v1/label/_name_/values
 
 ##### Status
 
