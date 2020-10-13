@@ -16,7 +16,7 @@ var UTILS = require('./lib/utils');
 /* ProtoBuf Helper */
 var fs = require('fs');
 var protoBuff = require("protocol-buffers");
-var messages = protoBuff(fs.readFileSync('lib/loki.proto'))
+var messages = protoBuff(fs.readFileSync('lib/loki.proto'));
 
 /* Fingerprinting */
 var fingerPrint = UTILS.fingerPrint;
@@ -71,6 +71,7 @@ function validate (username, password, req, reply, done) {
 fastify.addContentTypeParser('application/x-protobuf', function (req, done) {
   var data = ''
   req.on('data', chunk => { data += chunk })
+  req.on('error', (error) => { console.log(error) })
   req.on('end', () => {
     done(messages.PushRequest.decode(data))
   })
@@ -99,8 +100,8 @@ fastify.get('/hello', (request, reply) => {
 	}
 */
 
-fastify.post('/api/prom/push', (req, res) => {
-  if (debug) console.log('POST /api/prom/push');
+fastify.post('/loki/api/v1/push', (req, res) => {
+  if (debug) console.log('POST /loki/api/v1/push');
   if (debug) console.log('QUERY: ', req.query);
   if (debug) console.log('BODY: ', req.body);
   if (!req.body) {
@@ -126,7 +127,7 @@ fastify.post('/api/prom/push', (req, res) => {
 			if (debug) console.log('LABELS FINGERPRINT',stream.labels,finger);
 			labels.add(finger,stream.labels);
 			// Store Fingerprint
- 			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels), JSON_labels['__name__']||'' ]);
+ 			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels), JSON_labels['name']||'' ]);
 			for(var key in JSON_labels) {
 			   if (debug) console.log('Storing label',key, JSON_labels[key]);
 			   labels.add('_LABELS_',key); labels.add(key, JSON_labels[key]);
@@ -159,8 +160,8 @@ fastify.post('/api/prom/push', (req, res) => {
 	regexp: a regex to filter the returned results, will eventually be rolled into the query language
 */
 
-fastify.get('/api/prom/query', (req, res) => {
-  if (debug) console.log('GET /api/prom/query');
+fastify.get('/loki/api/v1/query_range', (req, res) => {
+  if (debug) console.log('GET /loki/api/v1/query_range');
   if (debug) console.log('QUERY: ', req.query );
   // console.log( req.urlData().query.replace('query=',' ') );
   var params = req.query;
@@ -192,8 +193,25 @@ fastify.get('/api/prom/query', (req, res) => {
 	}
 */
 
-fastify.get('/api/prom/label', (req, res) => {
-  if (debug) console.log('GET /api/prom/label');
+/* Label Value Handler via query (test) */
+fastify.get('/loki/api/v1/query', (req, res) => {
+  if (debug) console.log('GET /loki/api/v1/query');
+  if (debug) console.log('QUERY: ', req.query );
+  var query = req.query.query.replace(/\!?=/g,':');
+
+  // console.log( req.urlData().query.replace('query=',' ') );
+  var all_values = labels.get(query.name);
+  if (!all_values || all_values.length == 0) {
+	var resp = {"status":"success","data":{"resultType":"streams","result":[]}};
+  } else {
+  	var resp = { "values": all_values };
+  }
+  if (debug) console.log('LABEL',query.name,'VALUES', all_values);
+  res.send(resp);
+});
+
+fastify.get('/loki/api/v1/label', (req, res) => {
+  if (debug) console.log('GET /loki/api/v1/label');
   if (debug) console.log('QUERY: ', req.query);
   var all_labels = labels.get('_LABELS_');
   var resp = { "values": all_labels };
@@ -214,11 +232,19 @@ fastify.get('/api/prom/label', (req, res) => {
 	}
 */
 
-fastify.get('/api/prom/label/:name/values', (req, res) => {
+fastify.get('/loki/api/v1/label/:name/values', (req, res) => {
   if (debug) console.log('GET /api/prom/label/'+req.params.name+'/values');
   if (debug) console.log('QUERY LABEL: ', req.params.name);
   var all_values = labels.get(req.params.name);
   var resp = { "values": all_values };
+  res.send(resp);
+});
+
+/* Series Placeholder - we do not track this as of yet */
+fastify.get('/loki/api/v1/series', (req, res) => {
+  if (debug) console.log('GET /api/v1/series/'+req.params.name+'/values');
+  if (debug) console.log('QUERY SERIES: ', req.params);
+  var resp = { "status": "success", "data": []};
   res.send(resp);
 });
 

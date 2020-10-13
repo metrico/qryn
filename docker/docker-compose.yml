@@ -101,19 +101,19 @@ services:
       - CLICKHOUSE_SERVER=clickhouse-seed
 #      - CLOKI_LOGIN=logger
 #      - CLOKI_PASSWORD=password
-#      - DEBUG=true
+      - DEBUG=true
     depends_on:
       - clickhouse-seed
     labels:
       org.label-schema.group: "monitoring"
 
-  promtail:
-    container_name: promtail
-    image: grafana/promtail:master
-    volumes:
-      - ./loki/promtail-docker-config.yaml:/etc/promtail/promtail-docker-config.yaml
-      - /var/log:/var/log
-    command: "-config.file=/etc/promtail/promtail-docker-config.yaml"
+#  promtail:
+#    container_name: promtail
+#    image: grafana/promtail:master
+#    volumes:
+#      - ./loki/promtail-docker-config.yaml:/etc/promtail/promtail-docker-config.yaml
+#      - /var/log/syslog:/var/log/syslog
+#    command: "-config.file=/etc/promtail/promtail-docker-config.yaml"
 
   caddy:
     image: stefanprodan/caddy
