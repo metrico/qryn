@@ -48,6 +48,7 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | BULK_MAXAGE  		| 2000  	    | Max Age for Bulk Inserts  		|
 | BULK_MAXSIZE  	| 5000  	    | Max Size for Bulk Inserts  		|
 | BULK_MAXCACHE  	| 50000  	    | Max Labels in Memory Cache  		|
+| ROTATION_DAYS  	| 7  	    | Max Days before data rotation  		|
 | HOST 			| 0.0.0.0 	    | cLOKi API IP  		|
 | PORT  		| 3100 	            | cLOKi API PORT  		|
 | CLOKI_LOGIN           | false             | Basic HTTP Username           |
@@ -95,13 +96,13 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 ###### INSERT Labels & Logs
 
 ```console
-curl -i -XPOST -H Content-Type: application/json http://localhost:3100/api/prom/push --data '{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","line":"zzz"}]}]}'
+curl -i -XPOST -H Content-Type: application/json http://localhost:3100/loki/api/v1/push --data '{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","line":"zzz"}]}]}'
 ```
 
 ###### QUERY Logs
 
 ```console
-# curl localhost:3100/api/prom/query?query='{__name__="up"}'
+# curl localhost:3100/loki/api/v1/query?query='{__name__="up"}'
 ```
 
 ```json
@@ -131,7 +132,7 @@ curl -i -XPOST -H Content-Type: application/json http://localhost:3100/api/prom/
 ###### QUERY Labels
 
 ```console
-# curl localhost:3100/api/prom/label
+# curl localhost:3100/loki/api/v1/label
 ```
 
 ```json
@@ -141,7 +142,7 @@ curl -i -XPOST -H Content-Type: application/json http://localhost:3100/api/prom/
 ###### QUERY Label Values
 
 ```console
-# curl 'localhost:3100/api/prom/label/__name__/values'
+# curl 'localhost:3100/loki/api/v1/__name__/values'
 ```
 
 ```json
