@@ -4,10 +4,10 @@
 
 # cLoki
 
-#### like Loki, but for Clickhouse.
+### like Loki, but for Clickhouse.
 
 Super experimental, fully functional [Loki](https://github.com/grafana/loki) API emulator made with NodeJS, [Fastify](https://github.com/fastify/fastify) and [Clickhouse](https://clickhouse.yandex/)<br/>
-APIs are 100% Compatible with [Grafana Explore](http://docs.grafana.org/features/explore/) and [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) for logs ingestion
+APIs are compatible with [Grafana Explore](http://docs.grafana.org/features/explore/) and [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) for logs ingestion
 
 :fire: *Beta Stage, Contributions Welcome! :octocat: Do not use this for anything serious.. yet!*
 
@@ -15,9 +15,9 @@ APIs are 100% Compatible with [Grafana Explore](http://docs.grafana.org/features
 
 ### Project Background
 
-The *Loki API* is brilliantly simple and appealing - its misteriously assembled *Cortex* backend, not so much. We wanted to leverage this concept over a true and fully open-source solution end-to-end. Also, we love **Clickhouse** . 
+The *Loki API* and its Grafana native integration are brilliant, simple and appealing - but we just love **Clickhouse**. 
 
-**cLoki** implements the same API functionality as Loki, buffered by a fast bulking **LRU** sitting on top of **Clickhouse** and relying on its *columnar search and insert performance alongside solid distribuion and clustering capabilities* for stored data. Just like Loki, cLoki does not parse or index incoming logs, but rather groups log streams using the same label system as Prometheus. 
+**cLoki** implements the same API functionality as Loki, buffered by a fast bulking **LRU** sitting on top of **Clickhouse** tables and relying on its *columnar search and insert performance alongside solid distribuion and clustering capabilities* for stored data. Just like Loki, cLoki does not parse or index incoming logs, but rather groups log streams using the same label system as Prometheus. 
 
 <img src="https://user-images.githubusercontent.com/1423657/54091852-5ce91000-4385-11e9-849d-998c1e5d3243.png" width=700 />
 
