@@ -48,7 +48,8 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | BULK_MAXAGE  		| 2000  	    | Max Age for Bulk Inserts  		|
 | BULK_MAXSIZE  	| 5000  	    | Max Size for Bulk Inserts  		|
 | BULK_MAXCACHE  	| 50000  	    | Max Labels in Memory Cache  		|
-| ROTATION_DAYS  	| 7  	    | Max Days before data rotation  		|
+| LABELS_DAYS  		| 7  	    	    | Max Days before Label rotation  		|
+| SAMPLES_DAYS  	| 7  	    	    | Max Days before Timeseries rotation  		|
 | HOST 			| 0.0.0.0 	    | cLOKi API IP  		|
 | PORT  		| 3100 	            | cLOKi API PORT  		|
 | CLOKI_LOGIN           | false             | Basic HTTP Username           |
