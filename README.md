@@ -70,6 +70,7 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 
 * [x] /loki/api/v1/push
 * [x] /loki/api/v1/query
+* [x] /loki/api/v1/query_range
 * [x] /loki/api/v1/label
 * [x] /loki/api/v1/label/_name_/values
 
