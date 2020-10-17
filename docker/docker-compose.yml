@@ -107,13 +107,12 @@ services:
     labels:
       org.label-schema.group: "monitoring"
 
-#  promtail:
-#    container_name: promtail
-#    image: grafana/promtail:master
-#    volumes:
-#      - ./loki/promtail-docker-config.yaml:/etc/promtail/promtail-docker-config.yaml
-#      - /var/log/syslog:/var/log/syslog
-#    command: "-config.file=/etc/promtail/promtail-docker-config.yaml"
+  pastash:
+    image: qxip/pastash-loki
+    container_name: pastash
+    volumes:
+      - ./loki/pastash.json:/config/loki.conf
+      - /var/log:/var/log:ro
 
   caddy:
     image: stefanprodan/caddy
