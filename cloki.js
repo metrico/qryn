@@ -121,7 +121,7 @@ fastify.post('/loki/api/v1/push', (req, res) => {
 	streams.forEach(function(stream){
 		try {
 			try {
-				var JSON_labels = toJSON(stream.labels.replace(/\!?=/g,':'));
+				var JSON_labels = toJSON(stream.labels.replace(/\!?="/g,':"'));
 			} catch(e) { console.error(e); return; }
 			// Calculate Fingerprint
 			var finger = fingerPrint(JSON.stringify(JSON_labels));
@@ -172,7 +172,7 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
 
      try {
 	  var query = /\{(.*?)\}/g.exec(req.query.query)[1] || req.query.query;
-	  var queries = query.replace(/\!?=/g,':');
+	  var queries = query.replace(/\!?="/g,':"');
 	  var JSON_labels = toJSON(queries);
      } catch(e){ console.error(e, queries); res.send(resp); }
      if (debug) console.log('SCAN CLICKHOUSE',JSON_labels,params)
@@ -183,7 +183,7 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
 	  var label_rules = label_parser.labels;
 	  var label_regex = label_parser.regex;
 	  var query = /\{(.*?)\}/g.exec(req.query.query)[1] || req.query.query;
-	  var queries = query.replace(/\!?=/g,':');
+	  var queries = query.replace(/\!?="/g,':"');
 	  var JSON_labels = toJSON(queries);
      } catch(e){ console.error(e, queries); res.send(resp); }
      if (debug) console.log('SCAN LABELS',JSON_labels,label_rules,params)
@@ -212,7 +212,7 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
 fastify.get('/loki/api/v1/query', (req, res) => {
   if (debug) console.log('GET /loki/api/v1/query');
   if (debug) console.log('QUERY: ', req.query );
-  var query = req.query.query.replace(/\!?=/g,':');
+  var query = req.query.query.replace(/\!?="/g,':"');
 
   // console.log( req.urlData().query.replace('query=',' ') );
   var all_values = labels.get(query.name);

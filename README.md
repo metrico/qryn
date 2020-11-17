@@ -9,9 +9,6 @@
 Super experimental, fully functional [Loki](https://github.com/grafana/loki) API emulator made with NodeJS, [Fastify](https://github.com/fastify/fastify) and [Clickhouse](https://clickhouse.yandex/)<br/>
 APIs are compatible with [Grafana Explore](http://docs.grafana.org/features/explore/) and [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) for logs ingestion
 
-Looking for the **go** version? [cloki-go](https://github.com/QXIP/cloki-go)
-
-
 :fire: *Beta Stage, Contributions Welcome! :octocat: Do not use this for anything serious.. yet!*
 
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
@@ -26,13 +23,23 @@ The *Loki API* and its Grafana native integration are brilliant, simple and appe
 
 #### Experimental Features
 
-cLoki implements custom query functions for clickhouse, allowing direct access to any data regardless of the Loki tables.
+cLoki implements custom query functions for clickhouse, allowing direct access to any table
 
 ##### Matrix
 Convert columns to tagged timeseries using the experimental `clickhouse` function
 ```
-clickhouse({db="my_database", table="my_table", tag="source_ip", metric="avg(mos)", interval=60})
+clickhouse({db="my_database", table="my_table", tag="source_ip", metric="avg(mos)", where="mos > 0", interval="60"})
 ```
+###### Query Options
+| parameter  | description  |
+|---|---|
+|db       | database name  |
+|table    | table name |
+|tag      | column(s) for tags | 
+|metric   | function for values |
+|where    | optional where condition |
+|interval | optional interval in seconds |
+
 <img src="https://user-images.githubusercontent.com/1423657/99422089-6dde7880-28ff-11eb-8254-7f0add8860cd.png" />
 
 ------------
