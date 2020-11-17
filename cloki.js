@@ -175,7 +175,7 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
 	  var queries = query.replace(/\!?=/g,':');
 	  var JSON_labels = toJSON(queries);
      } catch(e){ console.error(e, queries); res.send(resp); }
-     if (debug) console.log('SCAN CLICKHOUSE',JSON_labels,label_rules,params)
+     if (debug) console.log('SCAN CLICKHOUSE',JSON_labels,params)
      scanClickhouse(JSON_labels,res,params);
   } else {
      try {
