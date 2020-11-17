@@ -35,6 +35,13 @@ npm start
 ##### :busstop: Docker
 For a fully working demo, check the [docker-compose](https://github.com/lmangani/cLoki/tree/master/docker) example
 
+##### Manually
+```
+CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_DB="my_data" CLICKHOUSE_AUTH="default:password" DEBUG=true node cloki.js
+```
+
+--------------
+
 #### Configuration
 The following ENV Variables can be used to control cLoki parameters and backend settings.
 
