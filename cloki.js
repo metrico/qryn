@@ -168,7 +168,7 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
   var params = req.query;
   var resp = { "streams": [] };
   if (!req.query.query) { res.send(resp); return; }
-  if (req.query.query.startsWith("clickhouse("){
+  if (req.query.query.startsWith("clickhouse(")){
 
      try {
 	  var query = /\{(.*?)\}/g.exec(req.query.query)[1] || req.query.query;
