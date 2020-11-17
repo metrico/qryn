@@ -9,6 +9,9 @@
 Super experimental, fully functional [Loki](https://github.com/grafana/loki) API emulator made with NodeJS, [Fastify](https://github.com/fastify/fastify) and [Clickhouse](https://clickhouse.yandex/)<br/>
 APIs are compatible with [Grafana Explore](http://docs.grafana.org/features/explore/) and [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) for logs ingestion
 
+Looking for the **go** version? [cloki-go](https://github.com/QXIP/cloki-go)
+
+
 :fire: *Beta Stage, Contributions Welcome! :octocat: Do not use this for anything serious.. yet!*
 
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
