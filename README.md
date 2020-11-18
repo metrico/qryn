@@ -41,7 +41,8 @@ clickhouse({ db="<b>my_database</b>", table="<b>my_table</b>", tag="<b>source_ip
 |interval | interval in seconds (optional) |
 
 
-<img src="https://user-images.githubusercontent.com/1423657/99422089-6dde7880-28ff-11eb-8254-7f0add8860cd.png" />
+![ezgif com-gif-maker](https://user-images.githubusercontent.com/1423657/99530591-d0885080-29a1-11eb-87e6-870a046fb4de.gif)
+
 
 ------------
 ### Setup
