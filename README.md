@@ -28,7 +28,12 @@ cLoki implements custom query functions for clickhouse, allowing direct access t
 ##### Matrix
 Convert columns to tagged timeseries using the experimental `clickhouse` function
 ```
-clickhouse({db="my_database", table="my_table", tag="source_ip", metric="avg(mos)", where="mos > 0", interval="60"})
+clickhouse({ db="my_database", 
+             table="my_table", 
+             tag="source_ip", 
+             metric="avg(mos)", 
+             where="mos > 0", 
+             interval="60" })
 ```
 ###### Query Options
 | parameter  | description  |
@@ -39,6 +44,7 @@ clickhouse({db="my_database", table="my_table", tag="source_ip", metric="avg(mos
 |metric   | function for values |
 |where    | optional where condition |
 |interval | optional interval in seconds |
+
 
 <img src="https://user-images.githubusercontent.com/1423657/99422089-6dde7880-28ff-11eb-8254-7f0add8860cd.png" />
 
