@@ -25,7 +25,13 @@ The *Loki API* and its Grafana native integration are brilliant, simple and appe
 
 cLoki implements custom query functions for clickhouse, allowing direct access to any table
 
-##### Matrix
+##### Matrix 
+Convert columns to tagged timeseries using the emulated loki 2.0 query format
+```
+avg by (source_ip) (rate(mos[60])) from my_database.my_table
+```
+
+##### Clickhouse
 Convert columns to tagged timeseries using the experimental `clickhouse` function
 <pre>
 clickhouse({ db="<b>my_database</b>", table="<b>my_table</b>", tag="<b>source_ip</b>", metric="<b>avg(mos)</b>", where="mos > 0", interval="60" })

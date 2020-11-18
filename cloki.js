@@ -168,7 +168,15 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
   var params = req.query;
   var resp = { "streams": [] };
   if (!req.query.query) { res.send(resp); return; }
-  if (req.query.query.startsWith("clickhouse(")){
+
+  var RATEQUERY = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\) from (.*)\.(.*)/;
+  if (RATEQUERY.test(req.query.query)){
+	var s = RATEQUERY.exec(req.query.query);
+	console.log('tags',s);
+	var JSON_labels = { db: s[5], table: s[6], interval: s[4] || 60, tag: s[2], metric: s[1]+'('+s[3]+')' };
+	scanClickhouse(JSON_labels,res,params);
+
+  } else if (req.query.query.startsWith("clickhouse(")){
 
      try {
 	  var query = /\{(.*?)\}/g.exec(req.query.query)[1] || req.query.query;
