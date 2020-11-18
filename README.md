@@ -33,12 +33,12 @@ clickhouse({ db="<b>my_database</b>", table="<b>my_table</b>", tag="<b>source_ip
 ###### Query Options
 | parameter  | description  |
 |---|---|
-|db       | database name  |
-|table    | table name |
-|tag      | column(s) for tags | 
-|metric   | function for values |
-|where    | optional where condition |
-|interval | optional interval in seconds |
+|db       | clickhouse database name  |
+|table    | clickhouse table name |
+|tag      | column(s) for tags, comma separated | 
+|metric   | function for metric values |
+|where    | where condition (optional) |
+|interval | interval in seconds (optional) |
 
 
 <img src="https://user-images.githubusercontent.com/1423657/99422089-6dde7880-28ff-11eb-8254-7f0add8860cd.png" />
