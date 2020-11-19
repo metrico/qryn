@@ -30,6 +30,9 @@ Convert columns to tagged timeseries using the emulated loki 2.0 query format
 <pre>
 <b>avg</b> by (<b>source_ip</b>) (rate(<b>mos</b>[<b>60</b>])) from <b>my_database.my_table</b>
 </pre>
+<pre>
+<b>sum</b> by (<b>ruri_user</b>) (rate(<b>duration</b>[<b>300</b>])) from <b>my_database.my_table</b> where <b>duration > 10</b>
+</pre>
 
 ##### Clickhouse
 Convert columns to tagged timeseries using the experimental `clickhouse` function
