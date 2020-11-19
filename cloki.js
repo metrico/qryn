@@ -169,8 +169,28 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
   var resp = { "streams": [] };
   if (!req.query.query) { res.send(resp); return; }
 
+  /* query templates */
   var RATEQUERY = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\) from (.*)\.(.*)/;
-  if (RATEQUERY.test(req.query.query)){
+  var RATEQUERYWHERE = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\) from (.*)\.(.*) where (.*)/;
+  var RATEQUERYNOWHERE = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\) from (.*)\.([\S]+)\s?(.*)/;
+
+
+  if (!req.query.query) {
+	res.code(400).send('invalid query');
+
+  } else if (RATEQUERYNOWHERE.test(req.query.query)){
+	var s = RATEQUERYNOWHERE.exec(req.query.query);
+	console.log('tags',s);
+	var JSON_labels = { db: s[5], table: s[6], interval: s[4] || 60, tag: s[2], metric: s[1]+'('+s[3]+')', where: s[3]+" "+s[7] };
+	scanClickhouse(JSON_labels,res,params);
+
+  } else if (RATEQUERYWHERE.test(req.query.query)){
+	var s = RATEQUERYWHERE.exec(req.query.query);
+	console.log('tags',s);
+	var JSON_labels = { db: s[5], table: s[6], interval: s[4] || 60, tag: s[2], metric: s[1]+'('+s[3]+')', where: s[7] };
+	scanClickhouse(JSON_labels,res,params);
+
+  } else if (RATEQUERY.test(req.query.query)){
 	var s = RATEQUERY.exec(req.query.query);
 	console.log('tags',s);
 	var JSON_labels = { db: s[5], table: s[6], interval: s[4] || 60, tag: s[2], metric: s[1]+'('+s[3]+')' };
