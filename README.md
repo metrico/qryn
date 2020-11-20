@@ -21,7 +21,7 @@ The *Loki API* and its Grafana native integration are brilliant, simple and appe
 
 <img src="https://user-images.githubusercontent.com/1423657/54091852-5ce91000-4385-11e9-849d-998c1e5d3243.png" width=700 />
 
-#### :fire: CliQL: Experimental Features
+### :fire: CliQL: Experimental Features
 
 cLoki implements custom query functions for clickhouse, allowing direct access to any table
 
