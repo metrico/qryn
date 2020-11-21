@@ -23,18 +23,22 @@ The *Loki API* and its Grafana native integration are brilliant, simple and appe
 
 ### :fire: CliQL: Experimental Features
 
-cLoki implements custom query functions for clickhouse, allowing direct access to any table
+cLoki implements custom query functions for clickhouse timeseries extraction, allowing direct access to any table
 
-##### Matrix 
+#### Timeseries
 Convert columns to tagged timeseries using the emulated loki 2.0 query format
+```
+<aggr-op> by (<labels,>) (<function>(<metric>[range_in_seconds])) from <database>.<table> where <optional condition>
+```
+###### Examples
 <pre>
 <b>avg</b> by (<b>source_ip</b>) (rate(<b>mos</b>[<b>60</b>])) from <b>my_database.my_table</b>
 </pre>
 <pre>
-<b>sum</b> by (<b>ruri_user</b>) (rate(<b>duration</b>[<b>300</b>])) from <b>my_database.my_table</b> where <b>duration > 10</b>
+<b>sum</b> by (<b>ruri_user, from_user</b>) (rate(<b>duration</b>[<b>300</b>])) from <b>my_database.my_table</b> where <b>duration > 10</b>
 </pre>
 
-##### Clickhouse
+#### Clickhouse
 Convert columns to tagged timeseries using the experimental `clickhouse` function
 <pre>
 clickhouse({ db="<b>my_database</b>", table="<b>my_table</b>", tag="<b>source_ip</b>", metric="<b>avg(mos)</b>", where="mos > 0", interval="60" })
