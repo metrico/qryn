@@ -146,6 +146,12 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 curl -i -XPOST -H Content-Type: application/json http://localhost:3100/loki/api/v1/push --data '{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","line":"zzz"}]}]}'
 ```
 
+###### INSERT Labels & Metrics
+
+```console
+curl -i -XPOST -H Content-Type: application/json http://localhost:3100/loki/api/v1/push --data '{"streams":[{"labels":"{\"__name__\":\"metric\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","value":"100"}]}]}'
+```
+
 ###### QUERY Logs
 
 ```console
