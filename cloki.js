@@ -69,6 +69,16 @@ function validate (username, password, req, reply, done) {
     }
 }
 
+fastify.addContentTypeParser('text/plain', { parseAs: 'string' }, function (req, body, done) {
+  try {
+    var json = JSON.parse(body)
+    done(null, json)
+  } catch (err) {
+    err.statusCode = 400
+    done(err, undefined)
+  }
+})
+
 fastify.addContentTypeParser('application/x-protobuf', function (req, done) {
   var data = ''
   req.on('data', chunk => { data += chunk })
@@ -140,6 +150,48 @@ fastify.post('/loki/api/v1/push', (req, res) => {
 				if (debug) console.log('BULK ROW',entry,finger);
 				if ( !entry && (!entry.timestamp||!entry.ts) && (!entry.value||!entry.line)) { console.error('no bulkable data',entry); return; }
 				var values = [ finger, new Date(entry.timestamp||entry.ts).getTime(), entry.value || 0, entry.line || "" ];
+				bulk.add(finger,values);
+			})
+		}
+	});
+  }
+  res.send(200);
+});
+
+/* Telegraf HTTP Bulk handler */
+fastify.post('/telegraf', (req, res) => {
+  if (debug) console.log('POST /telegraf');
+  if (debug) console.log('QUERY: ', req.query);
+  if (debug) console.log('BODY: ', req.body);
+  if (!req.body && !req.body.metrics) {
+	 console.error('No Request Body!', req);
+	 return;
+  }
+  var streams;
+  streams = req.body.metrics;
+  if (!Array.isArray(streams)) streams = [ streams ];
+  if (streams) {
+	console.log('influx', streams);
+	streams.forEach(function(stream){
+		try {
+			var JSON_labels = stream.tags;
+			// Calculate Fingerprint
+			var finger = fingerPrint(JSON.stringify(JSON_labels));
+			if (debug) console.log('LABELS FINGERPRINT',JSON_labels,finger);
+			labels.add(finger,stream.labels);
+			// Store Fingerprint
+ 			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels), stream.name||'' ]);
+			for(var key in JSON_labels) {
+			   //if (debug) console.log('Storing label',key, JSON_labels[key]);
+			   labels.add('_LABELS_',key); labels.add(key, JSON_labels[key]);
+			}
+		} catch(e) { console.log(e) }
+
+		if (stream.fields) {
+			Object.keys(stream.fields).forEach(function(entry){
+				// if (debug) console.log('BULK ROW',entry,finger);
+				if ( !entry && !stream.timestamp && (!entry.value||!entry.line)) { console.error('no bulkable data',entry); return; }
+				var values = [ finger, stream.timestamp * 1000, stream.fields[entry] || 0, stream.fields[entry].toString() || "" ];
 				bulk.add(finger,values);
 			})
 		}
