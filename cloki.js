@@ -220,7 +220,8 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
   var params = req.query;
   var resp = { "streams": [] };
   if (!req.query.query) { res.send(resp); return; }
-
+  /* remove newlines */
+  req.query.query = req.query.query.replace(/\n/g, ' ');
   /* query templates */
   var RATEQUERY = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\) from (.*)\.(.*)/;
   var RATEQUERYWHERE = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\) from (.*)\.(.*) where (.*)/;
@@ -257,17 +258,23 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
      } catch(e){ console.error(e, queries); res.send(resp); }
      if (debug) console.log('SCAN CLICKHOUSE',JSON_labels,params)
      scanClickhouse(JSON_labels,res,params);
+
   } else {
      try {
 	  var label_parser = labelParser(req.query.query);
 	  var label_rules = label_parser.labels;
 	  var label_regex = label_parser.regex;
+	  var timeseries = false;
+	  if (label_regex && label_regex.endsWith('| ts')){
+		timeseries = true;
+		label_regex = false;
+	  }
 	  var query = /\{(.*?)\}/g.exec(req.query.query)[1] || req.query.query;
 	  var queries = query.replace(/\!?="/g,':"');
 	  var JSON_labels = toJSON(queries);
      } catch(e){ console.error(e, queries); res.send(resp); }
      if (debug) console.log('SCAN LABELS',JSON_labels,label_rules,params)
-     scanFingerprints(JSON_labels,res,params,label_rules,label_regex);
+     scanFingerprints(JSON_labels,res,params,label_rules,label_regex,timeseries);
 
   }
 
