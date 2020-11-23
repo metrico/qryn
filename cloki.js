@@ -33,6 +33,7 @@ var labelParser = UTILS.labelParser;
 var init = DATABASE.init;
 var reloadFingerprints = DATABASE.reloadFingerprints;
 var scanFingerprints = DATABASE.scanFingerprints;
+var scanMetricFingerprints = DATABASE.scanMetricFingerprints;
 var scanClickhouse = DATABASE.scanClickhouse;
 
 init(process.env.CLICKHOUSE_TSDB || 'loki');
@@ -44,10 +45,12 @@ const fastify = require('fastify')({
 })
 
 const path = require('path')
+/*
 fastify.register(require('fastify-static'), {
   root: path.join(__dirname, 'web'),
   prefix: '/', // optional: default '/'
 })
+*/
 
 fastify.register(require('fastify-url-data'), (err) => {
   if (err) throw err
@@ -226,6 +229,7 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
   var RATEQUERY = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\) from (.*)\.(.*)/;
   var RATEQUERYWHERE = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\) from (.*)\.(.*) where (.*)/;
   var RATEQUERYNOWHERE = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\) from (.*)\.([\S]+)\s?(.*)/;
+  var RATEQUERYMETRICS = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\)/;
 
 
   if (!req.query.query) {
@@ -248,6 +252,12 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
 	console.log('tags',s);
 	var JSON_labels = { db: s[5], table: s[6], interval: s[4] || 60, tag: s[2], metric: s[1]+'('+s[3]+')' };
 	scanClickhouse(JSON_labels,res,params);
+
+  } else if (RATEQUERYMETRICS.test(req.query.query)){
+	var s = RATEQUERYMETRICS.exec(req.query.query);
+	console.log('metrics tags',s);
+	var JSON_labels = { db: 'loki', table: 'samples', interval: s[4] || 60, tag: s[2], metric: s[1]+'('+s[3]+')' };
+	scanMetricFingerprints(JSON_labels,res,params);
 
   } else if (req.query.query.startsWith("clickhouse(")){
 
