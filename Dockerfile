@@ -1,5 +1,5 @@
 # cLoki
-FROM node:10
+FROM node:12
 
 # BUILD FORCE
 ENV BUILD 703025
