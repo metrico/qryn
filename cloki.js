@@ -178,6 +178,7 @@ fastify.post('/telegraf', (req, res) => {
 	streams.forEach(function(stream){
 		try {
 			var JSON_labels = stream.tags;
+			JSON_labels.metric = stream.name;
 			// Calculate Fingerprint
 			var finger = fingerPrint(JSON.stringify(JSON_labels));
 			if (debug) console.log('LABELS FINGERPRINT',JSON_labels,finger);
