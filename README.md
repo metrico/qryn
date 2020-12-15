@@ -58,7 +58,8 @@ clickhouse({ db="<b>my_database</b>", table="<b>my_table</b>", tag="<b>source_ip
 |where    | where condition (optional) |
 |interval | interval in seconds (optional) |
 
-
+#### Telegraf
+Insert using [Telegraf Input](https://github.com/lmangani/cLoki/wiki/Telegraf-HTTP-Input) and display metrics and logs in Grafana without plugins
 
 
 ------------
