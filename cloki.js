@@ -174,7 +174,7 @@ fastify.post('/telegraf', (req, res) => {
   streams = req.body.metrics;
   if (!Array.isArray(streams)) streams = [ streams ];
   if (streams) {
-	console.log('influx', streams);
+	if (debug) console.log('influx', streams);
 	streams.forEach(function(stream){
 		try {
 			var JSON_labels = stream.tags;
@@ -276,7 +276,7 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
 	  var label_rules = label_parser.labels;
 	  var label_regex = label_parser.regex;
 	  var timeseries = false;
-	  if (label_regex && label_regex.endsWith('| ts')){
+	  if (label_regex && (label_regex.endsWith('| ts') || label_regex.endsWith('| unwrap') ) ){
 		timeseries = true;
 		label_regex = false;
 	  }
