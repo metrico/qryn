@@ -45,8 +45,16 @@ Convert columns to tagged timeseries using the emulated loki 2.0 query format
 
 #### Clickhouse
 Convert columns to tagged timeseries using the experimental `clickhouse` function
+#### Example
 <pre>
-clickhouse({ db="<b>my_database</b>", table="<b>my_table</b>", tag="<b>source_ip</b>", metric="<b>avg(mos)</b>", where="mos > 0", interval="60" })
+clickhouse({ 
+  db="<b>my_database</b>", 
+  table="<b>my_table</b>", 
+  tag="<b>source_ip</b>", 
+  metric="<b>avg(mos)</b>", 
+  where="<b>mos > 0</b>", 
+  interval="<b>60</b>" 
+})
 </pre>
 
 ###### Query Options
