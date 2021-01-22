@@ -1,6 +1,6 @@
 /*
  * Loki API to Clickhouse Gateway
- * (C) 2018-2019 QXIP BV
+ * (C) 2018-2021 QXIP BV
  */
 
 /* TODO: split into modules and prioritize performance! contributors help yourselves :) */
@@ -8,7 +8,7 @@
 var debug = process.env.DEBUG || false;
 var http_user = process.env.CLOKI_LOGIN || false;
 var http_pass = process.env.CLOKI_PASSWORD || false;
-
+var readonly = process.env.READONLY || false;
 
 var DATABASE = require('./lib/db/clickhouse');
 var UTILS = require('./lib/utils');
@@ -36,7 +36,7 @@ var scanFingerprints = DATABASE.scanFingerprints;
 var scanMetricFingerprints = DATABASE.scanMetricFingerprints;
 var scanClickhouse = DATABASE.scanClickhouse;
 
-init(process.env.CLICKHOUSE_TSDB || 'loki');
+if (!readonly) init(process.env.CLICKHOUSE_TSDB || 'loki');
 
 
 /* Fastify Helper */
@@ -120,6 +120,12 @@ fastify.post('/loki/api/v1/push', (req, res) => {
   if (debug) console.log('BODY: ', req.body);
   if (!req.body) {
 	 console.error('No Request Body!', req);
+	 res.send(500);
+	 return;
+  }
+  if (readonly) {
+	 console.error('Readonly! No push support.');
+	 res.send(500);
 	 return;
   }
   var streams;
@@ -168,6 +174,11 @@ fastify.post('/telegraf', (req, res) => {
   if (debug) console.log('BODY: ', req.body);
   if (!req.body && !req.body.metrics) {
 	 console.error('No Request Body!', req);
+	 return;
+  }
+  if (readonly) {
+	 console.error('Readonly! No push support.');
+	 res.send(500);
 	 return;
   }
   var streams;

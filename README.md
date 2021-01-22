@@ -109,6 +109,7 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | PORT  		| 3100 	            | cLOKi API PORT  		|
 | CLOKI_LOGIN           | false             | Basic HTTP Username           |
 | CLOKI_PASSWORD        | false             | Basic HTTP Password           |
+| READONLY  			| false  	    | Readonly Mode, no DB Init  		|
 | DEBUG  			| false  	    | Debug Mode  		|
 
 #### :fuelpump: Log Streams
