@@ -66,6 +66,7 @@ clickhouse({
 |metric   | function for metric values |
 |where    | where condition (optional) |
 |interval | interval in seconds (optional) |
+|timefield| time/date field name (optional) |
 
 #### Telegraf
 Insert using [Telegraf Input](https://github.com/lmangani/cLoki/wiki/Telegraf-HTTP-Input) and display metrics and logs in Grafana without plugins
