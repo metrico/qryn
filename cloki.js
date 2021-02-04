@@ -138,6 +138,7 @@ fastify.post('/loki/api/v1/push', (req, res) => {
   }
   if (streams) {
 	streams.forEach(function(stream){
+	  if(stream.entries){
 		try {
 			try {
 				var JSON_labels = toJSON(stream.labels.replace(/\!?="/g,':"'));
@@ -162,6 +163,30 @@ fastify.post('/loki/api/v1/push', (req, res) => {
 				bulk.add(finger,values);
 			})
 		}
+	  } else {
+		try {
+			var JSON_labels = stream;
+			// Calculate Fingerprint
+			var finger = fingerPrint(JSON.stringify(JSON_labels));
+			if (debug) console.log('LABELS FINGERPRINT',stream.labels,finger);
+			labels.add(finger,stream.labels);
+			// Store Fingerprint
+ 			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels), JSON_labels['name']||'' ]);
+			for(var key in JSON_labels) {
+			   if (debug) console.log('Storing label',key, JSON_labels[key]);
+			   labels.add('_LABELS_',key); labels.add(key, JSON_labels[key]);
+			}
+		} catch(e) { console.log(e) }
+
+		if (stream.values) {
+			stream.values.forEach(function(entry){
+				if (debug) console.log('BULK ROW',entry,finger);
+				bulk.add(finger,entry);
+			})
+		}
+
+          }
+
 	});
   }
   res.send(200);
