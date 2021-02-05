@@ -10,13 +10,13 @@ var http_user = process.env.CLOKI_LOGIN || false;
 var http_pass = process.env.CLOKI_PASSWORD || false;
 var readonly = process.env.READONLY || false;
 
-var DATABASE = require('./lib/db/clickhouse');
-var UTILS = require('./lib/utils');
+var DATABASE = require("./lib/db/clickhouse");
+var UTILS = require("./lib/utils");
 
 /* ProtoBuf Helper */
-var fs = require('fs');
+var fs = require("fs");
 var protoBuff = require("protocol-buffers");
-var messages = protoBuff(fs.readFileSync('lib/loki.proto'));
+var messages = protoBuff(fs.readFileSync("lib/loki.proto"));
 
 /* Fingerprinting */
 var fingerPrint = UTILS.fingerPrint;
@@ -36,15 +36,14 @@ var scanFingerprints = DATABASE.scanFingerprints;
 var scanMetricFingerprints = DATABASE.scanMetricFingerprints;
 var scanClickhouse = DATABASE.scanClickhouse;
 
-if (!readonly) init(process.env.CLICKHOUSE_TSDB || 'loki');
-
+if (!readonly) init(process.env.CLICKHOUSE_TSDB || "loki");
 
 /* Fastify Helper */
-const fastify = require('fastify')({
-  logger: false
-})
+const fastify = require("fastify")({
+	logger: false,
+});
 
-const path = require('path')
+const path = require("path");
 /*
 fastify.register(require('fastify-static'), {
   root: path.join(__dirname, 'web'),
@@ -52,50 +51,56 @@ fastify.register(require('fastify-static'), {
 })
 */
 
-fastify.register(require('fastify-url-data'), (err) => {
-  if (err) throw err
-})
+fastify.register(require("fastify-url-data"), (err) => {
+	if (err) throw err;
+});
 
 /* Enable Simple Authentication */
-if (http_user && http_password){
-  fastify.register(require('fastify-basic-auth'), { validate })
-  fastify.after(() => {
-    fastify.addHook('preHandler', fastify.basicAuth)
-  })
+if (http_user && http_password) {
+	fastify.register(require("fastify-basic-auth"), { validate });
+	fastify.after(() => {
+		fastify.addHook("preHandler", fastify.basicAuth);
+	});
 }
 
-function validate (username, password, req, reply, done) {
-    if (username === http_user && password === http_password) {
-        done()
-    } else {
-        done(new Error('Unauthorized!: Wrong username/password.'))
-    }
+function validate(username, password, req, reply, done) {
+	if (username === http_user && password === http_password) {
+		done();
+	} else {
+		done(new Error("Unauthorized!: Wrong username/password."));
+	}
 }
 
-fastify.addContentTypeParser('text/plain', { parseAs: 'string' }, function (req, body, done) {
-  try {
-    var json = JSON.parse(body)
-    done(null, json)
-  } catch (err) {
-    err.statusCode = 400
-    done(err, undefined)
-  }
-})
+fastify.addContentTypeParser("text/plain", { parseAs: "string" }, function (
+	req,
+	body,
+	done
+) {
+	try {
+		var json = JSON.parse(body);
+		done(null, json);
+	} catch (err) {
+		err.statusCode = 400;
+		done(err, undefined);
+	}
+});
 
-fastify.addContentTypeParser('application/x-protobuf', function (req, done) {
-  var data = ''
-  req.on('data', chunk => { data += chunk })
-  req.on('error', (error) => { console.log(error) })
-  req.on('end', () => {
-    done(messages.PushRequest.decode(data))
-  })
-})
+fastify.addContentTypeParser("application/x-protobuf", function (req, done) {
+	var data = "";
+	req.on("data", (chunk) => {
+		data += chunk;
+	});
+	req.on("error", (error) => {
+		console.log(error);
+	});
+	req.on("end", () => {
+		done(messages.PushRequest.decode(data));
+	});
+});
 
-
-fastify.get('/hello', (request, reply) => {
-  reply.send({ hello: 'cloki' })
-})
-
+fastify.get("/hello", (request, reply) => {
+	reply.send({ hello: "cloki" });
+});
 
 /* Write Handler */
 /*
@@ -114,132 +119,183 @@ fastify.get('/hello', (request, reply) => {
 	}
 */
 
-fastify.post('/loki/api/v1/push', (req, res) => {
-  if (debug) console.log('POST /loki/api/v1/push');
-  if (debug) console.log('QUERY: ', req.query);
-  if (debug) console.log('BODY: ', req.body);
-  if (!req.body) {
-	 console.error('No Request Body!', req);
-	 res.send(500);
-	 return;
-  }
-  if (readonly) {
-	 console.error('Readonly! No push support.');
-	 res.send(500);
-	 return;
-  }
-  var streams;
-  if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/json') > -1) {
-	streams = req.body.streams;
-  } else if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/x-protobuf') > -1) {
-	// streams = messages.PushRequest.decode(req.body)
-	streams = req.body;
-	if (debug) console.log('GOT protoBuf',streams);
-  }
-  if (streams) {
-	streams.forEach(function(stream){
-	  if(stream.entries){
-		try {
+fastify.post("/loki/api/v1/push", (req, res) => {
+	if (debug) console.log("POST /loki/api/v1/push");
+	if (debug) console.log("QUERY: ", req.query);
+	if (debug) console.log("BODY: ", req.body);
+	if (!req.body) {
+		console.error("No Request Body!", req);
+		res.send(500);
+		return;
+	}
+	if (readonly) {
+		console.error("Readonly! No push support.");
+		res.send(500);
+		return;
+	}
+	var streams;
+	if (
+		req.headers["content-type"] &&
+		req.headers["content-type"].indexOf("application/json") > -1
+	) {
+		streams = req.body.streams;
+	} else if (
+		req.headers["content-type"] &&
+		req.headers["content-type"].indexOf("application/x-protobuf") > -1
+	) {
+		// streams = messages.PushRequest.decode(req.body)
+		streams = req.body;
+		if (debug) console.log("GOT protoBuf", streams);
+	}
+	if (streams) {
+		streams.forEach(function (stream) {
 			try {
-				var JSON_labels = toJSON(stream.labels.replace(/\!?="/g,':"'));
-			} catch(e) { console.error(e); return; }
-			// Calculate Fingerprint
-			var finger = fingerPrint(JSON.stringify(JSON_labels));
-			if (debug) console.log('LABELS FINGERPRINT',stream.labels,finger);
-			labels.add(finger,stream.labels);
-			// Store Fingerprint
- 			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels), JSON_labels['name']||'' ]);
-			for(var key in JSON_labels) {
-			   if (debug) console.log('Storing label',key, JSON_labels[key]);
-			   labels.add('_LABELS_',key); labels.add(key, JSON_labels[key]);
+				try {
+					var JSON_labels;
+					if (stream.stream) {
+						JSON_labels = stream.stream;
+					} else {
+						JSON_labels = toJSON(
+							stream.labels.replace(/\!?="/g, ':"')
+						);
+					}
+				} catch (e) {
+					console.error(e);
+					return;
+				}
+				// Calculate Fingerprint
+				var finger = fingerPrint(JSON.stringify(JSON_labels));
+				if (debug)
+					console.log("LABELS FINGERPRINT", stream.labels, finger);
+				labels.add(finger, stream.labels);
+				// Store Fingerprint
+				bulk_labels.add(finger, [
+					new Date().toISOString().split("T")[0],
+					finger,
+					JSON.stringify(JSON_labels),
+					JSON_labels["name"] || "",
+				]);
+				for (var key in JSON_labels) {
+					if (debug)
+						console.log("Storing label", key, JSON_labels[key]);
+					labels.add("_LABELS_", key);
+					labels.add(key, JSON_labels[key]);
+				}
+			} catch (e) {
+				console.log(e);
 			}
-		} catch(e) { console.log(e) }
 
-		if (stream.entries) {
-			stream.entries.forEach(function(entry){
-				if (debug) console.log('BULK ROW',entry,finger);
-				if ( !entry && (!entry.timestamp||!entry.ts) && (!entry.value||!entry.line)) { console.error('no bulkable data',entry); return; }
-				var values = [ finger, new Date(entry.timestamp||entry.ts).getTime(), entry.value || 0, entry.line || "" ];
-				bulk.add(finger,values);
-			})
-		}
-	  } else {
-		try {
-			var JSON_labels = stream;
-			// Calculate Fingerprint
-			var finger = fingerPrint(JSON.stringify(JSON_labels));
-			if (debug) console.log('LABELS FINGERPRINT',stream.labels,finger);
-			labels.add(finger,stream.labels);
-			// Store Fingerprint
- 			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels), JSON_labels['name']||'' ]);
-			for(var key in JSON_labels) {
-			   if (debug) console.log('Storing label',key, JSON_labels[key]);
-			   labels.add('_LABELS_',key); labels.add(key, JSON_labels[key]);
+			if (stream.entries) {
+				stream.entries.forEach(function (entry) {
+					if (debug) console.log("BULK ROW", entry, finger);
+					if (
+						!entry &&
+						(!entry.timestamp || !entry.ts) &&
+						(!entry.value || !entry.line)
+					) {
+						console.error("no bulkable data", entry);
+						return;
+					}
+					var values = [
+						finger,
+						new Date(entry.timestamp || entry.ts).getTime(),
+						entry.value || 0,
+						entry.line || "",
+					];
+					console.log(values);
+					bulk.add(finger, values);
+				});
 			}
-		} catch(e) { console.log(e) }
 
-		if (stream.values) {
-			stream.values.forEach(function(entry){
-				if (debug) console.log('BULK ROW',entry,finger);
-				bulk.add(finger,entry);
-			})
-		}
-
-          }
-
-	});
-  }
-  res.send(200);
+			if (stream.values) {
+				stream.values.forEach(function (value) {
+					if (debug) console.log("BULK ROW", value, finger);
+					if (!value && !value[0] && !value[1]) {
+						console.error("no bulkable data", value);
+						return;
+					}
+					var values = [
+						finger,
+						Math.round(value[0] / 1000000), // convert to millieseconds
+						0,
+						value[1],
+					];
+					bulk.add(finger, values);
+				});
+			}
+		});
+	}
+	res.send(200);
 });
 
 /* Telegraf HTTP Bulk handler */
-fastify.post('/telegraf', (req, res) => {
-  if (debug) console.log('POST /telegraf');
-  if (debug) console.log('QUERY: ', req.query);
-  if (debug) console.log('BODY: ', req.body);
-  if (!req.body && !req.body.metrics) {
-	 console.error('No Request Body!', req);
-	 return;
-  }
-  if (readonly) {
-	 console.error('Readonly! No push support.');
-	 res.send(500);
-	 return;
-  }
-  var streams;
-  streams = req.body.metrics;
-  if (!Array.isArray(streams)) streams = [ streams ];
-  if (streams) {
-	if (debug) console.log('influx', streams);
-	streams.forEach(function(stream){
-		try {
-			var JSON_labels = stream.tags;
-			JSON_labels.metric = stream.name;
-			// Calculate Fingerprint
-			var finger = fingerPrint(JSON.stringify(JSON_labels));
-			if (debug) console.log('LABELS FINGERPRINT',JSON_labels,finger);
-			labels.add(finger,stream.labels);
-			// Store Fingerprint
- 			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels), stream.name||'' ]);
-			for(var key in JSON_labels) {
-			   //if (debug) console.log('Storing label',key, JSON_labels[key]);
-			   labels.add('_LABELS_',key); labels.add(key, JSON_labels[key]);
+fastify.post("/telegraf", (req, res) => {
+	if (debug) console.log("POST /telegraf");
+	if (debug) console.log("QUERY: ", req.query);
+	if (debug) console.log("BODY: ", req.body);
+	if (!req.body && !req.body.metrics) {
+		console.error("No Request Body!", req);
+		return;
+	}
+	if (readonly) {
+		console.error("Readonly! No push support.");
+		res.send(500);
+		return;
+	}
+	var streams;
+	streams = req.body.metrics;
+	if (!Array.isArray(streams)) streams = [streams];
+	if (streams) {
+		if (debug) console.log("influx", streams);
+		streams.forEach(function (stream) {
+			try {
+				var JSON_labels = stream.tags;
+				JSON_labels.metric = stream.name;
+				// Calculate Fingerprint
+				var finger = fingerPrint(JSON.stringify(JSON_labels));
+				if (debug)
+					console.log("LABELS FINGERPRINT", JSON_labels, finger);
+				labels.add(finger, stream.labels);
+				// Store Fingerprint
+				bulk_labels.add(finger, [
+					new Date().toISOString().split("T")[0],
+					finger,
+					JSON.stringify(JSON_labels),
+					stream.name || "",
+				]);
+				for (var key in JSON_labels) {
+					//if (debug) console.log('Storing label',key, JSON_labels[key]);
+					labels.add("_LABELS_", key);
+					labels.add(key, JSON_labels[key]);
+				}
+			} catch (e) {
+				console.log(e);
 			}
-		} catch(e) { console.log(e) }
 
-		if (stream.fields) {
-			Object.keys(stream.fields).forEach(function(entry){
-				// if (debug) console.log('BULK ROW',entry,finger);
-				if ( !entry && !stream.timestamp && (!entry.value||!entry.line)) { console.error('no bulkable data',entry); return; }
-				var values = [ finger, stream.timestamp * 1000, stream.fields[entry] || 0, stream.fields[entry].toString() || "" ];
-				bulk.add(finger,values);
-			})
-		}
-	});
-  }
-  res.send(200);
+			if (stream.fields) {
+				Object.keys(stream.fields).forEach(function (entry) {
+					// if (debug) console.log('BULK ROW',entry,finger);
+					if (
+						!entry &&
+						!stream.timestamp &&
+						(!entry.value || !entry.line)
+					) {
+						console.error("no bulkable data", entry);
+						return;
+					}
+					var values = [
+						finger,
+						stream.timestamp * 1000,
+						stream.fields[entry] || 0,
+						stream.fields[entry].toString() || "",
+					];
+					bulk.add(finger, values);
+				});
+			}
+		});
+	}
+	res.send(200);
 });
-
 
 /* Query Handler */
 /*
@@ -253,80 +309,117 @@ fastify.post('/telegraf', (req, res) => {
 	regexp: a regex to filter the returned results, will eventually be rolled into the query language
 */
 
-fastify.get('/loki/api/v1/query_range', (req, res) => {
-  if (debug) console.log('GET /loki/api/v1/query_range');
-  if (debug) console.log('QUERY: ', req.query );
-  // console.log( req.urlData().query.replace('query=',' ') );
-  var params = req.query;
-  var resp = { "streams": [] };
-  if (!req.query.query) { res.send(resp); return; }
-  /* remove newlines */
-  req.query.query = req.query.query.replace(/\n/g, ' ');
-  /* query templates */
-  var RATEQUERY = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\) from (.*)\.(.*)/;
-  var RATEQUERYWHERE = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\) from (.*)\.(.*) where (.*)/;
-  var RATEQUERYNOWHERE = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\) from (.*)\.([\S]+)\s?(.*)/;
-  var RATEQUERYMETRICS = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\)/;
+fastify.get("/loki/api/v1/query_range", (req, res) => {
+	if (debug) console.log("GET /loki/api/v1/query_range");
+	if (debug) console.log("QUERY: ", req.query);
+	// console.log( req.urlData().query.replace('query=',' ') );
+	var params = req.query;
+	var resp = { streams: [] };
+	if (!req.query.query) {
+		res.send(resp);
+		return;
+	}
+	/* remove newlines */
+	req.query.query = req.query.query.replace(/\n/g, " ");
+	/* query templates */
+	var RATEQUERY = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\) from (.*)\.(.*)/;
+	var RATEQUERYWHERE = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\) from (.*)\.(.*) where (.*)/;
+	var RATEQUERYNOWHERE = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\) from (.*)\.([\S]+)\s?(.*)/;
+	var RATEQUERYMETRICS = /(.*) by \((.*)\) \(rate\((.*)\[(.*)\]\)\)/;
 
-
-  if (!req.query.query) {
-	res.code(400).send('invalid query');
-
-  } else if (RATEQUERYNOWHERE.test(req.query.query)){
-	var s = RATEQUERYNOWHERE.exec(req.query.query);
-	console.log('tags',s);
-	var JSON_labels = { db: s[5], table: s[6], interval: s[4] || 60, tag: s[2], metric: s[1]+'('+s[3]+')', where: s[3]+" "+s[7] };
-	scanClickhouse(JSON_labels,res,params);
-
-  } else if (RATEQUERYWHERE.test(req.query.query)){
-	var s = RATEQUERYWHERE.exec(req.query.query);
-	console.log('tags',s);
-	var JSON_labels = { db: s[5], table: s[6], interval: s[4] || 60, tag: s[2], metric: s[1]+'('+s[3]+')', where: s[7] };
-	scanClickhouse(JSON_labels,res,params);
-
-  } else if (RATEQUERY.test(req.query.query)){
-	var s = RATEQUERY.exec(req.query.query);
-	console.log('tags',s);
-	var JSON_labels = { db: s[5], table: s[6], interval: s[4] || 60, tag: s[2], metric: s[1]+'('+s[3]+')' };
-	scanClickhouse(JSON_labels,res,params);
-
-  } else if (RATEQUERYMETRICS.test(req.query.query)){
-	var s = RATEQUERYMETRICS.exec(req.query.query);
-	console.log('metrics tags',s);
-	var JSON_labels = { db: 'loki', table: 'samples', interval: s[4] || 60, tag: s[2], metric: s[1]+'('+s[3]+')' };
-	scanMetricFingerprints(JSON_labels,res,params);
-
-  } else if (req.query.query.startsWith("clickhouse(")){
-
-     try {
-	  var query = /\{(.*?)\}/g.exec(req.query.query)[1] || req.query.query;
-	  var queries = query.replace(/\!?="/g,':"');
-	  var JSON_labels = toJSON(queries);
-     } catch(e){ console.error(e, queries); res.send(resp); }
-     if (debug) console.log('SCAN CLICKHOUSE',JSON_labels,params)
-     scanClickhouse(JSON_labels,res,params);
-
-  } else {
-     try {
-	  var label_parser = labelParser(req.query.query);
-	  var label_rules = label_parser.labels;
-	  var label_regex = label_parser.regex;
-	  var timeseries = false;
-	  if (label_regex && (label_regex.endsWith('| ts') || label_regex.endsWith('| unwrap') ) ){
-		timeseries = true;
-		label_regex = false;
-	  }
-	  var query = /\{(.*?)\}/g.exec(req.query.query)[1] || req.query.query;
-	  var queries = query.replace(/\!?="/g,':"');
-	  var JSON_labels = toJSON(queries);
-     } catch(e){ console.error(e, queries); res.send(resp); }
-     if (debug) console.log('SCAN LABELS',JSON_labels,label_rules,params)
-     scanFingerprints(JSON_labels,res,params,label_rules,label_regex,timeseries);
-
-  }
-
+	if (!req.query.query) {
+		res.code(400).send("invalid query");
+	} else if (RATEQUERYNOWHERE.test(req.query.query)) {
+		var s = RATEQUERYNOWHERE.exec(req.query.query);
+		console.log("tags", s);
+		var JSON_labels = {
+			db: s[5],
+			table: s[6],
+			interval: s[4] || 60,
+			tag: s[2],
+			metric: s[1] + "(" + s[3] + ")",
+			where: s[3] + " " + s[7],
+		};
+		scanClickhouse(JSON_labels, res, params);
+	} else if (RATEQUERYWHERE.test(req.query.query)) {
+		var s = RATEQUERYWHERE.exec(req.query.query);
+		console.log("tags", s);
+		var JSON_labels = {
+			db: s[5],
+			table: s[6],
+			interval: s[4] || 60,
+			tag: s[2],
+			metric: s[1] + "(" + s[3] + ")",
+			where: s[7],
+		};
+		scanClickhouse(JSON_labels, res, params);
+	} else if (RATEQUERY.test(req.query.query)) {
+		var s = RATEQUERY.exec(req.query.query);
+		console.log("tags", s);
+		var JSON_labels = {
+			db: s[5],
+			table: s[6],
+			interval: s[4] || 60,
+			tag: s[2],
+			metric: s[1] + "(" + s[3] + ")",
+		};
+		scanClickhouse(JSON_labels, res, params);
+	} else if (RATEQUERYMETRICS.test(req.query.query)) {
+		var s = RATEQUERYMETRICS.exec(req.query.query);
+		console.log("metrics tags", s);
+		var JSON_labels = {
+			db: "loki",
+			table: "samples",
+			interval: s[4] || 60,
+			tag: s[2],
+			metric: s[1] + "(" + s[3] + ")",
+		};
+		scanMetricFingerprints(JSON_labels, res, params);
+	} else if (req.query.query.startsWith("clickhouse(")) {
+		try {
+			var query =
+				/\{(.*?)\}/g.exec(req.query.query)[1] || req.query.query;
+			var queries = query.replace(/\!?="/g, ':"');
+			var JSON_labels = toJSON(queries);
+		} catch (e) {
+			console.error(e, queries);
+			res.send(resp);
+		}
+		if (debug) console.log("SCAN CLICKHOUSE", JSON_labels, params);
+		scanClickhouse(JSON_labels, res, params);
+	} else {
+		try {
+			var label_parser = labelParser(req.query.query);
+			var label_rules = label_parser.labels;
+			var label_regex = label_parser.regex;
+			var timeseries = false;
+			if (
+				label_regex &&
+				(label_regex.endsWith("| ts") ||
+					label_regex.endsWith("| unwrap"))
+			) {
+				timeseries = true;
+				label_regex = false;
+			}
+			var query =
+				/\{(.*?)\}/g.exec(req.query.query)[1] || req.query.query;
+			var queries = query.replace(/\!?="/g, ':"');
+			var JSON_labels = toJSON(queries);
+		} catch (e) {
+			console.error(e, queries);
+			res.send(resp);
+		}
+		if (debug) console.log("SCAN LABELS", JSON_labels, label_rules, params);
+		scanFingerprints(
+			JSON_labels,
+			res,
+			params,
+			label_rules,
+			label_regex,
+			timeseries
+		);
+	}
 });
-
 
 /* Label Handlers */
 /*
@@ -343,28 +436,31 @@ fastify.get('/loki/api/v1/query_range', (req, res) => {
 */
 
 /* Label Value Handler via query (test) */
-fastify.get('/loki/api/v1/query', (req, res) => {
-  if (debug) console.log('GET /loki/api/v1/query');
-  if (debug) console.log('QUERY: ', req.query );
-  var query = req.query.query.replace(/\!?="/g,':"');
+fastify.get("/loki/api/v1/query", (req, res) => {
+	if (debug) console.log("GET /loki/api/v1/query");
+	if (debug) console.log("QUERY: ", req.query);
+	var query = req.query.query.replace(/\!?="/g, ':"');
 
-  // console.log( req.urlData().query.replace('query=',' ') );
-  var all_values = labels.get(query.name);
-  if (!all_values || all_values.length == 0) {
-	var resp = {"status":"success","data":{"resultType":"streams","result":[]}};
-  } else {
-  	var resp = { "values": all_values };
-  }
-  if (debug) console.log('LABEL',query.name,'VALUES', all_values);
-  res.send(resp);
+	// console.log( req.urlData().query.replace('query=',' ') );
+	var all_values = labels.get(query.name);
+	if (!all_values || all_values.length == 0) {
+		var resp = {
+			status: "success",
+			data: { resultType: "streams", result: [] },
+		};
+	} else {
+		var resp = { values: all_values };
+	}
+	if (debug) console.log("LABEL", query.name, "VALUES", all_values);
+	res.send(resp);
 });
 
-fastify.get('/loki/api/v1/label', (req, res) => {
-  if (debug) console.log('GET /loki/api/v1/label');
-  if (debug) console.log('QUERY: ', req.query);
-  var all_labels = labels.get('_LABELS_');
-  var resp = { "values": all_labels };
-  res.send(resp);
+fastify.get("/loki/api/v1/label", (req, res) => {
+	if (debug) console.log("GET /loki/api/v1/label");
+	if (debug) console.log("QUERY: ", req.query);
+	var all_labels = labels.get("_LABELS_");
+	var resp = { values: all_labels };
+	res.send(resp);
 });
 
 /* Label Value Handler */
@@ -381,25 +477,30 @@ fastify.get('/loki/api/v1/label', (req, res) => {
 	}
 */
 
-fastify.get('/loki/api/v1/label/:name/values', (req, res) => {
-  if (debug) console.log('GET /api/prom/label/'+req.params.name+'/values');
-  if (debug) console.log('QUERY LABEL: ', req.params.name);
-  var all_values = labels.get(req.params.name);
-  var resp = { "values": all_values };
-  res.send(resp);
+fastify.get("/loki/api/v1/label/:name/values", (req, res) => {
+	if (debug)
+		console.log("GET /api/prom/label/" + req.params.name + "/values");
+	if (debug) console.log("QUERY LABEL: ", req.params.name);
+	var all_values = labels.get(req.params.name);
+	var resp = { values: all_values };
+	res.send(resp);
 });
 
 /* Series Placeholder - we do not track this as of yet */
-fastify.get('/loki/api/v1/series', (req, res) => {
-  if (debug) console.log('GET /api/v1/series/'+req.params.name+'/values');
-  if (debug) console.log('QUERY SERIES: ', req.params);
-  var resp = { "status": "success", "data": []};
-  res.send(resp);
+fastify.get("/loki/api/v1/series", (req, res) => {
+	if (debug) console.log("GET /api/v1/series/" + req.params.name + "/values");
+	if (debug) console.log("QUERY SERIES: ", req.params);
+	var resp = { status: "success", data: [] };
+	res.send(resp);
 });
 
 // Run API Service
-fastify.listen(process.env.PORT || 3100, process.env.HOST || '0.0.0.0', (err, address) => {
-  if (err) throw err
-  console.log('cLoki API up');
-  fastify.log.info(`server listening on ${address}`)
-})
+fastify.listen(
+	process.env.PORT || 3100,
+	process.env.HOST || "0.0.0.0",
+	(err, address) => {
+		if (err) throw err;
+		console.log("cLoki API up");
+		fastify.log.info(`server listening on ${address}`);
+	}
+);
