@@ -21,7 +21,7 @@ var protoBuff = require("protocol-buffers");
 var messages = protoBuff(fs.readFileSync("lib/loki.proto"));
 
 /* Fingerprinting */
-var fingerPrint = UTILS.fingerPrint;
+this.fingerPrint = UTILS.fingerPrint;
 this.toJSON = UTILS.toJSON;
 
 // Database this.bulk Helpers */
