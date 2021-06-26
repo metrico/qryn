@@ -45,9 +45,13 @@ const fastify = require("fastify")({
 });
 
 const path = require("path");
-fastify.register(require("fastify-url-data"), (err) => {
+fastify.register(require("fastify-url-data"));
+
+fastify.after((err) => {
     if (err) throw err;
 });
+
+
 
 /* Enable Simple Authentication */
 if (this.http_ && this.http_password) {
@@ -140,3 +144,8 @@ fastify.listen(
         fastify.log.info(`cloki API listening on ${address}`);
     }
 );
+
+module.exports.stop = () => {
+    fastify.close();
+    DATABASE.stop();
+};
