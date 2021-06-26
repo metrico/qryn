@@ -2,6 +2,16 @@ const casual = require('casual');
 const fastify = require('fastify');
 const axios = require('axios');
 const logfmt = require('logfmt');
+
+/**
+ * This is the Insert benchmark test.
+ * In order to run the test you have to
+ * - run clickhouse with appropriate databases
+ * - provide all the needed environment for cLoki
+ * - export BENCHMARK=1 and INSERT_BENCHMARK=1 env vars
+ * - run jest
+ */
+
 const isInsertBenchmarkEnabled = () => process.env.BENCHMARK && process.env.INSERT_BENCHMARK
 
 const randWords = (min, max) => casual.words(Math.round(Math.random() * (max-min)) + min);
