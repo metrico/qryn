@@ -12,7 +12,8 @@ const logfmt = require('logfmt');
  * - run jest
  */
 
-const isInsertBenchmarkEnabled = () => process.env.BENCHMARK && process.env.INSERT_BENCHMARK
+const isInsertBenchmarkEnabled = () => process.env.BENCHMARK && process.env.INSERT_BENCHMARK &&
+    parseInt(process.env.BENCHMARK) && parseInt(process.env.INSERT_BENCHMARK)
 
 const randWords = (min, max) => casual.words(Math.round(Math.random() * (max-min)) + min);
 
@@ -141,8 +142,9 @@ const insertData = async (pointsPerReq, reqsPersSec, testLengthMs, fromMs, toMs)
     logResults(start.getTime(), end.getTime(), sentPoints);
 }
 let l = null;
-beforeAll(() => {
+beforeAll(async () => {
     l = require("../cloki");
+    await new Promise(f => setTimeout(f, 500));
 })
 afterAll(() => {
     l.stop();
@@ -152,16 +154,16 @@ it('should insert data', async () => {
     if (!isInsertBenchmarkEnabled()) {
         return;
     }
-    await new Promise(f => setTimeout(f, 500));
+    /*await new Promise(f => setTimeout(f, 500));
     for (const i of [1, 10,100]) {
         for(const j of [1,10,100]) {
             await insertData(i, j, 10000);
         }
-    }
+    }*/
     console.log("Sending 1 000 000 logs as fast as I can");
     const start = new Date()
     for(let i = 0; i < 1000; i++) {
-        await sendPoints(1000);
+        await sendPoints(1000, Date.now() - 3600 * 2 * 1000, Date.now());
     }
     logResults(start.getTime(), (new Date()).getTime(), 1000000);
 });
