@@ -1,5 +1,7 @@
 export namespace registry_types {
     interface Request {
+        ctx?: {[k: string]: any},
+        with?: {[k: string]: Request | UnionRequest}
         select: string[],
         from: string,
         left_join?: [{
@@ -8,6 +10,15 @@ export namespace registry_types {
         }],
         where?: (string | string[])[],
         limit?: number,
-        offset?: number
+        offset?: number,
+        order_by?: {
+            name: string,
+            order: string
+        },
+        group_by?: string[],
+        matrix?: boolean
+    }
+    interface UnionRequest {
+        requests: Request[]
     }
 }

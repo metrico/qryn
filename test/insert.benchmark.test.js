@@ -87,6 +87,8 @@ const genLog = [
 /**
  *
  * @param amount {number}
+ * @param fromMs {number}
+ * @param toMs {number}
  * @returns {Promise<void>}
  */
 const sendPoints = async (amount, fromMs, toMs) => {
@@ -95,14 +97,23 @@ const sendPoints = async (amount, fromMs, toMs) => {
         const fp = casual.random_element(fingerprints);
         const strFp = JSON.stringify(fp);
         points[strFp] = points[strFp] || {stream: labelsToJson(fp), values: []};
+        let fromNs = fromMs * 1000000;
+        let toNs = fromMs * 1000000;
         points[strFp].values.push([
-            casual.integer(fromMs, toMs) * 1000000,
+            casual.integer(fromMs, toMs) * 1000000, //  "" + (Math.floor(fromNs + (toNs - fromNs) / amount * i)),
             casual.random_element(genLog)()
         ]);
     }
-    await axios.post('http://localhost:3100/loki/api/v1/push', {
-        streams: Object.values(points)
-    });
+    try {
+        await axios.post('http://localhost:3100/loki/api/v1/push', {
+            streams: Object.values(points)
+        }, {
+            headers:{"Content-Type": "application/json"}
+        });
+    } catch (e) {
+        console.log(e.response);
+        throw e;
+    }
 };
 
 /**
@@ -147,7 +158,7 @@ beforeAll(async () => {
     await new Promise(f => setTimeout(f, 500));
 })
 afterAll(() => {
-    l.stop();
+    //l.stop();
 })
 jest.setTimeout(300000);
 it('should insert data', async () => {
