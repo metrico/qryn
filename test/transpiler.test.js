@@ -1,6 +1,10 @@
 const bnf = require('../parser/bnf');
 const transpiler = require('../parser/transpiler');
 
+beforeAll(() => {
+    process.env.CLICKHOUSE_DB = 'loki';
+});
+
 it('should transpile log_stream_selector', () => {
     let scr = '{et_dolorem=`nemo doloremque`, quia=\"eum voluptatem non eligendi\"}';
     let script = bnf.ParseScript(scr);

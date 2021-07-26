@@ -4,7 +4,8 @@ const log_range_aggregation_registry = require('./registry/log_range_aggregation
 const high_level_aggregation_registry = require('./registry/high_level_aggregation_registry');
 const {_and, durationToMs} = require("./registry/common");
 const compiler = require("./bnf");
-const {parseMs} = require("../lib/utils");
+const {parseMs, DATABASE_NAME} = require("../lib/utils");
+
 
 /**
  *
@@ -14,9 +15,9 @@ module.exports.init_query = () => {
     return {
         select: ['time_series.labels', 'samples.string', 'time_series.fingerprint as fingerprint',
             'samples.timestamp_ms as timestamp_ms'],
-        from: 'loki.samples',
+        from: `${DATABASE_NAME()}.samples`,
         left_join: [{
-            name: 'loki.time_series',
+            name: `${DATABASE_NAME()}.time_series`,
             on: ['AND', 'samples.fingerprint = time_series.fingerprint']
         }],
         limit: 1000,
