@@ -37,7 +37,7 @@ this.scanFingerprints = DATABASE.scanFingerprints;
 this.scanMetricFingerprints = DATABASE.scanMetricFingerprints;
 this.scanClickhouse = DATABASE.scanClickhouse;
 
-if (!this.readonly) init(process.env.CLICKHOUSE_TSDB || "loki");
+if (!this.readonly) init(process.env.CLICKHOUSE_TSDB || "cloki");
 
 /* Fastify Helper */
 const fastify = require("fastify")({

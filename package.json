@@ -18,7 +18,7 @@
   },
   "homepage": "https://github.com/lmangani/cloki#readme",
   "dependencies": {
-    "@apla/clickhouse": "^1.6.0",
+    "@apla/clickhouse": "^1.6.4",
     "fastify": "^2.15.1",
     "fastify-basic-auth": "^0.4.0",
     "fastify-static": "^1.1.0",
