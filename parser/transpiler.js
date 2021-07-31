@@ -22,7 +22,7 @@ module.exports.init_query = () => {
         }],
         limit: 1000,
         order_by: {
-            name: 'timestamp_ms',
+            name: 'labels, timestamp_ms',
             order: 'desc'
         }
     };
@@ -31,7 +31,7 @@ module.exports.init_query = () => {
 /**
  *
  * @param request {{query: string, limit: number, direction: string, start: string, end: string}}
- * @returns {{query: string, matrix: boolean}}
+ * @returns {{query: string, matrix: boolean, duration: number | undefined}}
  */
 module.exports.transpile = (request) => {
     const expression = compiler.ParseScript(request.query);
@@ -78,7 +78,8 @@ module.exports.transpile = (request) => {
     }
     return {
         query: module.exports.request_to_str(query),
-        matrix: !! query.matrix
+        matrix: !! query.matrix,
+        duration: query.ctx && query.ctx.duration ? query.ctx.duration : 1000
     };
 }
 

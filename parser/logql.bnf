@@ -36,12 +36,15 @@ labels_format_expression_param ::= <label_rename_param> | <label_inject_param>
 label_rename_param ::= <label> <OWSP> "=" <OWSP> <label>
 label_inject_param ::= <label> <OWSP> "=" <OWSP> <string_label_filter_expression_right_hand>
 
-log_range_aggregation ::= <log_range_aggregation_fn> <OWSP> "(" <OWSP>
-    <log_stream_selector> <OWSP> "[" <duration_value> "]" <OWSP> ")"
+log_range_aggregation ::= <log_range_aggregation_fn> <OWSP> "(" <OWSP> <log_stream_selector> <OWSP> "[" <duration_value> "]" <OWSP> ")"
 log_range_aggregation_fn ::= <log_range_aggregation_registry>
 
-aggregation_operator ::= <aggregation_operator_fn> <OWSP> "(" <OWSP>
-    [<NUMBER> <OWSP> "," <OWSP>] <log_range_aggregation> <OWSP>  ")" <OWSP> <opt_by_without> <OWSP>
+aggregation_operator ::= <aggregation_operator_fn> <OWSP> (<prefix_agg_operator> | <postfix_agg_operator>)
+
+postfix_agg_operator ::= "(" <OWSP> [<NUMBER> <OWSP> "," <OWSP>] <log_range_aggregation> <OWSP>  ")" <OWSP> <opt_by_without> <OWSP>
+
+prefix_agg_operator ::= <opt_by_without> <OWSP> "(" <OWSP> [<NUMBER> <OWSP> "," <OWSP>] <log_range_aggregation> <OWSP>  ")"
+
 aggregation_operator_fn ::= <high_level_aggregation_registry>
 opt_by_without ::= <by_without> <OWSP> "(" <OWSP> <label_list> <OWSP> ")" | <BLANK>
 by_without ::= "by" | "without"

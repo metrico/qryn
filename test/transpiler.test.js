@@ -88,3 +88,46 @@ it('should transpile log_range_aggregation', () => {
     expect(transpiler.request_to_str(query)).toMatchSnapshot();
 });
 
+
+it('should transpile aggregation_operator', () => {
+    let scr = 'sum (rate({minus_nam="aut illo"}[5m])) by (label_1)';
+    let script = bnf.ParseScript(scr);
+    let q = transpiler.init_query();
+    q.ctx = {
+        start: 0,
+        end: 3600 * 1000
+    };
+    let query = transpiler.transpile_aggregation_operator(script.rootToken, q);
+    expect(query).toMatchSnapshot();
+    expect(transpiler.request_to_str(query)).toMatchSnapshot()
+
+    scr = 'sum by (label_1) (rate({rerum_laborum=~`^con.+q.at[a-z]r`} != "consequatur nam soluta" [5m]))';
+    script = bnf.ParseScript(scr);
+    query = transpiler.transpile_aggregation_operator(script.rootToken, q);
+    expect(query).toMatchSnapshot();
+    expect(transpiler.request_to_str(query)).toMatchSnapshot();
+
+    scr = 'sum by (label_1)  (rate({minus_nam="aut illo"}[5m]))';
+    script = bnf.ParseScript(scr);
+    q = transpiler.init_query();
+    q.ctx = {
+        start: 0,
+        end: 3600 * 1000
+    };
+    query = transpiler.transpile_aggregation_operator(script.rootToken, q);
+    expect(query).toMatchSnapshot();
+    expect(transpiler.request_to_str(query)).toMatchSnapshot()
+
+    /*scr = 'rate({et_dolorem!=`nemo doloremque`} |~ "^mol[eE][^ ]+e +voluptatibus" [5m])';
+    script = bnf.ParseScript(scr);
+    query = transpiler.transpile_aggregation_operator(script.rootToken, transpiler.init_query());
+    expect(query).toMatchSnapshot();
+    expect(transpiler.request_to_str(query)).toMatchSnapshot();
+
+    scr = 'rate({rerum_laborum!~`^con.+q.at[a-z]r`} !~ "cons[eE][^ ]+r nam soluta" [5m])';
+    script = bnf.ParseScript(scr);
+    query = transpiler.transpile_aggregation_operator(script.rootToken, transpiler.init_query());
+    expect(query).toMatchSnapshot();
+    expect(transpiler.request_to_str(query)).toMatchSnapshot();*/
+});
+

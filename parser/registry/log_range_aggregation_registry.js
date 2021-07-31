@@ -23,20 +23,18 @@ const generic_rate = (value_expr, token, query) => {
      *
      * @type {registry_types.Request}
      */
-    const query_gaps = {
+    /*const query_gaps = {
         select: [
             'a1.labels',
             `toFloat64(${Math.floor(query.ctx.start / duration) * duration} + number * ${duration}) as timestamp_ms`,
             'toFloat64(0) as value'
         ],
         from: `(SELECT DISTINCT labels FROM rate_a) as a1, numbers(${Math.floor((query.ctx.end - query.ctx.start) / duration)}) as a2`,
-    };
+    };*/
     return {
-        ctx: query.ctx,
+        ctx: { ...query.ctx, duration: duration },
         with: {
-            rate_a: query_data,
-            rate_b: query_gaps,
-            rate_c: { requests: [{select: ['*'], from: 'rate_a'}, {select: ['*'], from: 'rate_b'}] }
+            rate_c: query_data,
         },
         select: ['labels', 'timestamp_ms', 'sum(value) as value'],
         from: 'rate_c',

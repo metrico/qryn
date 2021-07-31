@@ -1,5 +1,4 @@
 const casual = require('casual');
-const fastify = require('fastify');
 const axios = require('axios');
 const logfmt = require('logfmt');
 
@@ -27,10 +26,9 @@ const genFingerprints = (options) => {
     const labels = new Array(options.labels || 10).fill('').map(() =>
         randWords(1,2).replace(/[^a-zA-Z0-9_]/, '_')
     );
-    const fingerprints = new Array(options.fingerprints || 1000).fill([]).map(() =>
+    return new Array(options.fingerprints || 1000).fill([]).map(() =>
         labels.map(l => [l, randWords(1, 5)])
     );
-    return fingerprints;
 }
 
 /**
@@ -97,8 +95,8 @@ const sendPoints = async (amount, fromMs, toMs) => {
         const fp = casual.random_element(fingerprints);
         const strFp = JSON.stringify(fp);
         points[strFp] = points[strFp] || {stream: labelsToJson(fp), values: []};
-        let fromNs = fromMs * 1000000;
-        let toNs = fromMs * 1000000;
+        /*let fromNs = fromMs * 1000000;
+        let toNs = fromMs * 1000000;*/
         points[strFp].values.push([
             casual.integer(fromMs, toMs) * 1000000, //  "" + (Math.floor(fromNs + (toNs - fromNs) / amount * i)),
             casual.random_element(genLog)()
@@ -135,7 +133,7 @@ const logResults = (startMs, endMs, points) => {
  * @param toMs? {number}
  * @returns {Promise<void>}
  */
-const insertData = async (pointsPerReq, reqsPersSec, testLengthMs, fromMs, toMs) => {
+/*const insertData = async (pointsPerReq, reqsPersSec, testLengthMs, fromMs, toMs) => {
     console.log(`Sending ${pointsPerReq} logs/req, ${reqsPersSec} reqs/sec - ${testLengthMs} msecs...`)
     let sendPromises = [];
     let sentPoints = 0;
@@ -151,14 +149,20 @@ const insertData = async (pointsPerReq, reqsPersSec, testLengthMs, fromMs, toMs)
     await Promise.all(sendPromises);
     let end = new Date();
     logResults(start.getTime(), end.getTime(), sentPoints);
-}
+}*/
 let l = null;
 beforeAll(async () => {
+    if (!isInsertBenchmarkEnabled()) {
+        return;
+    }
     l = require("../cloki");
     await new Promise(f => setTimeout(f, 500));
 })
 afterAll(() => {
-    //l.stop();
+    if (!isInsertBenchmarkEnabled()) {
+        return;
+    }
+    l.stop();
 })
 jest.setTimeout(300000);
 it('should insert data', async () => {
