@@ -9,9 +9,9 @@ module.exports = {
      */
     "|=": (token, query) => {
         const val = unquote_token(token);
-        return _and(query, [
+        return querySelectorPostProcess(_and(query, [
             `position(string, '${val}') != 0`
-        ]);
+        ]));
     },
     /**
      *
@@ -21,9 +21,9 @@ module.exports = {
      */
     "|~": (token, query) => {
         const val = unquote_token(token);
-        return _and(query, [
+        return querySelectorPostProcess(_and(query, [
             `extractAllGroups(string, '(${val})') != []`
-        ]);
+        ]));
     },
     /**
      *
@@ -33,9 +33,9 @@ module.exports = {
      */
     "!=": (token, query) => {
         const val = unquote_token(token);
-        return _and(query, [
+        return querySelectorPostProcess(_and(query, [
             `position(string, '${val}') == 0`
-        ]);
+        ]));
     },
     /**
      *
@@ -45,8 +45,8 @@ module.exports = {
      */
     "!~": (token, query) => {
         const val = unquote_token(token);
-        return _and(query, [
+        return querySelectorPostProcess(_and(query, [
             `extractAllGroups(string, '(${val})') == []`
-        ]);
+        ]));
     }
 };

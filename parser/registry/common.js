@@ -17,6 +17,14 @@ module.exports._and = (query, clauses) => {
 }
 
 /**
+ * @param query {registry_types.Request}
+ * @returns {registry_types.Request}
+ */
+module.exports.querySelectorPostProcess = (query) => {
+    return query;
+}
+
+/**
  *
  * @param token {Token}
  * @returns {string}

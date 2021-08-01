@@ -1,4 +1,4 @@
-const {_and, unquote_token} = require("./common");
+const {_and, unquote_token, querySelectorPostProcess} = require("./common");
 
 /**
  *
@@ -10,6 +10,8 @@ const label_and_val = (token) => {
     return [label, unquote_token(token)];
 }
 
+
+
 module.exports = {
     /**
      *
@@ -19,10 +21,10 @@ module.exports = {
      */
     "!=": (token, query) => {
         const [label, value] = label_and_val(token);
-        return _and(query, [
+        return querySelectorPostProcess(_and(query, [
             `JSONHas(labels, '${label}')`,
             `JSONExtractString(labels, '${label}') != '${value}'`
-        ]);
+        ]));
     },
     /**
      *
@@ -32,10 +34,10 @@ module.exports = {
      */
     "=~": (token, query) => {
         const [label, value] = label_and_val(token);
-        return _and(query, [
+        return querySelectorPostProcess(_and(query, [
             `JSONHas(labels, '${label}')`,
             `extractAllGroups(JSONExtractString(labels, '${label}'), '(${value})') != []`
-        ]);
+        ]));
     },
     /**
      *
@@ -45,10 +47,10 @@ module.exports = {
      */
     "!~": (token, query) => {
         const [label, value] = label_and_val(token);
-        return _and(query, [
+        return querySelectorPostProcess(_and(query, [
             `JSONHas(labels, '${label}')`,
             `extractAllGroups(JSONExtractString(labels, '${label}'), '(${value})') == []`
-        ]);
+        ]));
     },
     /**
      *
@@ -58,9 +60,9 @@ module.exports = {
      */
     "=": (token, query) => {
         const [label, value] = label_and_val(token);
-        return _and(query, [
+        return querySelectorPostProcess(_and(query, [
             `JSONHas(labels, '${label}')`,
             `JSONExtractString(labels, '${label}') = '${value}'`
-        ]);
+        ]));
     }
 };

@@ -16,7 +16,8 @@ export namespace registry_types {
             order: string
         },
         group_by?: string[],
-        matrix?: boolean
+        matrix?: boolean,
+        final: boolean
     }
     interface UnionRequest {
         requests: Request[]

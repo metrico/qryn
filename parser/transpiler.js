@@ -155,6 +155,7 @@ module.exports.request_to_str = (query) => {
     req += query.order_by ? ` ORDER BY ${query.order_by.name} ${query.order_by.order} ` : '';
     req += typeof (query.limit) !== 'undefined' ? ` LIMIT ${query.limit}` : '';
     req += typeof (query.offset) !== 'undefined' ? ` OFFSET ${query.offset}` : '';
+    req += query.final ? ' FINAL' : '';
     return req;
 }
 
