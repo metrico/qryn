@@ -10,7 +10,7 @@
 Super experimental, fully functional [Loki](https://github.com/grafana/loki) API emulator made with NodeJS, [Fastify](https://github.com/fastify/fastify) and [Clickhouse](https://clickhouse.yandex/)<br/>
 APIs are compatible with [Grafana Explore](http://docs.grafana.org/features/explore/) and [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) for logs ingestion
 
-:fire: *Beta Stage, Contributions Welcome! :octocat: Do not use this for anything serious.. yet!*
+:fire: *Beta Stage, Contributors are Welcome! :octocat: *
 
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
 
@@ -142,77 +142,11 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 * [ ] Stream Selector rules _()_
   * [x] = exactly equal.
   * [x] != not equal.
-  * [ ] =~ regex-match.
+  * [x] =~ regex-match.
   * [ ] !~ do not regex-match.
 * [x] Basic Search
   * [x] Labels  _(single key, multi key, AND logic)_
   * [x] Samples  _(by Fingerprint match)_
-
---------------
-
-### API Examples
-
-###### INSERT Labels & Logs
-
-```console
-curl -i -XPOST -H "Content-Type: application/json" http://localhost:3100/loki/api/v1/push --data '{"streams":[{"labels":"{\"__name__\":\"up\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","line":"zzz"}]}]}'
-```
-
-###### INSERT Labels & Metrics
-
-```console
-curl -i -XPOST -H "Content-Type: application/json" http://localhost:3100/loki/api/v1/push --data '{"streams":[{"labels":"{\"__name__\":\"metric\"}","entries":[{"timestamp":"2018-12-26T16:00:06.944Z","value":"100"}]}]}'
-```
-
-###### QUERY Logs
-
-```console
-# curl localhost:3100/loki/api/v1/query?query='{__name__="up"}'
-```
-
-```json
-{
-    "streams": [
-        {
-            "labels": "{\"__name__\":\"up\"}",
-            "entries": [
-                {
-                    "timestamp":"1545840006944",
-                    "line":"zzz"
-                },
-                {
-                    "timestamp":"1545840006944",
-                    "line":"zzz"
-                },
-                {
-                    "timestamp": "1545840006944",
-                    "line":"zzz"
-                }
-            ]
-        }
-    ]
-}
-```
-
-###### QUERY Labels
-
-```console
-# curl localhost:3100/loki/api/v1/label
-```
-
-```json
-{"values":["__name__"]}
-```
-
-###### QUERY Label Values
-
-```console
-# curl 'localhost:3100/loki/api/v1/__name__/values'
-```
-
-```json
-{"values":["up"]}
-```
 
 --------------
 
