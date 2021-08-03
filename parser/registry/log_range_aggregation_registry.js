@@ -9,16 +9,6 @@ const {durationToMs} = require("./common");
  */
 const generic_rate = (value_expr, token, query) => {
     const duration = durationToMs(token.Child('duration_value').value);
-    const query_data = {...query};
-    query_data.select = ['time_series.labels', `floor(samples.timestamp_ms / ${duration}) * ${duration} as timestamp_ms`,
-        `${value_expr} as value`];
-    query_data.limit = undefined;
-    query_data.group_by = ['time_series.labels', `floor(samples.timestamp_ms / ${duration}) * ${duration}`];
-    query_data.order_by = {
-        name: "timestamp_ms",
-        order: "asc"
-    }
-    query_data.matrix = true;
     /**
      *
      * @type {registry_types.Request}
@@ -34,13 +24,31 @@ const generic_rate = (value_expr, token, query) => {
     return {
         ctx: { ...query.ctx, duration: duration },
         with: {
-            rate_c: query_data,
+            rate_a: {
+                ...query,
+                ctx: undefined,
+                with: undefined,
+                limit: undefined
+            },
+            rate_c: {
+                select: [
+                    'labels',
+                    `floor(timestamp_ms / ${duration}) * ${duration} as timestamp_ms`,
+                    `${value_expr} as value`
+                ],
+                from: 'rate_a',
+                group_by: ['labels', `timestamp_ms`],
+                order_by: {
+                    name: "labels, timestamp_ms",
+                    order: "asc"
+                }
+            }
         },
         select: ['labels', 'timestamp_ms', 'sum(value) as value'],
         from: 'rate_c',
         group_by: ['labels', 'timestamp_ms'],
         order_by: {
-            name: 'timestamp_ms',
+            name: 'labels, timestamp_ms',
             order: 'asc'
         },
         matrix: true
