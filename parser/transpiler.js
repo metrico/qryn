@@ -13,7 +13,7 @@ const {parseMs, DATABASE_NAME} = require("../lib/utils");
  */
 module.exports.init_query = () => {
     return {
-        select: ['time_series.labels', 'samples.string', 'time_series.fingerprint as fingerprint',
+        select: ['DISTINCT time_series.labels', 'samples.string', 'time_series.fingerprint as fingerprint',
             'samples.timestamp_ms as timestamp_ms'],
         from: `${DATABASE_NAME()}.samples`,
         left_join: [{

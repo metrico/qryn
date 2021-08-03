@@ -73,6 +73,9 @@ const createPoints = (id, frequencySec, startMs, endMs, extraLabels, points) => 
 }
 
 it('should stream the same data to loki / cloki', async () => {
+    if (!sameData()) {
+        return;
+    }
     const testId = Date.now().toString();
     console.log(testId);
     const start = Date.now() - 60 * 1000;
