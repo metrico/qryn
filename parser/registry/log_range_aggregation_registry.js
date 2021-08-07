@@ -9,6 +9,7 @@ const {durationToMs} = require("./common");
  */
 const generic_rate = (value_expr, token, query) => {
     const duration = durationToMs(token.Child('duration_value').value);
+    const step = query.ctx.step;
     /**
      *
      * @type {registry_types.Request}
@@ -30,7 +31,7 @@ const generic_rate = (value_expr, token, query) => {
                 with: undefined,
                 limit: undefined
             },
-            rate_c: {
+            rate_b: {
                 select: [
                     'labels',
                     `floor(timestamp_ms / ${duration}) * ${duration} as timestamp_ms`,
@@ -42,10 +43,23 @@ const generic_rate = (value_expr, token, query) => {
                     name: "labels, timestamp_ms",
                     order: "asc"
                 }
-            }
+            },
+            rate_c: step > duration ? {
+                select: [
+                    'labels',
+                    `floor(timestamp_ms / ${step}) * ${step} as timestamp_ms`,
+                    `avg(rate_b.value) as value`
+                ],
+                from: 'rate_b',
+                group_by: ['labels', `timestamp_ms`],
+                order_by: {
+                    name: "labels, timestamp_ms",
+                    order: "asc"
+                }
+            } : undefined
         },
         select: ['labels', 'timestamp_ms', 'sum(value) as value'],
-        from: 'rate_c',
+        from: step > duration ? 'rate_c' : 'rate_b',
         group_by: ['labels', 'timestamp_ms'],
         order_by: {
             name: 'labels, timestamp_ms',

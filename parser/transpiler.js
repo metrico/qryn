@@ -30,7 +30,7 @@ module.exports.init_query = () => {
 
 /**
  *
- * @param request {{query: string, limit: number, direction: string, start: string, end: string}}
+ * @param request {{query: string, limit: number, direction: string, start: string, end: string, step: string}}
  * @returns {{query: string, matrix: boolean, duration: number | undefined}}
  */
 module.exports.transpile = (request) => {
@@ -38,6 +38,7 @@ module.exports.transpile = (request) => {
     const token = expression.rootToken;
     let start = parseMs(request.start, Date.now() - 3600 * 1000);
     let end = parseMs(request.end, Date.now());
+    let step = request.step ? parseInt(request.step) * 1000 : 0;
     let query = module.exports.init_query();
     if (request.limit) {
         query.limit = request.limit;
@@ -62,7 +63,8 @@ module.exports.transpile = (request) => {
         end = Math.ceil(end / duration) * duration;
         query.ctx = {
             start:start,
-            end: end
+            end: end,
+            step: step
         };
         query = _and(query, [
             `timestamp_ms >= ${start}`,
@@ -143,7 +145,7 @@ module.exports.request_to_str = (query) => {
     if (query.requests) {
         return query.requests.map(r => `(${module.exports.request_to_str(r)})`).join(' UNION ALL ');
     }
-    let req = query.with ? 'WITH ' + Object.entries(query.with)
+    let req = query.with ? 'WITH ' + Object.entries(query.with).filter(e => e[1])
         .map(e => `${e[0]} as (${module.exports.request_to_str(e[1])})`).join(', ') :
         '';
     req += ` SELECT ${query.select.join(', ')} FROM ${query.from} `;
