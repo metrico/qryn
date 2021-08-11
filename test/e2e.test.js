@@ -12,6 +12,9 @@ beforeAll(async () => {
     jest.setTimeout(300000);
 });
 afterAll(() => {
+    if (!e2e()) {
+        return;
+    }
     l.stop();
 });
 
