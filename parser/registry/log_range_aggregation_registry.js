@@ -40,7 +40,7 @@ const generic_rate = (value_expr, token, query) => {
                 from: 'rate_a',
                 group_by: ['labels', `timestamp_ms`],
                 order_by: {
-                    name: "labels, timestamp_ms",
+                    name: ["labels", "timestamp_ms"],
                     order: "asc"
                 }
             },
@@ -53,7 +53,7 @@ const generic_rate = (value_expr, token, query) => {
                 from: 'rate_b',
                 group_by: ['labels', `timestamp_ms`],
                 order_by: {
-                    name: "labels, timestamp_ms",
+                    name: ["labels", "timestamp_ms"],
                     order: "asc"
                 }
             } : undefined
@@ -62,7 +62,7 @@ const generic_rate = (value_expr, token, query) => {
         from: step > duration ? 'rate_c' : 'rate_b',
         group_by: ['labels', 'timestamp_ms'],
         order_by: {
-            name: 'labels, timestamp_ms',
+            name: ['labels', 'timestamp_ms'],
             order: 'asc'
         },
         matrix: true

@@ -22,7 +22,7 @@ module.exports.init_query = () => {
         }],
         limit: 1000,
         order_by: {
-            name: 'labels, timestamp_ms',
+            name: ['timestamp_ms', 'labels'],
             order: 'desc'
         }
     };
@@ -77,6 +77,23 @@ module.exports.transpile = (request) => {
             `timestamp_ms >= ${start}`,
             `timestamp_ms <= ${end}`
         ]);
+        query = {
+            ctx: query.ctx,
+            with: {
+                ...query.with || {},
+                sel_a: {
+                    ...query,
+                    ctx: undefined,
+                    with: undefined
+                }
+            },
+            select: ['*'],
+            from: 'sel_a',
+            order_by: {
+                name: ['labels', 'timestamp_ms'],
+                order: query.order_by.order
+            }
+        };
     }
     return {
         query: module.exports.request_to_str(query),
@@ -154,7 +171,7 @@ module.exports.request_to_str = (query) => {
     }
     req += query.where && query.where.length ? ` WHERE ${whereBuilder(query.where)} ` : '';
     req += query.group_by ? ` GROUP BY ${query.group_by.join(', ')}` : '';
-    req += query.order_by ? ` ORDER BY ${query.order_by.name} ${query.order_by.order} ` : '';
+    req += query.order_by ? ` ORDER BY ${query.order_by.name.map(n => n + " " + query.order_by.order).join(", ")} ` : '';
     req += typeof (query.limit) !== 'undefined' ? ` LIMIT ${query.limit}` : '';
     req += typeof (query.offset) !== 'undefined' ? ` OFFSET ${query.offset}` : '';
     req += query.final ? ' FINAL' : '';

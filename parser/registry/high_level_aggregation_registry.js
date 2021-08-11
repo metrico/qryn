@@ -13,7 +13,7 @@ const generic_request = (expression) => {
      * @returns {registry_types.Request}
      */
     return (token, query) => {
-        const by_without = token.Child('opt_by_without') ?
+        const by_without = token.Child('by_without') ?
             token.Child('by_without').value.toString().toLowerCase() :
             undefined;
         const label_list = token.Child('opt_by_without') ?
@@ -42,7 +42,7 @@ const generic_request = (expression) => {
             from: 'agg_a',
             group_by: ['labels', 'timestamp_ms'],
             order_by: {
-                name: 'timestamp_ms',
+                name: ['timestamp_ms'],
                 order: 'asc'
             },
             matrix: true

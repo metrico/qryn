@@ -12,7 +12,7 @@ export namespace registry_types {
         limit?: number,
         offset?: number,
         order_by?: {
-            name: string,
+            name: string[],
             order: string
         },
         group_by?: string[],
