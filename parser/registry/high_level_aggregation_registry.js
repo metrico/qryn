@@ -42,7 +42,7 @@ const generic_request = (expression) => {
             from: 'agg_a',
             group_by: ['labels', 'timestamp_ms'],
             order_by: {
-                name: ['timestamp_ms'],
+                name: ['labels', 'timestamp_ms'],
                 order: 'asc'
             },
             matrix: true
