@@ -1,9 +1,10 @@
+#!/usr/bin/env node
+
 /*
  * Loki API to Clickhouse Gateway
  * (C) 2018-2021 QXIP BV
  */
 
-/* TODO: split into modules and prioritize performance! contributors help yourselves :) */
 this.debug = process.env.DEBUG || false;
 var debug = this.debug;
 
