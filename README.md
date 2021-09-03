@@ -84,7 +84,7 @@ CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" clok
 ##### :busstop: PM2
 ```
 sudo npm install -g cloki pm2
-CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" pm2 start cloki```
+CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" pm2 start cloki
 pm2 save
 pm2 startup
 ```
