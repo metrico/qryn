@@ -7,10 +7,12 @@
 
 ### like Loki, but for Clickhouse.
 
-cLoki is a [Loki](https://github.com/grafana/loki) API emulator made with NodeJS, [Fastify](https://github.com/fastify/fastify) and [Clickhouse](https://clickhouse.yandex/)<br/>
-APIs are compatible with [Grafana Explore](http://docs.grafana.org/features/explore/) and [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) for logs ingestion
+cLoki is a clear room design [Loki](https://github.com/grafana/loki) API emulator made with NodeJS, [Fastify](https://github.com/fastify/fastify) and [Clickhouse](https://clickhouse.yandex/)<br/>
+APIs are compatible with [Grafana](http://docs.grafana.org/features/explore/), [LogQL](https://grafana.com/docs/loki/latest/logql/) and [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) for logs querying, processing and ingestion
 
-:fire: *Beta Stage, Contributors are Welcome! :octocat: *
+Performance is comparable to native Loki, with cLoki outperforming on large range filtered queries.
+
+:fire: *Beta Stage, Contributors and Testers are Welcome!* :octocat:
 
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
 
