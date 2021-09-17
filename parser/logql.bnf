@@ -3,7 +3,7 @@
 log_stream_selector ::= "{" <OWSP> <log_stream_selector_rule> *(<OWSP> "," <OWSP> <log_stream_selector_rule>) <OWSP> "}" <OWSP> *(<OWSP><log_pipeline>)
 
 log_stream_selector_rule ::= <label> <OWSP> <operator> <OWSP> <quoted_str>
-label ::= (<ALPHA> | "_") *(<ALPHA> | "_" | <NUMBER>)
+label ::= (<ALPHA> | "_") *(<ALPHA> | "_" | <DIGITS>)
 operator ::= <stream_selector_operator_registry>
 quoted_str ::= <QLITERAL> | <AQLITERAL>
 
@@ -19,9 +19,7 @@ parameter ::= <label> <OWSP> "=" <OWSP> <quoted_str> | <quoted_str>
 
 label_filter_expression ::= "|" <OWSP> <string_label_filter_expression> | "|" <OWSP> <number_label_filter_expression>
 
-string_label_filter_expression ::= <label> <OWSP> <operator> <OWSP> <string_label_filter_expression_right_hand>
-string_label_filter_expression_right_hand ::= <quoted_str> | <backticked_str>
-backticked_str ::= <AQLITERAL>
+string_label_filter_expression ::= <label> <OWSP> <operator> <OWSP> <quoted_str>
 
 number_label_filter_expression ::= <label> <OWSP> <number_operator> <OWSP> <number_value>
 number_operator ::= <number_operator_registry>
@@ -29,12 +27,12 @@ number_value ::= <duration_value> | <bytes_value> | <NUMBER>
 duration_value ::= <NUMBER> ("ns"|"us"|"ms"|"s"|"m"|"h")
 bytes_value ::= <NUMBER> ("b"|"kib"|"kb"|"mb"|"mib"|"gib"|"gb"|"lib"|"tb"|"pib"|"pb"|"eib"|"eb")
 
-line_format_expression ::= "|" <OWSP> "line_format" <string_label_filter_expression_right_hand>
+line_format_expression ::= "|" <OWSP> "line_format" <quoted_str>
 
 labels_format_expression ::= "|" <OWSP> "label_format" <OWSP> <labels_format_expression_param>  *(<OWSP> "," <OWSP> <labels_format_expression_param>)
 labels_format_expression_param ::= <label_rename_param> | <label_inject_param>
 label_rename_param ::= <label> <OWSP> "=" <OWSP> <label>
-label_inject_param ::= <label> <OWSP> "=" <OWSP> <string_label_filter_expression_right_hand>
+label_inject_param ::= <label> <OWSP> "=" <OWSP> <quoted_str>
 
 log_range_aggregation ::= <log_range_aggregation_fn> <OWSP> "(" <OWSP> <log_stream_selector> <OWSP> "[" <duration_value> "]" <OWSP> ")"
 log_range_aggregation_fn ::= <log_range_aggregation_registry>

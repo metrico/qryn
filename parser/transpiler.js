@@ -2,6 +2,7 @@ const stream_selector_operator_registry = require('./registry/stream_selector_op
 const line_filter_operator_registry = require('./registry/line_filter_operator_registry');
 const log_range_aggregation_registry = require('./registry/log_range_aggregation_registry');
 const high_level_aggregation_registry = require('./registry/high_level_aggregation_registry');
+const parser_registry = require('./registry/parser_registry');
 const {_and, durationToMs} = require("./registry/common");
 const compiler = require("./bnf");
 const {parseMs, DATABASE_NAME} = require("../lib/utils");
@@ -14,7 +15,7 @@ const {parseMs, DATABASE_NAME} = require("../lib/utils");
 module.exports.init_query = () => {
     return {
         select: ['DISTINCT time_series.labels', 'samples.string', 'time_series.fingerprint as fingerprint',
-            'samples.timestamp_ms as timestamp_ms'],
+            'samples.timestamp_ms as timestamp_ms', '[] as extra_labels'],
         from: `${DATABASE_NAME()}.samples`,
         left_join: [{
             name: `${DATABASE_NAME()}.time_series`,
@@ -141,11 +142,19 @@ module.exports.transpile_log_stream_selector = (token, query) => {
         const op = rule.Child('operator').value;
         query = stream_selector_operator_registry[op](rule, query);
     }
-    for(const pipeline of token.Children('line_filter_expression')) {
-        const op = pipeline.Child('line_filter_operator').value;
-        query = line_filter_operator_registry[op](pipeline, query);
+    for(const pipeline of token.Children('log_pipeline')) {
+        if (pipeline.Child('line_filter_expression')) {
+            const op = pipeline.Child('line_filter_operator').value;
+            query = line_filter_operator_registry[op](pipeline, query);
+            continue;
+        }
+        if (pipeline.Child('parser_expression')) {
+            const op = pipeline.Child('parser_fn_name').value;
+            query = parser_registry[op](pipeline, query);
+            continue;
+        }
     }
-    for (const c of ['parser_expression','label_filter_expression','line_format_expression','labels_format_expression']) {
+    for (const c of ['label_filter_expression','line_format_expression','labels_format_expression']) {
         if (token.Children(c).length > 0) {
             throw new Error(`${c} not supported`);
         }

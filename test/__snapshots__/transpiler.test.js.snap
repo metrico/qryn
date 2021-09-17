@@ -322,6 +322,42 @@ Object {
 
 exports[`should transpile aggregation_operator 6`] = `"WITH rate_a as ( SELECT DISTINCT time_series.labels, samples.string, time_series.fingerprint as fingerprint, samples.timestamp_ms as timestamp_ms FROM loki.samples  LEFT JOIN loki.time_series ON samples.fingerprint = time_series.fingerprint WHERE JSONHas(labels, 'minus_nam') AND JSONExtractString(labels, 'minus_nam') = 'aut illo'  ORDER BY timestamp_ms desc, labels desc ), rate_b as ( SELECT labels, floor(timestamp_ms / 300000) * 300000 as timestamp_ms, toFloat64(count(1)) * 1000 / 300000 as value FROM rate_a  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc ), agg_a as ( SELECT labels, timestamp_ms, sum(value) as value FROM rate_b  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc ) SELECT arrayFilter(x -> x.1 IN ('label_1'), JSONExtractKeysAndValuesRaw(labels)) as labels, timestamp_ms, sum(value) as value FROM agg_a  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc "`;
 
+exports[`should transpile json requests 1`] = `
+Object {
+  "from": "loki.samples",
+  "left_join": Array [
+    Object {
+      "name": "loki.time_series",
+      "on": Array [
+        "AND",
+        "samples.fingerprint = time_series.fingerprint",
+      ],
+    },
+  ],
+  "limit": 1000,
+  "order_by": Object {
+    "name": Array [
+      "timestamp_ms",
+      "labels",
+    ],
+    "order": "desc",
+  },
+  "select": Array [
+    "DISTINCT time_series.labels",
+    "samples.string",
+    "time_series.fingerprint as fingerprint",
+    "samples.timestamp_ms as timestamp_ms",
+    "arrayFilter((x) -> x.2 != '', [('odit_iusto', if(JSONType(samples.string, 'dicta') == 'String', JSONExtractString(samples.string, 'dicta'), JSONExtractRaw(samples.string, 'dicta')))]) as extra_labels",
+  ],
+  "where": Array [
+    "AND",
+    "JSONHas(labels, 'autem_quis')",
+    "JSONExtractString(labels, 'autem_quis') = 'quidem sit'",
+    "isValidJSON(samples.string)",
+  ],
+}
+`;
+
 exports[`should transpile log_range_aggregation 1`] = `
 Object {
   "ctx": Object {

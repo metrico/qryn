@@ -131,3 +131,9 @@ it('should transpile aggregation_operator', () => {
     expect(transpiler.request_to_str(query)).toMatchSnapshot();*/
 });
 
+it("should transpile json requests", () => {
+    const script = bnf.ParseScript(`{autem_quis="quidem sit"}| json odit_iusto="dicta"`);
+    const res = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query());
+    expect(res).toMatchSnapshot();
+});
+
