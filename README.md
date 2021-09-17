@@ -78,7 +78,7 @@ Insert using [Telegraf Input](https://github.com/lmangani/cLoki/wiki/Telegraf-HT
 ### Setup
 
 ##### :busstop: GIT (Manual)
-Clone this repository, install with `npm`and run using `nodejs` 8.x *(or higher)*
+Clone this repository, install with `npm`and run using `nodejs` 12.x *(or higher)*
 ```
 npm install
 CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" node ./cloki.js
