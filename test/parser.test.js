@@ -20,4 +20,8 @@ it('should compile strings with escaped quotes', () => {
     expect(res2.rootToken.Children('log_stream_selector_rule').map(c => c.value)).toEqual(
         [ 'run=`kok\\`oko`', 'u_ru_ru!="lolol"', 'zozo=~"sssss"' ]
     );
+    const res3 = bnf.ParseScript("bytes_rate({run=`kok\\\\\\`oko`,u_ru_ru!=\"lolol\",zozo=~\"sssss\"}  |~\"atltlt\" !~   \"rmrmrm\" [5m])");
+    expect(res3.rootToken.Children('log_stream_selector_rule').map(c => c.value)).toEqual(
+        [ 'run=`kok\\\\\\`oko`', 'u_ru_ru!="lolol"', 'zozo=~"sssss"' ]
+    );
 });
