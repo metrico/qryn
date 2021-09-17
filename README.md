@@ -77,11 +77,17 @@ Insert using [Telegraf Input](https://github.com/lmangani/cLoki/wiki/Telegraf-HT
 ------------
 ### Setup
 
+##### :busstop: GIT (Manual)
+Clone this repository, install with `npm`and run using `nodejs` 8.x *(or higher)*
+```
+npm install
+CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" node ./cloki.js
+```
 ##### :busstop: NPM
 Install `cloki` as global package on your system using `npm`
 ```
 sudo npm install -g cloki
-CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" cloki
+CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" cd $(dirname $(readlink -f `which cloki`)) && cloki
 ```
 ##### :busstop: PM2
 ```
@@ -90,12 +96,7 @@ CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" pm2 
 pm2 save
 pm2 startup
 ```
-##### :busstop: GIT (Manual)
-Clone this repository, install with `npm`and run using `nodejs` 8.x *(or higher)*
-```
-npm install
-CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" node ./cloki.js
-```
+
 ##### :busstop: Docker
 For a fully working demo, check the [docker-compose](https://github.com/lmangani/cLoki/tree/master/docker) example
 
