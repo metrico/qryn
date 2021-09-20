@@ -358,6 +358,20 @@ Object {
 }
 `;
 
+exports[`should transpile json requests 2`] = `
+Array [
+  Object {
+    "labels": Object {
+      "autem_quis": "quidem sit",
+      "l1": "v3",
+      "l2": "v2",
+      "l3": "v4",
+    },
+    "string": "{\\"l1\\":\\"v3\\",\\"l3\\":\\"v4\\"}",
+  },
+]
+`;
+
 exports[`should transpile log_range_aggregation 1`] = `
 Object {
   "ctx": Object {

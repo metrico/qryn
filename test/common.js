@@ -6,16 +6,20 @@ const axios = require("axios");
  * @param startMs {number}
  * @param endMs {number}
  * @param extraLabels {Object}
+ * @param msgGen? {(function(number): String)}
  * @param points {Object}
  */
-module.exports.createPoints = (id, frequencySec, startMs, endMs, extraLabels, points) => {
+module.exports.createPoints = (id, frequencySec,
+                               startMs, endMs,
+                               extraLabels, points, msgGen) => {
     const streams = {
         'test_id': id,
         'freq': frequencySec.toString(),
         ...extraLabels
     };
+    msgGen = msgGen || ((i) => `FREQ_TEST_${i}`);
     const values = new Array(Math.floor((endMs - startMs) / frequencySec / 1000)).fill(0)
-        .map((v, i) => [ ((startMs + frequencySec * i * 1000) * 1000000).toString(), `FREQ_TEST_${i}` ]);
+        .map((v, i) => [ ((startMs + frequencySec * i * 1000) * 1000000).toString(), msgGen(i)]);
     points = {...points};
     points[JSON.stringify(streams)] = {
         stream: streams,

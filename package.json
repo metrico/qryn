@@ -34,7 +34,7 @@
     "short-hash": "^1.0.0",
     "axios": "^0.21.1",
     "bnf": "^1.0.1",
-    "scramjet": "^4.35.20",
+    "scramjet": "^4.36.0",
     "patch-package": "^6.4.7"
   },
   "devDependencies": {

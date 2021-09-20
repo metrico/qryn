@@ -18,6 +18,8 @@ afterAll(() => {
     l.stop();
 });
 
+jest.setTimeout(300000);
+
 it("e2e", async () => {
     if (!e2e()) {
         return;
@@ -30,15 +32,21 @@ it("e2e", async () => {
     points = createPoints(testID, 1, start, end, {}, points);
     points = createPoints(testID, 2, start, end, {}, points);
     points = createPoints(testID, 4, start, end, {}, points);
+
+    points = createPoints(testID+"_json", 1, start, end,
+        {fmt: "json", lbl_repl: "val_repl"}, points,
+        (i) => JSON.stringify({lbl_repl: testID, new_lbl: "new_val", str_id: i, arr: [1,2,3], obj: {o_1: "v_1"}})
+        );
     await sendPoints('http://localhost:3100', points);
     await new Promise(f => setTimeout(f, 4000));
     // ok limited res
     let resp = await axios.get(
         `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}"}&start=${start}000000&end=${end}000000&step=2`
     );
-    const adjustResult = (resp) => {
+    const adjustResult = (resp, id) => {
+        id = id || testID;
         resp.data.data.result = resp.data.data.result.map(stream => {
-            expect(stream.stream.test_id).toEqual(testID);
+            expect(stream.stream.test_id).toEqual(id);
             stream.stream.test_id = "TEST_ID";
             stream.values = stream.values.map(v => [v[0] - start * 1000000, v[1]]);
             return stream;
@@ -96,4 +104,11 @@ it("e2e", async () => {
     );
     adjustMatrixResult(resp);
     expect(resp.data).toMatchSnapshot();
+    console.log(`http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}&start=${start}000000&end=${end}000000&step=2`);
+    resp = await axios.get(
+        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}&start=${start}000000&end=${end}000000&step=2`
+    );
+    adjustResult(resp, testID + "_json");
+    expect(resp.data).toMatchSnapshot();
+    //console.log(JSON.stringify(resp.data, 1));
 });

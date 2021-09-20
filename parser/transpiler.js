@@ -15,7 +15,7 @@ const {parseMs, DATABASE_NAME} = require("../lib/utils");
 module.exports.init_query = () => {
     return {
         select: ['DISTINCT time_series.labels', 'samples.string', 'time_series.fingerprint as fingerprint',
-            'samples.timestamp_ms as timestamp_ms', '[] as extra_labels'],
+            'samples.timestamp_ms as timestamp_ms'],
         from: `${DATABASE_NAME()}.samples`,
         left_join: [{
             name: `${DATABASE_NAME()}.time_series`,
@@ -31,7 +31,8 @@ module.exports.init_query = () => {
 
 /**
  *
- * @param request {{query: string, limit: number, direction: string, start: string, end: string, step: string}}
+ * @param request {{query: string, limit: number, direction: string, start: string, end: string, step: string,
+ *      stream?: (function(DataStream): DataStream)[]}}
  * @returns {{query: string, matrix: boolean, duration: number | undefined}}
  */
 module.exports.transpile = (request) => {
@@ -80,12 +81,14 @@ module.exports.transpile = (request) => {
         ]);
         query = {
             ctx: query.ctx,
+            stream: query.stream,
             with: {
                 ...query.with || {},
                 sel_a: {
                     ...query,
                     ctx: undefined,
-                    with: undefined
+                    with: undefined,
+                    stream: undefined
                 }
             },
             select: ['*'],
@@ -99,7 +102,8 @@ module.exports.transpile = (request) => {
     return {
         query: module.exports.request_to_str(query),
         matrix: !! query.matrix,
-        duration: query.ctx && query.ctx.duration ? query.ctx.duration : 1000
+        duration: query.ctx && query.ctx.duration ? query.ctx.duration : 1000,
+        stream: query.stream
     };
 }
 

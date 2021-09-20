@@ -1,5 +1,6 @@
 const bnf = require('../parser/bnf');
 const transpiler = require('../parser/transpiler');
+const {DataStream} = require('scramjet');
 
 beforeAll(() => {
     process.env.CLICKHOUSE_DB = 'loki';
@@ -131,9 +132,18 @@ it('should transpile aggregation_operator', () => {
     expect(transpiler.request_to_str(query)).toMatchSnapshot();*/
 });
 
-it("should transpile json requests", () => {
-    const script = bnf.ParseScript(`{autem_quis="quidem sit"}| json odit_iusto="dicta"`);
-    const res = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query());
+it("should transpile json requests", async () => {
+    let script = bnf.ParseScript(`{autem_quis="quidem sit"}| json odit_iusto="dicta"`);
+    let res = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query());
+    expect(res).toMatchSnapshot();
+    script = bnf.ParseScript(`{autem_quis="quidem sit"}| json`);
+    res = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query());
+    let stream = DataStream.from([{
+        labels: {autem_quis: 'quidem sit', l1: 'v1', l2: 'v2'},
+        string: JSON.stringify({l1: 'v3', l3: 'v4'})
+    }]);
+    res.stream.forEach(f => {stream = f(stream);});
+    res = await stream.toArray();
     expect(res).toMatchSnapshot();
 });
 

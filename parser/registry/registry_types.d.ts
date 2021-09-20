@@ -1,3 +1,5 @@
+import {DataStream} from "scramjet";
+
 export namespace registry_types {
     interface Request {
         ctx?: {[k: string]: any},
@@ -17,6 +19,7 @@ export namespace registry_types {
         },
         group_by?: string[],
         matrix?: boolean,
+        stream?: ((DataStream) => DataStream)[],
         final: boolean
     }
     interface UnionRequest {
