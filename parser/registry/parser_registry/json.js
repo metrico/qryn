@@ -51,7 +51,7 @@ module.exports.via_clickhouse_query = (token, query) => {
                 return `'${JSON.parse(path.substring(1, path.length - 1))}'`;
             }
             if (path.startsWith("[")) {
-                return path.substring(1, path.length - 1);
+                return (parseInt(path.substring(1, path.length - 1))+1).toString();
             }
             return `'${path}'`;
         });
