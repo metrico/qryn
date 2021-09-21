@@ -116,5 +116,29 @@ it("e2e", async () => {
     );
     adjustResult(resp, testID + "_json");
     expect(resp.data).toMatchSnapshot();
+    // json with params / stream_selector
+    resp = await axios.get(
+        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}|json lbl_repl="new_lbl"|lbl_repl="new_val"&start=${start}000000&end=${end}000000&step=2`
+    );
+    adjustResult(resp, testID + "_json");
+    expect(resp.data).toMatchSnapshot();
+    // json with params / stream_selector
+    resp = await axios.get(
+        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}|json lbl_repl="new_lbl"|fmt="json"&start=${start}000000&end=${end}000000&step=2`
+    );
+    adjustResult(resp, testID + "_json");
+    expect(resp.data).toMatchSnapshot();
+    // json with no params / stream_selector
+    resp = await axios.get(
+        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}|json|fmt=~"[jk]son"&start=${start}000000&end=${end}000000&step=2`
+    );
+    adjustResult(resp, testID + "_json");
+    expect(resp.data).toMatchSnapshot();
+    // json no params / stream_selector
+    resp = await axios.get(
+        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}|json|lbl_repl="REPL"&start=${start}000000&end=${end}000000&step=2`
+    );
+    adjustResult(resp, testID + "_json");
+    expect(resp.data).toMatchSnapshot();
     //console.log(JSON.stringify(resp.data, 1));
 });

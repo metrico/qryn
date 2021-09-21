@@ -157,8 +157,13 @@ module.exports.transpile_log_stream_selector = (token, query) => {
             query = parser_registry[op](pipeline, query);
             continue;
         }
+        if (pipeline.Child('label_filter_expression')) {
+            const op = pipeline.Child('operator').value;
+            query = stream_selector_operator_registry[op](pipeline, query);
+            continue;
+        }
     }
-    for (const c of ['label_filter_expression','line_format_expression','labels_format_expression']) {
+    for (const c of ['line_format_expression','labels_format_expression']) {
         if (token.Children(c).length > 0) {
             throw new Error(`${c} not supported`);
         }
