@@ -23,7 +23,7 @@ const generic_request = (expression) => {
         }
         const labels_filter_clause = `arrayFilter(x -> x.1 ${by_without === 'by' ? 'IN' : 'NOT IN'} `+
             `(${label_list.map(l => `'${l}'`).join(',')}), `+
-            `JSONExtractKeysAndValuesRaw(labels))`;
+            `JSONExtractKeysAndValues(labels, 'String'))`;
         return {
             ctx: query.ctx,
             with: {

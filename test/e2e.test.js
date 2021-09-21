@@ -35,7 +35,7 @@ it("e2e", async () => {
 
     points = createPoints(testID+"_json", 1, start, end,
         {fmt: "json", lbl_repl: "val_repl"}, points,
-        (i) => JSON.stringify({lbl_repl: testID, new_lbl: "new_val", str_id: i, arr: [1,2,3], obj: {o_1: "v_1"}})
+        (i) => JSON.stringify({lbl_repl: 'REPL', new_lbl: "new_val", str_id: i, arr: [1,2,3], obj: {o_1: "v_1"}})
         );
     await sendPoints('http://localhost:3100', points);
     await new Promise(f => setTimeout(f, 4000));
@@ -104,9 +104,15 @@ it("e2e", async () => {
     );
     adjustMatrixResult(resp);
     expect(resp.data).toMatchSnapshot();
-    console.log(`http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}&start=${start}000000&end=${end}000000&step=2`);
+    // json without params
     resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}&start=${start}000000&end=${end}000000&step=2`
+        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}|json&start=${start}000000&end=${end}000000&step=2`
+    );
+    adjustResult(resp, testID + "_json");
+    expect(resp.data).toMatchSnapshot();
+    // json with params
+    resp = await axios.get(
+        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}|json lbl_repl="new_lbl"&start=${start}000000&end=${end}000000&step=2`
     );
     adjustResult(resp, testID + "_json");
     expect(resp.data).toMatchSnapshot();
