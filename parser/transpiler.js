@@ -3,6 +3,7 @@ const line_filter_operator_registry = require('./registry/line_filter_operator_r
 const log_range_aggregation_registry = require('./registry/log_range_aggregation_registry');
 const high_level_aggregation_registry = require('./registry/high_level_aggregation_registry');
 const parser_registry = require('./registry/parser_registry');
+const unwrap = require('./registry/unwrap');
 const {_and, durationToMs} = require("./registry/common");
 const compiler = require("./bnf");
 const {parseMs, DATABASE_NAME} = require("../lib/utils");
@@ -169,6 +170,17 @@ module.exports.transpile_log_stream_selector = (token, query) => {
         }
     }
     return query;
+}
+
+/**
+ *
+ * @param token {Token}
+ * @param query {registry_types.Request}
+ * @returns {registry_types.Request}
+ */
+module.exports.transpile_unwrap_expression = (token, query) => {
+    query = module.exports.transpile_log_stream_selector(token, query);
+    return unwrap(token.Child('unwrap_statement'), query);
 }
 
 /**

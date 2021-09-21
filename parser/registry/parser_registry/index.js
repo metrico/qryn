@@ -16,6 +16,5 @@ module.exports = {
         return json.via_clickhouse_query(token, query);
     },
     "logfmt": _i,
-    "regexp": _i,
-    "unpack": _i
+    "regexp": _i
 }

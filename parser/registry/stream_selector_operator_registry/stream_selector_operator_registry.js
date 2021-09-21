@@ -61,10 +61,10 @@ module.exports.neq_stream = (token, query) => {
     return {
         ...query,
         stream: [...(query.stream ? query.stream : []),
-            /**
-             * @param stream {DataStream}
+             /**
+              * @param stream {DataStream}
              */
-                (stream) => stream.filter((e) =>
+             (stream) => stream.filter((e) =>
                 e && e.labels && e.labels[label] && e.labels[label] !== value
             )
         ]

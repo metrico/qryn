@@ -34,8 +34,8 @@ it("e2e", async () => {
     points = createPoints(testID, 4, start, end, {}, points);
 
     points = createPoints(testID+"_json", 1, start, end,
-        {fmt: "json", lbl_repl: "val_repl"}, points,
-        (i) => JSON.stringify({lbl_repl: 'REPL', new_lbl: "new_val", str_id: i, arr: [1,2,3], obj: {o_1: "v_1"}})
+        {fmt: "json", lbl_repl: "val_repl", int_lbl: "1"}, points,
+        (i) => JSON.stringify({lbl_repl: 'REPL', int_val:'1', new_lbl: "new_val", str_id: i, arr: [1,2,3], obj: {o_1: "v_1"}})
         );
     await sendPoints('http://localhost:3100', points);
     await new Promise(f => setTimeout(f, 4000));
@@ -60,6 +60,7 @@ it("e2e", async () => {
             return stream;
         });
     }
+    console.log('TEST ID= ' + testID);
     adjustResult(resp);
     expect(resp.data).toMatchSnapshot();
     //empty res

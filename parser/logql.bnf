@@ -1,4 +1,4 @@
-<SYNTAX> ::= <log_stream_selector> | <log_range_aggregation> | <aggregation_operator>
+<SYNTAX> ::= <log_stream_selector> | <unwrap_expression> | <log_range_aggregation> | <aggregation_operator>
 
 log_stream_selector ::= "{" <OWSP> <log_stream_selector_rule> *(<OWSP> "," <OWSP> <log_stream_selector_rule>) <OWSP> "}" <OWSP> *(<OWSP><log_pipeline>)
 
@@ -47,3 +47,6 @@ aggregation_operator_fn ::= <high_level_aggregation_registry>
 opt_by_without ::= <by_without> <OWSP> "(" <OWSP> <label_list> <OWSP> ")" | <BLANK>
 by_without ::= "by" | "without"
 label_list ::= <label> <OWSP> *("," <OWSP> <label>)
+
+unwrap_expression ::= <log_stream_selector> <OWSP> <unwrap_statement>
+unwrap_statement ::= "|" <OWSP> "unwrap" <OWSP> <label>

@@ -1,5 +1,156 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`shoud transpile unwrap 1`] = `
+Object {
+  "from": "loki.samples",
+  "left_join": Array [
+    Object {
+      "name": "loki.time_series",
+      "on": Array [
+        "AND",
+        "samples.fingerprint = time_series.fingerprint",
+      ],
+    },
+  ],
+  "limit": 1000,
+  "order_by": Object {
+    "name": Array [
+      "timestamp_ms",
+      "labels",
+    ],
+    "order": "desc",
+  },
+  "select": Array [
+    "DISTINCT time_series.labels",
+    "samples.string",
+    "time_series.fingerprint as fingerprint",
+    "samples.timestamp_ms as timestamp_ms",
+    "toFloat64OrNull(JSONExtractString(labels,'int_lbl')) as unwrapped",
+  ],
+  "where": Array [
+    "AND",
+    "JSONHas(labels, 'test_id')",
+    "JSONExtractString(labels, 'test_id') = '0.7857680014573265_json'",
+    "JSONHas(labels, 'int_lbl')",
+    "isNotNull(unwrapped)",
+  ],
+}
+`;
+
+exports[`shoud transpile unwrap 2`] = `
+Object {
+  "from": "loki.samples",
+  "left_join": Array [
+    Object {
+      "name": "loki.time_series",
+      "on": Array [
+        "AND",
+        "samples.fingerprint = time_series.fingerprint",
+      ],
+    },
+  ],
+  "limit": 1000,
+  "order_by": Object {
+    "name": Array [
+      "timestamp_ms",
+      "labels",
+    ],
+    "order": "desc",
+  },
+  "select": Array [
+    "DISTINCT time_series.labels",
+    "samples.string",
+    "time_series.fingerprint as fingerprint",
+    "samples.timestamp_ms as timestamp_ms",
+    "arrayFilter((x) -> x.2 != '', [('int_lbl2', if(JSONType(samples.string, 'int_val') == 'String', JSONExtractString(samples.string, 'int_val'), JSONExtractRaw(samples.string, 'int_val')))]) as extra_labels",
+    "toFloat64OrNull(if(arrayExists(x -> x.1 == 'int_lbl2', extra_labels), arrayFirst(x -> x.1 == 'int_lbl2', extra_labels).2, JSONExtractString(labels,'int_lbl2'))) as unwrapped",
+  ],
+  "where": Array [
+    "AND",
+    "JSONHas(labels, 'test_id')",
+    "JSONExtractString(labels, 'test_id') = '0.7857680014573265_json'",
+    "isValidJSON(samples.string)",
+    Array [
+      "OR",
+      "arrayFirstIndex(x -> x.1 == 'int_lbl2', extra_labels) != 0",
+      Array [
+        "AND",
+        "arrayFirstIndex(x -> x.1 == 'int_lbl2', extra_labels) == 0",
+        "JSONHas(labels, 'int_lbl2')",
+      ],
+    ],
+    "isNotNull(unwrapped)",
+  ],
+}
+`;
+
+exports[`shoud transpile unwrap 3`] = `
+Object {
+  "from": "loki.samples",
+  "left_join": Array [
+    Object {
+      "name": "loki.time_series",
+      "on": Array [
+        "AND",
+        "samples.fingerprint = time_series.fingerprint",
+      ],
+    },
+  ],
+  "limit": 1000,
+  "order_by": Object {
+    "name": Array [
+      "timestamp_ms",
+      "labels",
+    ],
+    "order": "desc",
+  },
+  "select": Array [
+    "DISTINCT time_series.labels",
+    "samples.string",
+    "time_series.fingerprint as fingerprint",
+    "samples.timestamp_ms as timestamp_ms",
+    "arrayFilter((x) -> x.2 != '', [('int_lbl2', if(JSONType(samples.string, 'int_val') == 'String', JSONExtractString(samples.string, 'int_val'), JSONExtractRaw(samples.string, 'int_val')))]) as extra_labels",
+    "toFloat64OrNull(if(arrayExists(x -> x.1 == 'int_lbl', extra_labels), arrayFirst(x -> x.1 == 'int_lbl', extra_labels).2, JSONExtractString(labels,'int_lbl'))) as unwrapped",
+  ],
+  "where": Array [
+    "AND",
+    "JSONHas(labels, 'test_id')",
+    "JSONExtractString(labels, 'test_id') = '0.7857680014573265_json'",
+    "isValidJSON(samples.string)",
+    Array [
+      "OR",
+      "arrayFirstIndex(x -> x.1 == 'int_lbl', extra_labels) != 0",
+      Array [
+        "AND",
+        "arrayFirstIndex(x -> x.1 == 'int_lbl', extra_labels) == 0",
+        "JSONHas(labels, 'int_lbl')",
+      ],
+    ],
+    "isNotNull(unwrapped)",
+  ],
+}
+`;
+
+exports[`shoud transpile unwrap 4`] = `
+Array [
+  Object {
+    "labels": Object {
+      "fmt": "json",
+      "freq": "1",
+      "int_lbl": "1",
+      "int_val": "1",
+      "lbl_repl": "REPL",
+      "new_lbl": "new_val",
+      "obj_o_1": "v_1",
+      "str_id": "0",
+      "test_id": "0.7857680014573265_json",
+    },
+    "string": "{\\"lbl_repl\\":\\"REPL\\",\\"int_val\\":\\"1\\",\\"new_lbl\\":\\"new_val\\",\\"str_id\\":0,\\"arr\\":[1,2,3],\\"obj\\":{\\"o_1\\":\\"v_1\\"}}",
+    "unwrapped": 1,
+  },
+]
+`;
+
 exports[`should transpile aggregation_operator 1`] = `
 Object {
   "ctx": Object {
