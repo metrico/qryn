@@ -4,6 +4,7 @@ const log_range_aggregation_registry = require('./registry/log_range_aggregation
 const high_level_aggregation_registry = require('./registry/high_level_aggregation_registry');
 const parser_registry = require('./registry/parser_registry');
 const unwrap = require('./registry/unwrap');
+const unwrap_registry = require('./registry/unwrap_registry');
 const {_and, durationToMs} = require("./registry/common");
 const compiler = require("./bnf");
 const {parseMs, DATABASE_NAME} = require("../lib/utils");
@@ -15,7 +16,7 @@ const {parseMs, DATABASE_NAME} = require("../lib/utils");
  */
 module.exports.init_query = () => {
     return {
-        select: ['DISTINCT time_series.labels', 'samples.string', 'time_series.fingerprint as fingerprint',
+        select: ['time_series.labels as labels', 'samples.string as string', 'time_series.fingerprint as fingerprint',
             'samples.timestamp_ms as timestamp_ms'],
         from: `${DATABASE_NAME()}.samples`,
         left_join: [{
@@ -26,7 +27,8 @@ module.exports.init_query = () => {
         order_by: {
             name: ['timestamp_ms', 'labels'],
             order: 'desc'
-        }
+        },
+        distinct: true
     };
 }
 
@@ -178,6 +180,17 @@ module.exports.transpile_log_stream_selector = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
+module.exports.transpile_unwrap_function = (token, query) => {
+    query = module.exports.transpile_unwrap_expression(token.Child('unwrap_expression'), query);
+    return unwrap_registry[token.Child('unwrap_fn').value](token, query);
+}
+
+/**
+ *
+ * @param token {Token}
+ * @param query {registry_types.Request}
+ * @returns {registry_types.Request}
+ */
 module.exports.transpile_unwrap_expression = (token, query) => {
     query = module.exports.transpile_log_stream_selector(token, query);
     return unwrap(token.Child('unwrap_statement'), query);
@@ -195,7 +208,7 @@ module.exports.request_to_str = (query) => {
     let req = query.with ? 'WITH ' + Object.entries(query.with).filter(e => e[1])
         .map(e => `${e[0]} as (${module.exports.request_to_str(e[1])})`).join(', ') :
         '';
-    req += ` SELECT ${query.select.join(', ')} FROM ${query.from} `;
+    req += ` SELECT ${query.distinct ? 'DISTINCT' : ''} ${query.select.join(', ')} FROM ${query.from} `;
     for (const clause of query.left_join || []) {
         req += ` LEFT JOIN ${clause.name} ON ${whereBuilder(clause.on)}`;
     }

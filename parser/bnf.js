@@ -4,7 +4,8 @@ const registry_names = [
     'number_operator_registry',
     'stream_selector_operator_registry',
     'line_filter_operator_registry',
-    'parser_registry'
+    'parser_registry',
+    'unwrap_registry'
 ];
 const registries = registry_names.reduce((sum, n) => {
     sum[n] = require(`${__dirname}/registry/${n}`);

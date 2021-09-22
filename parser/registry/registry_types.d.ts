@@ -20,7 +20,8 @@ export namespace registry_types {
         group_by?: string[],
         matrix?: boolean,
         stream?: ((DataStream) => DataStream)[],
-        final: boolean
+        final: boolean,
+        distinct?: boolean
     }
     interface UnionRequest {
         requests: Request[]

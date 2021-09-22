@@ -148,19 +148,23 @@ it("should transpile json requests", async () => {
 });
 
 it ("shoud transpile unwrap", async () => {
-    let script = bnf.ParseScript(`{test_id="0.7857680014573265_json"}| unwrap int_lbl`);
+    const q = {
+        ...transpiler.init_query(),
+        ctx: {step: 120000}
+    };
+    let script = bnf.ParseScript(`rate({test_id="0.7857680014573265_json"}| unwrap int_lbl [1m]) by (fmt)`);
     expect(script).toBeTruthy();
-    let req = transpiler.transpile_unwrap_expression(script.rootToken, transpiler.init_query());
+    let req = transpiler.transpile_unwrap_function(script.rootToken, q);
     expect(req).toMatchSnapshot();
-    script = bnf.ParseScript(`{test_id="0.7857680014573265_json"}| json int_lbl2="int_val"| unwrap int_lbl2`);
-    req = transpiler.transpile_unwrap_expression(script.rootToken, transpiler.init_query());
+
+    script = bnf.ParseScript(`rate({test_id="0.7857680014573265_json"}| json int_lbl2="int_val"| unwrap int_lbl2 [1m]) by (fmt)`);
+    req = transpiler.transpile_unwrap_function(script.rootToken, q);
     expect(req).toMatchSnapshot();
-    script = bnf.ParseScript(`{test_id="0.7857680014573265_json"}| json int_lbl2="int_val"| unwrap int_lbl`);
-    req = transpiler.transpile_unwrap_expression(script.rootToken, transpiler.init_query());
+    script = bnf.ParseScript(`rate({test_id="0.7857680014573265_json"}| json int_lbl2="int_val"| unwrap int_lbl [1m]) by (int_lbl2)`);
+    req = transpiler.transpile_unwrap_function(script.rootToken, q);
     expect(req).toMatchSnapshot();
-    script = bnf.ParseScript(`{test_id="0.7857680014573265_json"}| json| unwrap int_val`);
-    req = transpiler.transpile_unwrap_expression(script.rootToken, transpiler.init_query());
-    let ds = DataStream.fromArray([{
+
+    /*const test_data = [{
         labels: {"test_id":"0.7857680014573265_json","freq":"1","fmt":"json","lbl_repl":"val_repl","int_lbl":"1"},
         string: JSON.stringify({"lbl_repl":"REPL","int_val":"1","new_lbl":"new_val","str_id":0,"arr":[1,2,3],"obj":{"o_1":"v_1"}})
     },{
@@ -169,10 +173,21 @@ it ("shoud transpile unwrap", async () => {
     },{
         labels: {"test_id":"0.7857680014573265_json","freq":"1","fmt":"json","lbl_repl":"val_repl","int_lbl":"1"},
         string: JSON.stringify({"lbl_repl":"REPL","int_val":"ewew","new_lbl":"new_val","str_id":0,"arr":[1,2,3],"obj":{"o_1":"v_1"}})
-    }]);
+    }];
+    script = bnf.ParseScript(`{test_id="0.7857680014573265_json"}| json| unwrap int_val`);
+    req = transpiler.transpile_unwrap_expression(script.rootToken, transpiler.init_query());
+    let ds = DataStream.fromArray(test_data);
     req.stream.forEach(s => {
         ds = s(ds);
     });
     let res = await ds.toArray();
     expect(res).toMatchSnapshot();
+    script = bnf.ParseScript(`{test_id="0.7857680014573265_json"}| json| unwrap int_lbl`);
+    req = transpiler.transpile_unwrap_expression(script.rootToken, transpiler.init_query());
+    ds = DataStream.fromArray(test_data);
+    req.stream.forEach(s => {
+        ds = s(ds);
+    });
+    res = await ds.toArray();
+    expect(res).toMatchSnapshot();*/
 });
