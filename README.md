@@ -87,12 +87,12 @@ CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" node
 Install `cloki` as global package on your system using `npm`
 ```
 sudo npm install -g cloki
-CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" cd $(dirname $(readlink -f `which cloki`)) && cloki
+cd $(dirname $(readlink -f `which cloki`)) && CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" cloki
 ```
 ##### :busstop: PM2
 ```
 sudo npm install -g cloki pm2
-CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" pm2 start cloki
+cd $(dirname $(readlink -f `which cloki`)) && CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" pm2 start cloki
 pm2 save
 pm2 startup
 ```
