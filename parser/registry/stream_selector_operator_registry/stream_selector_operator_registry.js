@@ -1,4 +1,4 @@
-const {_and, unquote_token, querySelectorPostProcess} = require("../common");
+const {_and, unquote_token, querySelectorPostProcess, isEOF} = require("../common");
 
 function selector_clauses(regex, eq, label, value) {
     return [
@@ -52,6 +52,15 @@ module.exports.neq_extra_labels = (token, query) => {
 
 /**
  *
+ * @param s {DataStream}
+ * @param fn {function(Object): boolean}
+ */
+function filter(s, fn) {
+    return s.filter(e => (e && e.labels && fn(e)) || isEOF(e));
+}
+
+/**
+ *
  * @param token {Token}
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
@@ -64,8 +73,8 @@ module.exports.neq_stream = (token, query) => {
              /**
               * @param stream {DataStream}
              */
-             (stream) => stream.filter((e) =>
-                e && e.labels && e.labels[label] && e.labels[label] !== value
+             (stream) => filter(stream, (e) =>
+                e.labels[label] && e.labels[label] !== value
             )
         ]
     };
@@ -118,8 +127,8 @@ module.exports.nreg_stream = (token, query) => {
             /**
              * @param stream {DataStream}
              */
-                (stream) => stream.filter((e) =>
-                e && e.labels && e.labels[label] && !e.labels[label].match(re)
+            (stream) => filter(stream, (e) =>
+                    e.labels[label] && !e.labels[label].match(re)
             )
         ]
     };
@@ -172,8 +181,8 @@ module.exports.reg_stream = (token, query) => {
             /**
              * @param stream {DataStream}
              */
-             (stream) => stream.filter((e) =>
-                e && e.labels && e.labels[label] && e.labels[label].match(re)
+             (stream) => filter(stream, (e) =>
+                e.labels[label] && e.labels[label].match(re)
             )
         ]
     };
@@ -224,8 +233,8 @@ module.exports.eq_stream = (token, query) => {
             /**
              * @param stream {DataStream}
              */
-            (stream) => stream.filter((e) =>
-                e && e.labels && e.labels[label] && e.labels[label] === value
+            (stream) => filter(stream, (e) =>
+                e.labels[label] && e.labels[label] === value
             )
         ]
     };

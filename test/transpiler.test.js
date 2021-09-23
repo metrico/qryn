@@ -148,7 +148,7 @@ it("should transpile json requests", async () => {
 });
 
 it ("shoud transpile unwrap", async () => {
-    const q = {
+    let q = {
         ...transpiler.init_query(),
         ctx: {step: 120000}
     };
@@ -164,24 +164,30 @@ it ("shoud transpile unwrap", async () => {
     req = transpiler.transpile_unwrap_function(script.rootToken, q);
     expect(req).toMatchSnapshot();
 
-    /*const test_data = [{
+    const test_data = [{
+        timestamp_ms: 0,
         labels: {"test_id":"0.7857680014573265_json","freq":"1","fmt":"json","lbl_repl":"val_repl","int_lbl":"1"},
         string: JSON.stringify({"lbl_repl":"REPL","int_val":"1","new_lbl":"new_val","str_id":0,"arr":[1,2,3],"obj":{"o_1":"v_1"}})
     },{
+        timestamp_ms: 1000,
         labels: {"test_id":"0.7857680014573265_json","freq":"1","fmt":"json","lbl_repl":"val_repl","int_lbl":"1"},
-        string: JSON.stringify({"lbl_repl":"REPL","int_val2":"1","new_lbl":"new_val","str_id":0,"arr":[1,2,3],"obj":{"o_1":"v_1"}})
+        string: JSON.stringify({"lbl_repl":"REPL","int_val":"1","new_lbl":"new_val","str_id":0,"arr":[1,2,3],"obj":{"o_1":"v_1"}})
     },{
+        timestamp_ms: 2000,
         labels: {"test_id":"0.7857680014573265_json","freq":"1","fmt":"json","lbl_repl":"val_repl","int_lbl":"1"},
         string: JSON.stringify({"lbl_repl":"REPL","int_val":"ewew","new_lbl":"new_val","str_id":0,"arr":[1,2,3],"obj":{"o_1":"v_1"}})
-    }];
-    script = bnf.ParseScript(`{test_id="0.7857680014573265_json"}| json| unwrap int_val`);
-    req = transpiler.transpile_unwrap_expression(script.rootToken, transpiler.init_query());
+    }, { EOF: true }];
+    script = bnf.ParseScript(`sum_over_time({test_id="0.7857680014573265_json"}| json| unwrap int_val [2s]) by (freq)`);
+    q.ctx.step = 1000;
+    req = transpiler.transpile_unwrap_function(script.rootToken, q);
     let ds = DataStream.fromArray(test_data);
     req.stream.forEach(s => {
         ds = s(ds);
     });
     let res = await ds.toArray();
-    expect(res).toMatchSnapshot();
+    console.log(JSON.stringify(res, 1));
+
+    /*expect(res).toMatchSnapshot();
     script = bnf.ParseScript(`{test_id="0.7857680014573265_json"}| json| unwrap int_lbl`);
     req = transpiler.transpile_unwrap_expression(script.rootToken, transpiler.init_query());
     ds = DataStream.fromArray(test_data);

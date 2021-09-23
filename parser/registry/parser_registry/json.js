@@ -1,5 +1,5 @@
 const {Compiler} = require("bnf/Compiler");
-const {_and} = require("../common");
+const {_and, map} = require("../common");
 const {DataStream} = require("scramjet");
 
 /**
@@ -142,7 +142,10 @@ module.exports.via_stream = (token, query) => {
      * @return {DataStream}
      */
     const stream = (stream) => {
-        return stream.map((e) => {
+        return map(stream, (e) => {
+            if (!e || !e.labels) {
+                return {...e};
+            }
             try {
                 const oString = JSON.parse(e.string);
                 const extra_labels = labels ? extract_labels(oString, labels) : obj_to_labels(oString, "");

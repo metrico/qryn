@@ -62,6 +62,20 @@ module.exports.transpile = (request) => {
             `timestamp_ms <= ${end}`
         ]);
         query = module.exports.transpile_aggregation_operator(token, query);
+    } else if (token.Child('unwrap_function')) {
+        const duration = durationToMs(token.Child('unwrap_function').Child('duration_value').value);
+        start = Math.floor(start / duration) * duration;
+        end = Math.ceil(end / duration) * duration;
+        query.ctx = {
+            start:start,
+            end: end,
+            step: step
+        };
+        query = _and(query, [
+            `timestamp_ms >= ${start}`,
+            `timestamp_ms <= ${end}`
+        ]);
+        query = module.exports.transpile_unwrap_function(token, query);
     } else if (token.Child('log_range_aggregation')) {
         const duration = durationToMs(token.Child('log_range_aggregation').Child('duration_value').value);
         start = Math.floor(start / duration) * duration;

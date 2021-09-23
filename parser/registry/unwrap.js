@@ -1,4 +1,4 @@
-const {_and} = require("./common");
+const {_and, map} = require("./common");
 /**
  *
  * @param token {Token}
@@ -68,9 +68,9 @@ function via_stream(label, query) {
              *
              * @param stream {DataStream}
              */
-            (stream) => stream.map(e => {
+            (stream) => map(stream, e => {
                 if (!e || !e.labels || !e.labels[label]) {
-                    return null;
+                    return {...e};
                 }
                 try {
                     e.unwrapped = parseFloat(e.labels[label]);
@@ -81,7 +81,7 @@ function via_stream(label, query) {
                 } catch (e) {
                     return null;
                 }
-            }).filter(e => e && e.unwrapped)
+            }).filter(e => e)
         ]
     }
 }

@@ -3,6 +3,7 @@
 exports[`shoud transpile unwrap 1`] = `
 Object {
   "ctx": Object {
+    "duration": 60000,
     "step": 120000,
   },
   "from": "uw_rate_b",
@@ -90,6 +91,7 @@ Object {
 exports[`shoud transpile unwrap 2`] = `
 Object {
   "ctx": Object {
+    "duration": 60000,
     "step": 120000,
   },
   "from": "uw_rate_b",
@@ -187,6 +189,7 @@ Object {
 exports[`shoud transpile unwrap 3`] = `
 Object {
   "ctx": Object {
+    "duration": 60000,
     "step": 120000,
   },
   "from": "uw_rate_b",

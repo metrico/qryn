@@ -57,3 +57,24 @@ module.exports.durationToMs = (duration_str) => {
     }
     throw new Error("Unsupported duration");
 }
+
+/**
+ *
+ * @param s {DataStream}
+ * @param fn
+ * @returns {DataStream}
+ */
+module.exports.map = (s, fn) => s.map((e) => {
+    return new Promise(f => {
+        setImmediate(() => {
+            f(fn(e));
+        });
+    });
+});
+
+/**
+ *
+ * @param eof {any}
+ * @returns boolean
+ */
+module.exports.isEOF = (eof) => eof.EOF;

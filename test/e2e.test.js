@@ -52,9 +52,10 @@ it("e2e", async () => {
             return stream;
         });
     }
-    const adjustMatrixResult = (resp) => {
+    const adjustMatrixResult = (resp, id) => {
+        id = id || testID;
         resp.data.data.result = resp.data.data.result.map(stream => {
-            expect(stream.metric.test_id).toEqual(testID);
+            expect(stream.metric.test_id).toEqual(id);
             stream.metric.test_id = "TEST_ID";
             stream.values = stream.values.map(v => [v[0] - Math.floor(start / 1000), v[1]]);
             return stream;
@@ -140,6 +141,16 @@ it("e2e", async () => {
         `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}|json|lbl_repl="REPL"&start=${start}000000&end=${end}000000&step=2`
     );
     adjustResult(resp, testID + "_json");
+    expect(resp.data).toMatchSnapshot();
+    resp = await axios.get(
+        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=sum_over_time({test_id="${testID}_json"}|json|lbl_repl="REPL"|unwrap int_lbl [3s]) by (test_id, lbl_repl)&start=${start}000000&end=${end}000000&step=2`
+    );
+    adjustMatrixResult(resp, testID + "_json");
+    expect(resp.data).toMatchSnapshot();
+    resp = await axios.get(
+        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=sum_over_time({test_id="0.8731910604070989_json"}|json lbl_int1="int_val"|lbl_repl="val_repl"|unwrap lbl_int1 [3s]) by (test_id, lbl_repl)&start=${start}000000&end=${end}000000&step=2`
+    );
+    adjustMatrixResult(resp, testID + "_json");
     expect(resp.data).toMatchSnapshot();
     //console.log(JSON.stringify(resp.data, 1));
 });
