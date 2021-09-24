@@ -82,20 +82,22 @@ Insert using [Telegraf Input](https://github.com/lmangani/cLoki/wiki/Telegraf-HT
 
 ##### :busstop: GIT (Manual)
 Clone this repository, install with `npm`and run using `nodejs` 12.x *(or higher)*
-```
+```bash
 npm install
-CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" node ./cloki.js
+CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLICKHOUSE_DB="cloki" node ./cloki.js
 ```
 ##### :busstop: NPM
 Install `cloki` as global package on your system using `npm`
-```
+```bash
 sudo npm install -g cloki
-cd $(dirname $(readlink -f `which cloki`)) && CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" cloki
+cd $(dirname $(readlink -f `which cloki`)) \
+  && CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLICKHOUSE_DB="cloki" cloki
 ```
 ##### :busstop: PM2
-```
+```bash
 sudo npm install -g cloki pm2
-cd $(dirname $(readlink -f `which cloki`)) && CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" pm2 start cloki
+cd $(dirname $(readlink -f `which cloki`)) \
+  && CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLICKHOUSE_DB="cloki" pm2 start cloki
 pm2 save
 pm2 startup
 ```
