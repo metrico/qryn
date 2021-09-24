@@ -12,9 +12,12 @@ APIs are compatible with [Grafana](http://docs.grafana.org/features/explore/), [
 
 Performance is comparable to native Loki, with cLoki outperforming on large range filtered queries.
 
-:fire: *Beta Stage, Contributors and Testers are Welcome!* :octocat:
+:bulb: Get started using the [cLoki Wiki](https://github.com/lmangani/cLoki/wiki)
 
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
+
+:fire: *Beta Stage, Contributors and Testers are Welcome!* :octocat:
+
 
 ### Project Background
 
