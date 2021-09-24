@@ -159,7 +159,7 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
   * [x] = exactly equal.
   * [x] != not equal.
   * [x] =~ regex-match.
-  * [ ] !~ do not regex-match.
+  * [x] !~ do not regex-match.
 * [x] Basic Search
   * [x] Labels  _(single key, multi key, AND logic)_
   * [x] Samples  _(by Fingerprint match)_
