@@ -1,6 +1,6 @@
 # This workflow will validate cloki using nodejs + clickhouse 
 
-name: Node.js CI
+name: CLOKI CI
 
 on:
   push:
@@ -27,4 +27,4 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm install
-    - run: npm test
+    - run: npm run test
