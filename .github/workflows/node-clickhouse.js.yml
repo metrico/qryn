@@ -1,4 +1,4 @@
-# This workflow will validate cloki using nodejs + clickhouse 
+# This workflow will validate cloki using nodejs + clickhouse
 
 name: CLOKI CI
 

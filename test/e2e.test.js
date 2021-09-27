@@ -2,24 +2,31 @@ const {createPoints, sendPoints} = require("./common");
 const axios = require("axios");
 const pb = require("protobufjs");
 const e2e = () => process.env.INTEGRATION_E2E || process.env.INTEGRATION;
+const cloki_local = () => process.env.CLOKI_LOCAL || false;
 let l = null;
 
 const root = pb.loadSync(__dirname + "/../lib/loki.proto");
 const pushMessage = root.lookupType("logproto.PushRequest");
 
-beforeAll(async () => {
-    if (!e2e()) {
-        return;
-    }
-    l = require("../cloki");
-    await new Promise(f => setTimeout(f, 500));
+beforeAll(() => {
+
+    //await new Promise(f => setTimeout(f, 500));
     jest.setTimeout(300000);
+    return setup()
 });
+
+function setup () {
+  if (!e2e()) {
+      return;
+  }
+  if (!cloki_local()) l = require("../cloki");
+  return new Promise(f => setTimeout(f, 1000));
+}
 afterAll(() => {
     if (!e2e()) {
         return;
     }
-    l.stop();
+    if (!cloki_local()) l.stop();
 });
 
 async function pushPBPoints(endpoint, points) {
