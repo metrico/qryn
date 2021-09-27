@@ -28,6 +28,6 @@ jobs:
     - env:
         CLICKHOUSE_DB: cloki
         DEBUG: true
-      run: cd $(dirname $(readlink -f `which cloki`)) && (timeout 10s cloki; exit 0)
+      run: cd $(dirname $(readlink -f `which cloki`)) && timeout 10s cloki || ( [[ $? -eq 124 ]] && echo "WARNING: Timeout reached" && exit 0 )
 #   - run: npm install -g jest
 #   - run: cd $(dirname $(readlink -f `which cloki`)) && npm run test
