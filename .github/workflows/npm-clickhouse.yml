@@ -26,7 +26,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: npm install --unsafe-perm -g cloki
     - env:
-        CLICKHOUSE_DB: cloki
+        CLICKHOUSE_DB: loki
         DEBUG: true
       run: cd $(dirname $(readlink -f `which cloki`)) && (timeout 10s cloki || ( [[ $? -eq 124 ]] && exit 0 ))
 #   - run: npm install -g jest
