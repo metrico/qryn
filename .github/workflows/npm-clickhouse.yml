@@ -28,5 +28,5 @@ jobs:
     - env:
         CLICKHOUSE_DB: cloki
         INTEGRATION_E2E: 1
-      run: timeout 5s cloki
+      run: cd $(dirname $(readlink -f `which cloki`)) && timeout 5s cloki
 #     run: cd $(dirname $(readlink -f `which cloki`)) && npm run test
