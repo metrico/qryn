@@ -24,9 +24,10 @@ jobs:
       uses: actions/setup-node@v2
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm install --unsafe-perm -g cloki jest
+    - run: npm install --unsafe-perm -g cloki
     - env:
         CLICKHOUSE_DB: cloki
-        INTEGRATION_E2E: 1
+        DEBUG: true
       run: cd $(dirname $(readlink -f `which cloki`)) && timeout 5s cloki
-#     run: cd $(dirname $(readlink -f `which cloki`)) && npm run test
+#   - run: npm install -g jest
+#   - run: cd $(dirname $(readlink -f `which cloki`)) && npm run test
