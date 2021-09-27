@@ -1,13 +1,18 @@
 const {createPoints, sendPoints} = require("./common");
 const axios = require("axios");
+const pb = require("protobufjs");
 const e2e = () => process.env.INTEGRATION_E2E || process.env.INTEGRATION;
 let l = null;
+
+const root = pb.loadSync(__dirname + "/../lib/loki.proto");
+const pushMessage = root.lookupType("logproto.PushRequest");
 
 beforeAll(async () => {
     if (!e2e()) {
         return;
     }
     l = require("../cloki");
+    await new Promise(f => setTimeout(f, 500));
     jest.setTimeout(300000);
     return new Promise(f => setTimeout(f, 5000));
 });
@@ -18,13 +23,27 @@ afterAll(() => {
     l.stop();
 });
 
+async function pushPBPoints(endpoint, points) {
+    let req = Object.values(points).map((p) => {
+        return {
+            labels: "{" + Object.entries(p.stream).map((e) => `${e[0]}=${JSON.stringify(e[1])}`),
+            entries: p.values.map(v => ({timestamp: {
+                    seconds: Math.floor(parseInt(v[0]) / 1000000000),
+                    nanos: parseInt(v[0]) % 1000000000
+                }, line: v[1]}))
+        }
+    });
+    req = pushMessage.fromObject(req);
+}
+
 jest.setTimeout(300000);
 
 it("e2e", async () => {
     if (!e2e()) {
         return;
     }
-    
+    console.log("Waiting 2s before all inits");
+    await new Promise(f => setTimeout(f, 2000));
     const testID = Math.random() + '';
     console.log(testID);
     const start = Math.floor((Date.now() - 60 * 1000 * 10) / 60 / 1000) * 60 * 1000;

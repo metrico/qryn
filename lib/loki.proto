@@ -1,5 +1,10 @@
-message Timestamp {
+syntax = "proto3";
 
+package logproto;
+
+option go_package = "logproto";
+
+message Timestamp {
   // Represents seconds of UTC time since Unix epoch
   // 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
   // 9999-12-31T23:59:59Z inclusive.
@@ -12,52 +17,20 @@ message Timestamp {
   int32 nanos = 2;
 }
 
-service Pusher {
-  rpc Push(PushRequest) returns (PushResponse) {};
-}
-
-service Querier {
-  rpc Query(QueryRequest) returns (stream QueryResponse) {};
-  rpc Label(LabelRequest) returns (LabelResponse) {};
-}
-
-enum Direction {
-  FORWARD = 0;
-  BACKWARD = 1;
-}
-
-message QueryRequest {
-  string query = 1;
-  uint32 limit = 2;
-  Timestamp start = 3 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false];
-  Timestamp end = 4 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false];
-  Direction direction = 5;
-  string regex = 6;
-}
-
 message PushRequest {
-  repeated Stream streams = 1 [(gogoproto.jsontag) = "streams"];
+  repeated StreamAdapter streams = 1 ;
 }
 
-message QueryResponse {
-  repeated Stream streams = 1;
+message PushResponse {
 }
 
-message LabelRequest {
-  string name = 1;
-  bool values = 2; // True to fetch label values, false for fetch labels names.
+
+message StreamAdapter {
+  string labels = 1 ;
+  repeated EntryAdapter entries = 2;
 }
 
-message LabelResponse {
-  repeated string values = 1;
-}
-
-message Stream {
-  string labels = 1 [(gogoproto.jsontag) = "labels"];
-  repeated Entry entries = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "entries"];
-}
-
-message Entry {
-  Timestamp timestamp = 1 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false, (gogoproto.jsontag) = "ts"];
-  string line = 2 [(gogoproto.jsontag) = "line"];
+message EntryAdapter {
+  Timestamp timestamp = 1;
+  string line = 2;
 }
