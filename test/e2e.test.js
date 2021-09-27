@@ -7,12 +7,12 @@ let l = null;
 const root = pb.loadSync(__dirname + "/../lib/loki.proto");
 const pushMessage = root.lookupType("logproto.PushRequest");
 
-beforeAll(async () => {
+beforeAll(() => {
     if (!e2e()) {
         return;
     }
     l = require("../cloki");
-    await new Promise(f => setTimeout(f, 500));
+    //await new Promise(f => setTimeout(f, 500));
     jest.setTimeout(300000);
     return new Promise(f => setTimeout(f, 5000));
 });
