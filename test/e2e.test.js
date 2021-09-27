@@ -8,9 +8,8 @@ beforeAll(async () => {
         return;
     }
     l = require("../cloki");
-    await new Promise(f => setTimeout(f, 15000));
     jest.setTimeout(300000);
-    
+    return new Promise(f => setTimeout(f, 5000));
 });
 afterAll(() => {
     if (!e2e()) {
