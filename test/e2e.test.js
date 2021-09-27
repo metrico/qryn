@@ -8,7 +8,7 @@ beforeAll(async () => {
         return;
     }
     l = require("../cloki");
-    console.log('cloki start', Date.now() );
+    await new Promise(f => setTimeout(f, 2000));
     jest.setTimeout(300000);
     
 });
@@ -25,8 +25,6 @@ it("e2e", async () => {
     if (!e2e()) {
         return;
     }
-    
-    await new Promise(f => setTimeout(f, 3000));
     
     const testID = Math.random() + '';
     console.log(testID);
