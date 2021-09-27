@@ -8,10 +8,8 @@ beforeAll(async () => {
         return;
     }
     l = require("../cloki");
-    console.log('cloki step', Date.now() );
-    await new Promise(f => setTimeout(f, 5000));
+    console.log('cloki start', Date.now() );
     jest.setTimeout(300000);
-    console.log('post wait', Date.now() );
     
 });
 afterAll(() => {
@@ -27,6 +25,9 @@ it("e2e", async () => {
     if (!e2e()) {
         return;
     }
+    
+    await new Promise(f => setTimeout(f, 3000));
+    
     const testID = Math.random() + '';
     console.log(testID);
     const start = Math.floor((Date.now() - 60 * 1000 * 10) / 60 / 1000) * 60 * 1000;
