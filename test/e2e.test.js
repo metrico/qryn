@@ -19,14 +19,14 @@ function setup () {
   if (!e2e()) {
       return;
   }
-  if (!cloki_local) l = require("../cloki");
+  if (!cloki_local()) l = require("../cloki");
   return new Promise(f => setTimeout(f, 1000));
 }
 afterAll(() => {
     if (!e2e()) {
         return;
     }
-    if (!cloki_local) l.stop();
+    if (!cloki_local()) l.stop();
 });
 
 async function pushPBPoints(endpoint, points) {
