@@ -26,16 +26,10 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: npm install -g pm2
     - run: npm install
     - run: npm run postinstall
     - env:
         CLICKHOUSE_DB: loki
         CLICKHOUSE_TSDB: loki
-      run: pm2 start cloki
-    - env:
-        CLICKHOUSE_DB: loki
-        CLICKHOUSE_TSDB: loki
         INTEGRATION_E2E: 1
-        CLOKI_LOCAL: true
       run: npm run test
