@@ -31,7 +31,7 @@ jobs:
     - env:
         CLICKHOUSE_DB: loki
         CLICKHOUSE_TSDB: loki
-      run: npm start &&
+      run: './cloki.js &&'
     - env:
         CLICKHOUSE_DB: loki
         CLICKHOUSE_TSDB: loki
