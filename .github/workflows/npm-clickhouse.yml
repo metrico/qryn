@@ -24,7 +24,7 @@ jobs:
       uses: actions/setup-node@v2
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm install --unsafe-perm -g cloki
+    - run: npm install --unsafe-perm -g cloki jest
     - env:
         CLICKHOUSE_DB: loki
         CLICKHOUSE_TSDB: loki
