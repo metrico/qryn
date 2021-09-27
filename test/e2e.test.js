@@ -8,9 +8,10 @@ beforeAll(async () => {
         return;
     }
     l = require("../cloki");
+    console.log('cloki step', Date.now() );
     await new Promise(f => setTimeout(f, 5000));
     jest.setTimeout(300000);
-    console.log('waited');
+    console.log('post wait', Date.now() );
     
 });
 afterAll(() => {
