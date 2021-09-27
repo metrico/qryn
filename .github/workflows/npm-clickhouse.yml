@@ -29,4 +29,5 @@ jobs:
         CLICKHOUSE_DB: loki
         CLICKHOUSE_TSDB: loki
         INTEGRATION_E2E: 1
-      run: cd $(dirname $(readlink -f `which cloki`)) && npm run test
+    - run: timeout 5s cloki
+#    - run: cd $(dirname $(readlink -f `which cloki`)) && npm run test
