@@ -152,7 +152,7 @@ module.exports = {
             from: 'rate_c',
             group_by: ['labels', 'timestamp_ms'],
             order_by: {
-                name: 'timestamp_ms',
+                name: ['labels', 'timestamp_ms'],
                 order: 'asc'
             },
             matrix: true
