@@ -123,7 +123,7 @@ module.exports = {
         query_data.select = ['labels', `floor(timestamp_ms / ${duration}) * ${duration} as timestamp_ms`,
             `toFloat64(0) as value`];
         query_data.limit = undefined;
-        query_data.group_by = ['labels', `floor(timestamp_ms / ${duration}) * ${duration}`];
+        query_data.group_by = ['labels', `timestamp_ms`];
         query_data.order_by = {
             name: ['labels', "timestamp_ms"],
             order: "asc"
