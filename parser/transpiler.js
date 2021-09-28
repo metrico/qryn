@@ -2,6 +2,7 @@ const stream_selector_operator_registry = require('./registry/stream_selector_op
 const line_filter_operator_registry = require('./registry/line_filter_operator_registry');
 const log_range_aggregation_registry = require('./registry/log_range_aggregation_registry');
 const high_level_aggregation_registry = require('./registry/high_level_aggregation_registry');
+const line_format = require("./registry/line_format");
 const parser_registry = require('./registry/parser_registry');
 const unwrap = require('./registry/unwrap');
 const unwrap_registry = require('./registry/unwrap_registry');
@@ -39,7 +40,7 @@ module.exports.init_query = () => {
  * @returns {{query: string, matrix: boolean, duration: number | undefined}}
  */
 module.exports.transpile = (request) => {
-    const expression = compiler.ParseScript(request.query);
+    const expression = compiler.ParseScript(request.query.trim());
     const token = expression.rootToken;
     let start = parseMs(request.start, Date.now() - 3600 * 1000);
     let end = parseMs(request.end, Date.now());
@@ -179,8 +180,12 @@ module.exports.transpile_log_stream_selector = (token, query) => {
             query = stream_selector_operator_registry[op](pipeline, query);
             continue;
         }
+        if (pipeline.Child('line_format_expression')) {
+            query = line_format(pipeline, query);
+            continue;
+        }
     }
-    for (const c of ['line_format_expression','labels_format_expression']) {
+    for (const c of ['labels_format_expression']) {
         if (token.Children(c).length > 0) {
             throw new Error(`${c} not supported`);
         }

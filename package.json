@@ -36,7 +36,9 @@
     "bnf": "^1.0.1",
     "scramjet": "^4.36.0",
     "patch-package": "^6.4.7",
-    "protobufjs": "^6.11.2"
+    "protobufjs": "^6.11.2",
+    "handlebars": "^4.7.7",
+    "handlebars-helpers": "^0.10.0"
   },
   "devDependencies": {
     "jest": "^27.0.5",

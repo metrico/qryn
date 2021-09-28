@@ -90,7 +90,7 @@ function apply_by_without_stream(token, query) {
  */
 function add_timestamp(values, timestamp, value, duration, step, counter_fn) {
     const timestamp_without_step = Math.floor(timestamp / duration) * duration
-    const timestamp_with_step = step > duration ? Math.floor(timestamp / duration / step) * step * duration :
+    const timestamp_with_step = step > duration ? Math.floor(timestamp_without_step / step) * step :
         timestamp_without_step;
     if (!values) {
         values = {};
@@ -186,7 +186,7 @@ function apply_via_stream(token, query, counter_fn, summarize_fn) {
     if (token.Child('by_without')) {
         query = apply_by_without_stream(token.Child('opt_by_without'), query);
     }
-    const results = new Map();
+    let results = new Map();
     const duration = durationToMs(token.Child('duration_value').value);
     const step = query.ctx.step;
     return {
@@ -207,8 +207,9 @@ function apply_via_stream(token, query, counter_fn, summarize_fn) {
                             const value = Object.values(_v[1]).reduce((sum, v) => sum + summarize_fn(v), 0);
                             emit({labels: v.labels, timestamp_ms: _v[0], value: value});
                         }
-                        emit({EOF: true})
                     }
+                    results = new Map();
+                    emit({EOF: true})
                     return;
                 }
                 const l = hashLabels(e.labels);

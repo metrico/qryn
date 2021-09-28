@@ -27,7 +27,7 @@ number_value ::= <duration_value> | <bytes_value> | <NUMBER>
 duration_value ::= <NUMBER> ("ns"|"us"|"ms"|"s"|"m"|"h")
 bytes_value ::= <NUMBER> ("b"|"kib"|"kb"|"mb"|"mib"|"gib"|"gb"|"lib"|"tb"|"pib"|"pb"|"eib"|"eb")
 
-line_format_expression ::= "|" <OWSP> "line_format" <quoted_str>
+line_format_expression ::= "|" <OWSP> "line_format" <OWSP> <quoted_str>
 
 labels_format_expression ::= "|" <OWSP> "label_format" <OWSP> <labels_format_expression_param>  *(<OWSP> "," <OWSP> <labels_format_expression_param>)
 labels_format_expression_param ::= <label_rename_param> | <label_inject_param>
