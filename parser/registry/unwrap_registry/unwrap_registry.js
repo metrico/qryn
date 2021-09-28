@@ -295,7 +295,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     first_over_time: builder((token, query) => {
-        return apply_via_request(token, query, 'argmin(unwrapped, uw_rate_a.timestamp_ms)');
+        return apply_via_request(token, query, 'argMin(unwrapped, uw_rate_a.timestamp_ms)');
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val) => {
             return sum ? sum : {first: val}
@@ -308,7 +308,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     last_over_time: builder((token, query) => {
-        return apply_via_request(token, query, 'argmax(unwrapped, uw_rate_a.timestamp_ms');
+        return apply_via_request(token, query, 'argMax(unwrapped, uw_rate_a.timestamp_ms)');
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val) => {
             return val
@@ -321,7 +321,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     stdvar_over_time: builder((token, query) => {
-        return apply_via_request(token, query, 'varPop(unwrapped');
+        return apply_via_request(token, query, 'varPop(unwrapped)');
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val) => {
             throw new Error('not implemented')
@@ -334,7 +334,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     stddev_over_time:  builder((token, query) => {
-        return apply_via_request(token, query, 'stddevPop(unwrapped');
+        return apply_via_request(token, query, 'stddevPop(unwrapped)');
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val) => {
             throw new Error('not implemented')

@@ -23,7 +23,7 @@ Performance is comparable to native Loki, with cLoki outperforming on large rang
 
 The *Loki API* and its Grafana native integration are brilliant, simple and appealing - but we just love **Clickhouse**. 
 
-**cLoki** implements the same API functionality as Loki, buffered by a fast bulking **LRU** sitting on top of **Clickhouse** tables and relying on its *columnar search and insert performance alongside solid distribuion and clustering capabilities* for stored data. Just like Loki, cLoki does not parse or index incoming logs, but rather groups log streams using the same label system as Prometheus. 
+**cLoki** implements the same API functionality as Loki, buffered by a fast bulking **LRU** sitting on top of **Clickhouse** tables and relying on its *columnar search and insert performance alongside solid distribution and clustering capabilities* for stored data. Just like Loki, cLoki does not parse or index incoming logs, but rather groups log streams using the same label system as Prometheus. 
 
 <img src="https://user-images.githubusercontent.com/1423657/54091852-5ce91000-4385-11e9-849d-998c1e5d3243.png" width=700 />
 
