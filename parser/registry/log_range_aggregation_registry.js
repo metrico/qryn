@@ -125,7 +125,7 @@ module.exports = {
         query_data.limit = undefined;
         query_data.group_by = ['labels', `floor(timestamp_ms / ${duration}) * ${duration}`];
         query_data.order_by = {
-            name: "timestamp_ms",
+            name: ['labels', "timestamp_ms"],
             order: "asc"
         }
         query_data.matrix = true;
