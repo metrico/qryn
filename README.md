@@ -27,6 +27,10 @@ The *Loki API* and its Grafana native integration are brilliant, simple and appe
 
 <img src="https://user-images.githubusercontent.com/1423657/54091852-5ce91000-4385-11e9-849d-998c1e5d3243.png" width=700 />
 
+### :fire: LogQL: Supported Features
+
+cLoki implements a broad range of [LogQL Queries](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries) to provide transparent compatibility with the Loki API and Grafana datasources
+
 ### :fire: CliQL: Experimental 2.0 Features
 
 cLoki implements custom query functions for clickhouse timeseries extraction, allowing direct access to any table
