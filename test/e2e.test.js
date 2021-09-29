@@ -191,7 +191,7 @@ it("e2e", async () => {
     adjustMatrixResult(resp, testID);
     expect(resp.data).toMatchSnapshot();
     resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=rate({test_id="${testID}"}| line_format "{ \\"str\\":\\"{{_entry}}\\", \\"freq2\\": {{divide freq 2}} }"|json|unwrap freq2 [1s]) by (test_id, freq2)&start=${start}000000&end=${end}000000&step=120`
+        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=rate({test_id="${testID}"}| line_format "{ \\"str\\":\\"{{_entry}}\\", \\"freq2\\": {{divide freq 2}} }"|json|unwrap freq2 [1s]) by (test_id, freq2)&start=${start}000000&end=${end}000000&step=60`
     );
     adjustMatrixResult(resp, testID);
     expect(resp.data).toMatchSnapshot();
