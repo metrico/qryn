@@ -29,7 +29,7 @@ afterAll(() => {
     if (!cloki_local()) l.stop();
 });
 
-async function pushPBPoints(endpoint, points) {
+/*async function pushPBPoints(endpoint, points) {
     let req = Object.values(points).map((p) => {
         return {
             labels: "{" + Object.entries(p.stream).map((e) => `${e[0]}=${JSON.stringify(e[1])}`),
@@ -40,7 +40,7 @@ async function pushPBPoints(endpoint, points) {
         }
     });
     req = pushMessage.fromObject(req);
-}
+}*/
 
 jest.setTimeout(300000);
 
@@ -87,7 +87,7 @@ it("e2e", async () => {
             return stream;
         });
     }
-    console.log('TEST ID= ' + testID);
+    console.log('TEST ID=' + testID);
     adjustResult(resp);
     expect(resp.data).toMatchSnapshot();
     //empty res
@@ -174,9 +174,26 @@ it("e2e", async () => {
     adjustMatrixResult(resp, testID + "_json");
     expect(resp.data).toMatchSnapshot();
     resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=sum_over_time({test_id="0.8731910604070989_json"}|json lbl_int1="int_val"|lbl_repl="val_repl"|unwrap lbl_int1 [3s]) by (test_id, lbl_repl)&start=${start}000000&end=${end}000000&step=2`
+        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=sum_over_time({test_id="${testID}_json"}|json lbl_int1="int_val"|lbl_repl="val_repl"|unwrap lbl_int1 [3s]) by (test_id, lbl_repl)&start=${start}000000&end=${end}000000&step=2`
     );
     adjustMatrixResult(resp, testID + "_json");
+    expect(resp.data).toMatchSnapshot();
+
+    resp = await axios.get(
+        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}"}| line_format "{ \\"str\\":\\"{{_entry}}\\", \\"freq2\\": {{divide freq 2}} }"&start=${start}000000&end=${end}000000&step=2`
+    );
+    adjustResult(resp, testID);
+    expect(resp.data).toMatchSnapshot();
+    resp = await axios.get(
+        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=rate({test_id="${testID}"}| line_format "{ \\"str\\":\\"{{_entry}}\\", \\"freq2\\": {{divide freq 2}} }"|json|unwrap freq2 [1s]) by (test_id, freq2)&start=${start}000000&end=${end}000000&step=2`
+    );
+
+    adjustMatrixResult(resp, testID);
+    expect(resp.data).toMatchSnapshot();
+    resp = await axios.get(
+        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=rate({test_id="${testID}"}| line_format "{ \\"str\\":\\"{{_entry}}\\", \\"freq2\\": {{divide freq 2}} }"|json|unwrap freq2 [1s]) by (test_id, freq2)&start=${start}000000&end=${end}000000&step=120`
+    );
+    adjustMatrixResult(resp, testID);
     expect(resp.data).toMatchSnapshot();
     //console.log(JSON.stringify(resp.data, 1));
 });

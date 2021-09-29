@@ -197,3 +197,28 @@ it ("shoud transpile unwrap", async () => {
     res = await ds.toArray();
     expect(res).toMatchSnapshot();*/
 });
+
+
+it("should transpile line format", async () => {
+    let script = bnf.ParseScript('{a="b"} | line_format "{{_entry}} {{lbl1}} {{divide int 2}}"')
+    let q = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query());
+    let ds = DataStream.fromArray([{labels: {lbl1: 'a', int: 10}, string: 'str'}]);
+    q.stream.forEach(s => { ds = s(ds)});
+    expect(await ds.toArray()).toMatchSnapshot();
+    script = bnf.ParseScript('{a="b"} | line_format "{ \\"entry\\": \\"{{_entry}}\\", \\"intval\\": {{divide int 2}} }" | json')
+    q = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query());
+    ds = DataStream.fromArray([{labels: {lbl1: 'a', int: 10}, string: 'str'}]);
+    q.stream.forEach(s => { ds = s(ds)});
+    expect(await ds.toArray()).toMatchSnapshot();
+
+    q = {
+        ...transpiler.init_query(),
+        ctx: {step: 1000}
+    };
+    script = bnf.ParseScript('rate({a="b"} | line_format "{ \\"entry\\": \\"{{_entry}}\\", \\"intval\\": {{divide int 2}} }" | json | unwrap intval [1s])')
+    q = transpiler.transpile_unwrap_function(script.rootToken, q);
+    ds = DataStream.fromArray([{labels: {lbl1: 'a', int: 10}, timestamp_ms: 0, string: 'str'}, { EOF: true }]);
+    q.stream.forEach(s => {ds = s(ds)});
+    expect(await ds.toArray()).toMatchSnapshot();
+    //console.log(await ds.toArray());
+});

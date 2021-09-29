@@ -660,6 +660,50 @@ Array [
 ]
 `;
 
+exports[`should transpile line format 1`] = `
+Array [
+  Object {
+    "labels": Object {
+      "int": 10,
+      "lbl1": "a",
+    },
+    "string": "str a 5",
+  },
+]
+`;
+
+exports[`should transpile line format 2`] = `
+Array [
+  Object {
+    "labels": Object {
+      "entry": "str",
+      "int": 10,
+      "intval": "5",
+      "lbl1": "a",
+    },
+    "string": "{ \\"entry\\": \\"str\\", \\"intval\\": 5 }",
+  },
+]
+`;
+
+exports[`should transpile line format 3`] = `
+Array [
+  Object {
+    "labels": Object {
+      "entry": "str",
+      "int": 10,
+      "intval": "5",
+      "lbl1": "a",
+    },
+    "timestamp_ms": "0",
+    "value": 1,
+  },
+  Object {
+    "EOF": true,
+  },
+]
+`;
+
 exports[`should transpile log_range_aggregation 1`] = `
 Object {
   "ctx": Object {
