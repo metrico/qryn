@@ -29,7 +29,19 @@ The *Loki API* and its Grafana native integration are brilliant, simple and appe
 
 ### :fire: LogQL: Supported Features
 
-cLoki implements a broad range of [LogQL Queries](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries) to provide transparent compatibility with the Loki API and Grafana datasources
+cLoki implements a broad range of [LogQL Queries](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries) to provide transparent compatibility with the Loki API and Grafana datasource
+
+![image](https://user-images.githubusercontent.com/1423657/135249640-5f5a61e5-0f94-4517-b052-76d47c3572f5.png)
+
+- [Log Stream Selector](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#log-stream-selector)
+- [Line Filter Expression](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#line-filter-expression)
+- [Label Filter Expression](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#label-filter-expression)
+- [Parser Expression](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#parser-expression)
+- [Log Range Aggregations](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#log-range-aggregations)
+- [Aggregation operators](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#aggregation-operators)
+- [Unwrap Expression.](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#unwrap-expression)
+- [Line Format Expression](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#line-format-expression---handlebars--)
+
 
 ### :fire: CliQL: Experimental 2.0 Features
 
