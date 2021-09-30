@@ -91,11 +91,10 @@ fastify.addContentTypeParser("application/x-protobuf", {parseAs: 'buffer'},
     _data.streams = _data.streams.map(s => ({
         ...s,
         entries: s.entries.map(e => {
-            let nanos = "000000000" + e.timestamp.nanos;
-            nanos = Math.floor(parseInt(nanos.substr(nanos.length - 9)) / 1000000);
+            let millis = Math.floor(e.timestamp.nanos / 1000000);
             return {
                 ...e,
-                timestamp: e.timestamp.seconds * 1000 + nanos,
+                timestamp: e.timestamp.seconds * 1000 + millis,
             };
             })
     }));
