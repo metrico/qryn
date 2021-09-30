@@ -1,0 +1,35 @@
+# This workflow will validate cloki using nodejs + clickhouse
+
+name: CLOKI CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x, 14.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+    - uses: EpicStep/clickhouse-github-action@v1.0.0
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - run: npm install
+    - run: npm run postinstall
+    - env:
+        CLICKHOUSE_DB: loki
+        CLICKHOUSE_TSDB: loki
+        INTEGRATION_E2E: 1
+      run: npm run test

@@ -1,6 +1,8 @@
-# Grafana + cLoki + Prometheus & Co
+# Grafana + cLoki + paStash
 
 #### BETA VERSION! PLEASE REPORT BUGS AND IMPROVEMENTS
+
+This docker bundle will spin up a full system including Grafana, cLoki, paStash and Prometheus for testing and evaluation purposes.
 
 --------
 
@@ -12,9 +14,9 @@ docker-compose up
 
 to bring up:  
 
-* [Grafana]      localhost:3000 (admin/admin)
-* [Prometheus]   localhost:9090 (admin/admin)
-* [Alertmanager] localhost:9093 (admin/admin)
+* Grafana      localhost:3000 (admin/admin)
+* Prometheus   localhost:9090 (admin/admin)
+* Alertmanager localhost:9093 (admin/admin)
 
 When the Grafana dashboard autoprovisioning does not work for you make sure you have no old grafana volumes.
 

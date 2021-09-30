@@ -5,57 +5,6 @@ volumes:
     grafana_data: {}
 
 services:
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    volumes:
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention=30d'
-      - '--web.enable-lifecycle'
-    restart: unless-stopped
-    expose:
-      - 9090
-    labels:
-      org.label-schema.group: "monitoring"
-  
-  alertmanager:
-    image: prom/alertmanager:latest
-    container_name: alertmanager
-    volumes: 
-      - ./alertmanager/:/etc/alertmanager/
-    command:
-      - '--config.file=/etc/alertmanager/config.yml'
-      - '--storage.path=/alertmanager'
-    restart: unless-stopped
-    expose:
-      - 9093
-    labels:
-      org.label-schema.group: "monitoring"
-
-  nodeexporter:
-    image: prom/node-exporter:latest
-    container_name: nodeexporter
-    user: root
-    privileged: true
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
-    restart: unless-stopped
-    expose:
-      - 9100
-    labels:
-      org.label-schema.group: "monitoring"
-  
   grafana:
     image: grafana/grafana:master
     container_name: grafana
@@ -90,7 +39,7 @@ services:
       - infinity
 
   cloki:
-    image: qxip/cloki:master
+    image: qxip/cloki:latest
     container_name: loki
     restart: unless-stopped
     expose:
@@ -99,19 +48,20 @@ services:
       - "3100:3100"
     environment:
       - CLICKHOUSE_SERVER=clickhouse-seed
-#      - DEBUG=true
+#     - CLOKI_LOGIN=logger
+#     - CLOKI_PASSWORD=password
+      - DEBUG=false
     depends_on:
       - clickhouse-seed
     labels:
       org.label-schema.group: "monitoring"
 
-  promtail:
-    container_name: promtail
-    image: grafana/promtail:master
+  pastash:
+    image: qxip/pastash-loki
+    container_name: pastash
     volumes:
-      - ./loki/promtail-docker-config.yaml:/etc/promtail/promtail-docker-config.yaml
-      - /var/log:/var/log
-    command: "-config.file=/etc/promtail/promtail-docker-config.yaml"
+      - ./loki/pastash.json:/config/loki.conf
+      - /var/log:/var/log:ro
 
   caddy:
     image: stefanprodan/caddy

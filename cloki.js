@@ -1,241 +1,152 @@
+#!/usr/bin/env node
+
 /*
  * Loki API to Clickhouse Gateway
- * (C) 2018-2019 QXIP BV
- * Some Rights Reserved.
+ * (C) 2018-2021 QXIP BV
  */
 
-/* TODO: split into modules and prioritize performance! contributors help yourselves :) */
+this.debug = process.env.DEBUG || false;
+var debug = this.debug;
 
-var debug = process.env.DEBUG || false;
+this.readonly = process.env.READONLY || false;
+this.http_user = process.env.CLOKI_LOGIN || false;
+this.http_pass = process.env.CLOKI_PASSWORD || false;
 
-var DATABASE = require('./lib/db/clickhouse');
-var UTILS = require('./lib/utils');
+var DATABASE = require("./lib/db/clickhouse");
+var UTILS = require("./lib/utils");
 
 /* ProtoBuf Helper */
-var fs = require('fs');
-//var protoBuff = require("protocol-buffers");
-//var messages = protoBuff(fs.readFileSync('lib/loki.proto'))
-
-var protobuf = require("protobufjs");
-var pushDecode;
-protobuf.load("lib/loki.proto", function(err, root) {
-    if (err)
-        throw err;
-	console.log('Loading Decoder...');
-	pushDecode = root.lookupType("logproto.PushRequest");
-});
+var fs = require("fs");
+var protoBuff = require("protocol-buffers");
+var messages = protoBuff(fs.readFileSync("lib/loki.proto"));
 
 /* Fingerprinting */
-var fingerPrint = UTILS.fingerPrint;
-var toJSON = UTILS.toJSON;
+this.fingerPrint = UTILS.fingerPrint;
+this.toJSON = UTILS.toJSON;
 
-// Database Bulk Helpers */
-var bulk = DATABASE.cache.bulk; // samples
-var bulk_labels = DATABASE.cache.bulk_labels; // labels
-var labels = DATABASE.cache.labels; // in-memory labels
+/* Database this.bulk Helpers */
+this.bulk = DATABASE.cache.bulk; // samples
+this.bulk_labels = DATABASE.cache.bulk_labels; // labels
+this.labels = DATABASE.cache.labels; // in-memory labels
 
 /* Function Helpers */
-var labelParser = UTILS.labelParser;
+this.labelParser = UTILS.labelParser;
 
 var init = DATABASE.init;
-var reloadFingerprints = DATABASE.reloadFingerprints;
-var scanFingerprints = DATABASE.scanFingerprints;
+this.reloadFingerprints = DATABASE.reloadFingerprints;
+this.scanFingerprints = DATABASE.scanFingerprints;
+this.scanMetricFingerprints = DATABASE.scanMetricFingerprints;
+this.scanClickhouse = DATABASE.scanClickhouse;
 
-init(process.env.CLICKHOUSE_TSDB || 'loki');
-
+if (!this.readonly) init(process.env.CLICKHOUSE_DB || "cloki");
 
 /* Fastify Helper */
-const fastify = require('fastify')({
-  logger: false
-})
-
-fastify.register(require('fastify-url-data'), (err) => {
-  if (err) throw err
-})
-
-fastify.addContentTypeParser('application/x-protobuf', { parseAs: 'buffer' }, function (req, payload, done) {
-  // console.log('protobuf',payload.toString());
-  try {
-  	var decoded = pushDecode.decode(payload);
-	done(decoded)
-  } catch(e){
-	console.error(e);
-  	done()
-  }
+const fastify = require("fastify")({
+    logger: false,
 });
 
-/*
-fastify.addContentTypeParser('application/x-protobuf', function (req, done) {
-  var buffer = Buffer.alloc(parseInt(req.headers['content-length']));
-  req.on('data', chunk => { buffer = Buffer.concat([buffer, chunk]) })
-  req.on('end', () => {
-    try {
-        console.log('protobuf',buffer);
-	var decoded = pushDecode.decode(buffer);
-	done(decoded)
-    } catch(e) {
-        console.error('protobuf',e);
-	done()
+const path = require("path");
+fastify.register(require("fastify-url-data"));
+
+fastify.after((err) => {
+    if (err) throw err;
+});
+
+
+
+/* Enable Simple Authentication */
+if (this.http_ && this.http_password) {
+    fastify.register(require("fastify-basic-auth"), {
+        validate
+    });
+    fastify.after(() => {
+        fastify.addHook("preHandler", fastify.basicAuth);
+    });
+}
+function validate(username, password, req, reply, done) {
+    if (username === this.http_user && password === this.http_password) {
+        done();
+    } else {
+        done(new Error("Unauthorized!: Wrong username/password."));
     }
-  })
-})
+}
 
-*/
+fastify.addContentTypeParser("text/plain", {
+    parseAs: "string"
+}, function(req, body, done) {
+    try {
+        var json = JSON.parse(body);
+        done(null, json);
+    } catch (err) {
+        err.statusCode = 400;
+        done(err, undefined);
+    }
+});
 
-/*
-fastify.addContentTypeParser('*', function (req, done) {
-  done()
-})
-*/
+/* Protobuf Handler */
+fastify.addContentTypeParser("application/x-protobuf", function(req, done) {
+    var data = "";
+    req.on("data", (chunk) => {
+        data += chunk;
+    });
+    req.on("error", (error) => {
+        console.log(error);
+    });
+    req.on("end", () => {
+        done(messages.PushRequest.decode(data));
+    });
+});
 
-fastify.get('/', (request, reply) => {
-  reply.send({ hello: 'loki' })
-})
+/* 404 Handler */
+const handler_404 = require('./lib/handlers/404.js').bind(this);
+fastify.setNotFoundHandler(handler_404);
 
+/* Hello cloki test API */
+const handler_hello = require('./lib/handlers/hello.js').bind(this);
+fastify.get("/hello", handler_hello);
 
 /* Write Handler */
-/*
-    Accepts JSON formatted requests when the header Content-Type: application/json is sent.
-    Example of the JSON format:
+const handler_push = require('./lib/handlers/push.js').bind(this);
+fastify.post("/loki/api/v1/push", handler_push);
 
-	{
-	    "streams": [
-	        {
-	            "labels": "{foo=\"bar\"}",
-	            "entries": [
-	                {"ts": "2018-12-18T08:28:06.801064-04:00", "line": "baz"}
-	            ]
-	        }
-	    ]
-	}
-*/
-
-fastify.post('/api/prom/push', (req, res) => {
-  if (debug) console.log('POST /api/prom/push');
-  if (debug) console.log('QUERY: ', req.query);
-  if (debug) console.log('BODY: ', req.body);
-  if (!req.body) {
-	 console.error('No Request Body!', req.headers);
-	 return;
-  }
-  var streams;
-  if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/json') > -1) {
-	streams = req.body.streams;
-  } else if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/x-protobuf') > -1) {
-	// streams = messages.PushRequest.decode(req.body)
-	streams = req.body;
-	if (debug) console.log('GOT protoBuf',streams);
-  }
-  if (streams) {
-	streams.forEach(function(stream){
-		try {
-			try {
-				var JSON_labels = toJSON(stream.labels.replace(/\!?=/g,':'));
-			} catch(e) { console.error(e); return; }
-			// Calculate Fingerprint
-			var finger = fingerPrint(JSON.stringify(JSON_labels));
-			if (debug) console.log('LABELS FINGERPRINT',stream.labels,finger);
-			labels.add(finger,stream.labels);
-			// Store Fingerprint
- 			bulk_labels.add(finger,[new Date().toISOString().split('T')[0], finger, JSON.stringify(JSON_labels), JSON_labels['__name__']||'' ]);
-			for(var key in JSON_labels) {
-			   if (debug) console.log('Storing label',key, JSON_labels[key]);
-			   labels.add('_LABELS_',key); labels.add(key, JSON_labels[key]);
-			}
-		} catch(e) { console.log(e) }
-
-		if (stream.entries) {
-			stream.entries.forEach(function(entry){
-				if (debug) console.log('BULK ROW',entry,finger);
-				if ( !entry && (!entry.timestamp||!entry.ts) && (!entry.value||!entry.line)) { console.error('no bulkable data',entry); return; }
-				var values = [ finger, new Date(entry.timestamp||entry.ts).getTime(), entry.value || 0, entry.line || "" ];
-				bulk.add(finger,values);
-			})
-		}
-	});
-  }
-  res.send(200);
-});
-
+/* Telegraf HTTP Bulk handler */
+const handler_telegraf = require('./lib/handlers/telegraf.js').bind(this);
+fastify.post("/telegraf", handler_telegraf);
 
 /* Query Handler */
-/*
-   For doing queries, accepts the following parameters in the query-string:
-
-	query: a logQL query
-	limit: max number of entries to return
-	start: the start time for the query, as a nanosecond Unix epoch (nanoseconds since 1970)
-	end: the end time for the query, as a nanosecond Unix epoch (nanoseconds since 1970)
-	direction: forward or backward, useful when specifying a limit
-	regexp: a regex to filter the returned results, will eventually be rolled into the query language
-*/
-
-fastify.get('/api/prom/query', (req, res) => {
-  if (debug) console.log('GET /api/prom/query');
-  if (debug) console.log('QUERY: ', req.query );
-  // console.log( req.urlData().query.replace('query=',' ') );
-  var params = req.query;
-  var resp = { "streams": [] };
-  if (!req.query.query) { res.send(resp);return; }
-  try {
-
-	  var label_rules = labelParser(req.query.query);
-	  var queries = req.query.query.replace(/\!?=/g,':');
-	  var JSON_labels = toJSON(queries);
-  } catch(e){ console.error(e, queries); res.send(resp); }
-  if (debug) console.log('SCAN LABELS',JSON_labels,label_rules,params)
-  scanFingerprints(JSON_labels,res,params,label_rules);
-
-});
-
+const handler_query_range = require('./lib/handlers/query_range.js').bind(this);
+fastify.get("/loki/api/v1/query_range", handler_query_range);
 
 /* Label Handlers */
-/*
-   For retrieving the names of the labels one can query on.
-   Responses looks like this:
+/* Label Value Handler via query (test) */
+const handler_query = require('./lib/handlers/query.js').bind(this);
+fastify.get("/loki/api/v1/query", handler_query);
 
-	{
-	  "values": [
-	    "instance",
-	    "job",
-	    ...
-	  ]
-	}
-*/
-
-fastify.get('/api/prom/label', (req, res) => {
-  if (debug) console.log('GET /api/prom/label');
-  if (debug) console.log('QUERY: ', req.query);
-  var all_labels = labels.get('_LABELS_');
-  var resp = { "values": all_labels };
-  res.send(resp);
-});
+/* Label Handlers */
+const handler_label = require('./lib/handlers/label.js').bind(this);
+fastify.get("/loki/api/v1/label", handler_label);
+fastify.get("/loki/api/v1/labels", handler_label);
 
 /* Label Value Handler */
-/*
-   For retrieving the label values one can query on.
-   Responses looks like this:
+const handler_label_values = require('./lib/handlers/label_values.js').bind(this);
+fastify.get("/loki/api/v1/label/:name/values", handler_label_values);
 
-	{
-	  "values": [
-	    "default",
-	    "cortex-ops",
-	    ...
-	  ]
-	}
-*/
-
-fastify.get('/api/prom/label/:name/values', (req, res) => {
-  if (debug) console.log('GET /api/prom/label/'+req.params.name+'/values');
-  if (debug) console.log('QUERY LABEL: ', req.params.name);
-  var all_values = labels.get(req.params.name);
-  var resp = { "values": all_values };
-  res.send(resp);
-});
+/* Series Placeholder - we do not track this as of yet */
+const handler_series = require('./lib/handlers/series.js').bind(this);
+fastify.get("/loki/api/v1/series", handler_series);
 
 // Run API Service
-fastify.listen(process.env.PORT || 3100, process.env.HOST || '0.0.0.0', (err, address) => {
-  if (err) throw err
-  console.log('cLoki API up');
-  fastify.log.info(`server listening on ${address}`)
-})
+fastify.listen(
+    process.env.PORT || 3100,
+    process.env.HOST || "0.0.0.0",
+    (err, address) => {
+        if (err) throw err;
+        console.log("cLoki API up");
+        fastify.log.info(`cloki API listening on ${address}`);
+    }
+);
+
+module.exports.stop = () => {
+    fastify.close();
+    DATABASE.stop();
+};

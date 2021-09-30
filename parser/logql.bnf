@@ -1,0 +1,55 @@
+<SYNTAX> ::= <log_stream_selector> | <unwrap_function> | <log_range_aggregation> | <aggregation_operator>
+
+log_stream_selector ::= "{" <OWSP> <log_stream_selector_rule> *(<OWSP> "," <OWSP> <log_stream_selector_rule>) <OWSP> "}" <OWSP> *(<OWSP><log_pipeline>)
+
+log_stream_selector_rule ::= <label> <OWSP> <operator> <OWSP> <quoted_str>
+label ::= (<ALPHA> | "_") *(<ALPHA> | "_" | <DIGITS>)
+operator ::= <stream_selector_operator_registry>
+quoted_str ::= <QLITERAL> | <AQLITERAL>
+
+log_pipeline ::= <line_filter_expression> | <parser_expression> | <label_filter_expression> | <line_format_expression> | <labels_format_expression>
+
+line_filter_expression ::= <line_filter_operator> <OWSP> <quoted_str>
+line_filter_operator ::= <line_filter_operator_registry>
+
+parser_expression ::= "|" <OWSP> <parser_fn_name> <OWSP> <opt_parameters>
+parser_fn_name ::= <parser_registry>
+opt_parameters ::=  <parameter> <OWSP> *("," <OWSP> <parameter>) | <BLANK>
+parameter ::= <label> <OWSP> "=" <OWSP> <quoted_str> | <quoted_str>
+
+label_filter_expression ::= "|" <OWSP> <string_label_filter_expression> | "|" <OWSP> <number_label_filter_expression>
+
+string_label_filter_expression ::= <label> <OWSP> <operator> <OWSP> <quoted_str>
+
+number_label_filter_expression ::= <label> <OWSP> <number_operator> <OWSP> <number_value>
+number_operator ::= <number_operator_registry>
+number_value ::= <duration_value> | <bytes_value> | <NUMBER>
+duration_value ::= <NUMBER> ("ns"|"us"|"ms"|"s"|"m"|"h")
+bytes_value ::= <NUMBER> ("b"|"kib"|"kb"|"mb"|"mib"|"gib"|"gb"|"lib"|"tb"|"pib"|"pb"|"eib"|"eb")
+
+line_format_expression ::= "|" <OWSP> "line_format" <OWSP> <quoted_str>
+
+labels_format_expression ::= "|" <OWSP> "label_format" <OWSP> <labels_format_expression_param>  *(<OWSP> "," <OWSP> <labels_format_expression_param>)
+labels_format_expression_param ::= <label_rename_param> | <label_inject_param>
+label_rename_param ::= <label> <OWSP> "=" <OWSP> <label>
+label_inject_param ::= <label> <OWSP> "=" <OWSP> <quoted_str>
+
+log_range_aggregation ::= <log_range_aggregation_fn> <OWSP> "(" <OWSP> <log_stream_selector> <OWSP> "[" <duration_value> "]" <OWSP> ")"
+log_range_aggregation_fn ::= <log_range_aggregation_registry>
+
+aggregation_operator ::= <aggregation_operator_fn> <OWSP> (<prefix_agg_operator> | <postfix_agg_operator>)
+
+postfix_agg_operator ::= "(" <OWSP> [<NUMBER> <OWSP> "," <OWSP>] <log_range_aggregation> <OWSP>  ")" <OWSP> <opt_by_without> <OWSP>
+
+prefix_agg_operator ::= <opt_by_without> <OWSP> "(" <OWSP> [<NUMBER> <OWSP> "," <OWSP>] <log_range_aggregation> <OWSP>  ")"
+
+aggregation_operator_fn ::= <high_level_aggregation_registry>
+opt_by_without ::= <by_without> <OWSP> "(" <OWSP> <label_list> <OWSP> ")" | <BLANK>
+by_without ::= "by" | "without"
+label_list ::= <label> <OWSP> *("," <OWSP> <label>)
+
+unwrap_expression ::= <log_stream_selector> <OWSP> <unwrap_statement>
+unwrap_statement ::= "|" <OWSP> "unwrap" <OWSP> <label>
+unwrap_function ::= <unwrap_fn> <OWSP> "(" <OWSP> [<scalar_param> <OWSP> ","] <OWSP> <unwrap_expression> <OWSP> "[" <duration_value> "]" <OWSP> ")" <OWSP> <opt_by_without>
+scalar_param ::= <NUMBER>
+unwrap_fn ::= <unwrap_registry>

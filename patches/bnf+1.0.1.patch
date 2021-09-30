@@ -1,0 +1,54 @@
+diff --git a/node_modules/bnf/BnfRules.js b/node_modules/bnf/BnfRules.js
+index 1f949c1..5d02c75 100755
+--- a/node_modules/bnf/BnfRules.js
++++ b/node_modules/bnf/BnfRules.js
+@@ -135,9 +135,13 @@ exports.bnfRules = {
+   ESCAQUOTE( token ){
+     return token.TryString( Buffer.from( [ 92, 96 ] ) );
+   },
++  ESCSLASH(token){
++    return token.TryString( Buffer.from( [ 92, 92 ] ) );
++  },
+   //DO BE REMOVED IN THIS MAJOR VERSION! DO NOT USE!
+   SQEANYCHAR( token ){
+     return token.Or( [
++      token.Rule( "ESCSLASH" ),
+       token.Rule( "ESCSQUOTE" ),
+       token.Rule( "ANYCHAR" ),
+       token.Rule( "QUOTE" ),
+@@ -162,6 +166,7 @@ exports.bnfRules = {
+   //DO BE REMOVED IN THIS MAJOR VERSION! DO NOT USE!
+   QEANYCHAR( token ){
+     return token.Or( [
++      token.Rule( "ESCSLASH" ),
+       token.Rule( "ESCQUOTE" ),
+       token.Rule( "ANYCHAR" ),
+       token.Rule( "SQUOTE" ),
+@@ -186,6 +191,7 @@ exports.bnfRules = {
+   //DO BE REMOVED IN THIS MAJOR VERSION! DO NOT USE!
+   AQEANYCHAR( token ){
+     return token.Or( [
++      token.Rule( "ESCSLASH" ),
+       token.Rule( "ESCAQUOTE" ),
+       token.Rule( "ANYCHAR" ),
+       token.Rule( "SQUOTE" ),
+diff --git a/node_modules/bnf/Token.js b/node_modules/bnf/Token.js
+index f592ae5..9c47803 100755
+--- a/node_modules/bnf/Token.js
++++ b/node_modules/bnf/Token.js
+@@ -226,13 +226,13 @@ exports.Token = class Token{
+ 
+   TryString( charBuffer ){
+     let stringBuffer = Buffer.alloc( charBuffer.length );
+-    this.script.scriptBuffer.copy( stringBuffer, 0, this.point, charBuffer.length );
++    this.script.scriptBuffer.copy( stringBuffer, 0, this.point, this.point + charBuffer.length );
+     if( !stringBuffer.equals( charBuffer ) ){
+       return false;
+     }
+ 
+     this.SetValue( stringBuffer.toString() );
+-    this.point += charArray.length;
++    this.point += charBuffer.length;
+     return true;
+   }
+ 
