@@ -1,4 +1,4 @@
-const {durationToMs} = require("./common");
+const {durationToMs, getDuration} = require("./common");
 
 /**
  *
@@ -8,7 +8,7 @@ const {durationToMs} = require("./common");
  * @returns {registry_types.Request}
  */
 const generic_rate = (value_expr, token, query) => {
-    const duration = durationToMs(token.Child('duration_value').value);
+    const duration = getDuration(token, query);
     const step = query.ctx.step;
     /**
      *
@@ -77,7 +77,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     rate: (token, query) => {
-        const duration = durationToMs(token.Child('duration_value').value);
+        const duration = getDuration(token, query);
         return generic_rate(`toFloat64(count(1)) * 1000 / ${duration}`, token, query);
 
     },
@@ -99,7 +99,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     bytes_rate: (token, query) => {
-        const duration = durationToMs(token.Child('duration_value').value);
+        const duration = getDuration(token, query);
         return generic_rate(`toFloat64(sum(length(string))) * 1000 / ${duration}`, token, query);
     },
     /**
@@ -118,7 +118,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     absent_over_time: (token, query) => {
-        const duration = durationToMs(token.Child('duration_value').value);
+        const duration = getDuration(token, query);
         const query_data = {...query};
         query_data.select = ['labels', `floor(timestamp_ms / ${duration}) * ${duration} as timestamp_ms`,
             `toFloat64(0) as value`];

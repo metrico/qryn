@@ -74,6 +74,17 @@ module.exports.map = (s, fn) => s.map((e) => {
 
 /**
  *
+ * @param token {Token}
+ * @param query {registry_types.Request}
+ * @returns {number}
+ */
+module.exports.getDuration = (token, query) => {
+    const duration = durationToMs(token.Child('duration_value').value);
+    return Math.max(duration, query.ctx && query.ctx.step ? query.ctx.step : 1000);
+}
+
+/**
+ *
  * @param eof {any}
  * @returns boolean
  */

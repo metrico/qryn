@@ -1,4 +1,4 @@
-const {durationToMs} = require("../common");
+const {durationToMs, getDuration} = require("../common");
 const {parseLabels, hashLabels} = require("../../../common");
 /**
  *
@@ -120,7 +120,7 @@ function apply_via_request(token, query, value_expr) {
     } else {
         labels = concat_labels(query);
     }
-    const duration = durationToMs(token.Child('duration_value').value);
+    const duration = getDuration(token, query);
     const step = query.ctx.step;
     /**
      *
@@ -187,7 +187,7 @@ function apply_via_stream(token, query, counter_fn, summarize_fn) {
         query = apply_by_without_stream(token.Child('opt_by_without'), query);
     }
     let results = new Map();
-    const duration = durationToMs(token.Child('duration_value').value);
+    const duration = getDuration(token, query);
     const step = query.ctx.step;
     return {
         ...query,
@@ -230,11 +230,11 @@ function apply_via_stream(token, query, counter_fn, summarize_fn) {
 
 module.exports = {
     rate: builder((token, query) => {
-        const duration = durationToMs(token.Child('duration_value').value);
-        return apply_via_request(token, query, `COUNT(1) / ${duration / 1000}`)
+        const duration = getDuration(token, query);
+        return apply_via_request(token, query, `SUM(unwrapped) / ${duration / 1000}`)
     }, (token, query) => {
-        const duration = durationToMs(token.Child('duration_value').value);
-        return apply_via_stream(token, query, (sum) => sum+1, (sum) => sum / duration * 1000);
+        const duration = getDuration(token, query);
+        return apply_via_stream(token, query, (sum, val) => sum+val, (sum) => sum / duration * 1000);
     }),
 
     /**
