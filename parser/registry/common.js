@@ -79,7 +79,7 @@ module.exports.map = (s, fn) => s.map((e) => {
  * @returns {number}
  */
 module.exports.getDuration = (token, query) => {
-    const duration = durationToMs(token.Child('duration_value').value);
+    const duration = module.exports.durationToMs(token.Child('duration_value').value);
     return Math.max(duration, query.ctx && query.ctx.step ? query.ctx.step : 1000);
 }
 
