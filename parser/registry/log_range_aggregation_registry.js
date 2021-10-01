@@ -1,4 +1,4 @@
-const {durationToMs, getDuration} = require("./common");
+const {getDuration} = require("./common");
 
 /**
  *
@@ -48,7 +48,7 @@ const generic_rate = (value_expr, token, query) => {
                 select: [
                     'labels',
                     `floor(timestamp_ms / ${step}) * ${step} as timestamp_ms`,
-                    `avg(rate_b.value) as value`
+                    `argMin(rate_b.value, rate_b.timestamp_ms) as value`
                 ],
                 from: 'rate_b',
                 group_by: ['labels', `timestamp_ms`],
