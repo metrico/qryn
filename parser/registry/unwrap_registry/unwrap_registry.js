@@ -318,7 +318,7 @@ module.exports = {
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val, time) => {
             return sum && sum.time > time ? sum : {time: time, first: val}
-        }, (sum) => sum.first, true);
+        }, (sum) => sum.first);
     }),
     /**
      * stdvar_over_time(unwrapped-range): the population standard variance of the values in the specified interval.
