@@ -235,6 +235,7 @@ function apply_via_stream(token, query, counter_fn, summarize_fn, last_value) {
 }
 
 module.exports = {
+    apply_via_stream: apply_via_stream,
     rate: builder((token, query) => {
         const duration = getDuration(token, query);
         return apply_via_request(token, query, `SUM(unwrapped) / ${duration / 1000}`)
