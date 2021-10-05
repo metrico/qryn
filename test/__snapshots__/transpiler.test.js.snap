@@ -153,11 +153,7 @@ Object {
         Array [
           "OR",
           "arrayFirstIndex(x -> x.1 == 'int_lbl2', extra_labels) != 0",
-          Array [
-            "AND",
-            "arrayFirstIndex(x -> x.1 == 'int_lbl2', extra_labels) == 0",
-            "JSONHas(labels, 'int_lbl2')",
-          ],
+          "JSONHas(labels, 'int_lbl2')",
         ],
         "isNotNull(unwrapped)",
       ],
@@ -251,11 +247,7 @@ Object {
         Array [
           "OR",
           "arrayFirstIndex(x -> x.1 == 'int_lbl', extra_labels) != 0",
-          Array [
-            "AND",
-            "arrayFirstIndex(x -> x.1 == 'int_lbl', extra_labels) == 0",
-            "JSONHas(labels, 'int_lbl')",
-          ],
+          "JSONHas(labels, 'int_lbl')",
         ],
         "isNotNull(unwrapped)",
       ],
