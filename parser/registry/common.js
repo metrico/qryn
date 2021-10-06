@@ -1,3 +1,5 @@
+const glob = require("glob");
+
 /**
  * @param query {registry_types.Request}
  * @param clauses {string[]}
@@ -89,3 +91,14 @@ module.exports.getDuration = (token, query) => {
  * @returns boolean
  */
 module.exports.isEOF = (eof) => eof.EOF;
+
+module.exports.getPlugins = (path, cb) => {
+    let plugins = {};
+    for (let file of glob.sync(path + "/*.js")) {
+        const mod = require(file);
+        for (let fn of Object.keys(mod)) {
+            plugins[fn] = cb ? cb(mod[fn]()) : mod[fn]();
+        }
+    }
+    return plugins;
+}
