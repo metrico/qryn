@@ -49,7 +49,7 @@ function via_query_with_extra_labels(label, query) {
     return _and(query, [[
         'OR',
         `arrayFirstIndex(x -> x.1 == '${label}', extra_labels) != 0`,
-        ['AND', `arrayFirstIndex(x -> x.1 == '${label}', extra_labels) == 0`, `JSONHas(labels, '${label}')`]
+        `JSONHas(labels, '${label}')`
     ], `isNotNull(unwrapped)`]);
 }
 

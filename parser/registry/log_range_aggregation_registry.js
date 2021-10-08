@@ -1,4 +1,4 @@
-const {durationToMs} = require("./common");
+const {getDuration} = require("./common");
 
 /**
  *
@@ -8,7 +8,7 @@ const {durationToMs} = require("./common");
  * @returns {registry_types.Request}
  */
 const generic_rate = (value_expr, token, query) => {
-    const duration = durationToMs(token.Child('duration_value').value);
+    const duration = getDuration(token, query);
     const step = query.ctx.step;
     /**
      *
@@ -25,6 +25,7 @@ const generic_rate = (value_expr, token, query) => {
     return {
         ctx: { ...query.ctx, duration: duration },
         with: {
+            ...(query.with || {}),
             rate_a: {
                 ...query,
                 ctx: undefined,
@@ -48,7 +49,7 @@ const generic_rate = (value_expr, token, query) => {
                 select: [
                     'labels',
                     `floor(timestamp_ms / ${step}) * ${step} as timestamp_ms`,
-                    `avg(rate_b.value) as value`
+                    `argMin(rate_b.value, rate_b.timestamp_ms) as value`
                 ],
                 from: 'rate_b',
                 group_by: ['labels', `timestamp_ms`],
@@ -77,7 +78,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     rate: (token, query) => {
-        const duration = durationToMs(token.Child('duration_value').value);
+        const duration = getDuration(token, query);
         return generic_rate(`toFloat64(count(1)) * 1000 / ${duration}`, token, query);
 
     },
@@ -99,7 +100,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     bytes_rate: (token, query) => {
-        const duration = durationToMs(token.Child('duration_value').value);
+        const duration = getDuration(token, query);
         return generic_rate(`toFloat64(sum(length(string))) * 1000 / ${duration}`, token, query);
     },
     /**
@@ -118,7 +119,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     absent_over_time: (token, query) => {
-        const duration = durationToMs(token.Child('duration_value').value);
+        const duration = getDuration(token, query);
         const query_data = {...query};
         query_data.select = ['labels', `floor(timestamp_ms / ${duration}) * ${duration} as timestamp_ms`,
             `toFloat64(0) as value`];

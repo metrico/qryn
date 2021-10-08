@@ -1,3 +1,5 @@
+const glob = require("glob");
+
 /**
  * @param query {registry_types.Request}
  * @param clauses {string[]}
@@ -74,7 +76,29 @@ module.exports.map = (s, fn) => s.map((e) => {
 
 /**
  *
+ * @param token {Token}
+ * @param query {registry_types.Request}
+ * @returns {number}
+ */
+module.exports.getDuration = (token, query) => {
+    const duration = module.exports.durationToMs(token.Child('duration_value').value);
+    return duration; //Math.max(duration, query.ctx && query.ctx.step ? query.ctx.step : 1000);
+}
+
+/**
+ *
  * @param eof {any}
  * @returns boolean
  */
 module.exports.isEOF = (eof) => eof.EOF;
+
+module.exports.getPlugins = (path, cb) => {
+    let plugins = {};
+    for (let file of glob.sync(path + "/*.js")) {
+        const mod = require(file);
+        for (let fn of Object.keys(mod)) {
+            plugins[fn] = cb ? cb(mod[fn]()) : mod[fn]();
+        }
+    }
+    return plugins;
+}

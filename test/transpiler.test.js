@@ -222,3 +222,18 @@ it("should transpile line format", async () => {
     expect(await ds.toArray()).toMatchSnapshot();
     //console.log(await ds.toArray());
 });
+
+it("should transpile plugins", async () => {
+    let script = bnf.ParseScript('derivative({a="b"} | unwrap int [10s])');
+    let _q = transpiler.init_query();
+    _q.ctx = {step: 1000};
+    let q = transpiler.transpile_unwrap_function(script.rootToken, _q);
+    let ds = DataStream.fromArray([
+        {labels: {lbl1: 'a'}, unwrapped: 10, timestamp_ms: 0, string: 'str'},
+        {labels: {lbl1: 'a'}, unwrapped: 20, timestamp_ms: 1000, string: 'str'},
+        {labels: {lbl1: 'a'}, unwrapped: 30, timestamp_ms: 2000, string: 'str'},
+        { EOF: true }
+    ]);
+    q.stream.forEach(s => {ds = s(ds)});
+    expect(await ds.toArray()).toMatchSnapshot();
+});

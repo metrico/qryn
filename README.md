@@ -12,7 +12,9 @@ APIs are compatible with [Grafana](http://docs.grafana.org/features/explore/), [
 
 Performance is comparable to native Loki, with cLoki outperforming on large range filtered queries.
 
-:bulb: Get started using the [cLoki Wiki](https://github.com/lmangani/cLoki/wiki)
+:bulb: Get started using the [cLoki Wiki](https://github.com/lmangani/cLoki/wiki)<br>
+:postal_horn: Allergic to NodeJS? Follow or join the development of [cLoki-go](https://github.com/qxip/cLoki-go)<br>
+
 
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
 
@@ -29,7 +31,8 @@ The *Loki API* and its Grafana native integration are brilliant, simple and appe
 
 ### :fire: LogQL: Supported Features
 
-cLoki implements a broad range of [LogQL Queries](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries) to provide transparent compatibility with the Loki API and Grafana datasource
+cLoki implements a broad range of [LogQL Queries](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries) to provide transparent compatibility with the Loki API<br>
+_No plugins needed_ - the Grafana Loki datasource can be used to natively query _logs_ and display extracted _timeseries_.
 
 ![image](https://user-images.githubusercontent.com/1423657/135249640-5f5a61e5-0f94-4517-b052-76d47c3572f5.png)
 
@@ -166,20 +169,7 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 
 ##### Status
 
-* [x] Basic Writes
-  * [x] Label Fingerprints
-  * [x] Sample Series
-  * [x] JSON Support
-  * [ ] ProtoBuf Support
-* [x] Basic Fingerprinting
-* [ ] Stream Selector rules _()_
-  * [x] = exactly equal.
-  * [x] != not equal.
-  * [x] =~ regex-match.
-  * [x] !~ do not regex-match.
-* [x] Basic Search
-  * [x] Labels  _(single key, multi key, AND logic)_
-  * [x] Samples  _(by Fingerprint match)_
+Consult the [Wiki](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries) for a detailed list of supported features
 
 --------------
 

@@ -1,4 +1,4 @@
-const {durationToMs} = require("../common");
+const {getDuration} = require("../common");
 const {parseLabels, hashLabels} = require("../../../common");
 /**
  *
@@ -85,7 +85,7 @@ function apply_by_without_stream(token, query) {
  * @param value {number}
  * @param duration {number}
  * @param step {number}
- * @param counter_fn {function(any, any): any}
+ * @param counter_fn {function(any, any, number): any}
  * @returns {Object}
  */
 function add_timestamp(values, timestamp, value, duration, step, counter_fn) {
@@ -102,7 +102,7 @@ function add_timestamp(values, timestamp, value, duration, step, counter_fn) {
         values[timestamp_with_step][timestamp_without_step] = 0;
     }
     values[timestamp_with_step][timestamp_without_step] =
-        counter_fn(values[timestamp_with_step][timestamp_without_step], value);
+        counter_fn(values[timestamp_with_step][timestamp_without_step], value, timestamp);
     return values;
 }
 
@@ -111,16 +111,17 @@ function add_timestamp(values, timestamp, value, duration, step, counter_fn) {
  * @param token {Token}
  * @param query {registry_types.Request}
  * @param value_expr {string}
+ * @param last_value {boolean} if the applier should take the latest value in step (if step > duration)
  * @returns {registry_types.Request}
  */
-function apply_via_request(token, query, value_expr) {
+function apply_via_request(token, query, value_expr, last_value) {
     let labels = "";
     if (token.Child('by_without')) {
         labels = apply_by_without_labels(token.Child('opt_by_without'), query);
     } else {
         labels = concat_labels(query);
     }
-    const duration = durationToMs(token.Child('duration_value').value);
+    const duration = getDuration(token, query);
     const step = query.ctx.step;
     /**
      *
@@ -139,6 +140,7 @@ function apply_via_request(token, query, value_expr) {
             order: "asc"
         }
     }
+    const argMin = last_value ? 'argMin' : 'argMax';
     /**
      *
      * @type {registry_types.Request}
@@ -162,7 +164,7 @@ function apply_via_request(token, query, value_expr) {
         ...(step > duration ? {
             select: [
                 `labels`, `floor(uw_rate_b.timestamp_ms / ${step}) * ${step} as timestamp_ms`,
-                'sum(value) as value'
+                `${argMin}(value,timestamp_ms) as value`
             ],
             from: 'uw_rate_b',
             group_by: ['labels', 'timestamp_ms'],
@@ -178,19 +180,21 @@ function apply_via_request(token, query, value_expr) {
  *
  * @param token {Token}
  * @param query {registry_types.Request}
- * @param counter_fn {function(any, any): any}
+ * @param counter_fn {function(any, any, number): any}
  * @param summarize_fn {function(any): number}
+ * @param last_value {boolean} if the applier should take the latest value in step (if step > duration)
  * @returns {registry_types.Request}
  */
-function apply_via_stream(token, query, counter_fn, summarize_fn) {
+function apply_via_stream(token, query, counter_fn, summarize_fn, last_value) {
     if (token.Child('by_without')) {
         query = apply_by_without_stream(token.Child('opt_by_without'), query);
     }
     let results = new Map();
-    const duration = durationToMs(token.Child('duration_value').value);
+    const duration = getDuration(token, query);
     const step = query.ctx.step;
     return {
         ...query,
+        limit: undefined,
         ctx: {...query.ctx, duration: duration},
         matrix: true,
         stream: [...(query.stream ? query.stream : []),
@@ -203,8 +207,10 @@ function apply_via_stream(token, query, counter_fn, summarize_fn) {
                         const ts = [...Object.entries(v.values)];
                         ts.sort();
                         for (const _v of ts) {
-                            // v  / (duration / 1000)
-                            const value = Object.values(_v[1]).reduce((sum, v) => sum + summarize_fn(v), 0);
+                            let value = Object.entries(_v[1]);
+                            value.sort();
+                            value = last_value ? value[value.length - 1][1] : value[0][1];
+                            value = summarize_fn(value);//Object.values(_v[1]).reduce((sum, v) => sum + summarize_fn(v), 0);
                             emit({labels: v.labels, timestamp_ms: _v[0], value: value});
                         }
                     }
@@ -229,12 +235,13 @@ function apply_via_stream(token, query, counter_fn, summarize_fn) {
 }
 
 module.exports = {
+    apply_via_stream: apply_via_stream,
     rate: builder((token, query) => {
-        const duration = durationToMs(token.Child('duration_value').value);
-        return apply_via_request(token, query, `COUNT(1) / ${duration / 1000}`)
+        const duration = getDuration(token, query);
+        return apply_via_request(token, query, `SUM(unwrapped) / ${duration / 1000}`)
     }, (token, query) => {
-        const duration = durationToMs(token.Child('duration_value').value);
-        return apply_via_stream(token, query, (sum) => sum+1, (sum) => sum / duration * 1000);
+        const duration = getDuration(token, query);
+        return apply_via_stream(token, query, (sum, val) => sum+val, (sum) => sum / duration * 1000);
     }),
 
     /**
@@ -297,8 +304,8 @@ module.exports = {
     first_over_time: builder((token, query) => {
         return apply_via_request(token, query, 'argMin(unwrapped, uw_rate_a.timestamp_ms)');
     }, (token, query) => {
-        return apply_via_stream(token, query, (sum, val) => {
-            return sum ? sum : {first: val}
+        return apply_via_stream(token, query, (sum, val, time ) => {
+            return sum && sum.time < time ? sum : {time: time, first: val}
         }, (sum) => sum.first);
     }),
     /**
@@ -308,11 +315,11 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     last_over_time: builder((token, query) => {
-        return apply_via_request(token, query, 'argMax(unwrapped, uw_rate_a.timestamp_ms)');
+        return apply_via_request(token, query, 'argMax(unwrapped, uw_rate_a.timestamp_ms)', true);
     }, (token, query) => {
-        return apply_via_stream(token, query, (sum, val) => {
-            return val
-        }, (sum) => sum);
+        return apply_via_stream(token, query, (sum, val, time) => {
+            return sum && sum.time > time ? sum : {time: time, first: val}
+        }, (sum) => sum.first);
     }),
     /**
      * stdvar_over_time(unwrapped-range): the population standard variance of the values in the specified interval.
