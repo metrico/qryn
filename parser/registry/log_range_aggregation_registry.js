@@ -25,6 +25,7 @@ const generic_rate = (value_expr, token, query) => {
     return {
         ctx: { ...query.ctx, duration: duration },
         with: {
+            ...(query.with || {}),
             rate_a: {
                 ...query,
                 ctx: undefined,

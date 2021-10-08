@@ -1,5 +1,12 @@
 const {_and, unquote_token, querySelectorPostProcess, isEOF} = require("../common");
-
+const {DATABASE_NAME} = require("../../../lib/utils");
+/**
+ * @param regex {boolean}
+ * @param eq {boolean}
+ * @param label {string}
+ * @param value {string}
+ * @returns {string[]}
+ */
 function selector_clauses(regex, eq, label, value) {
     return [
         `JSONHas(labels, '${label}')`,
@@ -19,6 +26,42 @@ const label_and_val = (token) => {
 }
 
 /**
+ * @returns {registry_types.Request}
+ */
+const stream_select_query = () => {
+    return {
+        select: ["fingerprint"],
+        from: `${DATABASE_NAME()}.time_series`,
+        where: ['AND']
+    };
+}
+
+/**
+ * @param query {registry_types.Request}
+ * @param regex {boolean}
+ * @param eq {boolean}
+ * @param label {string}
+ * @param value {string}
+ * @returns {registry_types.Request}
+ */
+const simple_request = (query, regex, eq, label, value) => {
+    const is_str_sel = query.with && query.with.str_sel;
+    let str_sel = is_str_sel ? query.with.str_sel : stream_select_query();
+    str_sel = _and(str_sel, selector_clauses(regex, eq, label, value));
+    query = {
+        ...query,
+        with: {
+            ...(query.with || {}),
+            str_sel: str_sel
+        }
+    };
+    if (is_str_sel) {
+        return query;
+    }
+    return querySelectorPostProcess(_and(query, ['samples.fingerprint IN str_sel']));
+}
+
+/**
  *
  * @param token {Token}
  * @param query {registry_types.Request}
@@ -26,7 +69,7 @@ const label_and_val = (token) => {
  */
 module.exports.neq_simple = (token, query) => {
     const [label, value] = label_and_val(token);
-    return querySelectorPostProcess(_and(query, selector_clauses(false, false, label, value)));
+    return simple_request(query, false, false, label, value);
 };
 
 /**
@@ -88,7 +131,7 @@ module.exports.neq_stream = (token, query) => {
  */
 module.exports.nreg_simple = (token, query) => {
     const [label, value] = label_and_val(token);
-    return querySelectorPostProcess(_and(query, selector_clauses(true, false, label, value)));
+    return simple_request(query, true, false, label, value);
 };
 
 /**
@@ -142,7 +185,7 @@ module.exports.nreg_stream = (token, query) => {
  */
 module.exports.reg_simple = (token, query) => {
     const [label, value] = label_and_val(token);
-    return querySelectorPostProcess(_and(query, selector_clauses(true, true, label, value)));
+    return simple_request(query, true, true, label, value);
 };
 
 /**
@@ -196,7 +239,7 @@ module.exports.reg_stream = (token, query) => {
  */
 module.exports.eq_simple = (token, query) => {
     const [label, value] = label_and_val(token);
-    return querySelectorPostProcess(_and(query, selector_clauses(false, true, label, value)));
+    return simple_request(query, false, true, label, value);
 };
 /**
  *
