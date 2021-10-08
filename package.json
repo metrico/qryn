@@ -1,6 +1,6 @@
 {
   "name": "cloki",
-  "version": "1.0.39",
+  "version": "1.0.40",
   "description": "Loki API with Clickhouse Backend",
   "main": "cloki.js",
   "bin": {
