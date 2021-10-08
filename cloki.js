@@ -14,6 +14,7 @@ this.http_pass = process.env.CLOKI_PASSWORD || false;
 
 var DATABASE = require("./lib/db/clickhouse");
 var UTILS = require("./lib/utils");
+const snappy = require("snappy");
 
 /* ProtoBuf Helper */
 var fs = require("fs");
@@ -45,7 +46,6 @@ const fastify = require("fastify")({
     logger: false,
 });
 
-const path = require("path");
 fastify.register(require("fastify-url-data"));
 
 fastify.after((err) => {
@@ -84,17 +84,21 @@ fastify.addContentTypeParser("text/plain", {
 });
 
 /* Protobuf Handler */
-fastify.addContentTypeParser("application/x-protobuf", function(req, done) {
-    var data = "";
-    req.on("data", (chunk) => {
-        data += chunk;
-    });
-    req.on("error", (error) => {
-        console.log(error);
-    });
-    req.on("end", () => {
-        done(messages.PushRequest.decode(data));
-    });
+fastify.addContentTypeParser("application/x-protobuf", {parseAs: 'buffer'},
+    async function (req, body, done) {
+    let _data = await snappy.uncompress(body);
+    _data = messages.PushRequest.decode(_data);
+    _data.streams = _data.streams.map(s => ({
+        ...s,
+        entries: s.entries.map(e => {
+            let millis = Math.floor(e.timestamp.nanos / 1000000);
+            return {
+                ...e,
+                timestamp: e.timestamp.seconds * 1000 + millis,
+            };
+            })
+    }));
+    return _data.streams;
 });
 
 /* 404 Handler */
