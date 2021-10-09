@@ -45,10 +45,19 @@ _No plugins needed_ - the Grafana Loki datasource can be used to natively query 
 - [Unwrap Expression.](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#unwrap-expression)
 - [Line Format Expression](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#line-format-expression---handlebars--)
 
+--------
+
+### :fuelpump: Log Streams
+
+cLoki supports input via Push API using *JSON* or *Protobuf* and it is compatible with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/) and any other Loki compatible agent such as _Telegraf, Fluentbit, Logstash and others._ 
+
+Our _preferred_ companion for parsing and shipping log streams to **cLoki** is [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) with extensive interpolation capabilities to create tags and trim any log fat. Sending JSON formatted logs is _suggested_ when dealing with metrics.
+
+--------
 
 ### :fire: CliQL: Experimental 2.0 Features
 
-cLoki implements custom query functions for clickhouse timeseries extraction, allowing direct access to any table
+cLoki implements custom query functions for clickhouse timeseries extraction, allowing direct access to any existing table
 
 ![ezgif com-gif-maker](https://user-images.githubusercontent.com/1423657/99530591-d0885080-29a1-11eb-87e6-870a046fb4de.gif)
 
@@ -91,9 +100,6 @@ clickhouse({
 |where    | where condition (optional) |
 |interval | interval in seconds (optional) |
 |timefield| time/date field name (optional) |
-
-#### Telegraf
-Insert using [Telegraf Input](https://github.com/lmangani/cLoki/wiki/Telegraf-HTTP-Input) and display metrics and logs in Grafana without plugins
 
 
 ------------
@@ -149,9 +155,6 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | READONLY  			| false  	    | Readonly Mode, no DB Init  		|
 | DEBUG  			| false  	    | Debug Mode  		|
 
-#### :fuelpump: Log Streams
-
-The ideal companion for parsing and shipping log streams to **cLoki** is [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) with extensive interpolation capabilities.
 
 ------------
 
