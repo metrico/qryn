@@ -10,7 +10,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     "json": (token, query) => {
-        if (!token.Children("parameter").length) {
+        if (!token.Children("parameter").length || (query.stream && query.stream.length)) {
             return json.via_stream(token, query);
         }
         return json.via_clickhouse_query(token, query);

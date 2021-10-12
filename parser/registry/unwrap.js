@@ -10,10 +10,28 @@ module.exports = (token, query) => {
     if (query.stream) {
         return via_stream(label, query);
     }
+    if (label === "_entry") {
+        return unwrap_line(query);
+    }
     if (query.select.some(e => e.endsWith('as extra_labels'))) {
         return via_query_with_extra_labels(label, query);
     }
     return via_query(label, query);
+}
+
+/**
+ *
+ * @param query {registry_types.Request}
+ * @returns {registry_types.Request}
+ */
+function unwrap_line(query) {
+    query = {
+        ...query,
+        select: [...query.select, `toFloat64OrNull(string) as unwrapped`]
+    };
+    return _and(query, [
+        `isNotNull(unwrapped)`
+    ]);
 }
 
 /**
@@ -60,6 +78,7 @@ function via_query_with_extra_labels(label, query) {
  * @returns {registry_types.Request}
  */
 function via_stream(label, query) {
+    const is_unwrap_string = label === "_entry";
     return {
         ...query,
         stream: [
@@ -69,11 +88,14 @@ function via_stream(label, query) {
              * @param stream {DataStream}
              */
             (stream) => map(stream, e => {
-                if (!e || !e.labels || !e.labels[label]) {
+                if (!e || !e.labels) {
                     return {...e};
                 }
+                if (!is_unwrap_string && !e.labels[label]) {
+                    return null;
+                }
                 try {
-                    e.unwrapped = parseFloat(e.labels[label]);
+                    e.unwrapped = parseFloat(is_unwrap_string ? e.string : e.labels[label]);
                     if (isNaN(e.unwrapped)) {
                         return null;
                     }

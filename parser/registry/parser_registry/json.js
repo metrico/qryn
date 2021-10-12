@@ -111,7 +111,7 @@ module.exports.via_stream = (token, query) => {
      */
     const extract_label = (obj, path) => {
         let res = obj;
-        for (const p in path) {
+        for (const p of path) {
             if (!res[p]) {
                 return undefined;
             }
@@ -130,7 +130,7 @@ module.exports.via_stream = (token, query) => {
      */
     const extract_labels = (obj, labels) => {
         let res = {};
-        for (const l in Object.keys(labels)) {
+        for (const l of Object.keys(labels)) {
             res[l] = extract_label(obj, labels[l]);
         }
         return res;

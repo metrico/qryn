@@ -22,10 +22,14 @@ module.exports = (token, query) => {
                 if (!e.labels) {
                     return e;
                 }
-                return {
-                    ...e,
-                    string: processor({...e.labels, _entry: e.string})
+                try {
+                    return {
+                        ...e,
+                        string: processor({...e.labels, _entry: e.string})
+                    }
+                } catch (err) {
+                    return null;
                 }
-            })]
+            }).filter(e => e)]
     };
 };
