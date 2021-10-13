@@ -1,4 +1,6 @@
 const glob = require("glob");
+const {hashLabels, parseLabels} = require("../../common");
+
 
 /**
  * @param query {registry_types.Request}
@@ -85,6 +87,8 @@ module.exports.getDuration = (token, query) => {
     return duration; //Math.max(duration, query.ctx && query.ctx.step ? query.ctx.step : 1000);
 }
 
+const getDuration = module.exports.getDuration;
+
 /**
  *
  * @param eof {any}
@@ -101,4 +105,133 @@ module.exports.getPlugins = (path, cb) => {
         }
     }
     return plugins;
+}
+
+/**
+ *
+ * @param query {registry_types.Request}
+ * @returns {string}
+ */
+module.exports.concat_labels = (query) => {
+    if (query.select.some(f => f.endsWith('as extra_labels'))) {
+        return `arraySort(arrayConcat(arrayFilter(`+
+            `x -> arrayExists(y -> y.1 == x.1, extra_labels) == 0, `+
+            `JSONExtractKeysAndValues(labels, 'String')), extra_labels))`;
+    }
+    return `JSONExtractKeysAndValues(labels, 'String')`
+}
+
+/**
+ * sum_over_time(unwrapped-range): the sum of all values in the specified interval.
+ * @param token {Token}
+ * @param query {registry_types.Request}
+ * @returns {registry_types.Request}
+ */
+function apply_by_without_stream(token, query) {
+    const is_by = token.Child('by_without').value === 'by';
+    const filter_labels = token.Children('label').map(l => l.value);
+    return {
+        ...query,
+        stream: [...(query.stream ? query.stream : []),
+            /**
+             *
+             * @param stream {DataStream}
+             */
+                (stream) => stream.map(e => {
+                if (!e || !e.labels) {
+                    return e;
+                }
+                let labels = [...Object.entries(e.labels)].filter(l =>
+                    (is_by && filter_labels.includes(l[0])) || (!is_by && !filter_labels.includes(l[0]))
+                );
+                return {...e, labels: parseLabels(labels)};
+            })
+        ]
+    };
+}
+
+/**
+ *
+ * @param values {Object}
+ * @param timestamp {number}
+ * @param value {number}
+ * @param duration {number}
+ * @param step {number}
+ * @param counter_fn {function(any, any, number): any}
+ * @returns {Object}
+ */
+function add_timestamp(values, timestamp, value, duration, step, counter_fn) {
+    const timestamp_without_step = Math.floor(timestamp / duration) * duration
+    const timestamp_with_step = step > duration ? Math.floor(timestamp_without_step / step) * step :
+        timestamp_without_step;
+    if (!values) {
+        values = {};
+    }
+    if (!values[timestamp_with_step]) {
+        values[timestamp_with_step] = {}
+    }
+    if (!values[timestamp_with_step][timestamp_without_step]) {
+        values[timestamp_with_step][timestamp_without_step] = 0;
+    }
+    values[timestamp_with_step][timestamp_without_step] =
+        counter_fn(values[timestamp_with_step][timestamp_without_step], value, timestamp);
+    return values;
+}
+
+/**
+ *
+ * @param token {Token}
+ * @param query {registry_types.Request}
+ * @param counter_fn {function(any, any, number): any}
+ * @param summarize_fn {function(any): number}
+ * @param last_value {boolean} if the applier should take the latest value in step (if step > duration)
+ * @returns {registry_types.Request}
+ */
+module.exports.apply_via_stream = (token, query, counter_fn, summarize_fn, last_value) => {
+    if (token.Child('by_without')) {
+        query = apply_by_without_stream(token.Child('opt_by_without'), query);
+    }
+    let results = new Map();
+    const duration = getDuration(token, query);
+    const step = query.ctx.step;
+    return {
+        ...query,
+        limit: undefined,
+        ctx: {...query.ctx, duration: duration},
+        matrix: true,
+        stream: [...(query.stream ? query.stream : []),
+            /**
+             * @param s {DataStream}
+             */
+                (s) => s.remap((emit, e) => {
+                if (!e || !e.labels) {
+                    for (const [_, v] of results) {
+                        const ts = [...Object.entries(v.values)];
+                        ts.sort();
+                        for (const _v of ts) {
+                            let value = Object.entries(_v[1]);
+                            value.sort();
+                            value = last_value ? value[value.length - 1][1] : value[0][1];
+                            value = summarize_fn(value);//Object.values(_v[1]).reduce((sum, v) => sum + summarize_fn(v), 0);
+                            emit({labels: v.labels, timestamp_ms: _v[0], value: value});
+                        }
+                    }
+                    results = new Map();
+                    emit({EOF: true})
+                    return;
+                }
+                const l = hashLabels(e.labels);
+                if (!results.has(l)) {
+                    results.set(l, {
+                        labels: e.labels,
+                        values: add_timestamp(undefined, e.timestamp_ms, e, duration, step, counter_fn)
+                    });
+                } else {
+                    results.get(l).values = add_timestamp(
+                        results.get(l).values, e.timestamp_ms, e, duration, step, counter_fn
+                    );
+                }
+            })
+        ]
+    };
 }

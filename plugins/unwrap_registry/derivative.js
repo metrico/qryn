@@ -6,14 +6,14 @@ module.exports.derivative = () => {
         /**
          *
          * @param sum {any} previous value for the current time bucket
-         * @param val {number} current value
+         * @param val {{unwrapped: number}} current values
          * @param time {number} timestamp in ms for the current value
          * @returns {any}
          */
         run: (sum, val, time) => {
             sum = sum || {};
-            sum.first = sum && sum.first && time > sum.first.time ? sum.first : {time: time, val: val};
-            sum.last = sum && sum.last && time < sum.last ? sum.last : {time: time, val: val};
+            sum.first = sum && sum.first && time > sum.first.time ? sum.first : {time: time, val: val.unwrapped};
+            sum.last = sum && sum.last && time < sum.last ? sum.last : {time: time, val: val.unwrapped};
             return sum;
         },
         /**

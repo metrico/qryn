@@ -1,5 +1,5 @@
-const {getDuration} = require("../common");
-const {parseLabels, hashLabels} = require("../../../common");
+const {getDuration, concat_labels, apply_via_stream} = require("../common");
+const {parseLabels} = require("../../../common");
 /**
  *
  * @param via_request {function(Token, registry_types.Request): registry_types.Request}
@@ -13,20 +13,6 @@ function builder(via_request, via_stream) {
         via_request: via_request,
         via_stream: via_stream
     };
-}
-
-/**
- *
- * @param query {registry_types.Request}
- * @returns {string}
- */
-function concat_labels(query) {
-    if (query.select.some(f => f.endsWith('as extra_labels'))) {
-        return `arraySort(arrayConcat(arrayFilter(`+
-            `x -> arrayExists(y -> y.1 == x.1, extra_labels) == 0, `+
-            `JSONExtractKeysAndValues(labels, 'String')), extra_labels))`;
-    }
-    return `JSONExtractKeysAndValues(labels, 'String')`
 }
 
 /**
@@ -47,63 +33,6 @@ function apply_by_without_labels(token, query) {
             `${labels}))`;
     }
     return labels;
-}
-
-/**
- * sum_over_time(unwrapped-range): the sum of all values in the specified interval.
- * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
- */
-function apply_by_without_stream(token, query) {
-    const is_by = token.Child('by_without').value === 'by';
-    const filter_labels = token.Children('label').map(l => l.value);
-    return {
-        ...query,
-        stream: [...(query.stream ? query.stream : []),
-            /**
-             *
-             * @param stream {DataStream}
-             */
-            (stream) => stream.map(e => {
-                if (!e || !e.labels) {
-                    return e;
-                }
-                let labels = [...Object.entries(e.labels)].filter(l =>
-                    (is_by && filter_labels.includes(l[0])) || (!is_by && !filter_labels.includes(l[0]))
-                );
-                return {...e, labels: parseLabels(labels)};
-            })
-        ]
-    };
-}
-
-/**
- *
- * @param values {Object}
- * @param timestamp {number}
- * @param value {number}
- * @param duration {number}
- * @param step {number}
- * @param counter_fn {function(any, any, number): any}
- * @returns {Object}
- */
-function add_timestamp(values, timestamp, value, duration, step, counter_fn) {
-    const timestamp_without_step = Math.floor(timestamp / duration) * duration
-    const timestamp_with_step = step > duration ? Math.floor(timestamp_without_step / step) * step :
-        timestamp_without_step;
-    if (!values) {
-        values = {};
-    }
-    if (!values[timestamp_with_step]) {
-        values[timestamp_with_step] = {}
-    }
-    if (!values[timestamp_with_step][timestamp_without_step]) {
-        values[timestamp_with_step][timestamp_without_step] = 0;
-    }
-    values[timestamp_with_step][timestamp_without_step] =
-        counter_fn(values[timestamp_with_step][timestamp_without_step], value, timestamp);
-    return values;
 }
 
 /**
@@ -176,64 +105,6 @@ function apply_via_request(token, query, value_expr, last_value) {
     }
 }
 
-/**
- *
- * @param token {Token}
- * @param query {registry_types.Request}
- * @param counter_fn {function(any, any, number): any}
- * @param summarize_fn {function(any): number}
- * @param last_value {boolean} if the applier should take the latest value in step (if step > duration)
- * @returns {registry_types.Request}
- */
-function apply_via_stream(token, query, counter_fn, summarize_fn, last_value) {
-    if (token.Child('by_without')) {
-        query = apply_by_without_stream(token.Child('opt_by_without'), query);
-    }
-    let results = new Map();
-    const duration = getDuration(token, query);
-    const step = query.ctx.step;
-    return {
-        ...query,
-        limit: undefined,
-        ctx: {...query.ctx, duration: duration},
-        matrix: true,
-        stream: [...(query.stream ? query.stream : []),
-            /**
-             * @param s {DataStream}
-             */
-                (s) => s.remap((emit, e) => {
-                if (!e || !e.labels) {
-                    for (const [_, v] of results) {
-                        const ts = [...Object.entries(v.values)];
-                        ts.sort();
-                        for (const _v of ts) {
-                            let value = Object.entries(_v[1]);
-                            value.sort();
-                            value = last_value ? value[value.length - 1][1] : value[0][1];
-                            value = summarize_fn(value);//Object.values(_v[1]).reduce((sum, v) => sum + summarize_fn(v), 0);
-                            emit({labels: v.labels, timestamp_ms: _v[0], value: value});
-                        }
-                    }
-                    results = new Map();
-                    emit({EOF: true})
-                    return;
-                }
-                const l = hashLabels(e.labels);
-                if (!results.has(l)) {
-                    results.set(l, {
-                        labels: e.labels,
-                        values: add_timestamp(undefined, e.timestamp_ms, e.unwrapped, duration, step, counter_fn)
-                    });
-                } else {
-                    results.get(l).values = add_timestamp(
-                        results.get(l).values, e.timestamp_ms, e.unwrapped, duration, step, counter_fn
-                    );
-                }
-            })
-        ]
-    };
-}
-
 module.exports = {
     apply_via_stream: apply_via_stream,
     rate: builder((token, query) => {
@@ -241,7 +112,9 @@ module.exports = {
         return apply_via_request(token, query, `SUM(unwrapped) / ${duration / 1000}`)
     }, (token, query) => {
         const duration = getDuration(token, query);
-        return apply_via_stream(token, query, (sum, val) => sum+val, (sum) => sum / duration * 1000);
+        return apply_via_stream(token, query,
+            (sum, val) => sum+val.unwrapped,
+            (sum) => sum / duration * 1000);
     }),
 
     /**
@@ -253,7 +126,9 @@ module.exports = {
     sum_over_time: builder((token, query) => {
         return apply_via_request(token, query, 'sum(unwrapped)');
     }, (token, query) => {
-        return apply_via_stream(token, query, (sum, val) => sum + val, (sum) => sum);
+        return apply_via_stream(token, query,
+            (sum, val) => sum + val.unwrapped,
+            (sum) => sum);
     }),
 
     /**
@@ -266,7 +141,7 @@ module.exports = {
         return apply_via_request(token, query, 'avg(unwrapped)');
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val) => {
-            return sum ? {count: sum.count + 1, val: sum.val + val} : {count: 1, val: val}
+            return sum ? {count: sum.count + 1, val: sum.val + val.unwrapped} : {count: 1, val: val.unwrapped}
         }, (sum) => sum.val / sum.count);
     }),
     /**
@@ -279,7 +154,7 @@ module.exports = {
         return apply_via_request(token, query, 'max(unwrapped)');
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val) => {
-            return Math.max(sum, val)
+            return Math.max(sum, val.unwrapped)
         }, (sum) => sum);
     }),
     /**
@@ -292,7 +167,7 @@ module.exports = {
         return apply_via_request(token, query, 'min(unwrapped)');
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val) => {
-            return Math.min(sum, val)
+            return Math.min(sum, val.unwrapped)
         }, (sum) => sum);
     }),
     /**
@@ -305,7 +180,7 @@ module.exports = {
         return apply_via_request(token, query, 'argMin(unwrapped, uw_rate_a.timestamp_ms)');
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val, time ) => {
-            return sum && sum.time < time ? sum : {time: time, first: val}
+            return sum && sum.time < time ? sum : {time: time, first: val.unwrapped}
         }, (sum) => sum.first);
     }),
     /**
@@ -318,7 +193,7 @@ module.exports = {
         return apply_via_request(token, query, 'argMax(unwrapped, uw_rate_a.timestamp_ms)', true);
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val, time) => {
-            return sum && sum.time > time ? sum : {time: time, first: val}
+            return sum && sum.time > time ? sum : {time: time, first: val.unwrapped}
         }, (sum) => sum.first);
     }),
     /**

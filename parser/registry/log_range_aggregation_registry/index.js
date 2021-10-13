@@ -1,74 +1,8 @@
-const {getDuration} = require("./common");
+const {getDuration} = require("../common");
+const reg = require("./log_range_agg_reg");
+const {generic_rate} = reg;
 
-/**
- *
- * @param value_expr {string}
- * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
- */
-const generic_rate = (value_expr, token, query) => {
-    const duration = getDuration(token, query);
-    const step = query.ctx.step;
-    /**
-     *
-     * @type {registry_types.Request}
-     */
-    /*const query_gaps = {
-        select: [
-            'a1.labels',
-            `toFloat64(${Math.floor(query.ctx.start / duration) * duration} + number * ${duration}) as timestamp_ms`,
-            'toFloat64(0) as value'
-        ],
-        from: `(SELECT DISTINCT labels FROM rate_a) as a1, numbers(${Math.floor((query.ctx.end - query.ctx.start) / duration)}) as a2`,
-    };*/
-    return {
-        ctx: { ...query.ctx, duration: duration },
-        with: {
-            ...(query.with || {}),
-            rate_a: {
-                ...query,
-                ctx: undefined,
-                with: undefined,
-                limit: undefined
-            },
-            rate_b: {
-                select: [
-                    'labels',
-                    `floor(timestamp_ms / ${duration}) * ${duration} as timestamp_ms`,
-                    `${value_expr} as value`
-                ],
-                from: 'rate_a',
-                group_by: ['labels', `timestamp_ms`],
-                order_by: {
-                    name: ["labels", "timestamp_ms"],
-                    order: "asc"
-                }
-            },
-            rate_c: step > duration ? {
-                select: [
-                    'labels',
-                    `floor(timestamp_ms / ${step}) * ${step} as timestamp_ms`,
-                    `argMin(rate_b.value, rate_b.timestamp_ms) as value`
-                ],
-                from: 'rate_b',
-                group_by: ['labels', `timestamp_ms`],
-                order_by: {
-                    name: ["labels", "timestamp_ms"],
-                    order: "asc"
-                }
-            } : undefined
-        },
-        select: ['labels', 'timestamp_ms', 'sum(value) as value'],
-        from: step > duration ? 'rate_c' : 'rate_b',
-        group_by: ['labels', 'timestamp_ms'],
-        order_by: {
-            name: ['labels', 'timestamp_ms'],
-            order: 'asc'
-        },
-        matrix: true
-    };
-}
+
 
 module.exports = {
     /**
@@ -78,9 +12,11 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     rate: (token, query) => {
+        if (query.stream && query.stream.length) {
+            return reg.rate_stream(token, query);
+        }
         const duration = getDuration(token, query);
         return generic_rate(`toFloat64(count(1)) * 1000 / ${duration}`, token, query);
-
     },
 
     /**
@@ -90,6 +26,9 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     count_over_time: (token, query) => {
+        if (query.stream && query.stream.length) {
+            return reg.count_over_time_stream(token, query);
+        }
         return generic_rate(`toFloat64(count(1))`, token, query);
     },
 
@@ -100,6 +39,9 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     bytes_rate: (token, query) => {
+        if (query.stream && query.stream.length) {
+            return reg.bytes_rate_stream(token, query);
+        }
         const duration = getDuration(token, query);
         return generic_rate(`toFloat64(sum(length(string))) * 1000 / ${duration}`, token, query);
     },
@@ -110,6 +52,9 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     bytes_over_time: (token, query) => {
+        if (query.stream && query.stream.length) {
+            return reg.bytes_over_time_stream(token, query);
+        }
         return generic_rate(`toFloat64(sum(length(string)))`, token, query);
     },
     /**
@@ -119,6 +64,9 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     absent_over_time: (token, query) => {
+        if (query.stream && query.stream.length) {
+            return reg.bytes_over_time_stream(token, query);
+        }
         const duration = getDuration(token, query);
         const query_data = {...query};
         query_data.select = ['labels', `floor(timestamp_ms / ${duration}) * ${duration} as timestamp_ms`,

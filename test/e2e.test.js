@@ -211,5 +211,11 @@ it("e2e", async () => {
     resp = await runRequest(`rate({test_id="${testID}_json"}| line_format "{{ divide int_lbl 2  }}" | unwrap _entry [1s])`);
     adjustMatrixResult(resp, testID + "_json");
     expect(resp.data).toMatchSnapshot();
+    resp = await runRequest(`sum(rate({test_id="${testID}_json"}| json [5s])) by (test_id)`);
+    adjustMatrixResult(resp, testID + "_json");
+    expect(resp.data).toMatchSnapshot();
+    resp = await runRequest(`sum(rate({test_id="${testID}_json"}| json lbl_rrr="lbl_repl" [5s])) by (test_id, lbl_rrr)`);
+    adjustMatrixResult(resp, testID + "_json");
+    expect(resp.data).toMatchSnapshot();
     //console.log(JSON.stringify(resp.data, 1));
 });
