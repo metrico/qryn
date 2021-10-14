@@ -51,7 +51,7 @@ module.exports.transpile = (request) => {
     }
     query.order_by.order = request.direction === 'forward' ? 'asc' : 'desc';
     if (token.Child('aggregation_operator')) {
-        const duration = durationToMs(token.Child('log_range_aggregation').Child('duration_value').value);
+        const duration = durationToMs(token.Child('duration_value').value);
         start = Math.floor(start / duration) * duration;
         end = Math.ceil(end / duration) * duration;
         query.ctx = {
@@ -134,7 +134,11 @@ module.exports.transpile = (request) => {
  */
 module.exports.transpile_aggregation_operator = (token, query) => {
     const agg = token.Child("aggregation_operator");
-    query = module.exports.transpile_log_range_aggregation(agg, query);
+    if (token.Child('log_range_aggregation')) {
+        query = module.exports.transpile_log_range_aggregation(agg, query);
+    } else if (token.Child('unwrap_function')) {
+        query = module.exports.transpile_unwrap_function(agg, query);
+    }
     return high_level_aggregation_registry[agg.Child("aggregation_operator_fn").value](token, query);
 }
 

@@ -217,5 +217,7 @@ it("e2e", async () => {
     resp = await runRequest(`sum(rate({test_id="${testID}_json"}| json lbl_rrr="lbl_repl" [5s])) by (test_id, lbl_rrr)`);
     adjustMatrixResult(resp, testID + "_json");
     expect(resp.data).toMatchSnapshot();
-    //console.log(JSON.stringify(resp.data, 1));
+    resp = await runRequest(`sum(sum_over_time({test_id="${testID}_json"}| json | unwrap int_val [10s]) by (test_id, str_id)) by (test_id)`)
+    adjustMatrixResult(resp, testID + "_json");
+    expect(resp.data).toMatchSnapshot();
 });
