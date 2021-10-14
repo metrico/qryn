@@ -1,12 +1,12 @@
 const {createPoints, sendPoints} = require("./common");
 const axios = require("axios");
-const pb = require("protobufjs");
+//const pb = require("protobufjs");
 const e2e = () => process.env.INTEGRATION_E2E || process.env.INTEGRATION;
 const cloki_local = () => process.env.CLOKI_LOCAL || false;
 let l = null;
 
-const root = pb.loadSync(__dirname + "/../lib/loki.proto");
-const pushMessage = root.lookupType("logproto.PushRequest");
+//const root = pb.loadSync(__dirname + "/../lib/loki.proto");
+//const pushMessage = root.lookupType("logproto.PushRequest");
 
 beforeAll(() => {
 
@@ -217,7 +217,11 @@ it("e2e", async () => {
     resp = await runRequest(`sum(rate({test_id="${testID}_json"}| json lbl_rrr="lbl_repl" [5s])) by (test_id, lbl_rrr)`);
     adjustMatrixResult(resp, testID + "_json");
     expect(resp.data).toMatchSnapshot();
-    resp = await runRequest(`sum(sum_over_time({test_id="${testID}_json"}| json | unwrap int_val [10s]) by (test_id, str_id)) by (test_id)`)
+    resp = await runRequest(`sum(sum_over_time({test_id="${testID}_json"}| json | unwrap int_val [10s]) by (test_id, str_id)) by (test_id)`);
     adjustMatrixResult(resp, testID + "_json");
     expect(resp.data).toMatchSnapshot();
+    resp = await runRequest(`derivative({test_id="${testID}_json"}| json | unwrap str_id [10s]) by (test_id)`);
+    adjustMatrixResult(resp, testID + "_json");
+    expect(resp.data).toMatchSnapshot();
+    //console.log(JSON.stringify(resp.data));
 });
