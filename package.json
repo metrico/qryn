@@ -53,9 +53,15 @@
   "keywords": [
     "loki",
     "logs",
+    "logging",
+    "logql",
+    "promql",
     "grafana",
+    "grafana-loki",
     "clickhouse",
+    "clickhouse-server",
     "grep",
+    "tail",
     "prometheus"
   ]
 }
