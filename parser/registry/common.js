@@ -3,11 +3,18 @@ const {hashLabels, parseLabels} = require("../../common");
 
 
 /**
- * @param query {registry_types.Request}
+ * @param query {registry_types.Request | string[]}
  * @param clauses {string[]}
- * @returns {registry_types.Request}
+ * @returns {registry_types.Request | string[]}
  */
 module.exports._and = (query, clauses) => {
+    if (Array.isArray(query)) {
+        if (!query.length) {
+            return ['AND', ...clauses];
+        }
+        return query[0] === 'AND' ? [...query, ...clauses] :
+            ['AND', query, ...clauses];
+    }
     query = {...query};
     if (!query.where) {
         query.where = ['AND'];
@@ -79,12 +86,12 @@ module.exports.map = (s, fn) => s.map((e) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * //@param query {registry_types.Request}
  * @returns {number}
  */
-module.exports.getDuration = (token, query) => {
-    const duration = module.exports.durationToMs(token.Child('duration_value').value);
-    return duration; //Math.max(duration, query.ctx && query.ctx.step ? query.ctx.step : 1000);
+module.exports.getDuration = (token/*, query*/) => {
+    return module.exports.durationToMs(token.Child('duration_value').value);
+        //Math.max(duration, query.ctx && query.ctx.step ? query.ctx.step : 1000);
 }
 
 const getDuration = module.exports.getDuration;
