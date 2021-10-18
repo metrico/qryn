@@ -24,11 +24,11 @@ function builder(via_request, via_stream) {
 function apply_by_without_labels(token, query) {
     let labels = concat_labels(query);
     const filter_labels = token.Children('label').map(l => l.value).map(l => `'${l}'`);
-    if (token.Child('by_without').value === 'by') {
+    if (token.Child('by_without_unwrap').value === 'by') {
         labels = `arraySort(arrayFilter(x -> arrayExists(y -> x.1 == y, [${filter_labels.join(',')}]) != 0, `+
             `${labels}))`;
     }
-    if (token.Child('by_without').value === 'without') {
+    if (token.Child('by_without_unwrap').value === 'without') {
         labels = `arraySort(arrayFilter(x -> arrayExists(y -> x.1 == y, [${filter_labels.join(',')}]) == 0, `+
             `${labels}))`;
     }
@@ -45,8 +45,8 @@ function apply_by_without_labels(token, query) {
  */
 function apply_via_request(token, query, value_expr, last_value) {
     let labels = "";
-    if (token.Child('by_without')) {
-        labels = apply_by_without_labels(token.Child('opt_by_without'), query);
+    if (token.Child('by_without_unwrap')) {
+        labels = apply_by_without_labels(token.Child('opt_by_without_unwrap'), query);
     } else {
         labels = concat_labels(query);
     }
@@ -114,7 +114,7 @@ module.exports = {
         const duration = getDuration(token, query);
         return apply_via_stream(token, query,
             (sum, val) => sum+val.unwrapped,
-            (sum) => sum / duration * 1000);
+            (sum) => sum / duration * 1000, false, 'by_without_unwrap');
     }),
 
     /**
@@ -128,7 +128,7 @@ module.exports = {
     }, (token, query) => {
         return apply_via_stream(token, query,
             (sum, val) => sum + val.unwrapped,
-            (sum) => sum);
+            (sum) => sum, false, 'by_without_unwrap');
     }),
 
     /**
@@ -142,7 +142,7 @@ module.exports = {
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val) => {
             return sum ? {count: sum.count + 1, val: sum.val + val.unwrapped} : {count: 1, val: val.unwrapped}
-        }, (sum) => sum.val / sum.count);
+        }, (sum) => sum.val / sum.count, false, 'by_without_unwrap');
     }),
     /**
      * max_over_time(unwrapped-range): the maximum value of all points in the specified interval.
@@ -155,7 +155,7 @@ module.exports = {
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val) => {
             return Math.max(sum, val.unwrapped)
-        }, (sum) => sum);
+        }, (sum) => sum, false, 'by_without_unwrap');
     }),
     /**
      * min_over_time(unwrapped-range): the minimum value of all points in the specified interval
@@ -168,7 +168,7 @@ module.exports = {
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val) => {
             return Math.min(sum, val.unwrapped)
-        }, (sum) => sum);
+        }, (sum) => sum, false, 'by_without_unwrap');
     }),
     /**
      * first_over_time(unwrapped-range): the first value of all points in the specified interval
@@ -181,7 +181,7 @@ module.exports = {
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val, time ) => {
             return sum && sum.time < time ? sum : {time: time, first: val.unwrapped}
-        }, (sum) => sum.first);
+        }, (sum) => sum.first, false, 'by_without_unwrap');
     }),
     /**
      * last_over_time(unwrapped-range): the last value of all points in the specified interval
@@ -194,7 +194,7 @@ module.exports = {
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val, time) => {
             return sum && sum.time > time ? sum : {time: time, first: val.unwrapped}
-        }, (sum) => sum.first);
+        }, (sum) => sum.first, false, 'by_without_unwrap');
     }),
     /**
      * stdvar_over_time(unwrapped-range): the population standard variance of the values in the specified interval.
@@ -207,7 +207,7 @@ module.exports = {
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val) => {
             throw new Error('not implemented')
-        }, (sum) => sum);
+        }, (sum) => sum, false, 'by_without_unwrap');
     }),
     /**
      * stddev_over_time(unwrapped-range): the population standard deviation of the values in the specified interval.
@@ -220,7 +220,7 @@ module.exports = {
     }, (token, query) => {
         return apply_via_stream(token, query, (sum, val) => {
             throw new Error('not implemented')
-        }, (sum) => sum);
+        }, (sum) => sum, false, 'by_without_unwrap');
     }),
     /**
      * quantile_over_time(scalar,unwrapped-range): the φ-quantile (0 ≤ φ ≤ 1) of the values in the specified interval.

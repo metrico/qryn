@@ -39,9 +39,9 @@ log_range_aggregation_fn ::= <log_range_aggregation_registry>
 
 aggregation_operator ::= <aggregation_operator_fn> <OWSP> (<prefix_agg_operator> | <postfix_agg_operator>)
 
-postfix_agg_operator ::= "(" <OWSP> [<NUMBER> <OWSP> "," <OWSP>] <log_range_aggregation> <OWSP>  ")" <OWSP> <opt_by_without> <OWSP>
+postfix_agg_operator ::= "(" <OWSP> [<NUMBER> <OWSP> "," <OWSP>] (<log_range_aggregation> | <unwrap_function>) <OWSP>  ")" <OWSP> <opt_by_without> <OWSP>
 
-prefix_agg_operator ::= <opt_by_without> <OWSP> "(" <OWSP> [<NUMBER> <OWSP> "," <OWSP>] <log_range_aggregation> <OWSP>  ")"
+prefix_agg_operator ::= <opt_by_without> <OWSP> "(" <OWSP> [<NUMBER> <OWSP> "," <OWSP>] (<log_range_aggregation> | <unwrap_function>) <OWSP>  ")"
 
 aggregation_operator_fn ::= <high_level_aggregation_registry>
 opt_by_without ::= <by_without> <OWSP> "(" <OWSP> <label_list> <OWSP> ")" | <BLANK>
@@ -50,6 +50,9 @@ label_list ::= <label> <OWSP> *("," <OWSP> <label>)
 
 unwrap_expression ::= <log_stream_selector> <OWSP> <unwrap_statement>
 unwrap_statement ::= "|" <OWSP> "unwrap" <OWSP> <label>
-unwrap_function ::= <unwrap_fn> <OWSP> "(" <OWSP> [<scalar_param> <OWSP> ","] <OWSP> <unwrap_expression> <OWSP> "[" <duration_value> "]" <OWSP> ")" <OWSP> <opt_by_without>
+unwrap_function ::= <unwrap_fn> <OWSP> "(" <OWSP> [<scalar_param> <OWSP> ","] <OWSP> <unwrap_expression> <OWSP> "[" <duration_value> "]" <OWSP> ")" <OWSP> <opt_by_without_unwrap>
 scalar_param ::= <NUMBER>
 unwrap_fn ::= <unwrap_registry>
+opt_by_without_unwrap ::= <by_without_unwrap> <OWSP> "(" <OWSP> <label_list> <OWSP> ")" | <BLANK>
+by_without_unwrap ::= "by" | "without"
+

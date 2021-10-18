@@ -125,10 +125,11 @@ module.exports.concat_labels = (query) => {
  * sum_over_time(unwrapped-range): the sum of all values in the specified interval.
  * @param token {Token}
  * @param query {registry_types.Request}
+ * @param by_without_name {string} name of the by_without token
  * @returns {registry_types.Request}
  */
-function apply_by_without_stream(token, query) {
-    const is_by = token.Child('by_without').value === 'by';
+function apply_by_without_stream(token, query, by_without_name) {
+    const is_by = token.Child(by_without_name).value === 'by';
     const filter_labels = token.Children('label').map(l => l.value);
     return {
         ...query,
@@ -185,11 +186,14 @@ function add_timestamp(values, timestamp, value, duration, step, counter_fn) {
  * @param counter_fn {function(any, any, number): any}
  * @param summarize_fn {function(any): number}
  * @param last_value {boolean} if the applier should take the latest value in step (if step > duration)
+ * @param by_without_name {string} name of the by_without token
  * @returns {registry_types.Request}
  */
-module.exports.apply_via_stream = (token, query, counter_fn, summarize_fn, last_value) => {
-    if (token.Child('by_without')) {
-        query = apply_by_without_stream(token.Child('opt_by_without'), query);
+module.exports.apply_via_stream = (token, query,
+                                   counter_fn, summarize_fn, last_value, by_without_name) => {
+    by_without_name = by_without_name || 'by_without';
+    if (token.Child(by_without_name)) {
+        query = apply_by_without_stream(token.Child(`opt_${by_without_name}`), query, by_without_name);
     }
     let results = new Map();
     const duration = getDuration(token, query);

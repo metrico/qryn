@@ -1,6 +1,5 @@
 const reg = require('./unwrap_registry');
 const {getPlugins} = require("../common");
-const {apply_via_stream} = require("./unwrap_registry");
 
 module.exports = {
     /**
@@ -138,7 +137,14 @@ module.exports = {
 
     ...getPlugins(__dirname + "/../../../plugins/unwrap_registry", (plugin) => {
         return (token, query) => {
-            return reg.apply_via_stream(token, query, plugin.run, plugin.approx);
+            return reg.apply_via_stream(
+                token,
+                query,
+                plugin.run,
+                plugin.approx,
+                false,
+                'by_without_unwrap'
+            );
         }
     })
 }
