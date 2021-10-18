@@ -2,6 +2,7 @@ const stream_selector_operator_registry = require('./registry/stream_selector_op
 const line_filter_operator_registry = require('./registry/line_filter_operator_registry');
 const log_range_aggregation_registry = require('./registry/log_range_aggregation_registry');
 const high_level_aggregation_registry = require('./registry/high_level_aggregation_registry');
+const number_operator_registry = require('./registry/number_operator_registry');
 const line_format = require("./registry/line_format");
 const parser_registry = require('./registry/parser_registry');
 const unwrap = require('./registry/unwrap');
@@ -117,6 +118,11 @@ module.exports.transpile = (request) => {
             }
         };
     }
+    if (token.Child('compared_agg_statement')) {
+        const op = token.Child('compared_agg_statement_cmp').Child('number_operator').value;
+        query = number_operator_registry[op](token.Child('compared_agg_statement'), query);
+    }
+
     return {
         query: module.exports.request_to_str(query),
         matrix: !! query.matrix,
@@ -237,6 +243,7 @@ module.exports.request_to_str = (query) => {
     }
     req += query.where && query.where.length ? ` WHERE ${whereBuilder(query.where)} ` : '';
     req += query.group_by ? ` GROUP BY ${query.group_by.join(', ')}` : '';
+    req += query.having && query.having.length ? ` HAVING ${whereBuilder(query.having)}` : '';
     req += query.order_by ? ` ORDER BY ${query.order_by.name.map(n => n + " " + query.order_by.order).join(", ")} ` : '';
     req += typeof (query.limit) !== 'undefined' ? ` LIMIT ${query.limit}` : '';
     req += typeof (query.offset) !== 'undefined' ? ` OFFSET ${query.offset}` : '';

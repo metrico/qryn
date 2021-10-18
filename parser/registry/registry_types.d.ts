@@ -18,6 +18,7 @@ export namespace registry_types {
             order: string
         },
         group_by?: string[],
+        having?: (string | string[])[],
         matrix?: boolean,
         stream?: ((DataStream) => DataStream)[],
         final: boolean,
