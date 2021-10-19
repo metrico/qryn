@@ -32,3 +32,10 @@ it('should compile strings with escaped quotes', () => {
         [ 'run=`kok\\\\\\`oko`', 'u_ru_ru!="lolol"', 'zozo=~"sssss"' ]
     );
 });
+
+it('should glob', () => {
+    const glob = require('glob');
+    console.log(glob.sync('+(/home/hromozeka/QXIP/cLoki/plugins/unwrap_registry/**/plugnplay.yml|test_plugin/)'));
+    console.log(glob.sync('/home/hromozeka/QXIP/cLoki/plugins/unwrap_registry/**/plugnplay.yml'));
+    console.log(glob.sync('/home/hromozeka/QXIP/test_plugin/**/plugnplay.yml'));
+});

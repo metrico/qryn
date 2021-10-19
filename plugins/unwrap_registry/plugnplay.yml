@@ -1,0 +1,5 @@
+# /path/to/plugin1/plugnplay.yml
+id: plugin1
+name: First Plugin
+description: This is the first plugin to be tested.
+loader: derivative.js # This is the file that contains the plugin loader.

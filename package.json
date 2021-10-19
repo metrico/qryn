@@ -40,7 +40,8 @@
     "handlebars": "^4.7.7",
     "handlebars-helpers": "^0.10.0",
     "snappy": "^7.0.3",
-    "glob": "^7.2.0"
+    "glob": "^7.2.0",
+    "plugnplay": "^3.13.0"
   },
   "devDependencies": {
     "jest": "^27.0.5",
