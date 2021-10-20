@@ -49,12 +49,15 @@ plugnplay package.
 ```
 const {PluginLoaderBase} = require('plugnplay');
 module.exports = `class extends PluginLoaderBase {
-    ...
+    exportSync() { return {...}; }
 }
 ```
 
 The exporting class should implement one function: `exportSync() {...}`.
 The `exportSync` function should return an object representing API different for each type of plugin.
+
+Finally, you have to add the path to your plugin root folder to the env variable `PLUGINS_PATH`. 
+Different paths should be separated by comma sign `,`. 
 
 ## Unwrapped Range Aggregation (unwrap_registry)
 
