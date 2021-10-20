@@ -1,46 +1,32 @@
 const { PluginManager } = require('plugnplay');
 
+const rootPath = !process.env.PLUGINS_PATH ? __dirname :
+    `{${__dirname},${process.env.PLUGINS_PATH}}`
 
 const manager = new PluginManager({
     discovery: {
-        rootPath: `/home/hromozeka/QXIP/+(cLoki/unwrap_registry|test_plugin)`
+        rootPath: rootPath,
+        allowsContributed: false
     }
 });
 
 const plugins = manager.discoverSync();
 
-/**
- *
- * @type {Object<string, (int|Function)[][]>}
- */
-const filters = {};
-/**
- *
- * @param tag
- * @param filter
- * @param priority
- */
-module.exports.addFilter = (tag, filter, priority) => {
-    filters[tag] = filters[tag] || [];
-    filters[tag].push([priority, filter]);
-};
-/**
- *
- * @param tag{string}
- * @param init {any}
- * @returns {any}
- */
-module.exports.applyFilter = (tag, init) => {
-    const fls = filters[tag] || [];
-    fls.sort();
-    return fls.reduce((sum, f) => f[1](sum), init);
-};
-
-const api = {
-    addFilter: module.exports.addFilter,
-    useFilter: module.exports.applyFilter
+for (const plg of plugins) {
+    manager.require(plg.id);
 }
 
-for (const plg of plugins) {
-    manager.require(plg.id, api);
+module.exports.get_plg = (options) => {
+    if (options.id) {
+        return [...plugins.values()].some(p => p.id === options.id) ? manager.require(options.id).exports : null;
+    }
+    if (options.type) {
+        let res = {};
+        for (const p of plugins) {
+            if (p.type === options.type) {
+                res[p.id] = manager.require(p.id).exports;
+            }
+        }
+        return res;
+    }
 }
