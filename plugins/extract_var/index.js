@@ -9,7 +9,7 @@ module.exports = class extends PluginLoaderBase {
              * @returns {string}
              */
             stringify: (token) => {
-                return `first_over_time({${token.Child('quoted_str1')}=${token.Child('quoted_str2').value}} | json | line_format "\"${token.Child('quoted_str2')}\":\"{{${token.Child('quoted_str4')}}}\""| unwrap _entry [5s])`;
+                return `first_over_time({${token.Child('quoted_str1').value}=${token.Child('quoted_str2').value}} | json | line_format "\"${token.Child('quoted_str2').value}\":\"{{${token.Child('quoted_str4').value}}}\""| unwrap _entry [5s])`;
             }
         };
     }
