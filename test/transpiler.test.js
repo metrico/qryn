@@ -237,3 +237,9 @@ it("should transpile plugins", async () => {
     q.stream.forEach(s => {ds = s(ds)});
     expect(await ds.toArray()).toMatchSnapshot();
 });
+
+it("should transpile macro", async () => {
+    let script = bnf.ParseScript('test_macro("b")');
+    expect(transpiler.transpile_macro(script.rootToken.Child('user_macro')))
+        .toMatch('{test_id="b"}');
+});

@@ -167,3 +167,112 @@ module.exports = class extends PluginLoaderBase {
     }
 }
 ```
+
+## Macro plugin implementation (macros)
+
+cLoki parses logql requests using the bnf package https://github.com/daKuleMune/nodebnf#readme 
+
+You can provide a custom bnf token representation and map it to a relevant logql request via a plugin with `macros` 
+type.
+
+The raw ABNF description: https://github.com/lmangani/cLoki/blob/master/parser/logql.bnf .
+
+### Custom BNF requirements 
+
+A bnf description in your plugin should follow the requirements:
+- one bnf rule on a string
+- no multiline rules
+- no comments supported
+- bnf rule name should start with MACRO_ prefix
+- no bnf rule name collisions
+
+### Plugin API
+A plugin should export two fields: 
+```
+const exports = {
+    bnf: "... bnf rules ...",
+    /**
+     * 
+     * @param token {Token}
+     * @returns {string}
+     */
+    stringify: (token) => {}
+}
+```
+The `bnf` field should contain bnf rules.
+
+The `stringify` function should convert a parsed query token into a legit logQL request. 
+
+### The `Token` type
+Token type is a request parsed by the BNF package. It has the following fields:
+
+|    Field    |   Header                                    |   Description    |
+| ----------- | ------------------------------------------- | ---------------- | 
+|  value      | token.value:string                          | part of the request expression corresponding to the token |
+|  Child      | token.Child(child_type: string): Token      | function returning the first token child with the specified type. |
+|  Children   | token.Children(child_type: string): Token[] | function returning all the token children with the specified type. |
+
+### Example
+Let's review an example of macro translating `test_macro("val1")` to `{test_id="val1"}`
+
+The `plugnplay.yml` file
+```
+id: test_macro
+name: test macro
+description: A macro to test
+loader: index.js
+type: macros
+```
+
+The BNF description of the macro: `MACRO_test_macro_fn ::= "test_macro" <OWSP> "(" <OWSP> <quoted_str> <OWSP> ")"`
+
+The complete loader code:
+```
+const {PluginLoaderBase} = require('plugnplay');
+module.exports = class extends PluginLoaderBase {
+    exportSync() {
+        return {
+            bnf: `MACRO_test_macro_fn ::= "test_macro" <OWSP> "(" <OWSP> <quoted_str> <OWSP> ")"`,
+            /**
+             *
+             * @param token {Token}
+             * @returns {string}
+             */
+            stringify: (token) => {
+                return `{test_id=${token.Child('quoted_str').value}}`;
+            }
+        };
+    }
+}
+```
+
+### Commonly used tokens defined by the core BNF
+
+You can use the common rules already defined in the core BNF description.
+
+The raw ABNF description with all the rules: https://github.com/lmangani/cLoki/blob/master/parser/logql.bnf .
+
+The rules defined in the BNF package are here: https://github.com/daKuleMune/nodebnf#readme
+
+Commonly used LogQL rules:
+
+| Rule name | Example | Description |
+| ------------------- | ------- | ----------- |
+| log_stream_selector      | <code>{label1 = "val1", l2 =~ "v2"} &#124;~ "re1"</code> | log stream selector with label selectors and all pipeline operators
+| log_stream_selector_rule | `label1 = "val1"`                                        | one label selector rule 
+| label                    | `label1`                                                 | label name
+| operator                 | `= / != / =~ / !~`                                       | label selector operator
+| quoted_str               | `"qstr\""`                                               | one properly quoted string
+| line_filter_expression   | <code>&#124;~ "re1"</code>                               | one line filter expression
+| line_filter_operator     | <code>&#124;= / &#124;= / !~ / != </code>                | string filter operator
+| parser_expression        |  <code>&#124; json jlbl="l1[1].l2" </code>               | one parser expression
+| label_filter_expression  | <code>&#124; jlbl = "val1" </code>                       | one label filter in the pipeline part
+| line_format_expression   | <code>&#124; line_format "l1: {{label1}}" </code>        | line format expression
+| labels_format_expression | <code>&#124; line_format lbl1="l1: {{label1}}" </code>   | label format expression
+| log_range_aggregation    | `rate({label1="val1"} [1m])`                             | log range aggregation expression
+| aggregation_operator     | `sum(rate({label1="val1"} [1m])) by (lbl1, lbl2)`        | aggregation operator expression
+| unwrap_expression        | <code>{label1="val1"} &#124;~ "re1" &#124; unwrap lbl2 </code>                      | line selector with pipeline ending with the unwrap expression
+| unwrap_function          | <code>rate(rate({label1="val1"} &#124; unwrap int_lbl2 [1m]) by (label3)</code>     | unwrapped log-range aggregation
+| compared_agg_statement   | <code>rate(rate({label1="val1"} &#124; unwrap int_lbl2 [1m]) by (label3) > 5</code> | wrapped or unwrapped log-range aggregation comparef to a numeric const
+
+

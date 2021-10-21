@@ -10,6 +10,7 @@ const unwrap_registry = require('./registry/unwrap_registry');
 const {_and, durationToMs} = require("./registry/common");
 const compiler = require("./bnf");
 const {parseMs, DATABASE_NAME} = require("../lib/utils");
+const {get_plg} = require("../plugins/engine");
 
 
 /**
@@ -43,6 +44,13 @@ module.exports.init_query = () => {
 module.exports.transpile = (request) => {
     const expression = compiler.ParseScript(request.query.trim());
     const token = expression.rootToken;
+    if (token.Child('user_macro')) {
+        return module.exports.transpile({
+            ...request,
+            query: module.exports.transpile_macro(token.Child('user_macro'))
+        });
+    }
+
     let start = parseMs(request.start, Date.now() - 3600 * 1000);
     let end = parseMs(request.end, Date.now());
     let step = request.step ? parseInt(request.step) * 1000 : 0;
@@ -129,6 +137,17 @@ module.exports.transpile = (request) => {
         duration: query.ctx && query.ctx.duration ? query.ctx.duration : 1000,
         stream: query.stream
     };
+}
+
+
+/**
+ *
+ * @param token {Token}
+ * @returns {string}
+ */
+module.exports.transpile_macro = (token) => {
+    const plg = Object.values(get_plg({type: 'macros'})).find(m => token.Child(m._main_rule_name));
+    return plg.stringify(token);
 }
 
 
