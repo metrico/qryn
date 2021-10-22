@@ -12,9 +12,9 @@ module.exports = class extends PluginLoaderBase {
                  * @returns {any}
                  */
                 run: (lowest, val, time) => {
-                    console.log('test', typeof lowest, lowest);
-                    console.log('val', typeof val, val);
-                    console.log('time', typeof time, time);
+                    //console.log('test', typeof lowest, lowest);
+                    //console.log('val', typeof val, val);
+                    //console.log('time', typeof time, time);
                     if(lowest == 0 || val.unwrapped < lowest) {
                       lowest = val.unwrapped
                     }
