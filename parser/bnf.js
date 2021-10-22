@@ -44,4 +44,23 @@ bnf += "user_macro ::=" + Object.values(plugins).map(p => p._main_rule_name).map
 let compiler = new Compiler();
 compiler.AddLanguage(bnf , "logql" );
 
+const BNF_CORE_RULES = new Set([
+	'BLANK',  'CR', 'LF', 'CRLF', 'DIGIT', 'DIGITS',
+	'NUMBER', 'WSP', 'TAB', 'SPACE', 'OWSP', 'ANYWSP', 'ALPHA', 'SYMBOL', 'ESCAPE',
+	'QUOTE', 'SQUOTE', 'AQUOTE', 'ANYCHAR', 'SQLITERAL', 'QLITERAL', 'AQLITERAL',
+	'LITERAL', 'ANYLITERAL', 'EOF'
+]);
+
+for (const [name, rule] of Object.entries(compiler.languages.logql.rules)) {
+    for (const token of rule) {
+        if (token.type === 1 && !compiler.languages.logql.rules[token.value] && !BNF_CORE_RULES.has(token.value)) {
+            const re = new RegExp(`^\\s*${name}\\s*::=`);
+            const line = compiler.languages.logql._syntaxLines.find(
+                l => l.original.match(re)
+            ).original;
+            throw new Error(`BNF error in line "${line}": \n Rule "${token.value}": not found`);
+        }
+    }
+}
+
 module.exports = compiler;
