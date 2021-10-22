@@ -12,6 +12,9 @@ module.exports = class extends PluginLoaderBase {
                  * @returns {any}
                  */
                 run: (sum, val, time) => {
+                    console.log('test', typeof sum, sum);
+                    console.log('val', typeof val, val);
+                    console.log('time', typeof time, time);
                     sum = sum || {};
                     sum.first = sum && sum.first && time > sum.first.time ? sum.first : {
                         time: time,
