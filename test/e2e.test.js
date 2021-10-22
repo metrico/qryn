@@ -237,4 +237,14 @@ it("e2e", async () => {
     expect(resp.data).toMatchSnapshot();
     resp = await runRequest(`derivative({test_id="${testID}_json"}| json | unwrap str_id [10s]) by (test_id) > 1`);
     expect(resp.data).toMatchSnapshot();
+    resp = await runRequest(`{test_id="${testID}"} | freq >= 4`);
+    adjustResult(resp, testID);
+    expect(resp.data).toMatchSnapshot();
+    resp = await runRequest(`{test_id="${testID}_json"} | json sid="str_id" | sid >= 598`);
+    adjustResult(resp, testID + "_json");
+    expect(resp.data).toMatchSnapshot();
+    resp = await runRequest(`{test_id="${testID}_json"} | json | str_id >= 598`);
+    adjustResult(resp, testID + "_json");
+    expect(resp.data).toMatchSnapshot();
+    //console.log(JSON.stringify(resp.data));
 });

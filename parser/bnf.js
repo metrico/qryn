@@ -34,7 +34,9 @@ Token.prototype.Children = function ( tokenType ){
 
 let bnf = fs.readFileSync(__dirname + "/logql.bnf").toString();
 for (const reg of Object.keys(registries)) {
-    bnf = bnf.replace(`<${reg}>`, Object.keys(registries[reg]).map(n => `"${n}"`).join("|"));
+    let keys = Object.keys(registries[reg]).map(n => `"${n}"`);
+    keys.sort((a,b) => b.length - a.length);
+    bnf = bnf.replace(`<${reg}>`, keys.join("|"));
 }
 let compiler = new Compiler();
 compiler.AddLanguage(bnf , "logql" );

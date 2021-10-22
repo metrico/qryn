@@ -32,3 +32,15 @@ it('should compile strings with escaped quotes', () => {
         [ 'run=`kok\\\\\\`oko`', 'u_ru_ru!="lolol"', 'zozo=~"sssss"' ]
     );
 });
+
+it ('should parse lbl cmp', () => {
+    const ops = ['>', '<', '>=', '<=', '==', '!='];
+    for (const op of ops) {
+        let res = bnf.ParseScript(`{test_id="123345456"} | freq ${op} 4.0`);
+        expect(res.rootToken.Child('number_label_filter_expression').value).toEqual(`freq ${op} 4.0`);
+    }
+    for (const op of ops) {
+        let res = bnf.ParseScript(`{test_id="123345456"} | freq ${op} 4`);
+        expect(res.rootToken.Child('number_label_filter_expression').value).toEqual(`freq ${op} 4`);
+    }
+});
