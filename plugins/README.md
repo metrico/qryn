@@ -3,11 +3,12 @@
 * WORK IN PROGRESS!
 
 Missing a LogQL function in cLoki? Extend functionality in in _no time_ using [cLoki Plugins](https://github.com/lmangani/cLoki/tree/master/plugins)
+Need to alias a complex query? Use macros to turn complex queries into easy to use queries
 
 ## Overall plugin structure
 
 Plugins are supported via plugnplay module https://github.com/e0ipso/plugnplay .
-To create a plugin you have to do a nodejs project with subfolders for each plugin:
+To create a plugin you have to create a nodejs project with subfolders for each plugin or add them into your cLoki plugins folder:
 ```
 /
 |- package.json
@@ -22,8 +23,8 @@ To create a plugin you have to do a nodejs project with subfolders for each plug
 ## Different types of plugins
 
 There is a number of different types of plugins supported by cLoki. Each type extends particular functionality:
-- Log-range aggregator over unwrapped range: `unwrap_registry` type
-- Custom macro function to shortcut an existing request statement: `macros` type
+- Log-range aggregator over unwrapped range: `unwrap_registry` type (vanilla LogQL example: avg_over_time)
+- Custom macro function to wrap or shorten an existing request statement: `macros` type
 
 
 ## Plugin implementation
@@ -39,11 +40,11 @@ loader: derivative.js
 type: unwrap_registry
 ```
 
-- `id` of the plugin should be unique. 
+- `id` of the plugin should be unique.
 - `type` of the plugin should be `unwrap_registry`.
 - `loader` field should specify the js file exporting the plugin loader class.
 
-The js module specified in the `loader` field should export a class extending  `PluginLoaderBase` class from the 
+The js module specified in the `loader` field should export a class extending  `PluginLoaderBase` class from the
 plugnplay package.
 
 ```
@@ -56,8 +57,8 @@ module.exports = `class extends PluginLoaderBase {
 The exporting class should implement one function: `exportSync() {...}`.
 The `exportSync` function should return an object representing API different for each type of plugin.
 
-Finally, you have to add the path to your plugin root folder to the env variable `PLUGINS_PATH`. 
-Different paths should be separated by comma sign `,`. 
+Finally, you have to add the path to your plugin root folder to the env variable `PLUGINS_PATH`.
+Different paths should be separated by comma sign `,`.
 
 ## Unwrapped Range Aggregation (unwrap_registry)
 
@@ -98,8 +99,8 @@ The `run` method is called every time new unwrapped value accepted by the stream
         }
 ```
 
-So the run function accepts the previous aggregated value. The initial value is 0. 
-The second is an object with current unwrapped value. 
+So the run function accepts the previous aggregated value. The initial value is 0.
+The second is an object with current unwrapped value.
 And the time when the unwrapped value appeared in the database.
 The run function should return the new sum. Data immutability is preferred but optional.
 
@@ -170,14 +171,16 @@ module.exports = class extends PluginLoaderBase {
 
 ## Macro plugin implementation (macros)
 
-cLoki parses logql requests using the bnf package https://github.com/daKuleMune/nodebnf#readme 
+cLoki parses logql requests using the bnf package https://github.com/daKuleMune/nodebnf#readme
 
-You can provide a custom bnf token representation and map it to a relevant logql request via a plugin with `macros` 
+You can provide a custom bnf token representation and map it to a relevant logql request via a plugin with `macros`
 type.
 
 The raw ABNF description: https://github.com/lmangani/cLoki/blob/master/parser/logql.bnf .
 
-### Custom BNF requirements 
+If you are unfamiliar BNF rules, here is a good resource to get a quick introduction: http://www.cs.umsl.edu/~janikow/cs4280/bnf.pdf
+
+### Custom BNF requirements
 
 A bnf description in your plugin should follow the requirements:
 - one bnf rule on a string
@@ -187,12 +190,12 @@ A bnf description in your plugin should follow the requirements:
 - no bnf rule name collisions
 
 ### Plugin API
-A plugin should export two fields: 
+A plugin should export two fields:
 ```
 const exports = {
     bnf: "... bnf rules ...",
     /**
-     * 
+     *
      * @param token {Token}
      * @returns {string}
      */
@@ -201,13 +204,13 @@ const exports = {
 ```
 The `bnf` field should contain bnf rules.
 
-The `stringify` function should convert a parsed query token into a legit logQL request. 
+The `stringify` function should convert a parsed query token into a legit logQL request.
 
 ### The `Token` type
 Token type is a request parsed by the BNF package. It has the following fields:
 
 |    Field    |   Header                                    |   Description    |
-| ----------- | ------------------------------------------- | ---------------- | 
+| ----------- | ------------------------------------------- | ---------------- |
 |  value      | token.value:string                          | part of the request expression corresponding to the token |
 |  Child      | token.Child(child_type: string): Token      | function returning the first token child with the specified type. |
 |  Children   | token.Children(child_type: string): Token[] | function returning all the token children with the specified type. |
@@ -259,7 +262,7 @@ Commonly used LogQL rules:
 | Rule name | Example | Description |
 | ------------------- | ------- | ----------- |
 | log_stream_selector      | <code>{label1 = "val1", l2 =~ "v2"} &#124;~ "re1"</code> | log stream selector with label selectors and all pipeline operators
-| log_stream_selector_rule | `label1 = "val1"`                                        | one label selector rule 
+| log_stream_selector_rule | `label1 = "val1"`                                        | one label selector rule
 | label                    | `label1`                                                 | label name
 | operator                 | `= / != / =~ / !~`                                       | label selector operator
 | quoted_str               | `"qstr\""`                                               | one properly quoted string
@@ -274,5 +277,3 @@ Commonly used LogQL rules:
 | unwrap_expression        | <code>{label1="val1"} &#124;~ "re1" &#124; unwrap lbl2 </code>                      | line selector with pipeline ending with the unwrap expression
 | unwrap_function          | <code>rate(rate({label1="val1"} &#124; unwrap int_lbl2 [1m]) by (label3)</code>     | unwrapped log-range aggregation
 | compared_agg_statement   | <code>rate(rate({label1="val1"} &#124; unwrap int_lbl2 [1m]) by (label3) > 5</code> | wrapped or unwrapped log-range aggregation comparef to a numeric const
-
-
