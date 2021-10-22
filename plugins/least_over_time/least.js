@@ -6,30 +6,27 @@ module.exports = class extends PluginLoaderBase {
             least_over_time: {
                 /**
                  *
-                 * @param sum {any} previous value for the current time bucket
+                 * @param lowest {any} previous value for the current time bucket
                  * @param val {{unwrapped: number}} current values
                  * @param time {number} timestamp in ms for the current value
                  * @returns {any}
                  */
-                run: (sum, val, time) => {
-                    console.log('test', typeof sum, sum);
+                run: (lowest, val, time) => {
+                    console.log('test', typeof lowest, lowest);
                     console.log('val', typeof val, val);
                     console.log('time', typeof time, time);
-                    sum = sum || {};
-                    sum.first = sum && sum.first && time > sum.first.time ? sum.first : {
-                        time: time,
-                        val: val.unwrapped
-                    };
-                    sum.last = sum && sum.last && time < sum.last ? sum.last : {time: time, val: val.unwrapped};
-                    return sum;
+                    if(val.unwrapped < lowest) {
+                      lowest = val.unwrapped
+                    }
+                    return lowest;
                 },
                 /**
-                 * @param sum {any} sum of the time bucket you have created during "run"
+                 * @param lowest {any} lowest of the time bucket you have created during "run"
                  * @returns {number}
                  */
-                approx: (sum) => {
-                    return sum && sum.last && sum.first && sum.last.time > sum.first.time ?
-                        (sum.last.val - sum.first.val) / (sum.last.time - sum.first.time) * 1000 : 0;
+                approx: (lowest) => {
+                    console.log('lowest', typeof lowest, lowest)
+                    return lowest
                 }
             }
         };
