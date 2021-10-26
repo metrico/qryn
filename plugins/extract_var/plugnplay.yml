@@ -1,0 +1,5 @@
+id: export_var
+name: export var
+description: Export one variable from log stream
+loader: index.js
+type: macros

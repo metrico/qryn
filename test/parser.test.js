@@ -32,3 +32,10 @@ it('should compile strings with escaped quotes', () => {
         [ 'run=`kok\\\\\\`oko`', 'u_ru_ru!="lolol"', 'zozo=~"sssss"' ]
     );
 });
+
+it('should parse macros', () => {
+    let res = bnf.ParseScript('test_macro("macro is ok")');
+    expect(res.rootToken.value).toMatch('test_macro("macro is ok")');
+    expect(res.rootToken.Child('quoted_str').value).toMatch('"macro is ok"');
+});
+

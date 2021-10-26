@@ -237,4 +237,8 @@ it("e2e", async () => {
     expect(resp.data).toMatchSnapshot();
     resp = await runRequest(`derivative({test_id="${testID}_json"}| json | unwrap str_id [10s]) by (test_id) > 1`);
     expect(resp.data).toMatchSnapshot();
+    resp = await runRequest(`test_macro("${testID}")`);
+    adjustResult(resp, testID);
+    expect(resp.data).toMatchSnapshot();
+    //console.log(JSON.stringify(resp.data));
 });
