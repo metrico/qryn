@@ -1,0 +1,5 @@
+id: test_macro
+name: test macro
+description: A macro to test
+loader: index.js
+type: macros

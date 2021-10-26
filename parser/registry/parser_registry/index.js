@@ -16,5 +16,31 @@ module.exports = {
         return json.via_clickhouse_query(token, query);
     },
     "logfmt": _i,
-    "regexp": _i
+
+    /**
+     *
+     * @param token {Token}
+     * @param query {registry_types.Request}
+     * @returns {registry_types.Request}
+     */
+    "regexp": (token, query) => {
+        const re = new RegExp(JSON.parse(token.Child("parameter").value));
+        const getLabels = (m) => {
+            return m && m.groups ? m.groups : {};
+        }
+        return {
+            ...query,
+            stream: [...(query.stream || []),
+                (s) => s.map(e => {
+                    return e.labels ? {
+                        ...e,
+                        labels: {
+                            ...e.labels,
+                            ...getLabels(e.string.match(re))
+                        }
+                    } : e;
+                })
+            ]
+        };
+    }
 }

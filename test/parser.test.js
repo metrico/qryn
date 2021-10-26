@@ -44,3 +44,11 @@ it ('should parse lbl cmp', () => {
         expect(res.rootToken.Child('number_label_filter_expression').value).toEqual(`freq ${op} 4`);
     }
 });
+
+
+it('should parse macros', () => {
+    let res = bnf.ParseScript('test_macro("macro is ok")');
+    expect(res.rootToken.value).toMatch('test_macro("macro is ok")');
+    expect(res.rootToken.Child('quoted_str').value).toMatch('"macro is ok"');
+});
+

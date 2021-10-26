@@ -12,6 +12,8 @@ this.readonly = process.env.READONLY || false;
 this.http_user = process.env.CLOKI_LOGIN || false;
 this.http_pass = process.env.CLOKI_PASSWORD || false;
 
+require("./plugins/engine");
+
 var DATABASE = require("./lib/db/clickhouse");
 var UTILS = require("./lib/utils");
 const snappy = require("snappy");

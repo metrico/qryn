@@ -1,0 +1,5 @@
+id: derivative
+name: Derivative Plugin
+description: Plugin to test pluggable extensions
+loader: derivative.js
+type: unwrap_registry

@@ -1,4 +1,4 @@
-<SYNTAX> ::= <log_stream_selector> | <unwrap_function> | <log_range_aggregation> | <aggregation_operator> | <compared_agg_statement>
+<SYNTAX> ::= <log_stream_selector> | <unwrap_function> | <log_range_aggregation> | <aggregation_operator> | <compared_agg_statement> | <user_macro>
 
 log_stream_selector ::= "{" <OWSP> <log_stream_selector_rule> *(<OWSP> "," <OWSP> <log_stream_selector_rule>) <OWSP> "}" <OWSP> *(<OWSP><log_pipeline>)
 

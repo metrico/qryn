@@ -246,5 +246,8 @@ it("e2e", async () => {
     resp = await runRequest(`{test_id="${testID}_json"} | json | str_id >= 598`);
     adjustResult(resp, testID + "_json");
     expect(resp.data).toMatchSnapshot();
+    resp = await runRequest(`test_macro("${testID}")`);
+    adjustResult(resp, testID);
+    expect(resp.data).toMatchSnapshot();
     //console.log(JSON.stringify(resp.data));
 });

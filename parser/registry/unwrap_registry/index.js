@@ -135,7 +135,7 @@ module.exports = {
         return reg.absent_over_time.via_request(token, query);
     },
 
-    ...getPlugins(__dirname + "/../../../plugins/unwrap_registry", (plugin) => {
+    ...getPlugins("unwrap_registry", (plugin) => {
         return (token, query) => {
             return reg.apply_via_stream(
                 token,
