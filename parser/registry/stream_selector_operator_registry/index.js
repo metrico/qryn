@@ -1,5 +1,5 @@
 const reg = require('./stream_selector_operator_registry');
-
+const {has_extra_labels} = require("../common");
 
 
 module.exports = {
@@ -13,7 +13,7 @@ module.exports = {
         if (query.stream) {
             return reg.eq_stream(token, query);
         }
-        if (query.select.some((x) => x.endsWith('as extra_labels'))) {
+        if (has_extra_labels(query)) {
             return  reg.neq_extra_labels(token, query);
         }
         return reg.neq_simple(token,query);
@@ -28,7 +28,7 @@ module.exports = {
         if (query.stream) {
             return reg.reg_stream(token, query);
         }
-        if (query.select.some((x) => x.endsWith('as extra_labels'))) {
+        if (has_extra_labels(query)) {
             return  reg.reg_extra_labels(token, query);
         }
         return reg.reg_simple(token, query);
@@ -43,7 +43,7 @@ module.exports = {
         if (query.stream) {
             return reg.nreg_stream(token, query);
         }
-        if (query.select.some((x) => x.endsWith('as extra_labels'))) {
+        if (has_extra_labels(query)) {
             return  reg.nreg_extra_labels(token, query);
         }
         return reg.nreg_simple(token, query);
@@ -58,7 +58,7 @@ module.exports = {
         if (query.stream) {
             return reg.eq_stream(token, query);
         }
-        if (query.select.some((x) => x.endsWith('as extra_labels'))) {
+        if (has_extra_labels(query)) {
             return  reg.eq_extra_labels(token, query);
         }
         return reg.eq_simple(token, query);

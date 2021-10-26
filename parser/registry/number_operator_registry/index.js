@@ -1,15 +1,21 @@
 const agg_reg = require("./compared_agg_reg");
+const label_req = require("./compared_label_reg");
 
 /**
  *
  * @param token {Token}
  * @param query {registry_types.Request}
  * @param aggregated_processor {(function(Token, registry_types.Request): registry_types.Request)}
+ * @param label_comparer {(function(Token, registry_types.Request): registry_types.Request)}
  * @returns {registry_types.Request}
  */
-function generic_req(token, query, aggregated_processor) {
+function generic_req(token, query,
+                     aggregated_processor, label_comparer) {
     if (token.name === 'compared_agg_statement' || token.Child('compared_agg_statement')) {
         return aggregated_processor(token, query);
+    }
+    if (token.name === 'number_label_filter_expression' || token.Child('number_label_filter_expression')) {
+        return label_comparer(token,query);
     }
     throw new Error('Not implemented');
 }
@@ -22,7 +28,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     "==": (token, query) => {
-        return generic_req(token, query, agg_reg.eq);
+        return generic_req(token, query, agg_reg.eq, label_req.eq);
     },
 
     /**
@@ -32,7 +38,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     ">": (token, query) => {
-        return generic_req(token, query, agg_reg.gt);
+        return generic_req(token, query, agg_reg.gt, label_req.gt);
     },
 
     /**
@@ -42,7 +48,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     ">=": (token, query) => {
-        return generic_req(token, query, agg_reg.ge);
+        return generic_req(token, query, agg_reg.ge, label_req.ge);
     },
 
     /**
@@ -52,7 +58,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     "<": (token, query) => {
-        return generic_req(token, query, agg_reg.lt);
+        return generic_req(token, query, agg_reg.lt, label_req.lt);
     },
 
     /**
@@ -62,7 +68,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     "<=": (token, query) => {
-        return generic_req(token, query, agg_reg.le);
+        return generic_req(token, query, agg_reg.le, label_req.le);
     },
 
     /**
@@ -72,6 +78,6 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     "!=": (token, query) => {
-        return generic_req(token, query, agg_reg.neq);
+        return generic_req(token, query, agg_reg.neq, label_req.neq);
     }
 };

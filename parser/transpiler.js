@@ -204,9 +204,14 @@ module.exports.transpile_log_stream_selector = (token, query) => {
             query = parser_registry[op](pipeline, query);
             continue;
         }
-        if (pipeline.Child('label_filter_expression')) {
+        if (pipeline.Child('string_label_filter_expression')) {
             const op = pipeline.Child('operator').value;
             query = stream_selector_operator_registry[op](pipeline, query);
+            continue;
+        }
+        if (pipeline.Child('number_label_filter_expression')) {
+            const op = pipeline.Child('number_operator').value;
+            query = number_operator_registry[op](pipeline, query);
             continue;
         }
         if (pipeline.Child('line_format_expression')) {

@@ -90492,6 +90492,717 @@ Object {
             68000000000,
             "FREQ_TEST_17",
           ],
+          Array [
+            64000000000,
+            "FREQ_TEST_16",
+          ],
+          Array [
+            60000000000,
+            "FREQ_TEST_15",
+          ],
+          Array [
+            56000000000,
+            "FREQ_TEST_14",
+          ],
+          Array [
+            52000000000,
+            "FREQ_TEST_13",
+          ],
+          Array [
+            48000000000,
+            "FREQ_TEST_12",
+          ],
+          Array [
+            44000000000,
+            "FREQ_TEST_11",
+          ],
+          Array [
+            40000000000,
+            "FREQ_TEST_10",
+          ],
+          Array [
+            36000000000,
+            "FREQ_TEST_9",
+          ],
+          Array [
+            32000000000,
+            "FREQ_TEST_8",
+          ],
+          Array [
+            28000000000,
+            "FREQ_TEST_7",
+          ],
+          Array [
+            24000000000,
+            "FREQ_TEST_6",
+          ],
+          Array [
+            20000000000,
+            "FREQ_TEST_5",
+          ],
+          Array [
+            16000000000,
+            "FREQ_TEST_4",
+          ],
+          Array [
+            12000000000,
+            "FREQ_TEST_3",
+          ],
+          Array [
+            8000000000,
+            "FREQ_TEST_2",
+          ],
+          Array [
+            4000000000,
+            "FREQ_TEST_1",
+          ],
+          Array [
+            0,
+            "FREQ_TEST_0",
+          ],
+        ],
+      },
+    ],
+    "resultType": "streams",
+  },
+  "status": "success",
+}
+`;
+
+exports[`e2e 33`] = `
+Object {
+  "data": Object {
+    "result": Array [
+      Object {
+        "stream": Object {
+          "fmt": "json",
+          "freq": "1",
+          "int_lbl": "1",
+          "lbl_repl": "val_repl",
+          "sid": "599",
+          "test_id": "TEST_ID",
+        },
+        "values": Array [
+          Array [
+            599000000000,
+            "{\\"lbl_repl\\":\\"REPL\\",\\"int_val\\":\\"1\\",\\"new_lbl\\":\\"new_val\\",\\"str_id\\":599,\\"arr\\":[1,2,3],\\"obj\\":{\\"o_1\\":\\"v_1\\"}}",
+          ],
+        ],
+      },
+      Object {
+        "stream": Object {
+          "fmt": "json",
+          "freq": "1",
+          "int_lbl": "1",
+          "lbl_repl": "val_repl",
+          "sid": "598",
+          "test_id": "TEST_ID",
+        },
+        "values": Array [
+          Array [
+            598000000000,
+            "{\\"lbl_repl\\":\\"REPL\\",\\"int_val\\":\\"1\\",\\"new_lbl\\":\\"new_val\\",\\"str_id\\":598,\\"arr\\":[1,2,3],\\"obj\\":{\\"o_1\\":\\"v_1\\"}}",
+          ],
+        ],
+      },
+    ],
+    "resultType": "streams",
+  },
+  "status": "success",
+}
+`;
+
+exports[`e2e 34`] = `
+Object {
+  "data": Object {
+    "result": Array [
+      Object {
+        "stream": Object {
+          "fmt": "json",
+          "freq": "1",
+          "int_lbl": "1",
+          "int_val": "1",
+          "lbl_repl": "REPL",
+          "new_lbl": "new_val",
+          "obj_o_1": "v_1",
+          "str_id": "599",
+          "test_id": "TEST_ID",
+        },
+        "values": Array [
+          Array [
+            599000000000,
+            "{\\"lbl_repl\\":\\"REPL\\",\\"int_val\\":\\"1\\",\\"new_lbl\\":\\"new_val\\",\\"str_id\\":599,\\"arr\\":[1,2,3],\\"obj\\":{\\"o_1\\":\\"v_1\\"}}",
+          ],
+        ],
+      },
+      Object {
+        "stream": Object {
+          "fmt": "json",
+          "freq": "1",
+          "int_lbl": "1",
+          "int_val": "1",
+          "lbl_repl": "REPL",
+          "new_lbl": "new_val",
+          "obj_o_1": "v_1",
+          "str_id": "598",
+          "test_id": "TEST_ID",
+        },
+        "values": Array [
+          Array [
+            598000000000,
+            "{\\"lbl_repl\\":\\"REPL\\",\\"int_val\\":\\"1\\",\\"new_lbl\\":\\"new_val\\",\\"str_id\\":598,\\"arr\\":[1,2,3],\\"obj\\":{\\"o_1\\":\\"v_1\\"}}",
+          ],
+        ],
+      },
+    ],
+    "resultType": "streams",
+  },
+  "status": "success",
+}
+`;
+
+exports[`e2e 35`] = `
+Object {
+  "data": Object {
+    "result": Array [
+      Object {
+        "stream": Object {
+          "freq": "4",
+          "test_id": "TEST_ID",
+        },
+        "values": Array [
+          Array [
+            596000000000,
+            "FREQ_TEST_149",
+          ],
+          Array [
+            592000000000,
+            "FREQ_TEST_148",
+          ],
+          Array [
+            588000000000,
+            "FREQ_TEST_147",
+          ],
+          Array [
+            584000000000,
+            "FREQ_TEST_146",
+          ],
+          Array [
+            580000000000,
+            "FREQ_TEST_145",
+          ],
+          Array [
+            576000000000,
+            "FREQ_TEST_144",
+          ],
+          Array [
+            572000000000,
+            "FREQ_TEST_143",
+          ],
+          Array [
+            568000000000,
+            "FREQ_TEST_142",
+          ],
+          Array [
+            564000000000,
+            "FREQ_TEST_141",
+          ],
+          Array [
+            560000000000,
+            "FREQ_TEST_140",
+          ],
+          Array [
+            556000000000,
+            "FREQ_TEST_139",
+          ],
+          Array [
+            552000000000,
+            "FREQ_TEST_138",
+          ],
+          Array [
+            548000000000,
+            "FREQ_TEST_137",
+          ],
+          Array [
+            544000000000,
+            "FREQ_TEST_136",
+          ],
+          Array [
+            540000000000,
+            "FREQ_TEST_135",
+          ],
+          Array [
+            536000000000,
+            "FREQ_TEST_134",
+          ],
+          Array [
+            532000000000,
+            "FREQ_TEST_133",
+          ],
+          Array [
+            528000000000,
+            "FREQ_TEST_132",
+          ],
+          Array [
+            524000000000,
+            "FREQ_TEST_131",
+          ],
+          Array [
+            520000000000,
+            "FREQ_TEST_130",
+          ],
+          Array [
+            516000000000,
+            "FREQ_TEST_129",
+          ],
+          Array [
+            512000000000,
+            "FREQ_TEST_128",
+          ],
+          Array [
+            508000000000,
+            "FREQ_TEST_127",
+          ],
+          Array [
+            504000000000,
+            "FREQ_TEST_126",
+          ],
+          Array [
+            500000000000,
+            "FREQ_TEST_125",
+          ],
+          Array [
+            496000000000,
+            "FREQ_TEST_124",
+          ],
+          Array [
+            492000000000,
+            "FREQ_TEST_123",
+          ],
+          Array [
+            488000000000,
+            "FREQ_TEST_122",
+          ],
+          Array [
+            484000000000,
+            "FREQ_TEST_121",
+          ],
+          Array [
+            480000000000,
+            "FREQ_TEST_120",
+          ],
+          Array [
+            476000000000,
+            "FREQ_TEST_119",
+          ],
+          Array [
+            472000000000,
+            "FREQ_TEST_118",
+          ],
+          Array [
+            468000000000,
+            "FREQ_TEST_117",
+          ],
+          Array [
+            464000000000,
+            "FREQ_TEST_116",
+          ],
+          Array [
+            460000000000,
+            "FREQ_TEST_115",
+          ],
+          Array [
+            456000000000,
+            "FREQ_TEST_114",
+          ],
+          Array [
+            452000000000,
+            "FREQ_TEST_113",
+          ],
+          Array [
+            448000000000,
+            "FREQ_TEST_112",
+          ],
+          Array [
+            444000000000,
+            "FREQ_TEST_111",
+          ],
+          Array [
+            440000000000,
+            "FREQ_TEST_110",
+          ],
+          Array [
+            436000000000,
+            "FREQ_TEST_109",
+          ],
+          Array [
+            432000000000,
+            "FREQ_TEST_108",
+          ],
+          Array [
+            428000000000,
+            "FREQ_TEST_107",
+          ],
+          Array [
+            424000000000,
+            "FREQ_TEST_106",
+          ],
+          Array [
+            420000000000,
+            "FREQ_TEST_105",
+          ],
+          Array [
+            416000000000,
+            "FREQ_TEST_104",
+          ],
+          Array [
+            412000000000,
+            "FREQ_TEST_103",
+          ],
+          Array [
+            408000000000,
+            "FREQ_TEST_102",
+          ],
+          Array [
+            404000000000,
+            "FREQ_TEST_101",
+          ],
+          Array [
+            400000000000,
+            "FREQ_TEST_100",
+          ],
+          Array [
+            396000000000,
+            "FREQ_TEST_99",
+          ],
+          Array [
+            392000000000,
+            "FREQ_TEST_98",
+          ],
+          Array [
+            388000000000,
+            "FREQ_TEST_97",
+          ],
+          Array [
+            384000000000,
+            "FREQ_TEST_96",
+          ],
+          Array [
+            380000000000,
+            "FREQ_TEST_95",
+          ],
+          Array [
+            376000000000,
+            "FREQ_TEST_94",
+          ],
+          Array [
+            372000000000,
+            "FREQ_TEST_93",
+          ],
+          Array [
+            368000000000,
+            "FREQ_TEST_92",
+          ],
+          Array [
+            364000000000,
+            "FREQ_TEST_91",
+          ],
+          Array [
+            360000000000,
+            "FREQ_TEST_90",
+          ],
+          Array [
+            356000000000,
+            "FREQ_TEST_89",
+          ],
+          Array [
+            352000000000,
+            "FREQ_TEST_88",
+          ],
+          Array [
+            348000000000,
+            "FREQ_TEST_87",
+          ],
+          Array [
+            344000000000,
+            "FREQ_TEST_86",
+          ],
+          Array [
+            340000000000,
+            "FREQ_TEST_85",
+          ],
+          Array [
+            336000000000,
+            "FREQ_TEST_84",
+          ],
+          Array [
+            332000000000,
+            "FREQ_TEST_83",
+          ],
+          Array [
+            328000000000,
+            "FREQ_TEST_82",
+          ],
+          Array [
+            324000000000,
+            "FREQ_TEST_81",
+          ],
+          Array [
+            320000000000,
+            "FREQ_TEST_80",
+          ],
+          Array [
+            316000000000,
+            "FREQ_TEST_79",
+          ],
+          Array [
+            312000000000,
+            "FREQ_TEST_78",
+          ],
+          Array [
+            308000000000,
+            "FREQ_TEST_77",
+          ],
+          Array [
+            304000000000,
+            "FREQ_TEST_76",
+          ],
+          Array [
+            300000000000,
+            "FREQ_TEST_75",
+          ],
+          Array [
+            296000000000,
+            "FREQ_TEST_74",
+          ],
+          Array [
+            292000000000,
+            "FREQ_TEST_73",
+          ],
+          Array [
+            288000000000,
+            "FREQ_TEST_72",
+          ],
+          Array [
+            284000000000,
+            "FREQ_TEST_71",
+          ],
+          Array [
+            280000000000,
+            "FREQ_TEST_70",
+          ],
+          Array [
+            276000000000,
+            "FREQ_TEST_69",
+          ],
+          Array [
+            272000000000,
+            "FREQ_TEST_68",
+          ],
+          Array [
+            268000000000,
+            "FREQ_TEST_67",
+          ],
+          Array [
+            264000000000,
+            "FREQ_TEST_66",
+          ],
+          Array [
+            260000000000,
+            "FREQ_TEST_65",
+          ],
+          Array [
+            256000000000,
+            "FREQ_TEST_64",
+          ],
+          Array [
+            252000000000,
+            "FREQ_TEST_63",
+          ],
+          Array [
+            248000000000,
+            "FREQ_TEST_62",
+          ],
+          Array [
+            244000000000,
+            "FREQ_TEST_61",
+          ],
+          Array [
+            240000000000,
+            "FREQ_TEST_60",
+          ],
+          Array [
+            236000000000,
+            "FREQ_TEST_59",
+          ],
+          Array [
+            232000000000,
+            "FREQ_TEST_58",
+          ],
+          Array [
+            228000000000,
+            "FREQ_TEST_57",
+          ],
+          Array [
+            224000000000,
+            "FREQ_TEST_56",
+          ],
+          Array [
+            220000000000,
+            "FREQ_TEST_55",
+          ],
+          Array [
+            216000000000,
+            "FREQ_TEST_54",
+          ],
+          Array [
+            212000000000,
+            "FREQ_TEST_53",
+          ],
+          Array [
+            208000000000,
+            "FREQ_TEST_52",
+          ],
+          Array [
+            204000000000,
+            "FREQ_TEST_51",
+          ],
+          Array [
+            200000000000,
+            "FREQ_TEST_50",
+          ],
+          Array [
+            196000000000,
+            "FREQ_TEST_49",
+          ],
+          Array [
+            192000000000,
+            "FREQ_TEST_48",
+          ],
+          Array [
+            188000000000,
+            "FREQ_TEST_47",
+          ],
+          Array [
+            184000000000,
+            "FREQ_TEST_46",
+          ],
+          Array [
+            180000000000,
+            "FREQ_TEST_45",
+          ],
+          Array [
+            176000000000,
+            "FREQ_TEST_44",
+          ],
+          Array [
+            172000000000,
+            "FREQ_TEST_43",
+          ],
+          Array [
+            168000000000,
+            "FREQ_TEST_42",
+          ],
+          Array [
+            164000000000,
+            "FREQ_TEST_41",
+          ],
+          Array [
+            160000000000,
+            "FREQ_TEST_40",
+          ],
+          Array [
+            156000000000,
+            "FREQ_TEST_39",
+          ],
+          Array [
+            152000000000,
+            "FREQ_TEST_38",
+          ],
+          Array [
+            148000000000,
+            "FREQ_TEST_37",
+          ],
+          Array [
+            144000000000,
+            "FREQ_TEST_36",
+          ],
+          Array [
+            140000000000,
+            "FREQ_TEST_35",
+          ],
+          Array [
+            136000000000,
+            "FREQ_TEST_34",
+          ],
+          Array [
+            132000000000,
+            "FREQ_TEST_33",
+          ],
+          Array [
+            128000000000,
+            "FREQ_TEST_32",
+          ],
+          Array [
+            124000000000,
+            "FREQ_TEST_31",
+          ],
+          Array [
+            120000000000,
+            "FREQ_TEST_30",
+          ],
+          Array [
+            116000000000,
+            "FREQ_TEST_29",
+          ],
+          Array [
+            112000000000,
+            "FREQ_TEST_28",
+          ],
+          Array [
+            108000000000,
+            "FREQ_TEST_27",
+          ],
+          Array [
+            104000000000,
+            "FREQ_TEST_26",
+          ],
+          Array [
+            100000000000,
+            "FREQ_TEST_25",
+          ],
+          Array [
+            96000000000,
+            "FREQ_TEST_24",
+          ],
+          Array [
+            92000000000,
+            "FREQ_TEST_23",
+          ],
+          Array [
+            88000000000,
+            "FREQ_TEST_22",
+          ],
+          Array [
+            84000000000,
+            "FREQ_TEST_21",
+          ],
+          Array [
+            80000000000,
+            "FREQ_TEST_20",
+          ],
+          Array [
+            76000000000,
+            "FREQ_TEST_19",
+          ],
+          Array [
+            72000000000,
+            "FREQ_TEST_18",
+          ],
+          Array [
+            68000000000,
+            "FREQ_TEST_17",
+          ],
         ],
       },
       Object {

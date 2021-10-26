@@ -127,7 +127,7 @@ module.exports.getPlugins = (type, cb) => {
  * @returns {string}
  */
 module.exports.concat_labels = (query) => {
-    if (query.select.some(f => f.endsWith('as extra_labels'))) {
+    if (module.exports.has_extra_labels(query)) {
         return `arraySort(arrayConcat(arrayFilter(`+
             `x -> arrayExists(y -> y.1 == x.1, extra_labels) == 0, `+
             `JSONExtractKeysAndValues(labels, 'String')), extra_labels))`;
@@ -191,6 +191,15 @@ function add_timestamp(values, timestamp, value, duration, step, counter_fn) {
     values[timestamp_with_step][timestamp_without_step] =
         counter_fn(values[timestamp_with_step][timestamp_without_step], value, timestamp);
     return values;
+}
+
+/**
+ *
+ * @param query {registry_types.Request}
+ * @returns {boolean}
+ */
+module.exports.has_extra_labels = (query) => {
+    return query.select.some((x) => x.endsWith('as extra_labels'));
 }
 
 /**

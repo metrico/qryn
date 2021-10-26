@@ -1,4 +1,4 @@
-const {_and, map} = require("./common");
+const {_and, map, has_extra_labels} = require("./common");
 /**
  *
  * @param token {Token}
@@ -13,7 +13,7 @@ module.exports = (token, query) => {
     if (label === "_entry") {
         return unwrap_line(query);
     }
-    if (query.select.some(e => e.endsWith('as extra_labels'))) {
+    if (has_extra_labels(query)) {
         return via_query_with_extra_labels(label, query);
     }
     return via_query(label, query);
