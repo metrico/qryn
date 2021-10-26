@@ -26,7 +26,7 @@ module.exports = {
     "regexp": (token, query) => {
         const re = new RegExp(JSON.parse(token.Child("parameter").value));
         const getLabels = (m) => {
-            return m.groups || {};
+            return m && m.groups ? m.groups : {};
         }
         return {
             ...query,
