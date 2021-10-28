@@ -34,6 +34,27 @@ it('should compile strings with escaped quotes', () => {
     );
 });
 
+it ('should parse lbl cmp', () => {
+    const ops = ['>', '<', '>=', '<=', '==', '!='];
+    for (const op of ops) {
+        let res = bnf.ParseScript(`{test_id="123345456"} | freq ${op} 4.0`);
+        expect(res.rootToken.Child('number_label_filter_expression').value).toEqual(`freq ${op} 4.0`);
+    }
+    for (const op of ops) {
+        let res = bnf.ParseScript(`{test_id="123345456"} | freq ${op} 4`);
+        expect(res.rootToken.Child('number_label_filter_expression').value).toEqual(`freq ${op} 4`);
+    }
+});
+
+
+it('should parse macros', () => {
+    let res = bnf.ParseScript('test_macro("macro is ok")');
+    expect(res.rootToken.value).toMatch('test_macro("macro is ok")');
+    expect(res.rootToken.Child('quoted_str').value).toMatch('"macro is ok"');
+});
+
+
+
 const print_tree = (token, indent, buf) => {
     buf = buf || "";
     if (token.name.match(/^(SCRIPT|SYNTAX|[a-z_]+)$/)) {

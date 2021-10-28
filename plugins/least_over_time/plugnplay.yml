@@ -1,0 +1,5 @@
+id: leastovertime
+name: Least Value Over Time Plugin
+description: Plugin to return least number over time frame
+loader: least.js
+type: unwrap_registry

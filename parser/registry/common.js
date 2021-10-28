@@ -1,5 +1,5 @@
-const glob = require("glob");
 const {hashLabels, parseLabels} = require("../../common");
+const {get_plg} = require("../../plugins/engine");
 
 
 /**
@@ -103,15 +103,22 @@ const getDuration = module.exports.getDuration;
  */
 module.exports.isEOF = (eof) => eof.EOF;
 
-module.exports.getPlugins = (path, cb) => {
-    let plugins = {};
-    for (let file of glob.sync(path + "/*.js")) {
+module.exports.getPlugins = (type, cb) => {
+    const _plgs = get_plg({type: type});
+    const plgs = {};
+    for (const _e of Object.values(_plgs)) {
+        for (const e of Object.entries(_e)) {
+            plgs[e[0]] = cb ? cb(e[1]) : () => e[1];
+        }
+    }
+    return plgs;
+    /*for (let file of glob.sync(path + "/*.js")) {
         const mod = require(file);
         for (let fn of Object.keys(mod)) {
             plugins[fn] = cb ? cb(mod[fn]()) : mod[fn]();
         }
     }
-    return plugins;
+    return plugins;*/
 }
 
 /**
@@ -193,6 +200,15 @@ function add_timestamp(values, timestamp, value, duration, step, counter_fn) {
     values[timestamp_with_step][timestamp_without_step] =
         counter_fn(values[timestamp_with_step][timestamp_without_step], value, timestamp);
     return values;
+}
+
+/**
+ *
+ * @param query {registry_types.Request}
+ * @returns {boolean}
+ */
+module.exports.has_extra_labels = (query) => {
+    return query.select.some((x) => x.endsWith('as extra_labels'));
 }
 
 /**
