@@ -4,7 +4,7 @@ export namespace registry_types {
     interface Request {
         ctx?: {[k: string]: any},
         with?: {[k: string]: Request | UnionRequest}
-        select: string[],
+        select: (string | Object)[],
         from: string,
         left_join?: [{
             name: string,

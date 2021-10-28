@@ -236,6 +236,7 @@ it("e2e", async () => {
     adjustMatrixResult(resp, testID);
     expect(resp.data).toMatchSnapshot();
     resp = await runRequest(`derivative({test_id="${testID}_json"}| json | unwrap str_id [10s]) by (test_id) > 1`);
+    adjustMatrixResult(resp, testID + "_json");
     expect(resp.data).toMatchSnapshot();
     resp = await runRequest(`{test_id="${testID}"} | freq >= 4`);
     adjustResult(resp, testID);
@@ -248,6 +249,18 @@ it("e2e", async () => {
     expect(resp.data).toMatchSnapshot();
     resp = await runRequest(`test_macro("${testID}")`);
     adjustResult(resp, testID);
+    expect(resp.data).toMatchSnapshot();
+    resp = await runRequest(`{test_id="${testID}"} | regexp "^(?<e>[^0-9]+)[0-9]+$"`);
+    adjustResult(resp, testID);
+    expect(resp.data).toMatchSnapshot();
+    resp = await runRequest(`{test_id="${testID}"} | regexp "^[^0-9]+(?<e>[0-9])+$"`);
+    adjustResult(resp, testID);
+    expect(resp.data).toMatchSnapshot();
+    resp = await runRequest(`{test_id="${testID}"} | regexp "^[^0-9]+([0-9]+(?<e>[0-9]))$"`);
+    adjustResult(resp, testID);
+    expect(resp.data).toMatchSnapshot();
+    resp = await runRequest(`first_over_time({test_id="${testID}", freq="0.5"} | regexp "^[^0-9]+(?<e>[0-9]+)$" | unwrap e [1s]) by(test_id)`, 1);
+    adjustMatrixResult(resp, testID);
     expect(resp.data).toMatchSnapshot();
     //console.log(JSON.stringify(resp.data));
 });

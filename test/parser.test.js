@@ -1,4 +1,5 @@
 const bnf = require('../parser/bnf');
+const regexp = require("../parser/registry/parser_registry/regexp");
 
 it('should compile', () => {
     let res = bnf.ParseScript("bytes_rate({run=\"kokoko\",u_ru_ru!=\"lolol\",zozo=~\"sssss\"}  |~\"atltlt\" !~   \"rmrmrm\" [5m])");
@@ -52,3 +53,49 @@ it('should parse macros', () => {
     expect(res.rootToken.Child('quoted_str').value).toMatch('"macro is ok"');
 });
 
+
+
+const print_tree = (token, indent, buf) => {
+    buf = buf || "";
+    if (token.name.match(/^(SCRIPT|SYNTAX|[a-z_]+)$/)) {
+        buf += new Array(indent).fill(" ").join("") + token.name + ": " + token.value+"\n"
+    }
+    buf = token.tokens.reduce((sum, t) => print_tree(t, indent+1, sum), buf);
+    return buf;
+}
+
+it('should compile regex', () => {
+    expect(print_tree(regexp.internal.compile("abcd\\("),0)).toMatchSnapshot();
+    expect(print_tree(regexp.internal.compile("(a\\(bc)"), 0)).toMatchSnapshot();
+    expect(print_tree(regexp.internal.compile("(?<label1>a[^\\[\\(\\)]bc)"), 0)).toMatchSnapshot();
+    expect(print_tree(regexp.internal.compile("(a(?<label1>[^\\[\\(\\)]bc))"), 0)).toMatchSnapshot();
+    expect(print_tree(regexp.internal.compile("(a[\\(\\)]+(?<l2>b)(?<label1>[^\\[\\(\\)]bc))"), 0)).toMatchSnapshot();
+});
+
+it('should get named groups', () => {
+    const nGroups = (str) => {
+        const t = regexp.internal.compile(str);
+        const g = regexp.internal.walk(t, []);
+        //console.log({n:str, g:g});
+        expect(g).toMatchSnapshot();
+    }
+    nGroups("abcd\\(");
+    nGroups("(a\\(bc)");
+    nGroups("(?<label1>a[^\\[\\(\\)]bc)");
+    nGroups("(a(?<label1>[^\\[\\(\\)]bc))");
+    nGroups("(a[\\(\\)]+(?<l2>b)(?<label1>[^\\[\\(\\)]bc))");
+});
+
+it('should erase names', () => {
+    const nGroups = (str) => {
+        const t = regexp.internal.compile(str);
+        const g = regexp.internal.rm_names(t);
+        //console.log({n:str, g:g.value});
+        expect(g.value).toMatchSnapshot();
+    }
+    nGroups("abcd\\(");
+    nGroups("(a\\(bc)");
+    nGroups("(?<label1>a[^\\[\\(\\)]bc)");
+    nGroups("(a(?<label1>[^\\[\\(\\)]bc))");
+    nGroups("(a[\\(\\)]+(?<l2>b)(?<label1>[^\\[\\(\\)]bc))");
+});

@@ -124,6 +124,15 @@ module.exports.getPlugins = (type, cb) => {
 /**
  *
  * @param query {registry_types.Request}
+ * @returns {boolean}
+ */
+module.exports.has_extra_labels = (query) => {
+    return query.select.some(f => f.endsWith('as extra_labels'));
+}
+
+/**
+ *
+ * @param query {registry_types.Request}
  * @returns {string}
  */
 module.exports.concat_labels = (query) => {
@@ -261,4 +270,65 @@ module.exports.apply_via_stream = (token, query,
             })
         ]
     };
+}
+
+/**
+ *
+ * @param str {string}
+ * @param custom {(function(string): string | undefined) | undefined}
+ * @param custom_slash {(function(string): (string | undefined)) | undefined}
+ * @return {string}
+ */
+module.exports.unquote = (str, custom, custom_slash) => {
+    const quote = str.substr(0, 1);
+    switch (quote) {
+        case '"':
+        case '`':
+            break;
+        default:
+            throw new Error(`Unknown quote: ${quote}`);
+    }
+    str = str.trim();
+    str = str.substr(1, str.length - 2);
+    let res = "";
+    let slash = false;
+    for (let i = 0; i < str.length; i++) {
+        if (!slash) {
+            if (custom && custom(str[i])) {
+                res += custom(str[i]);
+                continue;
+            }
+            if (str[i] === quote) {
+                throw new Error("Unexpected quote");
+            }
+            switch (str[i]) {
+                case '\\':
+                    slash = true;
+                    continue;
+                default:
+                    res += str[i];
+            }
+        }
+        if (slash) {
+            if (custom_slash && custom_slash(str[i])) {
+                res += custom_slash(str[i]);
+                continue;
+            }
+            if (str[i] === quote) {
+                res += quote;
+                continue;
+            }
+            switch (str[i]) {
+                case 'n':
+                    res += '\n';
+                    break;
+                case 't':
+                    res += '\t';
+                    break;
+                default:
+                    res += "\\" + str[i];
+            }
+        }
+    }
+    return res;
 }
