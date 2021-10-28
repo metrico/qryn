@@ -1,5 +1,6 @@
 const json = require("./json");
-
+const re = require("./regexp");
+const {has_extra_labels} = require("../common");
 const _i = () => {throw new Error("Not implemented")}
 
 module.exports = {
@@ -10,7 +11,8 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     "json": (token, query) => {
-        if (!token.Children("parameter").length || (query.stream && query.stream.length)) {
+        if (!token.Children("parameter").length || (query.stream && query.stream.length) ||
+            has_extra_labels(query)) {
             return json.via_stream(token, query);
         }
         return json.via_clickhouse_query(token, query);
@@ -24,23 +26,14 @@ module.exports = {
      * @returns {registry_types.Request}
      */
     "regexp": (token, query) => {
-        const re = new RegExp(JSON.parse(token.Child("parameter").value));
-        const getLabels = (m) => {
-            return m && m.groups ? m.groups : {};
+        if (query.stream && query.stream.length || has_extra_labels(query)) {
+            return re.via_stream(token, query);
         }
-        return {
-            ...query,
-            stream: [...(query.stream || []),
-                (s) => s.map(e => {
-                    return e.labels ? {
-                        ...e,
-                        labels: {
-                            ...e.labels,
-                            ...getLabels(e.string.match(re))
-                        }
-                    } : e;
-                })
-            ]
-        };
+        try {
+            return re.via_request(token, query);
+        } catch (e) {
+            console.log(e);
+            return re.via_stream(token, query);
+        }
     }
 }
