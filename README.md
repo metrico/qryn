@@ -144,7 +144,8 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | CLICKHOUSE_PORT  	| 8123  	    | Clickhouse Server port  		|
 | CLICKHOUSE_DB  	| cloki  	    | Clickhouse Database Name  		|
 | CLICKHOUSE_AUTH  	| default:  	    | Clickhouse Authentication (user:password) |
-| CLICKHOUSE_TIMEFIELD | record_datetime    | Clickhouse DateTime column for native queries |
+| CLICKHOUSE_PROTO  	| http  	    | Clickhouse Protocol (http, https) |
+| CLICKHOUSE_TIMEFIELD  | record_datetime    | Clickhouse DateTime column for native queries |
 | BULK_MAXAGE  		| 2000  	    | Max Age for Bulk Inserts  		|
 | BULK_MAXSIZE  	| 5000  	    | Max Size for Bulk Inserts  		|
 | BULK_MAXCACHE  	| 50000  	    | Max Labels in Memory Cache  		|
