@@ -10,7 +10,7 @@ var debug = this.debug;
 
 this.readonly = process.env.READONLY || false;
 this.http_user = process.env.CLOKI_LOGIN || false;
-this.http_pass = process.env.CLOKI_PASSWORD || false;
+this.http_password = process.env.CLOKI_PASSWORD || false;
 
 require("./plugins/engine");
 
@@ -54,23 +54,23 @@ fastify.after((err) => {
     if (err) throw err;
 });
 
-
-
 /* Enable Simple Authentication */
-if (this.http_ && this.http_password) {
+if (this.http_user && this.http_password) {
+    function checkAuth(username, password, req, reply, done) {
+      if (username === this.http_user && password === this.http_password) {
+        done();
+      } else {
+        done(new Error("Unauthorized!: Wrong username/password."));
+      }
+    }
+    const validate = checkAuth.bind(this);
+
     fastify.register(require("fastify-basic-auth"), {
         validate
     });
     fastify.after(() => {
         fastify.addHook("preHandler", fastify.basicAuth);
     });
-}
-function validate(username, password, req, reply, done) {
-    if (username === this.http_user && password === this.http_password) {
-        done();
-    } else {
-        done(new Error("Unauthorized!: Wrong username/password."));
-    }
 }
 
 fastify.addContentTypeParser("text/plain", {
