@@ -49,6 +49,7 @@ const fastify = require("fastify")({
 });
 
 fastify.register(require("fastify-url-data"));
+fastify.register(require('fastify-websocket'));
 
 fastify.after((err) => {
     if (err) throw err;
@@ -140,6 +141,8 @@ fastify.get("/loki/api/v1/label/:name/values", handler_label_values);
 /* Series Placeholder - we do not track this as of yet */
 const handler_series = require('./lib/handlers/series.js').bind(this);
 fastify.get("/loki/api/v1/series", handler_series);
+
+fastify.get('/loki/api/v1/tail', {websocket:true}, require('./lib/handlers/tail').bind(this));
 
 // Run API Service
 fastify.listen(

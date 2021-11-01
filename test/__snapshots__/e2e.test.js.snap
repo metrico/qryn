@@ -163190,3 +163190,40 @@ Object {
   "status": "success",
 }
 `;
+
+exports[`e2e 40`] = `
+Object {
+  "data": Object {
+    "result": Array [
+      Object {
+        "stream": Object {
+          "freq": "1",
+          "test_id": "TEST_ID",
+        },
+        "values": Array [
+          Array [
+            0,
+            "MSG_0",
+          ],
+          Array [
+            1000000000,
+            "MSG_1",
+          ],
+          Array [
+            2000000000,
+            "MSG_2",
+          ],
+          Array [
+            3000000000,
+            "MSG_3",
+          ],
+          Array [
+            4000000000,
+            "MSG_4",
+          ],
+        ],
+      },
+    ],
+  },
+}
+`;

@@ -23,7 +23,7 @@
   "homepage": "https://github.com/lmangani/cloki#readme",
   "dependencies": {
     "@apla/clickhouse": "^1.6.4",
-    "fastify": "^2.15.1",
+    "fastify": "^3.22.1",
     "fastify-basic-auth": "^0.4.0",
     "fastify-static": "^4.2.4",
     "fastify-url-data": "^2.4.0",
@@ -41,7 +41,9 @@
     "handlebars-helpers": "^0.10.0",
     "snappy": "^7.0.3",
     "glob": "^7.1.2",
-    "plugnplay": "^3.13.0"
+    "plugnplay": "^3.13.0",
+    "fastify-websocket": "^4.0.0",
+    "ws": "^8.2.3"
   },
   "devDependencies": {
     "jest": "^27.0.5",
