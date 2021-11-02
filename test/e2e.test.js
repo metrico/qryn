@@ -297,6 +297,9 @@ it("e2e", async () => {
     }
     await new Promise(f => setTimeout(f, 6000));
     ws.close();
+    for (let res of resp.data.data.result) {
+        res.values.sort();
+    }
     adjustResult(resp, testID + "_ws", wsStart);
     expect(resp.data).toMatchSnapshot();
     //console.log(JSON.stringify(resp.data));
