@@ -1,5 +1,6 @@
 const {createPoints, sendPoints} = require("./common");
 const axios = require("axios");
+const {WebSocket} = require('ws');
 //const pb = require("protobufjs");
 const e2e = () => process.env.INTEGRATION_E2E || process.env.INTEGRATION;
 const cloki_local = () => process.env.CLOKI_LOCAL || false;
@@ -69,12 +70,13 @@ it("e2e", async () => {
     let resp = await axios.get(
         `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}"}&start=${start}000000&end=${end}000000&step=2`
     );
-    const adjustResult = (resp, id) => {
+    const adjustResult = (resp, id, _start) => {
+        _start = _start || start;
         id = id || testID;
         resp.data.data.result = resp.data.data.result.map(stream => {
             expect(stream.stream.test_id).toEqual(id);
             stream.stream.test_id = "TEST_ID";
-            stream.values = stream.values.map(v => [v[0] - start * 1000000, v[1]]);
+            stream.values = stream.values.map(v => [v[0] - _start * 1000000, v[1]]);
             return stream;
         });
     }
@@ -262,5 +264,44 @@ it("e2e", async () => {
     resp = await runRequest(`first_over_time({test_id="${testID}", freq="0.5"} | regexp "^[^0-9]+(?<e>[0-9]+)$" | unwrap e [1s]) by(test_id)`, 1);
     adjustMatrixResult(resp, testID);
     expect(resp.data).toMatchSnapshot();
+    const ws = new WebSocket(`ws://localhost:3100/loki/api/v1/tail?query={test_id="${testID}_ws"}`);
+    resp = {
+        data: {
+            data: {
+                result: []
+            }
+        }
+    };
+    ws.on('message', (msg) => {
+        const _msg = JSON.parse(msg);
+        for (const stream of _msg.streams) {
+            let _stream = resp.data.data.result.find(res =>
+                JSON.stringify(res.stream) === JSON.stringify(stream.stream)
+            );
+            if (!_stream) {
+                _stream = {
+                    stream: stream.stream,
+                    values: []
+                }
+                resp.data.data.result.push(_stream);
+            }
+            _stream.values.push(...stream.values);
+        }
+    });
+    const wsStart = Math.floor(Date.now() / 1000) * 1000;
+    for(let i = 0; i < 5; i++) {
+        let points = createPoints(testID + "_ws", 1, wsStart + i * 1000, wsStart + i * 1000 + 1000, {}, {},
+            () => `MSG_${i}`);
+        sendPoints('http://localhost:3100', points);
+        await new Promise(f => setTimeout(f, 1000));
+    }
+    await new Promise(f => setTimeout(f, 6000));
+    ws.close();
+    for (let res of resp.data.data.result) {
+        res.values.sort();
+    }
+    adjustResult(resp, testID + "_ws", wsStart);
+    expect(resp.data).toMatchSnapshot();
     //console.log(JSON.stringify(resp.data));
+    await new Promise(f => setTimeout(f, 1000));
 });

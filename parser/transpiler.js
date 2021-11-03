@@ -139,6 +139,36 @@ module.exports.transpile = (request) => {
     };
 }
 
+/**
+ *
+ * @param request {{query: string, stream?: (function(DataStream): DataStream)[]}}
+ * @returns {{query: string, stream: (function(DataStream): DataStream)[]}}
+ */
+module.exports.transpile_tail = (request) => {
+    const expression = compiler.ParseScript(request.query.trim());
+    const denied = ['user_macro', 'aggregation_operator', 'unwrap_function', 'log_range_aggregation'];
+    for (const d of denied) {
+        if (expression.rootToken.Child(d)) {
+            throw new Error(`${d} is not supported. Only raw logs are supported`);
+        }
+    }
+    let query = module.exports.init_query();
+    query = _and(query, [
+        `timestamp_ms >= (toUnixTimestamp(now()) - 5) * 1000`,
+    ]);
+    query = module.exports.transpile_log_stream_selector(expression.rootToken, query);
+    query.order_by = {
+        name: ['timestamp_ms'],
+        order: 'ASC'
+    }
+    query.limit = undefined;
+    return {
+        query: module.exports.request_to_str(query),
+        stream: query.stream || []
+    };
+
+}
+
 
 /**
  *
