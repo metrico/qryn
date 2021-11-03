@@ -303,4 +303,5 @@ it("e2e", async () => {
     adjustResult(resp, testID + "_ws", wsStart);
     expect(resp.data).toMatchSnapshot();
     //console.log(JSON.stringify(resp.data));
+    await new Promise(f => setTimeout(f, 1000));
 });
