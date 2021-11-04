@@ -144,6 +144,8 @@ fastify.get("/loki/api/v1/series", handler_series);
 
 fastify.get('/loki/api/v1/tail', {websocket:true}, require('./lib/handlers/tail').bind(this));
 
+fastify.get('/ready', require('./lib/handlers/ready').bind(this));
+
 // Run API Service
 fastify.listen(
     process.env.PORT || 3100,
