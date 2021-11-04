@@ -109,8 +109,9 @@ const handler_404 = require('./lib/handlers/404.js').bind(this);
 fastify.setNotFoundHandler(handler_404);
 
 /* Hello cloki test API */
-const handler_hello = require('./lib/handlers/hello.js').bind(this);
+const handler_hello = require('./lib/handlers/ready').bind(this);
 fastify.get("/hello", handler_hello);
+fastify.get("/ready", handler_hello);
 
 /* Write Handler */
 const handler_push = require('./lib/handlers/push.js').bind(this);
@@ -143,8 +144,6 @@ const handler_series = require('./lib/handlers/series.js').bind(this);
 fastify.get("/loki/api/v1/series", handler_series);
 
 fastify.get('/loki/api/v1/tail', {websocket:true}, require('./lib/handlers/tail').bind(this));
-
-fastify.get('/ready', require('./lib/handlers/ready').bind(this));
 
 // Run API Service
 fastify.listen(
