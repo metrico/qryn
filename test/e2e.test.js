@@ -1,6 +1,8 @@
 const {createPoints, sendPoints} = require("./common");
 const axios = require("axios");
 const {WebSocket} = require('ws');
+const assert = require("assert");
+const {test} = require("handlebars-helpers/lib/regex");
 //const pb = require("protobufjs");
 const e2e = () => process.env.INTEGRATION_E2E || process.env.INTEGRATION;
 const cloki_local = () => process.env.CLOKI_LOCAL || false;
@@ -301,6 +303,20 @@ it("e2e", async () => {
         res.values.sort();
     }
     adjustResult(resp, testID + "_ws", wsStart);
+    expect(resp.data).toMatchSnapshot();
+    resp = await axios.get(`http://localhost:3100/loki/api/v1/series?match={test_id="${testID}"}&start=1636008723293000000&end=1636012323293000000`)
+    resp.data.data = resp.data.data.map(l => {
+        expect(l.test_id).toEqual(testID);
+        return {...l, test_id: 'TEST'};
+    });
+    resp.data.data.sort((a,b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+    expect(resp.data).toMatchSnapshot();
+    resp = await axios.get(`http://localhost:3100/loki/api/v1/series?match={test_id="${testID}"}&match={test_id="${testID}_json"}&start=1636008723293000000&end=1636012323293000000`)
+    resp.data.data = resp.data.data.map(l => {
+        expect(l.test_id.startsWith(testID));
+        return {...l, test_id: l.test_id.replace(testID, 'TEST')};
+    });
+    resp.data.data.sort((a,b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
     expect(resp.data).toMatchSnapshot();
     //console.log(JSON.stringify(resp.data));
     await new Promise(f => setTimeout(f, 1000));

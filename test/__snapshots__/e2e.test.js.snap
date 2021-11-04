@@ -163227,3 +163227,58 @@ Object {
   },
 }
 `;
+
+exports[`e2e 41`] = `
+Object {
+  "data": Array [
+    Object {
+      "freq": "0.5",
+      "test_id": "TEST",
+    },
+    Object {
+      "freq": "1",
+      "test_id": "TEST",
+    },
+    Object {
+      "freq": "2",
+      "test_id": "TEST",
+    },
+    Object {
+      "freq": "4",
+      "test_id": "TEST",
+    },
+  ],
+  "status": "success",
+}
+`;
+
+exports[`e2e 42`] = `
+Object {
+  "data": Array [
+    Object {
+      "fmt": "json",
+      "freq": "1",
+      "int_lbl": "1",
+      "lbl_repl": "val_repl",
+      "test_id": "TEST_json",
+    },
+    Object {
+      "freq": "0.5",
+      "test_id": "TEST",
+    },
+    Object {
+      "freq": "1",
+      "test_id": "TEST",
+    },
+    Object {
+      "freq": "2",
+      "test_id": "TEST",
+    },
+    Object {
+      "freq": "4",
+      "test_id": "TEST",
+    },
+  ],
+  "status": "success",
+}
+`;

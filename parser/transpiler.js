@@ -11,6 +11,7 @@ const {_and, durationToMs} = require("./registry/common");
 const compiler = require("./bnf");
 const {parseMs, DATABASE_NAME} = require("../lib/utils");
 const {get_plg} = require("../plugins/engine");
+const {request_to_str} = require("./transpiler");
 
 
 /**
@@ -167,6 +168,42 @@ module.exports.transpile_tail = (request) => {
         stream: query.stream || []
     };
 
+}
+
+/**
+ *
+ * @param request {string[]} ['{ts1="a1"}', '{ts2="a2"}', ...]
+ * @returns {string} clickhouse query
+ */
+module.exports.transpile_series = (request) => {
+    if (request.length === 0) {
+        return '';
+    }
+    /**
+     *
+     * @param req {string}
+     * @returns {registry_types.Request}
+     */
+    const get_query = (req) => {
+        const expression = compiler.ParseScript(req.trim());
+        const query = module.exports.transpile_log_stream_selector(expression.rootToken, module.exports.init_query());
+        return {
+            ...query.with['str_sel'],
+            select: ['labels']
+        }
+    }
+    if (request.length === 1) {
+        return module.exports.request_to_str({
+            ...get_query(request[0]),
+            distinct: true
+        });
+    }
+    const queries = request.map(get_query);
+    return module.exports.request_to_str({
+        ...queries[0],
+        distinct: true,
+        where: ['OR', ...queries.map(q => q.where)]
+    });
 }
 
 
