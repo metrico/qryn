@@ -4,18 +4,17 @@
  * @returns {Object}
  */
 module.exports.parseLabels = (labels) => {
-    if (Array.isArray(labels)) {
-        return  labels.reduce((sum, l) => {
-            sum[l[0]] = l[1];
-            return sum;
-        }, {})
-    }
-    if (typeof labels === 'object') {
-        return labels;
-    }
-    return JSON.parse(labels);
+  if (Array.isArray(labels)) {
+    return labels.reduce((sum, l) => {
+      sum[l[0]] = l[1]
+      return sum
+    }, {})
+  }
+  if (typeof labels === 'object') {
+    return labels
+  }
+  return JSON.parse(labels)
 }
-
 
 /**
  *
@@ -23,13 +22,13 @@ module.exports.parseLabels = (labels) => {
  * @returns {string}
  */
 module.exports.hashLabels = (labels) => {
-    if (Array.isArray(labels)) {
-        return JSON.stringify(labels);
-    }
-    if (typeof labels === 'object' && labels !== null) {
-        let res = [...Object.entries(labels)];
-        res.sort();
-        return JSON.stringify(labels);
-    }
-    return labels;
+  if (Array.isArray(labels)) {
+    return JSON.stringify(labels)
+  }
+  if (typeof labels === 'object' && labels !== null) {
+    const res = [...Object.entries(labels)]
+    res.sort()
+    return JSON.stringify(labels)
+  }
+  return labels
 }
