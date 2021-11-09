@@ -9,7 +9,11 @@
   "scripts": {
     "test": "jest",
     "start": "node cloki.js",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "lint": "npx standard --fix *.js lib parser plugins test "
+  },
+  "standard": {
+    "env": [ "jest" ]
   },
   "repository": {
     "type": "git",
@@ -46,9 +50,10 @@
     "ws": "^8.2.3"
   },
   "devDependencies": {
-    "jest": "^27.0.5",
     "casual": "^1.6.2",
-    "logfmt": "^1.3.2"
+    "jest": "^27.0.5",
+    "logfmt": "^1.3.2",
+    "standard": "^16.0.4"
   },
   "directories": {
     "lib": "lib"

@@ -184,7 +184,7 @@ it('shoud transpile unwrap', async () => {
     ds = s(ds)
   })
   const res = await ds.toArray()
-  console.log(JSON.stringify(res, 1))
+  expect(res).toEqual([{ labels: { freq: '1' }, timestamp_ms: '0', value: 2 }, { EOF: true }])
 
   /* expect(res).toMatchSnapshot();
     script = bnf.ParseScript(`{test_id="0.7857680014573265_json"}| json| unwrap int_lbl`);

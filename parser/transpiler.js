@@ -3,6 +3,7 @@ const line_filter_operator_registry = require('./registry/line_filter_operator_r
 const log_range_aggregation_registry = require('./registry/log_range_aggregation_registry')
 const high_level_aggregation_registry = require('./registry/high_level_aggregation_registry')
 const number_operator_registry = require('./registry/number_operator_registry')
+const complex_label_filter_registry = require('./registry/complex_label_filter_expression')
 const line_format = require('./registry/line_format')
 const parser_registry = require('./registry/parser_registry')
 const unwrap = require('./registry/unwrap')
@@ -11,7 +12,6 @@ const { _and, durationToMs } = require('./registry/common')
 const compiler = require('./bnf')
 const { parseMs, DATABASE_NAME } = require('../lib/utils')
 const { get_plg } = require('../plugins/engine')
-const { request_to_str } = require('./transpiler')
 
 /**
  *
@@ -265,14 +265,8 @@ module.exports.transpile_log_stream_selector = (token, query) => {
       query = parser_registry[op](pipeline, query)
       continue
     }
-    if (pipeline.Child('string_label_filter_expression')) {
-      const op = pipeline.Child('operator').value
-      query = stream_selector_operator_registry[op](pipeline, query)
-      continue
-    }
-    if (pipeline.Child('number_label_filter_expression')) {
-      const op = pipeline.Child('number_operator').value
-      query = number_operator_registry[op](pipeline, query)
+    if (pipeline.Child('label_filter_pipeline')) {
+      query = module.exports.transpile_label_filter_pipeline(pipeline.Child('label_filter_pipeline'), query)
       continue
     }
     if (pipeline.Child('line_format_expression')) {
@@ -286,6 +280,16 @@ module.exports.transpile_log_stream_selector = (token, query) => {
     }
   }
   return query
+}
+
+/**
+ *
+ * @param pipeline {Token}
+ * @param query {registry_types.Request}
+ * @returns {registry_types.Request}
+ */
+module.exports.transpile_label_filter_pipeline = (pipeline, query) => {
+  return complex_label_filter_registry(pipeline.Child('complex_label_filter_expression'), query)
 }
 
 /**
