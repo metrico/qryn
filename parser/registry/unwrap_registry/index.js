@@ -10,9 +10,9 @@ module.exports = {
      */
   rate: (token, query) => {
     if (query.stream) {
-      return reg.rate.via_stream(token, query)
+      return reg.rate.viaStream(token, query)
     }
-    return reg.rate.via_request(token, query)
+    return reg.rate.viaRequest(token, query)
   },
   /**
      * sum_over_time(unwrapped-range): the sum of all values in the specified interval.
@@ -22,9 +22,9 @@ module.exports = {
      */
   sum_over_time: (token, query) => {
     if (query.stream) {
-      return reg.sum_over_time.via_stream(token, query)
+      return reg.sum_over_time.viaStream(token, query)
     }
-    return reg.sum_over_time.via_request(token, query)
+    return reg.sum_over_time.viaRequest(token, query)
   },
   /**
      * avg_over_time(unwrapped-range): the average value of all points in the specified interval.
@@ -34,9 +34,9 @@ module.exports = {
      */
   avg_over_time: (token, query) => {
     if (query.stream) {
-      return reg.avg_over_time.via_stream(token, query)
+      return reg.avg_over_time.viaStream(token, query)
     }
-    return reg.avg_over_time.via_request(token, query)
+    return reg.avg_over_time.viaRequest(token, query)
   },
   /**
      * max_over_time(unwrapped-range): the maximum value of all points in the specified interval.
@@ -46,9 +46,9 @@ module.exports = {
      */
   max_over_time: (token, query) => {
     if (query.stream) {
-      return reg.max_over_time.via_stream(token, query)
+      return reg.max_over_time.viaStream(token, query)
     }
-    return reg.max_over_time.via_request(token, query)
+    return reg.max_over_time.viaRequest(token, query)
   },
   /**
      * min_over_time(unwrapped-range): the minimum value of all points in the specified interval
@@ -58,9 +58,9 @@ module.exports = {
      */
   min_over_time: (token, query) => {
     if (query.stream) {
-      return reg.min_over_time.via_stream(token, query)
+      return reg.min_over_time.viaStream(token, query)
     }
-    return reg.min_over_time.via_request(token, query)
+    return reg.min_over_time.viaRequest(token, query)
   },
   /**
      * first_over_time(unwrapped-range): the first value of all points in the specified interval
@@ -70,9 +70,9 @@ module.exports = {
      */
   first_over_time: (token, query) => {
     if (query.stream) {
-      return reg.first_over_time.via_stream(token, query)
+      return reg.first_over_time.viaStream(token, query)
     }
-    return reg.first_over_time.via_request(token, query)
+    return reg.first_over_time.viaRequest(token, query)
   },
   /**
      * last_over_time(unwrapped-range): the last value of all points in the specified interval
@@ -82,9 +82,9 @@ module.exports = {
      */
   last_over_time: (token, query) => {
     if (query.stream) {
-      return reg.last_over_time.via_stream(token, query)
+      return reg.last_over_time.viaStream(token, query)
     }
-    return reg.last_over_time.via_request(token, query)
+    return reg.last_over_time.viaRequest(token, query)
   },
   /**
      * stdvar_over_time(unwrapped-range): the population standard variance of the values in the specified interval.
@@ -94,9 +94,9 @@ module.exports = {
      */
   stdvar_over_time: (token, query) => {
     if (query.stream) {
-      return reg.stdvar_over_time.via_stream(token, query)
+      return reg.stdvar_over_time.viaStream(token, query)
     }
-    return reg.stdvar_over_time.via_request(token, query)
+    return reg.stdvar_over_time.viaRequest(token, query)
   },
   /**
      * stddev_over_time(unwrapped-range): the population standard deviation of the values in the specified interval.
@@ -106,9 +106,9 @@ module.exports = {
      */
   stddev_over_time: (token, query) => {
     if (query.stream) {
-      return reg.stddev_over_time.via_stream(token, query)
+      return reg.stddev_over_time.viaStream(token, query)
     }
-    return reg.stddev_over_time.via_request(token, query)
+    return reg.stddev_over_time.viaRequest(token, query)
   },
   /**
      * quantile_over_time(scalar,unwrapped-range): the φ-quantile (0 ≤ φ ≤ 1) of the values in the specified interval.
@@ -118,9 +118,9 @@ module.exports = {
      */
   quantile_over_time: (token, query) => {
     if (query.stream) {
-      return reg.quantile_over_time.via_stream(token, query)
+      return reg.quantile_over_time.viaStream(token, query)
     }
-    return reg.quantile_over_time.via_request(token, query)
+    return reg.quantile_over_time.viaRequest(token, query)
   },
   /**
      * absent_over_time(unwrapped-range): returns an empty vector if the range vector passed to it has any elements and a 1-element vector with the value 1 if the range vector passed to it has no elements. (absent_over_time is useful for alerting on when no time series and logs stream exist for label combination for a certain amount of time.)
@@ -130,14 +130,14 @@ module.exports = {
      */
   absent_over_time: (token, query) => {
     if (query.stream) {
-      return reg.absent_over_time.via_stream(token, query)
+      return reg.absent_over_time.viaStream(token, query)
     }
-    return reg.absent_over_time.via_request(token, query)
+    return reg.absent_over_time.viaRequest(token, query)
   },
 
   ...getPlugins('unwrap_registry', (plugin) => {
     return (token, query) => {
-      return reg.apply_via_stream(
+      return reg.apply_viaStream(
         token,
         query,
         plugin.run,

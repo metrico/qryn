@@ -10,12 +10,12 @@ module.exports = {
      */
   '!=': (token, query) => {
     if (query.stream) {
-      return genStream(query, reg.eq_stream(token, query))
+      return genStream(query, reg.eqStream(token, query))
     }
     if (hasExtraLabels(query)) {
-      return _and(query, reg.neq_extra_labels(token, query))
+      return _and(query, reg.neqExtraLabels(token, query))
     }
-    return reg.simple_and(query, reg.neq_simple(token, query))
+    return reg.simpleAnd(query, reg.neqSimple(token, query))
   },
   /**
      *
@@ -25,12 +25,12 @@ module.exports = {
      */
   '=~': (token, query) => {
     if (query.stream) {
-      return genStream(query, reg.reg_stream(token, query))
+      return genStream(query, reg.regStream(token, query))
     }
     if (hasExtraLabels(query)) {
-      return _and(query, reg.reg_extra_labels(token, query))
+      return _and(query, reg.regExtraLabels(token, query))
     }
-    return reg.simple_and(query, reg.reg_simple(token, query))
+    return reg.simpleAnd(query, reg.regSimple(token, query))
   },
   /**
      *
@@ -40,12 +40,12 @@ module.exports = {
      */
   '!~': (token, query) => {
     if (query.stream) {
-      return genStream(query, reg.nreg_stream(token, query))
+      return genStream(query, reg.nregStream(token, query))
     }
     if (hasExtraLabels(query)) {
-      return _and(query, reg.nreg_extra_labels(token, query))
+      return _and(query, reg.nregExtraLabels(token, query))
     }
-    return reg.simple_and(query, reg.nreg_simple(token, query))
+    return reg.simpleAnd(query, reg.nregSimple(token, query))
   },
   /**
      *
@@ -55,12 +55,12 @@ module.exports = {
      */
   '=': (token, query) => {
     if (query.stream) {
-      return genStream(query, reg.eq_stream(token, query))
+      return genStream(query, reg.eqStream(token, query))
     }
     if (hasExtraLabels(query)) {
-      return _and(query, reg.eq_extra_labels(token, query))
+      return _and(query, reg.eqExtraLabels(token, query))
     }
-    return reg.simple_and(query, reg.eq_simple(token, query))
+    return reg.simpleAnd(query, reg.eqSimple(token, query))
   }
 }
 

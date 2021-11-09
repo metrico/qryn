@@ -43,20 +43,20 @@ const streamSelectQuery = () => {
  * @returns {registry_types.Request}
  */
 module.exports.simpleAnd = (query, clauses) => {
-  const isStrSel = query.with && query.with.strSel
-  let strSel = isStrSel ? query.with.strSel : streamSelectQuery()
+  const isStrSel = query.with && query.with.str_sel
+  let strSel = isStrSel ? query.with.str_sel : streamSelectQuery()
   strSel = _and(strSel, clauses)
   query = {
     ...query,
     with: {
       ...(query.with || {}),
-      strSel: strSel
+      str_sel: strSel
     }
   }
   if (isStrSel) {
     return query
   }
-  return querySelectorPostProcess(_and(query, ['samples.fingerprint IN strSel']))
+  return querySelectorPostProcess(_and(query, ['samples.fingerprint IN str_sel']))
 }
 
 /**

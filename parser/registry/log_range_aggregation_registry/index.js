@@ -23,9 +23,9 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  count_over_time: (token, query) => {
+  countOverTime: (token, query) => {
     if (query.stream && query.stream.length) {
-      return reg.count_over_time_stream(token, query)
+      return reg.countOverTimeStream(token, query)
     }
     return genericRate('toFloat64(count(1))', token, query)
   },
@@ -36,9 +36,9 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  bytes_rate: (token, query) => {
+  bytesRate: (token, query) => {
     if (query.stream && query.stream.length) {
-      return reg.bytes_rate_stream(token, query)
+      return reg.bytesRateStream(token, query)
     }
     const duration = getDuration(token, query)
     return genericRate(`toFloat64(sum(length(string))) * 1000 / ${duration}`, token, query)
@@ -49,9 +49,9 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  bytes_over_time: (token, query) => {
+  bytesOverTime: (token, query) => {
     if (query.stream && query.stream.length) {
-      return reg.bytes_over_time_stream(token, query)
+      return reg.bytesOverTimeStream(token, query)
     }
     return genericRate('toFloat64(sum(length(string)))', token, query)
   },
@@ -61,9 +61,9 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  absent_over_time: (token, query) => {
+  absentOverTime: (token, query) => {
     if (query.stream && query.stream.length) {
-      return reg.bytes_over_time_stream(token, query)
+      return reg.bytesOverTimeStream(token, query)
     }
     const duration = getDuration(token, query)
     const queryData = { ...query }

@@ -54,7 +54,7 @@ module.exports.transpile = (request) => {
   let start = parseMs(request.start, Date.now() - 3600 * 1000)
   let end = parseMs(request.end, Date.now())
   const step = request.step ? parseInt(request.step) * 1000 : 0
-  let query = module.exports.init_query()
+  let query = module.exports.initQuery()
   if (request.limit) {
     query.limit = request.limit
   }
@@ -152,7 +152,7 @@ module.exports.transpileTail = (request) => {
       throw new Error(`${d} is not supported. Only raw logs are supported`)
     }
   }
-  let query = module.exports.init_query()
+  let query = module.exports.initQuery()
   query = _and(query, [
     'timestamp_ms >= (toUnixTimestamp(now()) - 5) * 1000'
   ])
@@ -184,9 +184,9 @@ module.exports.transpileSeries = (request) => {
      */
   const getQuery = (req) => {
     const expression = compiler.ParseScript(req.trim())
-    const query = module.exports.transpileLogStreamSelector(expression.rootToken, module.exports.init_query())
+    const query = module.exports.transpileLogStreamSelector(expression.rootToken, module.exports.initQuery())
     return {
-      ...query.with.strSel,
+      ...query.with.str_sel,
       select: ['labels']
     }
   }

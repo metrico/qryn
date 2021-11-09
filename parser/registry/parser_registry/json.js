@@ -62,7 +62,7 @@ module.exports.viaClickhouseQuery = (token, query) => {
   exprs = "arrayFilter((x) -> x.2 != '', [" + exprs.join(',') + '])'
   return _and({
     ...query,
-    select: [...query.select.filter(f => !f.endsWith('as extraLabels')), `${exprs} as extraLabels`]
+    select: [...query.select.filter(f => !f.endsWith('as extra_labels')), `${exprs} as extra_labels`]
   }, ['isValidJSON(samples.string)'])
 }
 

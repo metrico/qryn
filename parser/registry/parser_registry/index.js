@@ -1,6 +1,6 @@
 const json = require('./json')
 const re = require('./regexp')
-const { hasextraLabels } = require('../common')
+const { hasExtraLabels } = require('../common')
 const _i = () => { throw new Error('Not implemented') }
 
 module.exports = {
@@ -12,10 +12,10 @@ module.exports = {
      */
   json: (token, query) => {
     if (!token.Children('parameter').length || (query.stream && query.stream.length) ||
-            hasextraLabels(query)) {
-      return json.via_stream(token, query)
+            hasExtraLabels(query)) {
+      return json.viaStream(token, query)
     }
-    return json.via_clickhouse_query(token, query)
+    return json.viaClickhouseQuery(token, query)
   },
   logfmt: _i,
 
@@ -26,14 +26,14 @@ module.exports = {
      * @returns {registry_types.Request}
      */
   regexp: (token, query) => {
-    if ((query.stream && query.stream.length) || hasextraLabels(query)) {
-      return re.via_stream(token, query)
+    if ((query.stream && query.stream.length) || hasExtraLabels(query)) {
+      return re.viaStream(token, query)
     }
     try {
-      return re.via_request(token, query)
+      return re.viaRequest(token, query)
     } catch (e) {
       console.log(e)
-      return re.via_stream(token, query)
+      return re.viaStream(token, query)
     }
   }
 }
