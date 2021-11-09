@@ -1,12 +1,11 @@
 const { Compiler } = require('bnf/Compiler')
 const { _and, map } = require('../common')
-const { DataStream } = require('scramjet')
 
 /**
  *
  * @type {function(Token): Object | undefined}
  */
-const get_labels = (() => {
+const getLabels = (() => {
   const compiler = new Compiler()
   compiler.AddLanguage(`
 <SYNTAX> ::= first_part *(part)
@@ -40,8 +39,8 @@ const get_labels = (() => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.via_clickhouse_query = (token, query) => {
-  const labels = get_labels(token)
+module.exports.viaClickhouseQuery = (token, query) => {
+  const labels = getLabels(token)
   let exprs = Object.entries(labels).map(lbl => {
     const path = lbl[1].map(path => {
       if (path.startsWith('.')) {
@@ -63,7 +62,7 @@ module.exports.via_clickhouse_query = (token, query) => {
   exprs = "arrayFilter((x) -> x.2 != '', [" + exprs.join(',') + '])'
   return _and({
     ...query,
-    select: [...query.select.filter(f => !f.endsWith('as extra_labels')), `${exprs} as extra_labels`]
+    select: [...query.select.filter(f => !f.endsWith('as extraLabels')), `${exprs} as extraLabels`]
   }, ['isValidJSON(samples.string)'])
 }
 
@@ -73,8 +72,8 @@ module.exports.via_clickhouse_query = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.via_stream = (token, query) => {
-  const labels = get_labels(token)
+module.exports.viaStream = (token, query) => {
+  const labels = getLabels(token)
 
   /**
      *
@@ -82,7 +81,7 @@ module.exports.via_stream = (token, query) => {
      * @param {string} prefix
      * @returns {string|{}|null}
      */
-  const obj_to_labels = (obj, prefix) => {
+  const objToLabels = (obj, prefix) => {
     if (Array.isArray(obj) ||
             obj === null
     ) {
@@ -92,7 +91,7 @@ module.exports.via_stream = (token, query) => {
       let res = {}
       for (const k of Object.keys(obj)) {
         const label = prefix + (prefix ? '_' : '') + (k.replace(/[^a-zA-Z0-9_]/g, '_'))
-        const val = obj_to_labels(obj[k], label)
+        const val = objToLabels(obj[k], label)
         if (typeof val === 'object') {
           res = { ...res, ...val }
           continue
@@ -109,7 +108,7 @@ module.exports.via_stream = (token, query) => {
      * @param {Object} obj
      * @param {String[]} path
      */
-  const extract_label = (obj, path) => {
+  const extractLabel = (obj, path) => {
     let res = obj
     for (const p of path) {
       if (!res[p]) {
@@ -128,10 +127,10 @@ module.exports.via_stream = (token, query) => {
      * @param {Object} obj
      * @param {Object} labels
      */
-  const extract_labels = (obj, labels) => {
+  const extractLabels = (obj, labels) => {
     const res = {}
     for (const l of Object.keys(labels)) {
-      res[l] = extract_label(obj, labels[l])
+      res[l] = extractLabel(obj, labels[l])
     }
     return res
   }
@@ -148,8 +147,8 @@ module.exports.via_stream = (token, query) => {
       }
       try {
         const oString = JSON.parse(e.string)
-        const extra_labels = labels ? extract_labels(oString, labels) : obj_to_labels(oString, '')
-        return { ...e, labels: { ...e.labels, ...extra_labels } }
+        const extraLabels = labels ? extractLabels(oString, labels) : objToLabels(oString, '')
+        return { ...e, labels: { ...e.labels, ...extraLabels } }
       } catch (err) {
         return undefined
       }

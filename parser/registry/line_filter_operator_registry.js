@@ -1,4 +1,4 @@
-const { _and, unquote_token, querySelectorPostProcess } = require('./common')
+const { _and, unquoteToken, querySelectorPostProcess } = require('./common')
 
 module.exports = {
   /**
@@ -8,7 +8,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
   '|=': (token, query) => {
-    const val = unquote_token(token)
+    const val = unquoteToken(token)
     return querySelectorPostProcess(_and(query, [
             `position(string, '${val}') != 0`
     ]))
@@ -20,7 +20,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
   '|~': (token, query) => {
-    const val = unquote_token(token)
+    const val = unquoteToken(token)
     return querySelectorPostProcess(_and(query, [
             `extractAllGroups(string, '(${val})') != []`
     ]))
@@ -32,7 +32,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
   '!=': (token, query) => {
-    const val = unquote_token(token)
+    const val = unquoteToken(token)
     return querySelectorPostProcess(_and(query, [
             `position(string, '${val}') == 0`
     ]))
@@ -44,7 +44,7 @@ module.exports = {
      * @returns {registry_types.Request}
      */
   '!~': (token, query) => {
-    const val = unquote_token(token)
+    const val = unquoteToken(token)
     return querySelectorPostProcess(_and(query, [
             `extractAllGroups(string, '(${val})') == []`
     ]))

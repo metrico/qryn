@@ -1,6 +1,6 @@
 const reg = require('./stream_selector_operator_registry/stream_selector_operator_registry')
 const numreg = require('./number_operator_registry/compared_label_reg')
-const { has_extra_labels, _and } = require('./common')
+const { hasExtraLabels, _and } = require('./common')
 
 /**
  *
@@ -10,7 +10,7 @@ const { has_extra_labels, _and } = require('./common')
  */
 module.exports = (token, query) => {
   if (query.stream) {
-    const pred = process_stream_expression(token, query)
+    const pred = processStreamExpression(token, query)
     return {
       ...query,
       stream: [...(query.stream ? query.stream : []),
@@ -23,9 +23,9 @@ module.exports = (token, query) => {
       ]
     }
   }
-  let ex = process_where_expression(token, query)
+  let ex = processWhereExpression(token, query)
   ex = ex[0] === 'and' ? ex.slice(1) : [ex]
-  return has_extra_labels(query)
+  return hasExtraLabels(query)
     ? _and(query, ex)
     : reg.simple_and(query, ex)
 }
@@ -35,31 +35,31 @@ module.exports = (token, query) => {
  * @param where {string[]}
  * @returns {string | string[]}
  */
-const deref_where_exp = (where) => where.length > 0 && where.length < 3 ? where[1] : where
+const derefWhereExp = (where) => where.length > 0 && where.length < 3 ? where[1] : where
 
 /**
  *
- * @param where_1 {string | string[]}
+ * @param where1 {string | string[]}
  * @param op {string}
- * @param where_2 {string | string[]}
+ * @param where2 {string | string[]}
  * @returns {string[]}
  */
-const where_concat = (where_1, op, where_2) => {
-  where_1 = Array.isArray(where_1) ? deref_where_exp(where_1) : where_1
+const whereConcat = (where1, op, where2) => {
+  where1 = Array.isArray(where1) ? derefWhereExp(where1) : where1
   let where = null
-  if (Array.isArray(where_1)) {
-    where = [op, ...(where_1[0] === op ? where_1.slice(1) : [where_1])]
+  if (Array.isArray(where1)) {
+    where = [op, ...(where1[0] === op ? where1.slice(1) : [where1])]
   } else {
-    where = [op, where_1]
+    where = [op, where1]
   }
-  if (!where_2) {
+  if (!where2) {
     return where
   }
-  where_2 = Array.isArray(where_2) ? deref_where_exp(where_2) : where_2
-  if (Array.isArray(where_2)) {
-    where.push.apply(where, where_2[0] === op ? where_2.slice(1) : [where_2])
+  where2 = Array.isArray(where2) ? derefWhereExp(where2) : where2
+  if (Array.isArray(where2)) {
+    where.push.apply(where, where2[0] === op ? where2.slice(1) : [where2])
   } else {
-    where.push(where_2)
+    where.push(where2)
   }
   return where
 }
@@ -70,43 +70,43 @@ const where_concat = (where_1, op, where_2) => {
  * @param query {registry_types.Request}
  * @returns {string[]}
  */
-const process_where_expression = (token, query) => {
+const processWhereExpression = (token, query) => {
   let where = []
-  let and_or = null
+  let andOr = null
   for (const t of token.tokens) {
     if (t.name === 'label_filter_expression') {
-      and_or = (and_or || 'and').toLowerCase()
-      const ex = get_label_filter_where_expression(t, query)
+      andOr = (andOr || 'and').toLowerCase()
+      const ex = getLabelFilterWhereExpression(t, query)
       switch (where.length) {
         case 0:
         case 1:
-          where = Array.isArray(ex) ? ex : [and_or, ex]
+          where = Array.isArray(ex) ? ex : [andOr, ex]
           break
         case 2:
-          where = where_concat(where[1], and_or, ex)
+          where = whereConcat(where[1], andOr, ex)
           break
         default:
-          where = where_concat(where, and_or, ex)
+          where = whereConcat(where, andOr, ex)
       }
-      and_or = null
+      andOr = null
     }
     if (t.name === 'bracketed_label_filter_expression' || t.name === 'complex_label_filter_expression') {
-      and_or = (and_or || 'and').toLowerCase()
+      andOr = (andOr || 'and').toLowerCase()
 
       switch (where.length) {
         case 0:
         case 1:
-          where = process_where_expression(t, query)
+          where = processWhereExpression(t, query)
           break
         case 2:
-          where = where_concat(where[1], and_or, process_where_expression(t, query))
+          where = whereConcat(where[1], andOr, processWhereExpression(t, query))
           break
         default:
-          where = where_concat(where, and_or, process_where_expression(t, query))
+          where = whereConcat(where, andOr, processWhereExpression(t, query))
       }
     }
-    if (t.name === 'and_or') {
-      and_or = t.value
+    if (t.name === 'andOr') {
+      andOr = t.value
     }
   }
   return where
@@ -118,27 +118,27 @@ const process_where_expression = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {string | string[]}
  */
-const get_label_filter_where_expression = (token, query) => {
+const getLabelFilterWhereExpression = (token, query) => {
   // TODO:
   let clauses = null
   if (token.Child('string_label_filter_expression')) {
     switch (token.Child('operator').value) {
       case '=':
-        clauses = has_extra_labels(query) ? reg.eq_extra_labels(token) : reg.eq_simple(token)
+        clauses = hasExtraLabels(query) ? reg.eq_extra_labels(token) : reg.eq_simple(token)
         break
       case '!=':
-        clauses = has_extra_labels(query) ? reg.neq_extra_labels(token) : reg.neq_simple(token)
+        clauses = hasExtraLabels(query) ? reg.neq_extra_labels(token) : reg.neq_simple(token)
         break
       case '=~':
-        clauses = has_extra_labels(query) ? reg.reg_extra_labels(token) : reg.nreg_extra_labels(token)
+        clauses = hasExtraLabels(query) ? reg.reg_extra_labels(token) : reg.nreg_extra_labels(token)
         break
       case '!~':
-        clauses = has_extra_labels(query) ? reg.nreg_extra_labels(token) : reg.nreg_simple(token)
+        clauses = hasExtraLabels(query) ? reg.nreg_extra_labels(token) : reg.nreg_simple(token)
         break
       default:
         throw new Error('Unsupported operator')
     }
-    return deref_where_exp(['and', ...clauses])
+    return derefWhereExp(['and', ...clauses])
   }
   if (token.Child('number_label_filter_expression')) {
     const label = token.Child('label').value
@@ -146,7 +146,7 @@ const get_label_filter_where_expression = (token, query) => {
       throw new Error('Not supported')
     }
     const val = token.Child('number_value').value
-    const idx = has_extra_labels(query) ? 'extra_labels_where' : 'simple_where'
+    const idx = hasExtraLabels(query) ? 'extra_labels_where' : 'simple_where'
     switch (token.Child('number_operator').value) {
       case '==':
         return numreg[idx].eq(label, val)
@@ -169,7 +169,7 @@ const get_label_filter_where_expression = (token, query) => {
  * @param fns {(function({labels: Object}): boolean)}
  * @returns {function({labels: Object}): boolean}
  */
-const generic_and = (...fns) => {
+const genericAnd = (...fns) => {
   return (e) => !fns.some(fn => !fn(e))
 }
 
@@ -178,7 +178,7 @@ const generic_and = (...fns) => {
  * @param fns {(function({labels: Object}): boolean)}
  * @returns {function({labels: Object}): boolean}
  */
-const generic_or = (...fns) => {
+const genericOr = (...fns) => {
   return (e) => fns.some(fn => fn(e))
 }
 
@@ -188,30 +188,30 @@ const generic_or = (...fns) => {
  * @param query {registry_types.Request}
  * @returns {function({labels: Object}): boolean}
  */
-const process_stream_expression = (token, query) => {
-  let and_or = 'and'
+const processStreamExpression = (token, query) => {
+  let andOr = 'and'
   let res = null
   for (const t of token.tokens) {
     if (t.name === 'label_filter_expression') {
       if (!res) {
-        res = get_label_filter_stream_expression(t, query)
+        res = getLabelFilterStreamExpression(t, query)
         continue
       }
-      res = (and_or || 'and').toLowerCase() === 'and'
-        ? generic_and(res, get_label_filter_stream_expression(t, query))
-        : generic_or(res, get_label_filter_stream_expression(t, query))
+      res = (andOr || 'and').toLowerCase() === 'and'
+        ? genericAnd(res, getLabelFilterStreamExpression(t, query))
+        : genericOr(res, getLabelFilterStreamExpression(t, query))
     }
     if (t.name === 'bracketed_label_filter_expression' || t.name === 'complex_label_filter_expression') {
       if (!res) {
-        res = process_stream_expression(t, query)
+        res = processStreamExpression(t, query)
         continue
       }
-      res = (and_or || 'and').toLowerCase() === 'and'
-        ? generic_and(res, process_stream_expression(t, query))
-        : generic_or(res, process_stream_expression(t, query))
+      res = (andOr || 'and').toLowerCase() === 'and'
+        ? genericAnd(res, processStreamExpression(t, query))
+        : genericOr(res, processStreamExpression(t, query))
     }
-    if (t.name === 'and_or') {
-      and_or = t.value
+    if (t.name === 'andOr') {
+      andOr = t.value
     }
   }
   return res || (() => true)
@@ -223,7 +223,7 @@ const process_stream_expression = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {function({labels: Object}): boolean}
  */
-const get_label_filter_stream_expression = (token, query) => {
+const getLabelFilterStreamExpression = (token, query) => {
   if (token.Child('string_label_filter_expression')) {
     switch (token.Child('operator').value) {
       case '=':

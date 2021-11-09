@@ -1,20 +1,20 @@
-const { getDuration, concat_labels, apply_via_stream } = require('../common')
+const { getDuration, concatLabels, applyViaStream } = require('../common')
 
 /**
  *
- * @param value_expr {string}
+ * @param valueExpr {string}
  * @param token {Token}
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-const generic_rate = (value_expr, token, query) => {
+const genericRate = (valueExpr, token, query) => {
   const duration = getDuration(token, query)
   const step = query.ctx.step
   /**
      *
      * @type {registry_types.Request}
      */
-  /* const query_gaps = {
+  /* const queryGaps = {
         select: [
             'a1.labels',
             `toFloat64(${Math.floor(query.ctx.start / duration) * duration} + number * ${duration}) as timestamp_ms`,
@@ -35,9 +35,9 @@ const generic_rate = (value_expr, token, query) => {
       },
       rate_b: {
         select: [
-          concat_labels(query) + ' as labels',
+          concatLabels(query) + ' as labels',
                     `floor(timestamp_ms / ${duration}) * ${duration} as timestamp_ms`,
-                    `${value_expr} as value`
+                    `${valueExpr} as value`
         ],
         from: 'rate_a',
         group_by: ['labels', 'timestamp_ms'],
@@ -74,7 +74,7 @@ const generic_rate = (value_expr, token, query) => {
   }
 }
 
-module.exports.generic_rate = generic_rate
+module.exports.genericRate = genericRate
 
 /**
  *
@@ -82,9 +82,9 @@ module.exports.generic_rate = generic_rate
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.rate_stream = (token, query) => {
+module.exports.rateStream = (token, query) => {
   const duration = getDuration(token, query)
-  return apply_via_stream(token, query, (sum) => {
+  return applyViaStream(token, query, (sum) => {
     sum = sum || 0
     ++sum
     return sum
@@ -97,8 +97,8 @@ module.exports.rate_stream = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.count_over_time_stream = (token, query) => {
-  return apply_via_stream(token, query, (sum) => {
+module.exports.countOverTimeStream = (token, query) => {
+  return applyViaStream(token, query, (sum) => {
     sum = sum || 0
     ++sum
     return sum
@@ -111,9 +111,9 @@ module.exports.count_over_time_stream = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.bytes_rate_stream = (token, query) => {
+module.exports.bytesRateStream = (token, query) => {
   const duration = getDuration(token, query)
-  return apply_via_stream(token, query, (sum, entry) => {
+  return applyViaStream(token, query, (sum, entry) => {
     sum = sum || 0
     sum += entry.string.length
     return sum
@@ -126,8 +126,8 @@ module.exports.bytes_rate_stream = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.bytes_over_time_stream = (token, query) => {
-  return apply_via_stream(token, query, (sum, entry) => {
+module.exports.bytesOverTimeStream = (token, query) => {
+  return applyViaStream(token, query, (sum, entry) => {
     sum = sum || 0
     sum += entry.string.length
     return sum
@@ -140,6 +140,6 @@ module.exports.bytes_over_time_stream = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.bytes_over_time_stream = (token, query) => {
+module.exports.bytesOverTimeStream = (token, query) => {
   throw new Error('Not Implemented')
 }

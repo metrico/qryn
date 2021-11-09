@@ -2,6 +2,7 @@ const streamSelectorOperatorRegistry = require('./registry/stream_selector_opera
 const lineFilterOperatorRegistry = require('./registry/line_filter_operator_registry')
 const logRangeAggregationRegistry = require('./registry/log_range_aggregation_registry')
 const highLevelAggregationRegistry = require('./registry/high_level_aggregation_registry')
+const complexLabelFilterExpression = require('./registry/complex_label_filter_expression')
 const numberOperatorRegistry = require('./registry/number_operator_registry')
 const lineFormat = require('./registry/line_format')
 const parserRegistry = require('./registry/parser_registry')
@@ -17,7 +18,7 @@ const { requestToStr } = require('./transpiler')
  *
  * @returns {registry_types.Request}
  */
-module.exports.init_query = () => {
+module.exports.initQuery = () => {
   return {
     select: ['time_series.labels as labels', 'samples.string as string', 'time_series.fingerprint as fingerprint',
       'samples.timestamp_ms as timestamp_ms'],
@@ -47,7 +48,7 @@ module.exports.transpile = (request) => {
   if (token.Child('user_macro')) {
     return module.exports.transpile({
       ...request,
-      query: module.exports.transpile_macro(token.Child('user_macro'))
+      query: module.exports.transpileMacro(token.Child('user_macro'))
     })
   }
 
@@ -71,7 +72,7 @@ module.exports.transpile = (request) => {
             `timestamp_ms >= ${start}`,
             `timestamp_ms <= ${end}`
     ])
-    query = module.exports.transpile_aggregation_operator(token, query)
+    query = module.exports.transpileAggregationOperator(token, query)
   } else if (token.Child('unwrap_function')) {
     const duration = durationToMs(token.Child('unwrap_function').Child('duration_value').value)
     start = Math.floor(start / duration) * duration
@@ -85,7 +86,7 @@ module.exports.transpile = (request) => {
             `timestamp_ms >= ${start}`,
             `timestamp_ms <= ${end}`
     ])
-    query = module.exports.transpile_unwrap_function(token, query)
+    query = module.exports.transpileUnwrapFunction(token, query)
   } else if (token.Child('log_range_aggregation')) {
     const duration = durationToMs(token.Child('log_range_aggregation').Child('duration_value').value)
     start = Math.floor(start / duration) * duration
@@ -99,9 +100,9 @@ module.exports.transpile = (request) => {
             `timestamp_ms >= ${start}`,
             `timestamp_ms <= ${end}`
     ])
-    query = module.exports.transpile_log_range_aggregation(token, query)
+    query = module.exports.transpileLogRangeAggregation(token, query)
   } else {
-    query = module.exports.transpile_log_stream_selector(token, query)
+    query = module.exports.transpileLogStreamSelector(token, query)
     query = _and(query, [
             `timestamp_ms >= ${start}`,
             `timestamp_ms <= ${end}`
@@ -144,9 +145,9 @@ module.exports.transpile = (request) => {
  * @param request {{query: string, stream?: (function(DataStream): DataStream)[]}}
  * @returns {{query: string, stream: (function(DataStream): DataStream)[]}}
  */
-module.exports.transpile_tail = (request) => {
+module.exports.transpileTail = (request) => {
   const expression = compiler.ParseScript(request.query.trim())
-  const denied = ['user_macro', 'aggregation_operator', 'unwrap_function', 'log_range_aggregation']
+  const denied = ['user_macro', 'aggregation_operator', 'unwra_function', 'log_range_aggregation']
   for (const d of denied) {
     if (expression.rootToken.Child(d)) {
       throw new Error(`${d} is not supported. Only raw logs are supported`)
@@ -156,7 +157,7 @@ module.exports.transpile_tail = (request) => {
   query = _and(query, [
     'timestamp_ms >= (toUnixTimestamp(now()) - 5) * 1000'
   ])
-  query = module.exports.transpile_log_stream_selector(expression.rootToken, query)
+  query = module.exports.transpileLogStreamSelector(expression.rootToken, query)
   query.order_by = {
     name: ['timestamp_ms'],
     order: 'ASC'
@@ -173,7 +174,7 @@ module.exports.transpile_tail = (request) => {
  * @param request {string[]} ['{ts1="a1"}', '{ts2="a2"}', ...]
  * @returns {string} clickhouse query
  */
-module.exports.transpile_series = (request) => {
+module.exports.transpileSeries = (request) => {
   if (request.length === 0) {
     return ''
   }
@@ -182,21 +183,21 @@ module.exports.transpile_series = (request) => {
      * @param req {string}
      * @returns {registry_types.Request}
      */
-  const get_query = (req) => {
+  const getQuery = (req) => {
     const expression = compiler.ParseScript(req.trim())
-    const query = module.exports.transpile_log_stream_selector(expression.rootToken, module.exports.init_query())
+    const query = module.exports.transpileLogStreamSelector(expression.rootToken, module.exports.init_query())
     return {
-      ...query.with.str_sel,
+      ...query.with.strSel,
       select: ['labels']
     }
   }
   if (request.length === 1) {
     return module.exports.requestToStr({
-      ...get_query(request[0]),
+      ...getQuery(request[0]),
       distinct: true
     })
   }
-  const queries = request.map(get_query)
+  const queries = request.map(getQuery)
   return module.exports.requestToStr({
     ...queries[0],
     distinct: true,
@@ -209,7 +210,7 @@ module.exports.transpile_series = (request) => {
  * @param token {Token}
  * @returns {string}
  */
-module.exports.transpile_macro = (token) => {
+module.exports.transpileMacro = (token) => {
   const plg = Object.values(getPlg({ type: 'macros' })).find(m => token.Child(m._main_rule_name))
   return plg.stringify(token)
 }
@@ -220,12 +221,12 @@ module.exports.transpile_macro = (token) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.transpile_aggregation_operator = (token, query) => {
+module.exports.transpileAggregationOperator = (token, query) => {
   const agg = token.Child('aggregation_operator')
   if (token.Child('log_range_aggregation')) {
-    query = module.exports.transpile_log_range_aggregation(agg, query)
+    query = module.exports.transpileLogRangeAggregation(agg, query)
   } else if (token.Child('unwrap_function')) {
-    query = module.exports.transpile_unwrap_function(agg, query)
+    query = module.exports.transpileUnwrapFunction(agg, query)
   }
   return highLevelAggregationRegistry[agg.Child('aggregation_operator_fn').value](token, query)
 }
@@ -236,9 +237,9 @@ module.exports.transpile_aggregation_operator = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.transpile_log_range_aggregation = (token, query) => {
+module.exports.transpileLogRangeAggregation = (token, query) => {
   const agg = token.Child('log_range_aggregation')
-  query = module.exports.transpile_log_stream_selector(agg, query)
+  query = module.exports.transpileLogStreamSelector(agg, query)
   return logRangeAggregationRegistry[agg.Child('log_range_aggregation_fn').value](token, query)
 }
 
@@ -248,7 +249,7 @@ module.exports.transpile_log_range_aggregation = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.transpile_log_stream_selector = (token, query) => {
+module.exports.transpileLogStreamSelector = (token, query) => {
   const rules = token.Children('log_stream_selector_rule')
   for (const rule of rules) {
     const op = rule.Child('operator').value
@@ -294,8 +295,8 @@ module.exports.transpile_log_stream_selector = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.transpile_label_filter_pipeline = (pipeline, query) => {
-  return complex_label_filter_registry(pipeline.Child('complex_label_filter_expression'), query)
+module.exports.transpileLabelFilterPipeline = (pipeline, query) => {
+  return complexLabelFilterExpression(pipeline.Child('complex_label_filter_expression'), query)
 }
 
 /**
@@ -304,8 +305,8 @@ module.exports.transpile_label_filter_pipeline = (pipeline, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.transpile_unwrap_function = (token, query) => {
-  query = module.exports.transpile_unwrap_expression(token.Child('unwrap_expression'), query)
+module.exports.transpileUnwrapFunction = (token, query) => {
+  query = module.exports.transpileUnwrapExpression(token.Child('unwrap_expression'), query)
   return unwrapRegistry[token.Child('unwrap_fn').value](token, query)
 }
 
@@ -315,8 +316,8 @@ module.exports.transpile_unwrap_function = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.transpile_unwrap_expression = (token, query) => {
-  query = module.exports.transpile_log_stream_selector(token, query)
+module.exports.transpileUnwrapExpression = (token, query) => {
+  query = module.exports.transpileLogStreamSelector(token, query)
   return unwrap(token.Child('unwrap_statement'), query)
 }
 

@@ -1,6 +1,6 @@
 const { getDuration } = require('../common')
 const reg = require('./log_range_agg_reg')
-const { generic_rate } = reg
+const { genericRate } = reg
 
 module.exports = {
   /**
@@ -14,7 +14,7 @@ module.exports = {
       return reg.rate_stream(token, query)
     }
     const duration = getDuration(token, query)
-    return generic_rate(`toFloat64(count(1)) * 1000 / ${duration}`, token, query)
+    return genericRate(`toFloat64(count(1)) * 1000 / ${duration}`, token, query)
   },
 
   /**
@@ -27,7 +27,7 @@ module.exports = {
     if (query.stream && query.stream.length) {
       return reg.count_over_time_stream(token, query)
     }
-    return generic_rate('toFloat64(count(1))', token, query)
+    return genericRate('toFloat64(count(1))', token, query)
   },
 
   /**
@@ -41,7 +41,7 @@ module.exports = {
       return reg.bytes_rate_stream(token, query)
     }
     const duration = getDuration(token, query)
-    return generic_rate(`toFloat64(sum(length(string))) * 1000 / ${duration}`, token, query)
+    return genericRate(`toFloat64(sum(length(string))) * 1000 / ${duration}`, token, query)
   },
   /**
      *
@@ -53,7 +53,7 @@ module.exports = {
     if (query.stream && query.stream.length) {
       return reg.bytes_over_time_stream(token, query)
     }
-    return generic_rate('toFloat64(sum(length(string)))', token, query)
+    return genericRate('toFloat64(sum(length(string)))', token, query)
   },
   /**
      *
@@ -66,21 +66,21 @@ module.exports = {
       return reg.bytes_over_time_stream(token, query)
     }
     const duration = getDuration(token, query)
-    const query_data = { ...query }
-    query_data.select = ['labels', `floor(timestamp_ms / ${duration}) * ${duration} as timestamp_ms`,
+    const queryData = { ...query }
+    queryData.select = ['labels', `floor(timestamp_ms / ${duration}) * ${duration} as timestamp_ms`,
       'toFloat64(0) as value']
-    query_data.limit = undefined
-    query_data.group_by = ['labels', 'timestamp_ms']
-    query_data.order_by = {
+    queryData.limit = undefined
+    queryData.group_by = ['labels', 'timestamp_ms']
+    queryData.order_by = {
       name: ['labels', 'timestamp_ms'],
       order: 'asc'
     }
-    query_data.matrix = true
+    queryData.matrix = true
     /**
          *
          * @type {registry_types.Request}
          */
-    const query_gaps = {
+    const queryGaps = {
       select: [
         'a1.labels',
                 `toFloat64(${Math.floor(query.ctx.start / duration) * duration} + number * ${duration}) as timestamp_ms`,
@@ -91,8 +91,8 @@ module.exports = {
     return {
       ctx: query.ctx,
       with: {
-        rate_a: query_data,
-        rate_b: query_gaps,
+        rate_a: queryData,
+        rate_b: queryGaps,
         rate_c: { requests: [{ select: ['*'], from: 'rate_a' }, { select: ['*'], from: 'rate_b' }] }
       },
       select: ['labels', 'timestamp_ms', 'min(value) as value'], // other than the generic
