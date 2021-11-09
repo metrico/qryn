@@ -290,6 +290,16 @@ module.exports.transpile_log_stream_selector = (token, query) => {
 
 /**
  *
+ * @param pipeline {Token}
+ * @param query {registry_types.Request}
+ * @returns {registry_types.Request}
+ */
+module.exports.transpile_label_filter_pipeline = (pipeline, query) => {
+  return complex_label_filter_registry(pipeline.Child('complex_label_filter_expression'), query)
+}
+
+/**
+ *
  * @param token {Token}
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}

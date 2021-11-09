@@ -3,12 +3,10 @@ const { has_extra_labels, _and } = require('../common')
  *
  * @param token {Token}
  * @param query {registry_types.Request}
- * @param stream_fn {(function(number, number): boolean)} stream_fn(current_val, searching_val)
- * @param extra_labels_search {(function (string, number): string)} extra_labels_search(label, searching_val)
- * @param labels_search {(function (string, number): string[])} labels_search(label, searching_val)
+ * @param index {string}
  * @returns {registry_types.Request}
  */
-const generic_req = (token, query, stream_fn, extra_labels_search, labels_search) => {
+const generic_req = (token, query, index) => {
   if (token.Child('number_value').Child('duration_value') ||
         token.Child('number_value').Child('bytes_value')) {
     throw new Error('Not implemented')
@@ -19,56 +17,95 @@ const generic_req = (token, query, stream_fn, extra_labels_search, labels_search
     throw new Error(token.Child('number_value').value + 'is not a number')
   }
   if (query.stream && query.stream.length) {
-    query.stream.push((s) => s.filter(e => {
-      if (e.EOF) {
-        return true
-      }
-      if (!e || !e.labels || !e.labels[label]) {
-        return false
-      }
-      const _val = parseFloat(e.labels[label])
-      return !isNaN(_val) && stream_fn(_val, val)
-    }))
-    return query
-  }
-  const _extra_labels_search = extra_labels_search(label, val)
-  const _labels_search = labels_search(label, val)
-  if (has_extra_labels(query)) {
-    return _and(query, [
-      // toFloat64OrNull(x.2) == ${val}
-
-      // [`toFloat64OrNull(JSONExtractString(labels, '${label}')) == ${val}`]
-      ['OR',
-                `arrayExists(x -> x.1 == '${label}' AND (${_extra_labels_search}), extra_labels) != 0`,
-                [
-                  'AND',
-                    `arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
-                    `JSONHas(labels, '${label}')`,
-                    ..._labels_search
-                ]
+    return {
+      ...query,
+      stream: [...(query.stream || []),
+        /**
+                 *
+                 * @param s {DataStream}
+                 */
+        (s) => s.filter(module.exports.stream_where[index](label, val))
       ]
-    ])
+
+    }
   }
-  return _and(query, [
-        `JSONHas(labels, '${label}')`,
-        ..._labels_search
-  ])
+  if (has_extra_labels(query)) {
+    return _and(query, [module.exports.extra_labels_where[index](label, val)])
+  }
+  return _and(query, module.exports.simple_where[index](label, val))
 }
 
 /**
  *
- * @param token {Token}
- * @param query {registry_types.Request}
- * @param stream_fn {(function(number, number): boolean)} stream_fn(current_val, searching_val)
- * @param sign {string} just a sign in a generic expression
- * @returns {registry_types.Request}
+ * @param label {string}
+ * @param val {string}
+ * @param sign {string}
+ * @returns {[string]}
  */
-const operator_generic_req = (token, query, stream_fn, sign) =>
-  generic_req(token, query,
-    stream_fn, //
-    (lbl, val) => `coalesce(toFloat64OrNull(x.2) ${sign} ${val}, 0)`,
-    (label, val) => [`toFloat64OrNull(JSONExtractString(labels, '${label}')) ${sign} ${val}`]
-  )
+const generic_simple_label_search =
+    (label, val, sign) => [
+      'and',
+      `JSONHas(labels, '${label}')`,
+      `toFloat64OrNull(JSONExtractString(labels, '${label}')) ${sign} ${val}`]
+
+/**
+ *
+ * @param lbl {string}
+ * @param val {string}
+ * @param sign {string}
+ * @returns {[string]}
+ */
+const generic_extra_label_search =
+    (lbl, val, sign) => ['or',
+        `arrayExists(x -> x.1 == '${lbl}' AND (coalesce(toFloat64OrNull(x.2) ${sign} ${val}, 0)), extra_labels) != 0`,
+        [
+          'AND',
+            `arrayExists(x -> x.1 == '${lbl}', extra_labels) == 0`,
+            ...(generic_simple_label_search(lbl, val, sign).slice(1))
+        ]
+    ]
+
+const generic_stream_search = (label, fn) =>
+  (e) => {
+    if (e.EOF) {
+      return true
+    }
+    if (!e || !e.labels || !e.labels[label]) {
+      return false
+    }
+    const val = parseFloat(e.labels[label])
+    if (isNaN(val)) {
+      return false
+    }
+    return fn(val)
+  }
+
+module.exports.simple_where = {
+  eq: (label, val) => generic_simple_label_search(label, val, '=='),
+  neq: (label, val) => generic_simple_label_search(label, val, '!='),
+  ge: (label, val) => generic_simple_label_search(label, val, '>='),
+  gt: (label, val) => generic_simple_label_search(label, val, '>'),
+  le: (label, val) => generic_simple_label_search(label, val, '<='),
+  lt: (label, val) => generic_simple_label_search(label, val, '<')
+}
+
+module.exports.extra_labels_where = {
+  eq: (label, val) => generic_extra_label_search(label, val, '=='),
+  neq: (label, val) => generic_extra_label_search(label, val, '!='),
+  ge: (label, val) => generic_extra_label_search(label, val, '>='),
+  gt: (label, val) => generic_extra_label_search(label, val, '>'),
+  le: (label, val) => generic_extra_label_search(label, val, '<='),
+  lt: (label, val) => generic_extra_label_search(label, val, '<')
+}
+
+module.exports.stream_where = {
+  eq: (label, val) => generic_stream_search(label, (_val) => Math.abs(val - _val) < 1e-10),
+  neq: (label, val) => generic_stream_search(label, (_val) => Math.abs(val - _val) > 1e-10),
+  ge: (label, val) => generic_stream_search(label, (_val) => _val >= val),
+  gt: (label, val) => generic_stream_search(label, (_val) => _val > val),
+  le: (label, val) => generic_stream_search(label, (_val) => _val <= val),
+  lt: (label, val) => generic_stream_search(label, (_val) => _val < val)
+}
 
 /**
  *
@@ -77,8 +114,7 @@ const operator_generic_req = (token, query, stream_fn, sign) =>
  * @returns {registry_types.Request}
  */
 module.exports.eq = (token, query) => {
-  return operator_generic_req(token, query,
-    (_val, val) => Math.abs(_val - val) < 1e-10, '==')
+  return generic_req(token, query, 'eq')
 }
 
 /**
@@ -88,10 +124,7 @@ module.exports.eq = (token, query) => {
  * @returns {registry_types.Request}
  */
 module.exports.neq = (token, query) => {
-  return operator_generic_req(token, query,
-    (_val, val) => Math.abs(_val - val) > 1e-10,
-    '!='
-  )
+  return generic_req(token, query, 'neq')
 }
 
 /**
@@ -101,10 +134,7 @@ module.exports.neq = (token, query) => {
  * @returns {registry_types.Request}
  */
 module.exports.gt = (token, query) => {
-  return operator_generic_req(token, query,
-    (_val, val) => _val > val,
-    '>'
-  )
+  return generic_req(token, query, 'gt')
 }
 
 /**
@@ -114,10 +144,7 @@ module.exports.gt = (token, query) => {
  * @returns {registry_types.Request}
  */
 module.exports.ge = (token, query) => {
-  return operator_generic_req(
-    token, query,
-    (_val, val) => _val >= val, '>='
-  )
+  return generic_req(token, query, 'ge')
 }
 
 /**
@@ -127,10 +154,7 @@ module.exports.ge = (token, query) => {
  * @returns {registry_types.Request}
  */
 module.exports.lt = (token, query) => {
-  return operator_generic_req(
-    token, query,
-    (_val, val) => _val < val, '<'
-  )
+  return generic_req(token, query, 'lt')
 }
 
 /**
@@ -140,8 +164,5 @@ module.exports.lt = (token, query) => {
  * @returns {registry_types.Request}
  */
 module.exports.le = (token, query) => {
-  return operator_generic_req(
-    token, query,
-    (_val, val) => _val <= val, '<='
-  )
+  return generic_req(token, query, 'le')
 }
