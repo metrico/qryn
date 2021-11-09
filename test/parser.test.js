@@ -85,7 +85,7 @@ it('should get named groups', () => {
 it('should erase names', () => {
   const nGroups = (str) => {
     const t = regexp.internal.compile(str)
-    const g = regexp.internal.rm_names(t)
+    const g = regexp.internal.rmNames(t)
     // console.log({n:str, g:g.value});
     expect(g.value).toMatchSnapshot()
   }

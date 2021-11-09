@@ -12,7 +12,6 @@ const { _and, durationToMs } = require('./registry/common')
 const compiler = require('./bnf')
 const { parseMs, DATABASE_NAME } = require('../lib/utils')
 const { getPlg } = require('../plugins/engine')
-const { requestToStr } = require('./transpiler')
 
 /**
  *
