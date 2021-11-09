@@ -186,7 +186,7 @@ module.exports.reg_extra_labels = (token, query) => {
 module.exports.reg_stream = (token, query) => {
   const [label, value] = label_and_val(token)
   const re = new RegExp(value)
-  return (e) => e.EOF || (e && e.labels &&e.labels[label] && e.labels[label].match(re))
+  return (e) => e.EOF || (e && e.labels && e.labels[label] && e.labels[label].match(re))
 }
 
 /**

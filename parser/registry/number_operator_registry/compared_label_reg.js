@@ -99,12 +99,12 @@ module.exports.extra_labels_where = {
 }
 
 module.exports.stream_where = {
-  eq: (label, val) => generic_stream_search(label,(_val) => Math.abs(val - _val) < 1e-10),
-  neq: (label, val) => generic_stream_search(label,(_val) => Math.abs(val - _val) > 1e-10),
-  ge: (label, val) => generic_stream_search(label,(_val) => _val >= val),
-  gt: (label, val) => generic_stream_search(label,(_val) => _val > val),
-  le: (label, val) => generic_stream_search(label,(_val) => _val <= val),
-  lt: (label, val) => generic_stream_search(label,(_val) => _val < val)
+  eq: (label, val) => generic_stream_search(label, (_val) => Math.abs(val - _val) < 1e-10),
+  neq: (label, val) => generic_stream_search(label, (_val) => Math.abs(val - _val) > 1e-10),
+  ge: (label, val) => generic_stream_search(label, (_val) => _val >= val),
+  gt: (label, val) => generic_stream_search(label, (_val) => _val > val),
+  le: (label, val) => generic_stream_search(label, (_val) => _val <= val),
+  lt: (label, val) => generic_stream_search(label, (_val) => _val < val)
 }
 
 /**

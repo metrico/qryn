@@ -199,33 +199,6 @@ Array [
 ]
 `;
 
-exports[`should parse comples filters 1`] = `"{l1=\\"v1\\"}|l2=\\"v2\\" or l3=\\"v3\\""`;
-
-exports[`should parse comples filters 2`] = `
-Array [
-  "l2=\\"v2\\" or l3=\\"v3\\"",
-]
-`;
-
-exports[`should parse comples filters 3`] = `"{l1=\\"v1\\"}| l4=\\"v4\\" and (l2=\\"v2\\" or l3=\\"v3\\")"`;
-
-exports[`should parse comples filters 4`] = `
-Array [
-  "l4=\\"v4\\" and (l2=\\"v2\\" or l3=\\"v3\\")",
-  "l2=\\"v2\\" or l3=\\"v3\\"",
-]
-`;
-
-exports[`should parse comples filters 5`] = `"{l1=\\"v1\\"}| l4=\\"v4\\" and (l2=\\"v2\\" or (l3=\\"v3\\"))"`;
-
-exports[`should parse comples filters 6`] = `
-Array [
-  "l4=\\"v4\\" and (l2=\\"v2\\" or (l3=\\"v3\\"))",
-  "l2=\\"v2\\" or (l3=\\"v3\\")",
-  "l3=\\"v3\\"",
-]
-`;
-
 exports[`should parse complex filters 1`] = `"{l1=\\"v1\\"}|l2=\\"v2\\" or l3=\\"v3\\""`;
 
 exports[`should parse complex filters 2`] = `

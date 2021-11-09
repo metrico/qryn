@@ -326,5 +326,5 @@ it('e2e', async () => {
   resp = await runRequest(`{test_id="${testID}_json"} | json | str_id < 2 or str_id >= 598 and str_id > 0`)
   adjustResult(resp, testID + '_json')
   expect(resp.data.data.result.map(s => [s.stream, s.values.length])).toMatchSnapshot()
-  //console.log(JSON.stringify(resp.data.data.result.map(s => [s.stream, s.values.length])));
+  // console.log(JSON.stringify(resp.data.data.result.map(s => [s.stream, s.values.length])));
 })

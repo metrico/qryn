@@ -109,7 +109,7 @@ const process_where_expression = (token, query) => {
       and_or = t.value
     }
   }
-  return where;
+  return where
 }
 
 /**
