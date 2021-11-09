@@ -13,7 +13,6 @@ APIs are compatible with [Grafana](http://docs.grafana.org/features/explore/), [
 Performance is comparable to native Loki, with cLoki outperforming on large range filtered queries.
 
 :bulb: Get started using the [cLoki Wiki](https://github.com/lmangani/cLoki/wiki)<br>
-:postal_horn: Allergic to NodeJS? Follow or join the development of [cLoki-go](https://github.com/qxip/cLoki-go)<br>
 
 
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
@@ -172,6 +171,7 @@ Loki API Functions are loosely implemented as documented by the [Loki API](https
 * [x] /loki/api/v1/query_range
 * [x] /loki/api/v1/label
 * [x] /loki/api/v1/label/_name_/values
+* [x] /loki/api/v1/tail
 
 ##### Status
 
