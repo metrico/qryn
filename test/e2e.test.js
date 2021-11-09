@@ -1,8 +1,6 @@
 const { createPoints, sendPoints } = require('./common')
 const axios = require('axios')
 const { WebSocket } = require('ws')
-const assert = require('assert')
-const { test } = require('handlebars-helpers/lib/regex')
 // const pb = require("protobufjs");
 const e2e = () => process.env.INTEGRATION_E2E || process.env.INTEGRATION
 const cloki_local = () => process.env.CLOKI_LOCAL || false
@@ -67,10 +65,6 @@ it('e2e', async () => {
   )
   await sendPoints('http://localhost:3100', points)
   await new Promise(f => setTimeout(f, 4000))
-  // ok limited res
-  let resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}"}&start=${start}000000&end=${end}000000&step=2`
-  )
   const adjustResult = (resp, id, _start) => {
     _start = _start || start
     id = id || testID
@@ -98,6 +92,11 @@ it('e2e', async () => {
       return stream
     })
   }
+
+  // ok limited res
+  let resp = await axios.get(
+    `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}"}&start=${start}000000&end=${end}000000&step=2`
+  )
   console.log('TEST ID=' + testID)
   adjustResult(resp)
   expect(resp.data).toMatchSnapshot()
@@ -317,6 +316,15 @@ it('e2e', async () => {
   })
   resp.data.data.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
   expect(resp.data).toMatchSnapshot()
-  // console.log(JSON.stringify(resp.data));
   await new Promise(f => setTimeout(f, 1000))
+  resp = await runRequest(`{test_id="${testID}"} | freq > 1 and (freq="4" or freq==2 or freq > 0.5)`)
+  adjustResult(resp, testID)
+  expect(resp.data.data.result.map(s => [s.stream, s.values.length])).toMatchSnapshot()
+  resp = await runRequest(`{test_id="${testID}_json"} | json sid="str_id" | sid >= 598 or sid < 2 and sid > 0`)
+  adjustResult(resp, testID + '_json')
+  expect(resp.data.data.result.map(s => [s.stream, s.values.length])).toMatchSnapshot()
+  resp = await runRequest(`{test_id="${testID}_json"} | json | str_id < 2 or str_id >= 598 and str_id > 0`)
+  adjustResult(resp, testID + '_json')
+  expect(resp.data.data.result.map(s => [s.stream, s.values.length])).toMatchSnapshot()
+  //console.log(JSON.stringify(resp.data.data.result.map(s => [s.stream, s.values.length])));
 })

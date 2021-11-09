@@ -17,14 +17,14 @@ const fs = require('fs')
 const { Compiler } = require('bnf/Compiler')
 const { Token } = require('bnf/Token')
 
-Token.prototype.Children = function ( tokenType ){
-    let tokens = [];
-    for( let i = 0; i < this.tokens.length; i++ ){
-        if( this.tokens[i].name === tokenType ){
-            tokens.push(this.tokens[i]);
-        }
-        tokens = [...tokens, ...this.tokens[i].Children( tokenType )];
+Token.prototype.Children = function (tokenType) {
+  let tokens = []
+  for (let i = 0; i < this.tokens.length; i++) {
+    if (this.tokens[i].name === tokenType) {
+      tokens.push(this.tokens[i])
     }
+    tokens = [...tokens, ...this.tokens[i].Children(tokenType)]
+  }
 
   return tokens
 }

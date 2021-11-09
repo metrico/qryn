@@ -3,6 +3,7 @@ const line_filter_operator_registry = require('./registry/line_filter_operator_r
 const log_range_aggregation_registry = require('./registry/log_range_aggregation_registry')
 const high_level_aggregation_registry = require('./registry/high_level_aggregation_registry')
 const number_operator_registry = require('./registry/number_operator_registry')
+const complex_label_filter_registry = require('./registry/complex_label_filter_expression');
 const line_format = require('./registry/line_format')
 const parser_registry = require('./registry/parser_registry')
 const unwrap = require('./registry/unwrap')
@@ -249,56 +250,47 @@ module.exports.transpile_log_range_aggregation = (token, query) => {
  * @returns {registry_types.Request}
  */
 module.exports.transpile_log_stream_selector = (token, query) => {
-    const rules = token.Children('log_stream_selector_rule');
-    for(const rule of rules) {
-        const op = rule.Child('operator').value;
-        query = stream_selector_operator_registry[op](rule, query);
+  const rules = token.Children('log_stream_selector_rule')
+  for (const rule of rules) {
+    const op = rule.Child('operator').value
+    query = stream_selector_operator_registry[op](rule, query)
+  }
+  for (const pipeline of token.Children('log_pipeline')) {
+    if (pipeline.Child('line_filter_expression')) {
+      const op = pipeline.Child('line_filter_operator').value
+      query = line_filter_operator_registry[op](pipeline, query)
+      continue
     }
-    for(const pipeline of token.Children('log_pipeline')) {
-        if (pipeline.Child('line_filter_expression')) {
-            const op = pipeline.Child('line_filter_operator').value;
-            query = line_filter_operator_registry[op](pipeline, query);
-            continue;
-        }
-        if (pipeline.Child('parser_expression')) {
-            const op = pipeline.Child('parser_fn_name').value;
-            query = parser_registry[op](pipeline, query);
-            continue;
-        }
-        if (pipeline.Child('label_filter_pipeline')) {
-            query = module.exports.transpile_label_filter_pipeline(pipeline.Child('label_filter_pipeline'), query);
-            continue;
-        }
-        if (pipeline.Child('line_format_expression')) {
-            query = line_format(pipeline, query);
-            continue;
-        }
+    if (pipeline.Child('parser_expression')) {
+      const op = pipeline.Child('parser_fn_name').value
+      query = parser_registry[op](pipeline, query)
+      continue
     }
-    for (const c of ['labels_format_expression']) {
-        if (token.Children(c).length > 0) {
-            throw new Error(`${c} not supported`);
-        }
+    if (pipeline.Child('label_filter_pipeline')) {
+      query = module.exports.transpile_label_filter_pipeline(pipeline.Child('label_filter_pipeline'), query)
+      continue
     }
-    return query;
+    if (pipeline.Child('line_format_expression')) {
+      query = line_format(pipeline, query)
+      continue
+    }
+  }
+  for (const c of ['labels_format_expression']) {
+    if (token.Children(c).length > 0) {
+      throw new Error(`${c} not supported`)
+    }
+  }
+  return query
 }
 
 /**
  *
- * @param token {Token}
+ * @param pipeline {Token}
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.transpile_label_filter_pipeline = (token, query) => {
-    if (token.tokens.length === 1)
-    if (pipeline.Child('string_label_filter_expression')) {
-        const op = pipeline.Child('operator').value;
-        query = stream_selector_operator_registry[op](pipeline, query);
-    }
-    if (pipeline.Child('number_label_filter_expression')) {
-        const op = pipeline.Child('number_operator').value;
-        query = number_operator_registry[op](pipeline, query);
-    }
-
+module.exports.transpile_label_filter_pipeline = (pipeline, query) => {
+  return complex_label_filter_registry(pipeline.Child('complex_label_filter_expression'), query);
 }
 
 /**

@@ -18,7 +18,7 @@ opt_parameters ::=  <parameter> <OWSP> *("," <OWSP> <parameter>) | <BLANK>
 parameter ::= <label> <OWSP> "=" <OWSP> <quoted_str> | <quoted_str>
 
 label_filter_pipeline ::= "|" <OWSP> <complex_label_filter_expression>
-complex_label_filter_expression ::= <label_filter_expression> | <bracketed_label_filter_expression> | (<label_filter_expression> | <bracketed_label_filter_expression>) <OWSP> *( <and_or> <WSP> <OWSP> <label_filter_expression> | <and_or> <WSP> <OWSP> <bracketed_label_filter_expression>)
+complex_label_filter_expression ::= <label_filter_expression> | <bracketed_label_filter_expression> | (<label_filter_expression> | <bracketed_label_filter_expression>) *(<OWSP> <and_or> <WSP> <OWSP> <label_filter_expression> | <OWSP> <and_or> <WSP> <OWSP> <bracketed_label_filter_expression>)
 bracketed_label_filter_expression ::= "(" <OWSP> <complex_label_filter_expression> <OWSP> ")"
 and_or ::= "and" | "or"
 label_filter_expression ::= <string_label_filter_expression> | <number_label_filter_expression>

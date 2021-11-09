@@ -163282,3 +163282,107 @@ Object {
   "status": "success",
 }
 `;
+
+exports[`e2e 43`] = `
+Array [
+  Array [
+    Object {
+      "freq": "4",
+      "test_id": "TEST_ID",
+    },
+    150,
+  ],
+  Array [
+    Object {
+      "freq": "2",
+      "test_id": "TEST_ID",
+    },
+    300,
+  ],
+]
+`;
+
+exports[`e2e 44`] = `
+Array [
+  Array [
+    Object {
+      "fmt": "json",
+      "freq": "1",
+      "int_lbl": "1",
+      "lbl_repl": "val_repl",
+      "sid": "599",
+      "test_id": "TEST_ID",
+    },
+    1,
+  ],
+  Array [
+    Object {
+      "fmt": "json",
+      "freq": "1",
+      "int_lbl": "1",
+      "lbl_repl": "val_repl",
+      "sid": "598",
+      "test_id": "TEST_ID",
+    },
+    1,
+  ],
+  Array [
+    Object {
+      "fmt": "json",
+      "freq": "1",
+      "int_lbl": "1",
+      "lbl_repl": "val_repl",
+      "sid": "1",
+      "test_id": "TEST_ID",
+    },
+    1,
+  ],
+]
+`;
+
+exports[`e2e 45`] = `
+Array [
+  Array [
+    Object {
+      "fmt": "json",
+      "freq": "1",
+      "int_lbl": "1",
+      "int_val": "1",
+      "lbl_repl": "REPL",
+      "new_lbl": "new_val",
+      "obj_o_1": "v_1",
+      "str_id": "599",
+      "test_id": "TEST_ID",
+    },
+    1,
+  ],
+  Array [
+    Object {
+      "fmt": "json",
+      "freq": "1",
+      "int_lbl": "1",
+      "int_val": "1",
+      "lbl_repl": "REPL",
+      "new_lbl": "new_val",
+      "obj_o_1": "v_1",
+      "str_id": "598",
+      "test_id": "TEST_ID",
+    },
+    1,
+  ],
+  Array [
+    Object {
+      "fmt": "json",
+      "freq": "1",
+      "int_lbl": "1",
+      "int_val": "1",
+      "lbl_repl": "REPL",
+      "new_lbl": "new_val",
+      "obj_o_1": "v_1",
+      "str_id": "1",
+      "test_id": "TEST_ID",
+    },
+    1,
+  ],
+]
+`;
