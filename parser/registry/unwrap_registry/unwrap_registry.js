@@ -4,7 +4,7 @@ const { getDuration, concatLabels, applyViaStream } = require('../common')
  *
  * @param viaRequest {function(Token, registry_types.Request): registry_types.Request}
  * @param viaStream {function(Token, registry_types.Request): registry_types.Request}
- * @returns { {
+ * @returns {
  *  viaRequest: function(Token, registry_types.Request): registry_types.Request,
  *  viaStream: function(Token, registry_types.Request): registry_types.Request} }
  */

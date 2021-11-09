@@ -15,52 +15,52 @@ module.exports = {
     return reg.rate.viaRequest(token, query)
   },
   /**
-     * sum_over_time(unwrapped-range): the sum of all values in the specified interval.
+     * sumOverTime(unwrapped-range): the sum of all values in the specified interval.
      * @param token {Token}
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  sum_over_time: (token, query) => {
+  sumOverTime: (token, query) => {
     if (query.stream) {
-      return reg.sum_over_time.viaStream(token, query)
+      return reg.sumOverTime.viaStream(token, query)
     }
-    return reg.sum_over_time.viaRequest(token, query)
+    return reg.sumOverTime.viaRequest(token, query)
   },
   /**
-     * avg_over_time(unwrapped-range): the average value of all points in the specified interval.
+     * avgOverTime(unwrapped-range): the average value of all points in the specified interval.
      * @param token {Token}
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  avg_over_time: (token, query) => {
+  avgOverTime: (token, query) => {
     if (query.stream) {
-      return reg.avg_over_time.viaStream(token, query)
+      return reg.avgOverTime.viaStream(token, query)
     }
-    return reg.avg_over_time.viaRequest(token, query)
+    return reg.avgOverTime.viaRequest(token, query)
   },
   /**
-     * max_over_time(unwrapped-range): the maximum value of all points in the specified interval.
+     * maxOverTime(unwrapped-range): the maximum value of all points in the specified interval.
      * @param token {Token}
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  max_over_time: (token, query) => {
+  maxOverTime: (token, query) => {
     if (query.stream) {
-      return reg.max_over_time.viaStream(token, query)
+      return reg.maxOverTime.viaStream(token, query)
     }
-    return reg.max_over_time.viaRequest(token, query)
+    return reg.maxOverTime.viaRequest(token, query)
   },
   /**
-     * min_over_time(unwrapped-range): the minimum value of all points in the specified interval
+     * minOverTime(unwrapped-range): the minimum value of all points in the specified interval
      * @param token {Token}
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  min_over_time: (token, query) => {
+  minOverTime: (token, query) => {
     if (query.stream) {
-      return reg.min_over_time.viaStream(token, query)
+      return reg.minOverTime.viaStream(token, query)
     }
-    return reg.min_over_time.viaRequest(token, query)
+    return reg.minOverTime.viaRequest(token, query)
   },
   /**
      * first_over_time(unwrapped-range): the first value of all points in the specified interval
@@ -75,69 +75,69 @@ module.exports = {
     return reg.first_over_time.viaRequest(token, query)
   },
   /**
-     * last_over_time(unwrapped-range): the last value of all points in the specified interval
+     * lastOverTime(unwrapped-range): the last value of all points in the specified interval
      * @param token {Token}
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  last_over_time: (token, query) => {
+  lastOverTime: (token, query) => {
     if (query.stream) {
-      return reg.last_over_time.viaStream(token, query)
+      return reg.lastOverTime.viaStream(token, query)
     }
-    return reg.last_over_time.viaRequest(token, query)
+    return reg.lastOverTime.viaRequest(token, query)
   },
   /**
-     * stdvar_over_time(unwrapped-range): the population standard variance of the values in the specified interval.
+     * stdvarOverTime(unwrapped-range): the population standard variance of the values in the specified interval.
      * @param token {Token}
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  stdvar_over_time: (token, query) => {
+  stdvarOverTime: (token, query) => {
     if (query.stream) {
-      return reg.stdvar_over_time.viaStream(token, query)
+      return reg.stdvarOverTime.viaStream(token, query)
     }
-    return reg.stdvar_over_time.viaRequest(token, query)
+    return reg.stdvarOverTime.viaRequest(token, query)
   },
   /**
-     * stddev_over_time(unwrapped-range): the population standard deviation of the values in the specified interval.
+     * stddevOverTime(unwrapped-range): the population standard deviation of the values in the specified interval.
      * @param token {Token}
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  stddev_over_time: (token, query) => {
+  stddevOverTime: (token, query) => {
     if (query.stream) {
-      return reg.stddev_over_time.viaStream(token, query)
+      return reg.stddevOverTime.viaStream(token, query)
     }
-    return reg.stddev_over_time.viaRequest(token, query)
+    return reg.stddevOverTime.viaRequest(token, query)
   },
   /**
-     * quantile_over_time(scalar,unwrapped-range): the φ-quantile (0 ≤ φ ≤ 1) of the values in the specified interval.
+     * quantileOverTime(scalar,unwrapped-range): the φ-quantile (0 ≤ φ ≤ 1) of the values in the specified interval.
      * @param token {Token}
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  quantile_over_time: (token, query) => {
+  quantileOverTime: (token, query) => {
     if (query.stream) {
-      return reg.quantile_over_time.viaStream(token, query)
+      return reg.quantileOverTime.viaStream(token, query)
     }
-    return reg.quantile_over_time.viaRequest(token, query)
+    return reg.quantileOverTime.viaRequest(token, query)
   },
   /**
-     * absent_over_time(unwrapped-range): returns an empty vector if the range vector passed to it has any elements and a 1-element vector with the value 1 if the range vector passed to it has no elements. (absent_over_time is useful for alerting on when no time series and logs stream exist for label combination for a certain amount of time.)
+     * absentOverTime(unwrapped-range): returns an empty vector if the range vector passed to it has any elements and a 1-element vector with the value 1 if the range vector passed to it has no elements. (absentOverTime is useful for alerting on when no time series and logs stream exist for label combination for a certain amount of time.)
      * @param token {Token}
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  absent_over_time: (token, query) => {
+  absentOverTime: (token, query) => {
     if (query.stream) {
-      return reg.absent_over_time.viaStream(token, query)
+      return reg.absentOverTime.viaStream(token, query)
     }
-    return reg.absent_over_time.viaRequest(token, query)
+    return reg.absentOverTime.viaRequest(token, query)
   },
 
   ...getPlugins('unwrap_registry', (plugin) => {
     return (token, query) => {
-      return reg.apply_viaStream(
+      return reg.applyViaStream(
         token,
         query,
         plugin.run,

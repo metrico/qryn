@@ -146,7 +146,7 @@ module.exports.transpile = (request) => {
  */
 module.exports.transpileTail = (request) => {
   const expression = compiler.ParseScript(request.query.trim())
-  const denied = ['user_macro', 'aggregation_operator', 'unwra_function', 'log_range_aggregation']
+  const denied = ['user_macro', 'aggregation_operator', 'unwrap_function', 'log_range_aggregation']
   for (const d of denied) {
     if (expression.rootToken.Child(d)) {
       throw new Error(`${d} is not supported. Only raw logs are supported`)
