@@ -53,6 +53,18 @@ it('should parse macros', () => {
     expect(res.rootToken.Child('quoted_str').value).toMatch('"macro is ok"');
 });
 
+it ('should parse complex filters', () => {
+   let res = bnf.ParseScript('{l1="v1"}|l2="v2" or l3="v3"');
+   expect(res.rootToken.value).toMatchSnapshot();
+   expect(res.rootToken.Children('complex_label_filter_expression').map(c => c.value)).toMatchSnapshot();
+   res = bnf.ParseScript('{l1="v1"}| l4="v4" and (l2="v2" or l3="v3")');
+    expect(res.rootToken.value).toMatchSnapshot();
+    expect(res.rootToken.Children('complex_label_filter_expression').map(c => c.value)).toMatchSnapshot();
+    res = bnf.ParseScript('{l1="v1"}| l4="v4" and (l2="v2" or (l3="v3"))');
+    expect(res.rootToken.value).toMatchSnapshot();
+    expect(res.rootToken.Children('complex_label_filter_expression').map(c => c.value)).toMatchSnapshot();
+});
+
 
 
 const print_tree = (token, indent, buf) => {

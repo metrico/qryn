@@ -23,9 +23,7 @@ Token.prototype.Children = function ( tokenType ){
         if( this.tokens[i].name === tokenType ){
             tokens.push(this.tokens[i]);
         }
-        else{
-            tokens = [...tokens, ...this.tokens[i].Children( tokenType )];
-        }
+        tokens = [...tokens, ...this.tokens[i].Children( tokenType )];
     }
 
     return tokens;

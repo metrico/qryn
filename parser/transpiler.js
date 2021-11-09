@@ -234,14 +234,8 @@ module.exports.transpile_log_stream_selector = (token, query) => {
             query = parser_registry[op](pipeline, query);
             continue;
         }
-        if (pipeline.Child('string_label_filter_expression')) {
-            const op = pipeline.Child('operator').value;
-            query = stream_selector_operator_registry[op](pipeline, query);
-            continue;
-        }
-        if (pipeline.Child('number_label_filter_expression')) {
-            const op = pipeline.Child('number_operator').value;
-            query = number_operator_registry[op](pipeline, query);
+        if (pipeline.Child('label_filter_pipeline')) {
+            query = module.exports.transpile_label_filter_pipeline(pipeline.Child('label_filter_pipeline'), query);
             continue;
         }
         if (pipeline.Child('line_format_expression')) {
@@ -255,6 +249,25 @@ module.exports.transpile_log_stream_selector = (token, query) => {
         }
     }
     return query;
+}
+
+/**
+ *
+ * @param token {Token}
+ * @param query {registry_types.Request}
+ * @returns {registry_types.Request}
+ */
+module.exports.transpile_label_filter_pipeline = (token, query) => {
+    if (token.tokens.length === 1)
+    if (pipeline.Child('string_label_filter_expression')) {
+        const op = pipeline.Child('operator').value;
+        query = stream_selector_operator_registry[op](pipeline, query);
+    }
+    if (pipeline.Child('number_label_filter_expression')) {
+        const op = pipeline.Child('number_operator').value;
+        query = number_operator_registry[op](pipeline, query);
+    }
+
 }
 
 /**

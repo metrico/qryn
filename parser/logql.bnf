@@ -7,7 +7,7 @@ label ::= (<ALPHA> | "_") *(<ALPHA> | "_" | <DIGITS>)
 operator ::= <stream_selector_operator_registry>
 quoted_str ::= <QLITERAL> | <AQLITERAL>
 
-log_pipeline ::= <line_filter_expression> | <parser_expression> | <label_filter_expression> | <line_format_expression> | <labels_format_expression>
+log_pipeline ::= <line_filter_expression> | <parser_expression> | <label_filter_pipeline> | <line_format_expression> | <labels_format_expression>
 
 line_filter_expression ::= <line_filter_operator> <OWSP> <quoted_str>
 line_filter_operator ::= <line_filter_operator_registry>
@@ -17,7 +17,11 @@ parser_fn_name ::= <parser_registry>
 opt_parameters ::=  <parameter> <OWSP> *("," <OWSP> <parameter>) | <BLANK>
 parameter ::= <label> <OWSP> "=" <OWSP> <quoted_str> | <quoted_str>
 
-label_filter_expression ::= "|" <OWSP> <string_label_filter_expression> | "|" <OWSP> <number_label_filter_expression>
+label_filter_pipeline ::= "|" <OWSP> <complex_label_filter_expression>
+complex_label_filter_expression ::= <label_filter_expression> | <bracketed_label_filter_expression> | (<label_filter_expression> | <bracketed_label_filter_expression>) <OWSP> *( <and_or> <WSP> <OWSP> <label_filter_expression> | <and_or> <WSP> <OWSP> <bracketed_label_filter_expression>)
+bracketed_label_filter_expression ::= "(" <OWSP> <complex_label_filter_expression> <OWSP> ")"
+and_or ::= "and" | "or"
+label_filter_expression ::= <string_label_filter_expression> | <number_label_filter_expression>
 
 string_label_filter_expression ::= <label> <OWSP> <operator> <OWSP> <quoted_str>
 
