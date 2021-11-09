@@ -1,5 +1,5 @@
-const {_and, unquote_token, querySelectorPostProcess, isEOF} = require("../common");
-const {DATABASE_NAME} = require("../../../lib/utils");
+const { _and, unquote_token, querySelectorPostProcess, isEOF } = require('../common')
+const { DATABASE_NAME } = require('../../../lib/utils')
 /**
  * @param regex {boolean}
  * @param eq {boolean}
@@ -7,12 +7,13 @@ const {DATABASE_NAME} = require("../../../lib/utils");
  * @param value {string}
  * @returns {string[]}
  */
-function selector_clauses(regex, eq, label, value) {
-    return [
+function selector_clauses (regex, eq, label, value) {
+  return [
         `JSONHas(labels, '${label}')`,
-        regex ? `extractAllGroups(JSONExtractString(labels, '${label}'), '(${value})') ${eq ? '!=' : '=='} []` :
-            `JSONExtractString(labels, '${label}') ${eq ? '=' : '!='} '${value}'`
-    ]
+        regex
+          ? `extractAllGroups(JSONExtractString(labels, '${label}'), '(${value})') ${eq ? '!=' : '=='} []`
+          : `JSONExtractString(labels, '${label}') ${eq ? '=' : '!='} '${value}'`
+  ]
 }
 
 /**
@@ -21,19 +22,19 @@ function selector_clauses(regex, eq, label, value) {
  * @returns {string[]}
  */
 const label_and_val = (token) => {
-    const label = token.Child('label').value;
-    return [label, unquote_token(token)];
+  const label = token.Child('label').value
+  return [label, unquote_token(token)]
 }
 
 /**
  * @returns {registry_types.Request}
  */
 const stream_select_query = () => {
-    return {
-        select: ["fingerprint"],
-        from: `${DATABASE_NAME()}.time_series`,
-        where: ['AND']
-    };
+  return {
+    select: ['fingerprint'],
+    from: `${DATABASE_NAME()}.time_series`,
+    where: ['AND']
+  }
 }
 
 /**
@@ -91,8 +92,8 @@ module.exports.neq_extra_labels = (token, query) => {
  * @param s {DataStream}
  * @param fn {function(Object): boolean}
  */
-function filter(s, fn) {
-    return s.filter(e => (e && e.labels && fn(e)) || isEOF(e));
+function filter (s, fn) {
+  return s.filter(e => (e && e.labels && fn(e)) || isEOF(e))
 }
 
 /**
@@ -124,7 +125,7 @@ module.exports.nreg_simple = (token, query) => {
  * @returns {string[]}
  */
 module.exports.nreg_extra_labels = (token, query) => {
-    const [label, value] = label_and_val(token);
+  const [label, value] = label_and_val(token)
 
     return [['OR', `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') == [], extra_labels) != 0`,
             [
@@ -165,7 +166,7 @@ module.exports.reg_simple = (token, query) => {
  * @returns {string[]}
  */
 module.exports.reg_extra_labels = (token, query) => {
-    const [label, value] = label_and_val(token);
+  const [label, value] = label_and_val(token)
 
     return [['OR', `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') != [], extra_labels) != 0`,
             [
@@ -205,7 +206,7 @@ module.exports.eq_simple = (token, query) => {
  * @returns {string[]}
  */
 module.exports.eq_extra_labels = (token, query) => {
-    const [label, value] = label_and_val(token);
+  const [label, value] = label_and_val(token)
 
     return [['OR', `indexOf(extra_labels, ('${label}', '${value}')) > 0`,
             [

@@ -1,8 +1,8 @@
-const reg = require('./stream_selector_operator_registry');
-const {has_extra_labels, _and} = require("../common");
+const reg = require('./stream_selector_operator_registry')
+const { has_extra_labels, _and } = require('../common')
 
 module.exports = {
-    /**
+  /**
      *
      * @param token {Token}
      * @param query {registry_types.Request}

@@ -1,4 +1,4 @@
-const {has_extra_labels, _and} = require("../common");
+const { has_extra_labels, _and } = require('../common')
 /**
  *
  * @param token {Token}
