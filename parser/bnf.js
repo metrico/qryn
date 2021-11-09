@@ -1,5 +1,5 @@
-const { get_plg } = require('../plugins/engine')
-const registry_names = [
+const { getPlg } = require('../plugins/engine')
+const registryNames = [
   'high_level_aggregation_registry',
   'log_range_aggregation_registry',
   'number_operator_registry',
@@ -8,7 +8,7 @@ const registry_names = [
   'parser_registry',
   'unwrap_registry'
 ]
-const registries = registry_names.reduce((sum, n) => {
+const registries = registryNames.reduce((sum, n) => {
   sum[n] = require(`${__dirname}/registry/${n}`)
   return sum
 }, {})
@@ -36,7 +36,7 @@ for (const reg of Object.keys(registries)) {
   keys.sort((a, b) => b.length - a.length)
   bnf = bnf.replace(`<${reg}>`, keys.join('|'))
 }
-const plugins = get_plg({ type: 'macros' })
+const plugins = getPlg({ type: 'macros' })
 bnf += Object.values(plugins).map(p => p.bnf).join('\n') + '\n'
 bnf += 'user_macro ::=' + Object.values(plugins).map(p => p._main_rule_name).map(n => `<${n}>`).join('|') + '\n'
 

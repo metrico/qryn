@@ -6,7 +6,7 @@
  */
 
 this.debug = process.env.DEBUG || false
-const debug = this.debug
+// const debug = this.debug
 
 this.readonly = process.env.READONLY || false
 this.http_user = process.env.CLOKI_LOGIN || false
@@ -105,43 +105,43 @@ fastify.addContentTypeParser('application/x-protobuf', { parseAs: 'buffer' },
   })
 
 /* 404 Handler */
-const handler_404 = require('./lib/handlers/404.js').bind(this)
-fastify.setNotFoundHandler(handler_404)
+const handler404 = require('./lib/handlers/404.js').bind(this)
+fastify.setNotFoundHandler(handler404)
 
 /* Hello cloki test API */
-const handler_hello = require('./lib/handlers/ready').bind(this)
-fastify.get('/hello', handler_hello)
-fastify.get('/ready', handler_hello)
+const handlerHello = require('./lib/handlers/ready').bind(this)
+fastify.get('/hello', handlerHello)
+fastify.get('/ready', handlerHello)
 
 /* Write Handler */
-const handler_push = require('./lib/handlers/push.js').bind(this)
-fastify.post('/loki/api/v1/push', handler_push)
+const handlerPush = require('./lib/handlers/push.js').bind(this)
+fastify.post('/loki/api/v1/push', handlerPush)
 
 /* Telegraf HTTP Bulk handler */
-const handler_telegraf = require('./lib/handlers/telegraf.js').bind(this)
-fastify.post('/telegraf', handler_telegraf)
+const handlerTelegraf = require('./lib/handlers/telegraf.js').bind(this)
+fastify.post('/telegraf', handlerTelegraf)
 
 /* Query Handler */
-const handler_query_range = require('./lib/handlers/query_range.js').bind(this)
-fastify.get('/loki/api/v1/query_range', handler_query_range)
+const handlerQueryRange = require('./lib/handlers/query_range.js').bind(this)
+fastify.get('/loki/api/v1/query_range', handlerQueryRange)
 
 /* Label Handlers */
 /* Label Value Handler via query (test) */
-const handler_query = require('./lib/handlers/query.js').bind(this)
-fastify.get('/loki/api/v1/query', handler_query)
+const handlerQuery = require('./lib/handlers/query.js').bind(this)
+fastify.get('/loki/api/v1/query', handlerQuery)
 
 /* Label Handlers */
-const handler_label = require('./lib/handlers/label.js').bind(this)
-fastify.get('/loki/api/v1/label', handler_label)
-fastify.get('/loki/api/v1/labels', handler_label)
+const handlerLabel = require('./lib/handlers/label.js').bind(this)
+fastify.get('/loki/api/v1/label', handlerLabel)
+fastify.get('/loki/api/v1/labels', handlerLabel)
 
 /* Label Value Handler */
-const handler_label_values = require('./lib/handlers/label_values.js').bind(this)
-fastify.get('/loki/api/v1/label/:name/values', handler_label_values)
+const handlerLabelValues = require('./lib/handlers/label_values.js').bind(this)
+fastify.get('/loki/api/v1/label/:name/values', handlerLabelValues)
 
 /* Series Placeholder - we do not track this as of yet */
-const handler_series = require('./lib/handlers/series.js').bind(this)
-fastify.get('/loki/api/v1/series', handler_series)
+const handlerSeries = require('./lib/handlers/series.js').bind(this)
+fastify.get('/loki/api/v1/series', handlerSeries)
 
 fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/tail').bind(this))
 

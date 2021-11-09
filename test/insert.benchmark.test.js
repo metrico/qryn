@@ -156,7 +156,7 @@ beforeAll(async () => {
     return
   }
   l = require('../cloki')
-  await new Promise(f => setTimeout(f, 500))
+  await new Promise((resolve, reject) => setTimeout(resolve, 500))
 })
 afterAll(() => {
   if (!isInsertBenchmarkEnabled()) {

@@ -15,7 +15,7 @@ async function main () {
     sendPoints('http://localhost:3100', points)
   }, period)
 
-  await new Promise(f => setTimeout(f, time))
+  await new Promise((resolve, reject) => setTimeout(resolve, time))
   clearInterval(t)
   console.log('end')
 }

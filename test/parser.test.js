@@ -51,21 +51,21 @@ it('should parse macros', () => {
   expect(res.rootToken.Child('quoted_str').value).toMatch('"macro is ok"')
 })
 
-const print_tree = (token, indent, buf) => {
+const printTree = (token, indent, buf) => {
   buf = buf || ''
   if (token.name.match(/^(SCRIPT|SYNTAX|[a-z_]+)$/)) {
     buf += new Array(indent).fill(' ').join('') + token.name + ': ' + token.value + '\n'
   }
-  buf = token.tokens.reduce((sum, t) => print_tree(t, indent + 1, sum), buf)
+  buf = token.tokens.reduce((sum, t) => printTree(t, indent + 1, sum), buf)
   return buf
 }
 
 it('should compile regex', () => {
-  expect(print_tree(regexp.internal.compile('abcd\\('), 0)).toMatchSnapshot()
-  expect(print_tree(regexp.internal.compile('(a\\(bc)'), 0)).toMatchSnapshot()
-  expect(print_tree(regexp.internal.compile('(?<label1>a[^\\[\\(\\)]bc)'), 0)).toMatchSnapshot()
-  expect(print_tree(regexp.internal.compile('(a(?<label1>[^\\[\\(\\)]bc))'), 0)).toMatchSnapshot()
-  expect(print_tree(regexp.internal.compile('(a[\\(\\)]+(?<l2>b)(?<label1>[^\\[\\(\\)]bc))'), 0)).toMatchSnapshot()
+  expect(printTree(regexp.internal.compile('abcd\\('), 0)).toMatchSnapshot()
+  expect(printTree(regexp.internal.compile('(a\\(bc)'), 0)).toMatchSnapshot()
+  expect(printTree(regexp.internal.compile('(?<label1>a[^\\[\\(\\)]bc)'), 0)).toMatchSnapshot()
+  expect(printTree(regexp.internal.compile('(a(?<label1>[^\\[\\(\\)]bc))'), 0)).toMatchSnapshot()
+  expect(printTree(regexp.internal.compile('(a[\\(\\)]+(?<l2>b)(?<label1>[^\\[\\(\\)]bc))'), 0)).toMatchSnapshot()
 })
 
 it('should get named groups', () => {

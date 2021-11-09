@@ -42,5 +42,5 @@ it('should stream the same data to loki / cloki', async () => {
   fs.writeFileSync('points.json', JSON.stringify({ streams: Object.values(points) }))
   await sendPoints('http://localhost:3100', points)
   await sendPoints(process.env.LOKI_ENDPOINT, points)
-  await new Promise(f => setTimeout(f, 1000))
+  await new Promise((resolve, reject) => setTimeout(resolve, 1000))
 })
