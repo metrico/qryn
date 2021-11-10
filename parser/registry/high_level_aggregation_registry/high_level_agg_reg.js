@@ -1,11 +1,11 @@
-const { apply_via_stream } = require('../common')
+const { applyViaStream } = require('../common')
 
 /**
  *
  * @param token {Token}
  * @returns [string, string[]]
  */
-function get_by_without (token) {
+function getByWithout (token) {
   return token.Child('by_without')
     ? [
         token.Child('by_without').value.toString().toLowerCase(),
@@ -20,7 +20,7 @@ function get_by_without (token) {
  * @param stream {(function(Token, registry_types.Request): registry_types.Request)}
  * @returns {(function(Token, registry_types.Request): registry_types.Request)}
  */
-module.exports.generic_request = (expression, stream) => {
+module.exports.genericRequest = (expression, stream) => {
   /**
      *
      * @param token {Token}
@@ -31,12 +31,12 @@ module.exports.generic_request = (expression, stream) => {
     if (query.stream && query.stream.length) {
       return stream(token, query)
     }
-    const [by_without, label_list] = get_by_without(token)
-    if (!by_without) {
+    const [byWithout, labelList] = getByWithout(token)
+    if (!byWithout) {
       return query
     }
-    const labels_filter_clause = `arrayFilter(x -> x.1 ${by_without === 'by' ? 'IN' : 'NOT IN'} ` +
-            `(${label_list.map(l => `'${l}'`).join(',')}), labels)`
+    const labelsFilterClause = `arrayFilter(x -> x.1 ${byWithout === 'by' ? 'IN' : 'NOT IN'} ` +
+            `(${labelList.map(l => `'${l}'`).join(',')}), labels)`
     return {
       ctx: query.ctx,
       with: {
@@ -49,7 +49,7 @@ module.exports.generic_request = (expression, stream) => {
         }
       },
       select: [
-                `${labels_filter_clause} as labels`,
+                `${labelsFilterClause} as labels`,
                 'timestamp_ms',
                 `${expression} as value` // 'sum(value) as value'
       ],
@@ -71,8 +71,8 @@ module.exports.generic_request = (expression, stream) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.stream_sum = (token, query) => {
-  return apply_via_stream(token, query, (sum, e) => {
+module.exports.streamSum = (token, query) => {
+  return applyViaStream(token, query, (sum, e) => {
     sum = sum || 0
     return sum + e.value
   }, (sum) => sum, false)
@@ -84,8 +84,8 @@ module.exports.stream_sum = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.stream_min = (token, query) => {
-  return apply_via_stream(token, query, (sum, e) => {
+module.exports.streamMin = (token, query) => {
+  return applyViaStream(token, query, (sum, e) => {
     return sum ? Math.min(sum.value, e.value) : { value: e.value }
   }, sum => sum.value)
 }
@@ -96,8 +96,8 @@ module.exports.stream_min = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.stream_max = (token, query) => {
-  return apply_via_stream(token, query, (sum, e) => {
+module.exports.streamMax = (token, query) => {
+  return applyViaStream(token, query, (sum, e) => {
     return sum ? Math.max(sum.value, e.value) : { value: e.value }
   }, sum => sum.value)
 }
@@ -108,8 +108,8 @@ module.exports.stream_max = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.stream_avg = (token, query) => {
-  return apply_via_stream(token, query, (sum, e) => {
+module.exports.streamAvg = (token, query) => {
+  return applyViaStream(token, query, (sum, e) => {
     return sum ? { value: sum.value + e.value, count: sum.count + 1 } : { value: e.value, count: 1 }
   }, sum => sum.value / sum.count)
 }
@@ -120,7 +120,7 @@ module.exports.stream_avg = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.stream_stddev = (token, query) => {
+module.exports.streamStddev = (token, query) => {
   throw new Error('Not implemented')
 }
 
@@ -130,7 +130,7 @@ module.exports.stream_stddev = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.stream_stdvar = (token, query) => {
+module.exports.streamStdvar = (token, query) => {
   throw new Error('Not implemented')
 }
 
@@ -140,8 +140,8 @@ module.exports.stream_stdvar = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.stream_count = (token, query) => {
-  return apply_via_stream(token, query, (sum) => {
+module.exports.streamCount = (token, query) => {
+  return applyViaStream(token, query, (sum) => {
     return sum ? sum + 1 : 1
   }, sum => sum)
 }

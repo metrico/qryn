@@ -1,4 +1,4 @@
-const { _and, map, has_extra_labels } = require('./common')
+const { _and, map, hasExtraLabels } = require('./common')
 /**
  *
  * @param token {Token}
@@ -8,15 +8,15 @@ const { _and, map, has_extra_labels } = require('./common')
 module.exports = (token, query) => {
   const label = token.Child('label').value
   if (query.stream) {
-    return via_stream(label, query)
+    return viaStream(label, query)
   }
   if (label === '_entry') {
-    return unwrap_line(query)
+    return unwrapLine(query)
   }
-  if (has_extra_labels(query)) {
-    return via_query_with_extra_labels(label, query)
+  if (hasExtraLabels(query)) {
+    return viaQueryWithExtraLabels(label, query)
   }
-  return via_query(label, query)
+  return viaQuery(label, query)
 }
 
 /**
@@ -24,7 +24,7 @@ module.exports = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-function unwrap_line (query) {
+function unwrapLine (query) {
   query = {
     ...query,
     select: [...query.select, 'toFloat64OrNull(string) as unwrapped']
@@ -40,7 +40,7 @@ function unwrap_line (query) {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-function via_query (label, query) {
+function viaQuery (label, query) {
   query = {
     ...query,
     select: [...query.select, `toFloat64OrNull(JSONExtractString(labels,'${label}')) as unwrapped`]
@@ -57,7 +57,7 @@ function via_query (label, query) {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-function via_query_with_extra_labels (label, query) {
+function viaQueryWithExtraLabels (label, query) {
   query = {
     ...query,
     select: [...query.select, `toFloat64OrNull(if(arrayExists(x -> x.1 == '${label}', extra_labels), ` +
@@ -77,8 +77,8 @@ function via_query_with_extra_labels (label, query) {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-function via_stream (label, query) {
-  const is_unwrap_string = label === '_entry'
+function viaStream (label, query) {
+  const isUnwrapString = label === '_entry'
   return {
     ...query,
     stream: [
@@ -91,11 +91,11 @@ function via_stream (label, query) {
         if (!e || !e.labels) {
           return { ...e }
         }
-        if (!is_unwrap_string && !e.labels[label]) {
+        if (!isUnwrapString && !e.labels[label]) {
           return null
         }
         try {
-          e.unwrapped = parseFloat(is_unwrap_string ? e.string : e.labels[label])
+          e.unwrapped = parseFloat(isUnwrapString ? e.string : e.labels[label])
           if (isNaN(e.unwrapped)) {
             return null
           }

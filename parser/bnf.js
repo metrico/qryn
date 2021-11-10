@@ -1,5 +1,5 @@
-const { get_plg } = require('../plugins/engine')
-const registry_names = [
+const { getPlg } = require('../plugins/engine')
+const registryNames = [
   'high_level_aggregation_registry',
   'log_range_aggregation_registry',
   'number_operator_registry',
@@ -8,8 +8,9 @@ const registry_names = [
   'parser_registry',
   'unwrap_registry'
 ]
-const registries = registry_names.reduce((sum, n) => {
-  sum[n] = require(`${__dirname}/registry/${n}`)
+const path = require('path')
+const registries = registryNames.reduce((sum, n) => {
+  sum[n] = require(path.join(__dirname, 'registry', n))
   return sum
 }, {})
 const fs = require('fs')
@@ -29,13 +30,13 @@ Token.prototype.Children = function (tokenType) {
   return tokens
 }
 
-let bnf = fs.readFileSync(__dirname + '/logql.bnf').toString()
+let bnf = fs.readFileSync(path.join(__dirname, 'logql.bnf')).toString()
 for (const reg of Object.keys(registries)) {
   const keys = Object.keys(registries[reg]).map(n => `"${n}"`)
   keys.sort((a, b) => b.length - a.length)
   bnf = bnf.replace(`<${reg}>`, keys.join('|'))
 }
-const plugins = get_plg({ type: 'macros' })
+const plugins = getPlg({ type: 'macros' })
 bnf += Object.values(plugins).map(p => p.bnf).join('\n') + '\n'
 bnf += 'user_macro ::=' + Object.values(plugins).map(p => p._main_rule_name).map(n => `<${n}>`).join('|') + '\n'
 

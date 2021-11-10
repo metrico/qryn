@@ -1,5 +1,5 @@
 const { hashLabels, parseLabels } = require('../../common')
-const { get_plg } = require('../../plugins/engine')
+const { getPlg } = require('../../plugins/engine')
 
 /**
  * @param query {registry_types.Request | string[]}
@@ -40,7 +40,7 @@ module.exports.querySelectorPostProcess = (query) => {
  * @param token {Token}
  * @returns {string}
  */
-module.exports.unquote_token = (token) => {
+module.exports.unquoteToken = (token) => {
   let value = token.Child('quoted_str').value
   value = `"${value.substr(1, value.length - 2)}"`
   return JSON.parse(value)
@@ -48,10 +48,10 @@ module.exports.unquote_token = (token) => {
 
 /**
  *
- * @param duration_str {string}
+ * @param durationStr {string}
  * @returns {number}
  */
-module.exports.durationToMs = (duration_str) => {
+module.exports.durationToMs = (durationStr) => {
   const durations = {
     ns: 1 / 1000000,
     us: 1 / 1000,
@@ -61,7 +61,7 @@ module.exports.durationToMs = (duration_str) => {
     h: 60000 * 60
   }
   for (const k of Object.keys(durations)) {
-    const m = duration_str.match(new RegExp(`^([0-9][.0-9]*)${k}$`))
+    const m = durationStr.match(new RegExp(`^([0-9][.0-9]*)${k}$`))
     if (m) {
       return parseInt(m[1]) * durations[k]
     }
@@ -76,9 +76,9 @@ module.exports.durationToMs = (duration_str) => {
  * @returns {DataStream}
  */
 module.exports.map = (s, fn) => s.map((e) => {
-  return new Promise(f => {
+  return new Promise((resolve) => {
     setImmediate(() => {
-      f(fn(e))
+      resolve(fn(e))
     })
   })
 })
@@ -104,7 +104,7 @@ const getDuration = module.exports.getDuration
 module.exports.isEOF = (eof) => eof.EOF
 
 module.exports.getPlugins = (type, cb) => {
-  const _plgs = get_plg({ type: type })
+  const _plgs = getPlg({ type: type })
   const plgs = {}
   for (const _e of Object.values(_plgs)) {
     for (const e of Object.entries(_e)) {
@@ -126,7 +126,7 @@ module.exports.getPlugins = (type, cb) => {
  * @param query {registry_types.Request}
  * @returns {boolean}
  */
-module.exports.has_extra_labels = (query) => {
+module.exports.hasExtraLabels = (query) => {
   return query.select.some(f => f.endsWith('as extra_labels'))
 }
 
@@ -135,8 +135,8 @@ module.exports.has_extra_labels = (query) => {
  * @param query {registry_types.Request}
  * @returns {string}
  */
-module.exports.concat_labels = (query) => {
-  if (module.exports.has_extra_labels(query)) {
+module.exports.concatLabels = (query) => {
+  if (module.exports.hasExtraLabels(query)) {
     return 'arraySort(arrayConcat(arrayFilter(' +
             'x -> arrayExists(y -> y.1 == x.1, extra_labels) == 0, ' +
             'JSONExtractKeysAndValues(labels, \'String\')), extra_labels))'
@@ -148,12 +148,12 @@ module.exports.concat_labels = (query) => {
  * sum_over_time(unwrapped-range): the sum of all values in the specified interval.
  * @param token {Token}
  * @param query {registry_types.Request}
- * @param by_without_name {string} name of the by_without token
+ * @param byWithoutName {string} name of the by_without token
  * @returns {registry_types.Request}
  */
-function apply_by_without_stream (token, query, by_without_name) {
-  const is_by = token.Child(by_without_name).value === 'by'
-  const filter_labels = token.Children('label').map(l => l.value)
+function applyByWithoutStream (token, query, byWithoutName) {
+  const isBy = token.Child(byWithoutName).value === 'by'
+  const filterLabels = token.Children('label').map(l => l.value)
   return {
     ...query,
     stream: [...(query.stream ? query.stream : []),
@@ -166,7 +166,7 @@ function apply_by_without_stream (token, query, by_without_name) {
           return e
         }
         const labels = [...Object.entries(e.labels)].filter(l =>
-          (is_by && filter_labels.includes(l[0])) || (!is_by && !filter_labels.includes(l[0]))
+          (isBy && filterLabels.includes(l[0])) || (!isBy && !filterLabels.includes(l[0]))
         )
         return { ...e, labels: parseLabels(labels) }
       })
@@ -181,25 +181,25 @@ function apply_by_without_stream (token, query, by_without_name) {
  * @param value {number}
  * @param duration {number}
  * @param step {number}
- * @param counter_fn {function(any, any, number): any}
+ * @param counterFn {function(any, any, number): any}
  * @returns {Object}
  */
-function add_timestamp (values, timestamp, value, duration, step, counter_fn) {
-  const timestamp_without_step = Math.floor(timestamp / duration) * duration
-  const timestamp_with_step = step > duration
-    ? Math.floor(timestamp_without_step / step) * step
-    : timestamp_without_step
+function addTimestamp (values, timestamp, value, duration, step, counterFn) {
+  const timestampWithoutStep = Math.floor(timestamp / duration) * duration
+  const timestampWithStep = step > duration
+    ? Math.floor(timestampWithoutStep / step) * step
+    : timestampWithoutStep
   if (!values) {
     values = {}
   }
-  if (!values[timestamp_with_step]) {
-    values[timestamp_with_step] = {}
+  if (!values[timestampWithStep]) {
+    values[timestampWithStep] = {}
   }
-  if (!values[timestamp_with_step][timestamp_without_step]) {
-    values[timestamp_with_step][timestamp_without_step] = 0
+  if (!values[timestampWithStep][timestampWithoutStep]) {
+    values[timestampWithStep][timestampWithoutStep] = 0
   }
-  values[timestamp_with_step][timestamp_without_step] =
-        counter_fn(values[timestamp_with_step][timestamp_without_step], value, timestamp)
+  values[timestampWithStep][timestampWithoutStep] =
+        counterFn(values[timestampWithStep][timestampWithoutStep], value, timestamp)
   return values
 }
 
@@ -208,7 +208,7 @@ function add_timestamp (values, timestamp, value, duration, step, counter_fn) {
  * @param query {registry_types.Request}
  * @returns {boolean}
  */
-module.exports.has_extra_labels = (query) => {
+module.exports.hasExtraLabels = (query) => {
   return query.select.some((x) => x.endsWith('as extra_labels'))
 }
 
@@ -216,17 +216,17 @@ module.exports.has_extra_labels = (query) => {
  *
  * @param token {Token}
  * @param query {registry_types.Request}
- * @param counter_fn {function(any, any, number): any}
- * @param summarize_fn {function(any): number}
- * @param last_value {boolean} if the applier should take the latest value in step (if step > duration)
- * @param by_without_name {string} name of the by_without token
+ * @param counterFn {function(any, any, number): any}
+ * @param summarizeFn {function(any): number}
+ * @param lastValue {boolean} if the applier should take the latest value in step (if step > duration)
+ * @param byWithoutName {string} name of the by_without token
  * @returns {registry_types.Request}
  */
-module.exports.apply_via_stream = (token, query,
-  counter_fn, summarize_fn, last_value, by_without_name) => {
-  by_without_name = by_without_name || 'by_without'
-  if (token.Child(by_without_name)) {
-    query = apply_by_without_stream(token.Child(`opt_${by_without_name}`), query, by_without_name)
+module.exports.applyViaStream = (token, query,
+  counterFn, summarizeFn, lastValue, byWithoutName) => {
+  byWithoutName = byWithoutName || 'by_without'
+  if (token.Child(byWithoutName)) {
+    query = applyByWithoutStream(token.Child(`opt_${byWithoutName}`), query, byWithoutName)
   }
   let results = new Map()
   const duration = getDuration(token, query)
@@ -242,14 +242,14 @@ module.exports.apply_via_stream = (token, query,
              */
       (s) => s.remap((emit, e) => {
         if (!e || !e.labels) {
-          for (const [_, v] of results) {
+          for (const v of results.values()) {
             const ts = [...Object.entries(v.values)]
             ts.sort()
             for (const _v of ts) {
               let value = Object.entries(_v[1])
               value.sort()
-              value = last_value ? value[value.length - 1][1] : value[0][1]
-              value = summarize_fn(value)// Object.values(_v[1]).reduce((sum, v) => sum + summarize_fn(v), 0);
+              value = lastValue ? value[value.length - 1][1] : value[0][1]
+              value = summarizeFn(value)// Object.values(_v[1]).reduce((sum, v) => sum + summarizeFn(v), 0);
               emit({ labels: v.labels, timestamp_ms: _v[0], value: value })
             }
           }
@@ -261,11 +261,11 @@ module.exports.apply_via_stream = (token, query,
         if (!results.has(l)) {
           results.set(l, {
             labels: e.labels,
-            values: add_timestamp(undefined, e.timestamp_ms, e, duration, step, counter_fn)
+            values: addTimestamp(undefined, e.timestamp_ms, e, duration, step, counterFn)
           })
         } else {
-          results.get(l).values = add_timestamp(
-            results.get(l).values, e.timestamp_ms, e, duration, step, counter_fn
+          results.get(l).values = addTimestamp(
+            results.get(l).values, e.timestamp_ms, e, duration, step, counterFn
           )
         }
       })
@@ -277,10 +277,10 @@ module.exports.apply_via_stream = (token, query,
  *
  * @param str {string}
  * @param custom {(function(string): string | undefined) | undefined}
- * @param custom_slash {(function(string): (string | undefined)) | undefined}
+ * @param customSlash {(function(string): (string | undefined)) | undefined}
  * @return {string}
  */
-module.exports.unquote = (str, custom, custom_slash) => {
+module.exports.unquote = (str, custom, customSlash) => {
   const quote = str.substr(0, 1)
   switch (quote) {
     case '"':
@@ -311,8 +311,8 @@ module.exports.unquote = (str, custom, custom_slash) => {
       }
     }
     if (slash) {
-      if (custom_slash && custom_slash(str[i])) {
-        res += custom_slash(str[i])
+      if (customSlash && customSlash(str[i])) {
+        res += customSlash(str[i])
         continue
       }
       if (str[i] === quote) {

@@ -670,6 +670,15 @@ Object {
 
 exports[`should transpile aggregation_operator 6`] = `"WITH str_sel as ( SELECT  fingerprint FROM loki.time_series  WHERE JSONHas(labels, 'minus_nam') AND JSONExtractString(labels, 'minus_nam') = 'aut illo' ), rate_a as ( SELECT DISTINCT time_series.labels as labels, samples.string as string, time_series.fingerprint as fingerprint, samples.timestamp_ms as timestamp_ms FROM loki.samples  LEFT JOIN loki.time_series ON samples.fingerprint = time_series.fingerprint WHERE samples.fingerprint IN str_sel  ORDER BY timestamp_ms desc, labels desc ), rate_b as ( SELECT  JSONExtractKeysAndValues(labels, 'String') as labels, floor(timestamp_ms / 300000) * 300000 as timestamp_ms, toFloat64(count(1)) * 1000 / 300000 as value FROM rate_a  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc ), agg_a as ( SELECT  labels, timestamp_ms, sum(value) as value FROM rate_b  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc ) SELECT  arrayFilter(x -> x.1 IN ('label_1'), labels) as labels, timestamp_ms, sum(value) as value FROM agg_a  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc "`;
 
+exports[`should transpile complex pipelines 1`] = `
+Object {
+  "duration": 1000,
+  "matrix": false,
+  "query": "WITH str_sel as ( SELECT  fingerprint FROM loki.time_series  WHERE JSONHas(labels, 'test_id') AND JSONExtractString(labels, 'test_id') = '\${testID}' AND JSONHas(labels, 'freq') AND toFloat64OrNull(JSONExtractString(labels, 'freq')) >= 4 ), sel_a as ( SELECT DISTINCT time_series.labels as labels, samples.string as string, time_series.fingerprint as fingerprint, samples.timestamp_ms as timestamp_ms FROM loki.samples  LEFT JOIN loki.time_series ON samples.fingerprint = time_series.fingerprint WHERE samples.fingerprint IN str_sel AND timestamp_ms >= 0 AND timestamp_ms <= 100000000  ORDER BY timestamp_ms asc, labels asc  LIMIT 1000) SELECT  * FROM sel_a  ORDER BY labels asc, timestamp_ms asc ",
+  "stream": undefined,
+}
+`;
+
 exports[`should transpile json requests 1`] = `
 Object {
   "distinct": true,

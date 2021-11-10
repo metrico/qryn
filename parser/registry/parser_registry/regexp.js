@@ -3,8 +3,8 @@ const { unquote } = require('../common')
 
 const reBnf = `
 <SYNTAX> ::= *(<literal> | <any_group>)
-label ::= ( ALPHA | "_" ) *( ALPHA | DIGIT | "_" ) 
-literal ::= <quoted_brack> | <letter> 
+label ::= ( ALPHA | "_" ) *( ALPHA | DIGIT | "_" )
+literal ::= <quoted_brack> | <letter>
 quoted_brack ::= "\\(" | "\\)"
 letter = !"\\(" !"\\)" !"(" !")" %x0-ff
 group_name ::= "?" "<" <label> ">"
@@ -45,11 +45,11 @@ const walk = (token, res) => {
  * @param token {Token}
  * @returns {Token}
  */
-const rm_names = (token) => {
+const rmNames = (token) => {
   if (token.tokens) {
     token.tokens = token.tokens.filter(t => t.name !== 'group_name')
   }
-  token.tokens.forEach(rm_names)
+  token.tokens.forEach(rmNames)
   return token
 }
 
@@ -72,20 +72,20 @@ const compile = (str) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.via_request = (token, query) => {
+module.exports.viaRequest = (token, query) => {
   const re = compile(unquote(token.Child('parameter').value,
     null,
     (s) => s === '\\' ? '\\\\' : undefined))
   const labels = walk(re, [])
-  const rm_tok = rm_names(re)
-  const names_array = '[' + labels.map(l => `'${l.name}'` || '').join(',') + ']'
+  const rmTok = rmNames(re)
+  const namesArray = '[' + labels.map(l => `'${l.name}'` || '').join(',') + ']'
 
   return {
     ...query,
     select: [
       ...query.select.filter(f => !f.endsWith('as extra_values')),
-            `arrayFilter(x -> x.1 != '' AND x.2 != '', arrayZip(${names_array}, ` +
-                `arrayMap(x -> x[length(x)], extractAllGroupsHorizontal(string, '${rm_tok.value}')))) as extra_labels`
+            `arrayFilter(x -> x.1 != '' AND x.2 != '', arrayZip(${namesArray}, ` +
+                `arrayMap(x -> x[length(x)], extractAllGroupsHorizontal(string, '${rmTok.value}')))) as extra_labels`
     ]
   }
 }
@@ -96,7 +96,7 @@ module.exports.via_request = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
-module.exports.via_stream = (token, query) => {
+module.exports.viaStream = (token, query) => {
   const re = new RegExp(unquote(token.Child('parameter').value))
   const getLabels = (m) => {
     return m && m.groups ? m.groups : {}
@@ -120,7 +120,7 @@ module.exports.via_stream = (token, query) => {
 }
 
 module.exports.internal = {
-  rm_names: rm_names,
+  rmNames: rmNames,
   walk: walk,
   compile: compile
 }

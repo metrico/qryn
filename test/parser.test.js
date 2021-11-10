@@ -51,39 +51,21 @@ it('should parse macros', () => {
   expect(res.rootToken.Child('quoted_str').value).toMatch('"macro is ok"')
 })
 
-it('should parse complex filters', () => {
-  let res = bnf.ParseScript('{l1="v1"}|l2="v2" or l3="v3"')
-  expect(res.rootToken.value).toMatchSnapshot()
-  expect(res.rootToken.Children('complex_label_filter_expression').map(c => c.value)).toMatchSnapshot()
-  res = bnf.ParseScript('{l1="v1"}| l4="v4" and (l2="v2" or l3="v3")')
-  expect(res.rootToken.value).toMatchSnapshot()
-  expect(res.rootToken.Children('complex_label_filter_expression').map(c => c.value)).toMatchSnapshot()
-  res = bnf.ParseScript('{l1="v1"}| l4="v4" and (l2="v2" or (l3="v3"))')
-  expect(res.rootToken.value).toMatchSnapshot()
-  expect(res.rootToken.Children('complex_label_filter_expression').map(c => c.value)).toMatchSnapshot()
-  res = bnf.ParseScript('{test_id="tid"}| freq="4" or freq==2')
-  expect(res.rootToken.value).toMatchSnapshot()
-  expect(res.rootToken.Children('complex_label_filter_expression').map(c => c.value)).toMatchSnapshot()
-  res = bnf.ParseScript('{test_id="tid"} | freq > 3 and (freq="4" or freq==2 or freq>1)')
-  expect(res.rootToken.value).toMatchSnapshot()
-  expect(res.rootToken.Children('complex_label_filter_expression').map(c => c.value)).toMatchSnapshot()
-})
-
-const print_tree = (token, indent, buf) => {
+const printTree = (token, indent, buf) => {
   buf = buf || ''
   if (token.name.match(/^(SCRIPT|SYNTAX|[a-z_]+)$/)) {
     buf += new Array(indent).fill(' ').join('') + token.name + ': ' + token.value + '\n'
   }
-  buf = token.tokens.reduce((sum, t) => print_tree(t, indent + 1, sum), buf)
+  buf = token.tokens.reduce((sum, t) => printTree(t, indent + 1, sum), buf)
   return buf
 }
 
 it('should compile regex', () => {
-  expect(print_tree(regexp.internal.compile('abcd\\('), 0)).toMatchSnapshot()
-  expect(print_tree(regexp.internal.compile('(a\\(bc)'), 0)).toMatchSnapshot()
-  expect(print_tree(regexp.internal.compile('(?<label1>a[^\\[\\(\\)]bc)'), 0)).toMatchSnapshot()
-  expect(print_tree(regexp.internal.compile('(a(?<label1>[^\\[\\(\\)]bc))'), 0)).toMatchSnapshot()
-  expect(print_tree(regexp.internal.compile('(a[\\(\\)]+(?<l2>b)(?<label1>[^\\[\\(\\)]bc))'), 0)).toMatchSnapshot()
+  expect(printTree(regexp.internal.compile('abcd\\('), 0)).toMatchSnapshot()
+  expect(printTree(regexp.internal.compile('(a\\(bc)'), 0)).toMatchSnapshot()
+  expect(printTree(regexp.internal.compile('(?<label1>a[^\\[\\(\\)]bc)'), 0)).toMatchSnapshot()
+  expect(printTree(regexp.internal.compile('(a(?<label1>[^\\[\\(\\)]bc))'), 0)).toMatchSnapshot()
+  expect(printTree(regexp.internal.compile('(a[\\(\\)]+(?<l2>b)(?<label1>[^\\[\\(\\)]bc))'), 0)).toMatchSnapshot()
 })
 
 it('should get named groups', () => {
@@ -103,7 +85,7 @@ it('should get named groups', () => {
 it('should erase names', () => {
   const nGroups = (str) => {
     const t = regexp.internal.compile(str)
-    const g = regexp.internal.rm_names(t)
+    const g = regexp.internal.rmNames(t)
     // console.log({n:str, g:g.value});
     expect(g.value).toMatchSnapshot()
   }

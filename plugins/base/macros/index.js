@@ -1,5 +1,5 @@
 const { PluginTypeLoaderBase } = require('plugnplay')
-const rule_names = new Set()
+const ruleNames = new Set()
 module.exports = class extends PluginTypeLoaderBase {
   exportSync (opts) {
     return {
@@ -25,10 +25,10 @@ module.exports = class extends PluginTypeLoaderBase {
           if (name[1].substr(0, 6) !== 'MACRO_') {
             throw new Error(`${name[1]} token name should start with "MACRO_"`)
           }
-          if (rule_names.has(name[1])) {
+          if (ruleNames.has(name[1])) {
             throw new Error(`${name[1]} token already registered`)
           }
-          rule_names.add(name[1])
+          ruleNames.add(name[1])
         }
         exports._main_rule_name = rules[0].match(/^(\w+)\s*::=/)[1]
       }

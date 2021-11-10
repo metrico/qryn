@@ -3,7 +3,7 @@ const axios = require('axios')
 const { WebSocket } = require('ws')
 // const pb = require("protobufjs");
 const e2e = () => process.env.INTEGRATION_E2E || process.env.INTEGRATION
-const cloki_local = () => process.env.CLOKI_LOCAL || false
+const clokiLocal = () => process.env.CLOKI_LOCAL || false
 let l = null
 
 // const root = pb.loadSync(__dirname + "/../lib/loki.proto");
@@ -19,14 +19,14 @@ function setup () {
   if (!e2e()) {
     return
   }
-  if (!cloki_local()) l = require('../cloki')
-  return new Promise(f => setTimeout(f, 1000))
+  if (!clokiLocal()) l = require('../cloki')
+  return new Promise(resolve => setTimeout(resolve, 1000))
 }
 afterAll(() => {
   if (!e2e()) {
     return
   }
-  if (!cloki_local()) l.stop()
+  if (!clokiLocal()) l.stop()
 })
 
 /* async function pushPBPoints(endpoint, points) {
@@ -49,7 +49,7 @@ it('e2e', async () => {
     return
   }
   console.log('Waiting 2s before all inits')
-  await new Promise(f => setTimeout(f, 2000))
+  await new Promise(resolve => setTimeout(resolve, 2000))
   const testID = Math.random() + ''
   console.log(testID)
   const start = Math.floor((Date.now() - 60 * 1000 * 10) / 60 / 1000) * 60 * 1000
@@ -64,7 +64,7 @@ it('e2e', async () => {
     (i) => JSON.stringify({ lbl_repl: 'REPL', int_val: '1', new_lbl: 'new_val', str_id: i, arr: [1, 2, 3], obj: { o_1: 'v_1' } })
   )
   await sendPoints('http://localhost:3100', points)
-  await new Promise(f => setTimeout(f, 4000))
+  await new Promise(resolve => setTimeout(resolve, 4000))
   const adjustResult = (resp, id, _start) => {
     _start = _start || start
     id = id || testID
@@ -94,115 +94,107 @@ it('e2e', async () => {
   }
 
   // ok limited res
-  let resp = await axios.get(
-    `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}"}&start=${start}000000&end=${end}000000&step=2`
-  )
+  let resp = await runRequest(`{test_id="${testID}"}`)
   console.log('TEST ID=' + testID)
   adjustResult(resp)
   expect(resp.data).toMatchSnapshot()
   // empty res
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}"}&start=${start - 3600 * 1000}000000&end=${end - 3600 * 1000}000000&step=2`
-  )
+  resp = await runRequest(`{test_id="${testID}"}`, 2, start - 3600 * 1000, end - 3600 * 1000)
   adjustResult(resp)
   expect(resp.data).toMatchSnapshot()
   // two clauses
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}", freq="2"}&start=${start}000000&end=${end}000000&step=2`
-  )
+  resp = await runRequest(`{test_id="${testID}", freq="2"}`)
   adjustResult(resp)
   expect(resp.data).toMatchSnapshot()
   // two clauses and filter
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=100&query=%7Btest_id%3D%22${testID}%22%2C%20freq%3D%222%22%7D%20%7C~%20%222%5B0-9%5D%24%22&start=${start}000000&end=${end}000000&step=2`
-  )
+  resp = await runRequest(`{test_id="${testID}", freq="2"} |~ "2[0-9]$"`)
   adjustResult(resp)
   expect(resp.data).toMatchSnapshot()
   // aggregation
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=1788&query=rate(%7Btest_id%3D%22${testID}%22%2C%20freq%3D%222%22%7D%20%7C~%20%222%5B0-9%5D%24%22%20%5B1s%5D)&start=${start}000000&end=${end}000000&step=2`
-  )
+  resp = await runRequest(`rate({test_id="${testID}", freq="2"} |~ "2[0-9]$" [1s])`)
   adjustMatrixResult(resp)
   expect(resp.data).toMatchSnapshot()
+  // hammering aggregation
+  for (const fn of ['count_over_time', 'bytes_rate', 'bytes_over_time', 'absent_over_time']) {
+    resp = await runRequest(`${fn}({test_id="${testID}", freq="2"} |~ "2[0-9]$" [1s])`)
+    expect(resp.data.data.result.length).toBeTruthy()
+  }
   // high level
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=1788&query=sum%20by%20(test_id)%20(rate(%7Btest_id%3D%22${testID}%22%7D%20%7C~%20%222%5B0-9%5D%24%22%20%5B1s%5D))&start=${start}000000&end=${end}000000&step=2`
-  )
+  resp = await runRequest(`sum by (test_id) (rate({test_id="${testID}"} |~ "2[0-9]$" [1s]))`)
   adjustMatrixResult(resp)
   expect(resp.data).toMatchSnapshot()
+  // hammering high level
+  for (const fn of ['min', 'max', 'avg', 'stddev', 'stdvar', 'count']) {
+    resp = await runRequest(`${fn} by (test_id) (rate({test_id="${testID}"} |~ "2[0-9]$" [1s]))`)
+    expect(resp.data.data.result.length).toBeTruthy()
+  }
   // aggregation empty
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=1788&query=rate(%7Btest_id%3D%22${testID}%22%2C%20freq%3D%222%22%7D%20%7C~%20%222%5B0-9%5D%24%22%20%5B1s%5D)&start=${start - 3600 * 1000}000000&end=${end - 3600 * 1000}000000&step=2`
-  )
+  resp = await runRequest(`rate({test_id="${testID}", freq="2"} |~ "2[0-9]$" [1s])`,
+    2, start - 3600 * 1000, end - 3600 * 1000)
   adjustMatrixResult(resp)
   expect(resp.data).toMatchSnapshot()
   // high level empty
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=1788&query=sum%20by%20(test_id)%20(rate(%7Btest_id%3D%22${testID}%22%7D%20%7C~%20%222%5B0-9%5D%24%22%20%5B1s%5D))&start=${start - 3600 * 1000}000000&end=${end - 3600 * 1000}000000&step=2`
-  )
+  resp = await runRequest(`sum by (test_id) (rate({test_id="${testID}"} |~ "2[0-9]$" [1s]))`,
+    2, start - 3600 * 1000, end - 3600 * 1000)
   adjustMatrixResult(resp)
   expect(resp.data).toMatchSnapshot()
   // json without params
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}|json&start=${start}000000&end=${end}000000&step=2`
-  )
+  resp = await runRequest(`{test_id="${testID}_json"}|json`)
   adjustResult(resp, testID + '_json')
   expect(resp.data).toMatchSnapshot()
   // json with params
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}|json lbl_repl="new_lbl"&start=${start}000000&end=${end}000000&step=2`
-  )
+  resp = await runRequest(`{test_id="${testID}_json"}|json lbl_repl="new_lbl"`)
   adjustResult(resp, testID + '_json')
   expect(resp.data).toMatchSnapshot()
   // json with params / stream_selector
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}|json lbl_repl="new_lbl"|lbl_repl="new_val"&start=${start}000000&end=${end}000000&step=2`
-  )
+  resp = await runRequest(`{test_id="${testID}_json"}|json lbl_repl="new_lbl"|lbl_repl="new_val"`)
   adjustResult(resp, testID + '_json')
   expect(resp.data).toMatchSnapshot()
   // json with params / stream_selector
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}|json lbl_repl="new_lbl"|fmt="json"&start=${start}000000&end=${end}000000&step=2`
-  )
+  resp = await runRequest(`{test_id="${testID}_json"}|json lbl_repl="new_lbl"|fmt="json"`)
   adjustResult(resp, testID + '_json')
   expect(resp.data).toMatchSnapshot()
   // json with no params / stream_selector
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}|json|fmt=~"[jk]son"&start=${start}000000&end=${end}000000&step=2`
-  )
+  resp = await runRequest(`{test_id="${testID}_json"}|json|fmt=~"[jk]son"`)
   adjustResult(resp, testID + '_json')
   expect(resp.data).toMatchSnapshot()
   // json no params / stream_selector
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}_json"}|json|lbl_repl="REPL"&start=${start}000000&end=${end}000000&step=2`
-  )
+  resp = await runRequest(`{test_id="${testID}_json"}|json|lbl_repl="REPL"`)
   adjustResult(resp, testID + '_json')
   expect(resp.data).toMatchSnapshot()
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=sum_over_time({test_id="${testID}_json"}|json|lbl_repl="REPL"|unwrap int_lbl [3s]) by (test_id, lbl_repl)&start=${start}000000&end=${end}000000&step=2`
-  )
+  resp = await runRequest(`sum_over_time({test_id="${testID}_json"}|json` +
+    '|lbl_repl="REPL"|unwrap int_lbl [3s]) by (test_id, lbl_repl)')
   adjustMatrixResult(resp, testID + '_json')
   expect(resp.data).toMatchSnapshot()
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=sum_over_time({test_id="${testID}_json"}|json lbl_int1="int_val"|lbl_repl="val_repl"|unwrap lbl_int1 [3s]) by (test_id, lbl_repl)&start=${start}000000&end=${end}000000&step=2`
-  )
+  // hammering aggregation
+  for (const fn of ['rate', 'sum_over_time', 'avg_over_time', 'max_over_time', 'min_over_time',
+    'first_over_time', 'last_over_time'
+    /* , 'stdvar_over_time', 'stddev_over_time', 'quantile_over_time', 'absent_over_time' */]) {
+    resp = await runRequest(`${fn}({test_id="${testID}_json"}|json` +
+      '|lbl_repl="REPL"|unwrap int_lbl [3s]) by (test_id, lbl_repl)')
+    try {
+      expect(resp.data.data.result.length).toBeTruthy()
+    } catch (e) {
+      console.log(fn)
+      throw e
+    }
+  }
+  resp = await runRequest(`sum_over_time({test_id="${testID}_json"}|json lbl_int1="int_val"` +
+    '|lbl_repl="val_repl"|unwrap lbl_int1 [3s]) by (test_id, lbl_repl)')
   adjustMatrixResult(resp, testID + '_json')
   expect(resp.data).toMatchSnapshot()
-
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query={test_id="${testID}"}| line_format "{ \\"str\\":\\"{{_entry}}\\", \\"freq2\\": {{divide freq 2}} }"&start=${start}000000&end=${end}000000&step=2`
-  )
+  resp = await runRequest(`{test_id="${testID}"}| line_format ` +
+    '"{ \\"str\\":\\"{{_entry}}\\", \\"freq2\\": {{divide freq 2}} }"')
   adjustResult(resp, testID)
   expect(resp.data).toMatchSnapshot()
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=rate({test_id="${testID}"}| line_format "{ \\"str\\":\\"{{_entry}}\\", \\"freq2\\": {{divide freq 2}} }"|json|unwrap freq2 [1s]) by (test_id, freq2)&start=${start}000000&end=${end}000000&step=2`
-  )
-
+  resp = await runRequest(`rate({test_id="${testID}"}` +
+    '| line_format "{ \\"str\\":\\"{{_entry}}\\", \\"freq2\\": {{divide freq 2}} }"' +
+    '| json|unwrap freq2 [1s]) by (test_id, freq2)')
   adjustMatrixResult(resp, testID)
   expect(resp.data).toMatchSnapshot()
-  resp = await axios.get(
-        `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=rate({test_id="${testID}"}| line_format "{ \\"str\\":\\"{{_entry}}\\", \\"freq2\\": {{divide freq 2}} }"|json|unwrap freq2 [1s]) by (test_id, freq2)&start=${start}000000&end=${end}000000&step=60`
-  )
+  resp = await runRequest(`rate({test_id="${testID}"}` +
+    '| line_format "{ \\"str\\":\\"{{_entry}}\\", \\"freq2\\": {{divide freq 2}} }"' +
+    '| json|unwrap freq2 [1s]) by (test_id, freq2)', 60)
   adjustMatrixResult(resp, testID)
   expect(resp.data).toMatchSnapshot()
   resp = await runRequest(`{test_id="${testID}_json"}|json|json int_lbl2="int_val"`)
@@ -293,9 +285,9 @@ it('e2e', async () => {
     const points = createPoints(testID + '_ws', 1, wsStart + i * 1000, wsStart + i * 1000 + 1000, {}, {},
       () => `MSG_${i}`)
     sendPoints('http://localhost:3100', points)
-    await new Promise(f => setTimeout(f, 1000))
+    await new Promise(resolve => setTimeout(resolve, 1000))
   }
-  await new Promise(f => setTimeout(f, 6000))
+  await new Promise(resolve => setTimeout(resolve, 6000))
   ws.close()
   for (const res of resp.data.data.result) {
     res.values.sort()
@@ -316,7 +308,7 @@ it('e2e', async () => {
   })
   resp.data.data.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
   expect(resp.data).toMatchSnapshot()
-  await new Promise(f => setTimeout(f, 1000))
+  await new Promise(resolve => setTimeout(resolve, 1000))
   resp = await runRequest(`{test_id="${testID}"} | freq > 1 and (freq="4" or freq==2 or freq > 0.5)`)
   adjustResult(resp, testID)
   expect(resp.data.data.result.map(s => [s.stream, s.values.length])).toMatchSnapshot()

@@ -7,136 +7,136 @@ beforeAll(() => {
 })
 
 it('should transpile log_stream_selector', () => {
-  let scr = '{et_dolorem=`nemo doloremque`, quia=\"eum voluptatem non eligendi\"}'
+  let scr = '{et_dolorem=`nemo doloremque`, quia="eum voluptatem non eligendi"}'
   let script = bnf.ParseScript(scr)
-  let query = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query())
+  let query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   expect(query).toMatchSnapshot()
-  expect(transpiler.request_to_str(query)).toMatchSnapshot()
+  expect(transpiler.requestToStr(query)).toMatchSnapshot()
 
   scr = '{rerum_laborum=~`^con.+q.at[a-z]r`}'
   script = bnf.ParseScript(scr)
-  query = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query())
+  query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   expect(query).toMatchSnapshot()
-  expect(transpiler.request_to_str(query)).toMatchSnapshot()
+  expect(transpiler.requestToStr(query)).toMatchSnapshot()
 
   scr = '{et_dolorem!=`nemo doloremque`}'
   script = bnf.ParseScript(scr)
-  query = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query())
+  query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   expect(query).toMatchSnapshot()
-  expect(transpiler.request_to_str(query)).toMatchSnapshot()
+  expect(transpiler.requestToStr(query)).toMatchSnapshot()
 
   scr = '{rerum_laborum!~`^con.+q.at[a-z]r`}'
   script = bnf.ParseScript(scr)
-  query = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query())
+  query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   expect(query).toMatchSnapshot()
-  expect(transpiler.request_to_str(query)).toMatchSnapshot()
+  expect(transpiler.requestToStr(query)).toMatchSnapshot()
 })
 
 it('should transpile log_stream_selector with stream filter', () => {
-  let scr = '{et_dolorem=`nemo doloremque`, quia=\"eum voluptatem non eligendi\"} |= "at et"'
+  let scr = '{et_dolorem=`nemo doloremque`, quia="eum voluptatem non eligendi"} |= "at et"'
   let script = bnf.ParseScript(scr)
-  let query = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query())
+  let query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   expect(query).toMatchSnapshot()
-  expect(transpiler.request_to_str(query)).toMatchSnapshot()
+  expect(transpiler.requestToStr(query)).toMatchSnapshot()
 
   scr = '{rerum_laborum=~`^con.+q.at[a-z]r`} != "consequatur nam soluta"'
   script = bnf.ParseScript(scr)
-  query = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query())
+  query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   expect(query).toMatchSnapshot()
-  expect(transpiler.request_to_str(query)).toMatchSnapshot()
+  expect(transpiler.requestToStr(query)).toMatchSnapshot()
 
   scr = '{et_dolorem!=`nemo doloremque`} |~ "^mol[eE][^ ]+e +voluptatibus"'
   script = bnf.ParseScript(scr)
-  query = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query())
+  query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   expect(query).toMatchSnapshot()
-  expect(transpiler.request_to_str(query)).toMatchSnapshot()
+  expect(transpiler.requestToStr(query)).toMatchSnapshot()
 
   scr = '{rerum_laborum!~`^con.+q.at[a-z]r`} !~ "cons[eE][^ ]+r nam soluta"'
   script = bnf.ParseScript(scr)
-  query = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query())
+  query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   expect(query).toMatchSnapshot()
-  expect(transpiler.request_to_str(query)).toMatchSnapshot()
+  expect(transpiler.requestToStr(query)).toMatchSnapshot()
 })
 
 it('should transpile log_range_aggregation', () => {
   let scr = 'rate({minus_nam="aut illo"}[5m])'
   let script = bnf.ParseScript(scr)
-  const q = transpiler.init_query()
+  const q = transpiler.initQuery()
   q.ctx = {
     start: 0,
     end: 3600 * 1000
   }
-  let query = transpiler.transpile_log_range_aggregation(script.rootToken, q)
+  let query = transpiler.transpileLogRangeAggregation(script.rootToken, q)
   expect(query).toMatchSnapshot()
-  expect(transpiler.request_to_str(query)).toMatchSnapshot()
+  expect(transpiler.requestToStr(query)).toMatchSnapshot()
 
   scr = 'rate({rerum_laborum=~`^con.+q.at[a-z]r`} != "consequatur nam soluta" [5m])'
   script = bnf.ParseScript(scr)
-  query = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query())
+  query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   expect(query).toMatchSnapshot()
-  expect(transpiler.request_to_str(query)).toMatchSnapshot()
+  expect(transpiler.requestToStr(query)).toMatchSnapshot()
 
   scr = 'rate({et_dolorem!=`nemo doloremque`} |~ "^mol[eE][^ ]+e +voluptatibus" [5m])'
   script = bnf.ParseScript(scr)
-  query = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query())
+  query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   expect(query).toMatchSnapshot()
-  expect(transpiler.request_to_str(query)).toMatchSnapshot()
+  expect(transpiler.requestToStr(query)).toMatchSnapshot()
 
   scr = 'rate({rerum_laborum!~`^con.+q.at[a-z]r`} !~ "cons[eE][^ ]+r nam soluta" [5m])'
   script = bnf.ParseScript(scr)
-  query = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query())
+  query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   expect(query).toMatchSnapshot()
-  expect(transpiler.request_to_str(query)).toMatchSnapshot()
+  expect(transpiler.requestToStr(query)).toMatchSnapshot()
 })
 
 it('should transpile aggregation_operator', () => {
   let scr = 'sum (rate({minus_nam="aut illo"}[5m])) by (label_1)'
   let script = bnf.ParseScript(scr)
-  let q = transpiler.init_query()
+  let q = transpiler.initQuery()
   q.ctx = {
     start: 0,
     end: 3600 * 1000
   }
-  let query = transpiler.transpile_aggregation_operator(script.rootToken, q)
+  let query = transpiler.transpileAggregationOperator(script.rootToken, q)
   expect(query).toMatchSnapshot()
-  expect(transpiler.request_to_str(query)).toMatchSnapshot()
+  expect(transpiler.requestToStr(query)).toMatchSnapshot()
 
   scr = 'sum by (label_1) (rate({rerum_laborum=~`^con.+q.at[a-z]r`} != "consequatur nam soluta" [5m]))'
   script = bnf.ParseScript(scr)
-  query = transpiler.transpile_aggregation_operator(script.rootToken, q)
+  query = transpiler.transpileAggregationOperator(script.rootToken, q)
   expect(query).toMatchSnapshot()
-  expect(transpiler.request_to_str(query)).toMatchSnapshot()
+  expect(transpiler.requestToStr(query)).toMatchSnapshot()
 
   scr = 'sum by (label_1)  (rate({minus_nam="aut illo"}[5m]))'
   script = bnf.ParseScript(scr)
-  q = transpiler.init_query()
+  q = transpiler.initQuery()
   q.ctx = {
     start: 0,
     end: 3600 * 1000
   }
-  query = transpiler.transpile_aggregation_operator(script.rootToken, q)
+  query = transpiler.transpileAggregationOperator(script.rootToken, q)
   expect(query).toMatchSnapshot()
-  expect(transpiler.request_to_str(query)).toMatchSnapshot()
+  expect(transpiler.requestToStr(query)).toMatchSnapshot()
 
   /* scr = 'rate({et_dolorem!=`nemo doloremque`} |~ "^mol[eE][^ ]+e +voluptatibus" [5m])';
     script = bnf.ParseScript(scr);
-    query = transpiler.transpile_aggregation_operator(script.rootToken, transpiler.init_query());
+    query = transpiler.transpileAggregationOperator(script.rootToken, transpiler.initQuery());
     expect(query).toMatchSnapshot();
-    expect(transpiler.request_to_str(query)).toMatchSnapshot();
+    expect(transpiler.requestToStr(query)).toMatchSnapshot();
 
     scr = 'rate({rerum_laborum!~`^con.+q.at[a-z]r`} !~ "cons[eE][^ ]+r nam soluta" [5m])';
     script = bnf.ParseScript(scr);
-    query = transpiler.transpile_aggregation_operator(script.rootToken, transpiler.init_query());
+    query = transpiler.transpileAggregationOperator(script.rootToken, transpiler.initQuery());
     expect(query).toMatchSnapshot();
-    expect(transpiler.request_to_str(query)).toMatchSnapshot(); */
+    expect(transpiler.requestToStr(query)).toMatchSnapshot(); */
 })
 
 it('should transpile json requests', async () => {
   let script = bnf.ParseScript('{autem_quis="quidem sit"}| json odit_iusto="dicta"')
-  let res = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query())
+  let res = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   expect(res).toMatchSnapshot()
   script = bnf.ParseScript('{autem_quis="quidem sit"}| json')
-  res = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query())
+  res = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   let stream = DataStream.from([{
     labels: { autem_quis: 'quidem sit', l1: 'v1', l2: 'v2' },
     string: JSON.stringify({ l1: 'v3', l3: 'v4' })
@@ -148,22 +148,22 @@ it('should transpile json requests', async () => {
 
 it('shoud transpile unwrap', async () => {
   const q = {
-    ...transpiler.init_query(),
+    ...transpiler.initQuery(),
     ctx: { step: 120000 }
   }
   let script = bnf.ParseScript('rate({test_id="0.7857680014573265_json"}| unwrap int_lbl [1m]) by (fmt)')
   expect(script).toBeTruthy()
-  let req = transpiler.transpile_unwrap_function(script.rootToken, q)
+  let req = transpiler.transpileUnwrapFunction(script.rootToken, q)
   expect(req).toMatchSnapshot()
 
   script = bnf.ParseScript('rate({test_id="0.7857680014573265_json"}| json int_lbl2="int_val"| unwrap int_lbl2 [1m]) by (fmt)')
-  req = transpiler.transpile_unwrap_function(script.rootToken, q)
+  req = transpiler.transpileUnwrapFunction(script.rootToken, q)
   expect(req).toMatchSnapshot()
   script = bnf.ParseScript('rate({test_id="0.7857680014573265_json"}| json int_lbl2="int_val"| unwrap int_lbl [1m]) by (int_lbl2)')
-  req = transpiler.transpile_unwrap_function(script.rootToken, q)
+  req = transpiler.transpileUnwrapFunction(script.rootToken, q)
   expect(req).toMatchSnapshot()
 
-  const test_data = [{
+  const testData = [{
     timestamp_ms: 0,
     labels: { test_id: '0.7857680014573265_json', freq: '1', fmt: 'json', lbl_repl: 'val_repl', int_lbl: '1' },
     string: JSON.stringify({ lbl_repl: 'REPL', int_val: '1', new_lbl: 'new_val', str_id: 0, arr: [1, 2, 3], obj: { o_1: 'v_1' } })
@@ -178,8 +178,8 @@ it('shoud transpile unwrap', async () => {
   }, { EOF: true }]
   script = bnf.ParseScript('sum_over_time({test_id="0.7857680014573265_json"}| json| unwrap int_val [2s]) by (freq)')
   q.ctx.step = 1000
-  req = transpiler.transpile_unwrap_function(script.rootToken, q)
-  let ds = DataStream.fromArray(test_data)
+  req = transpiler.transpileUnwrapFunction(script.rootToken, q)
+  let ds = DataStream.fromArray(testData)
   req.stream.forEach(s => {
     ds = s(ds)
   })
@@ -188,8 +188,8 @@ it('shoud transpile unwrap', async () => {
 
   /* expect(res).toMatchSnapshot();
     script = bnf.ParseScript(`{test_id="0.7857680014573265_json"}| json| unwrap int_lbl`);
-    req = transpiler.transpile_unwrap_expression(script.rootToken, transpiler.init_query());
-    ds = DataStream.fromArray(test_data);
+    req = transpiler.transpile_unwrap_expression(script.rootToken, transpiler.initQuery());
+    ds = DataStream.fromArray(testData);
     req.stream.forEach(s => {
         ds = s(ds);
     });
@@ -197,24 +197,37 @@ it('shoud transpile unwrap', async () => {
     expect(res).toMatchSnapshot(); */
 })
 
+it('should transpile complex pipelines', async () => {
+  const q = transpiler.transpile({
+    query: '{test_id="${testID}"} | freq >= 4',
+    limit: 1000,
+    direction: 'forward',
+    start: '1',
+    end: '100000000000000',
+    step: 1,
+    stream: []
+  })
+  expect(q).toMatchSnapshot()
+})
+
 it('should transpile line format', async () => {
   let script = bnf.ParseScript('{a="b"} | line_format "{{_entry}} {{lbl1}} {{divide int 2}}"')
-  let q = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query())
+  let q = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   let ds = DataStream.fromArray([{ labels: { lbl1: 'a', int: 10 }, string: 'str' }])
   q.stream.forEach(s => { ds = s(ds) })
   expect(await ds.toArray()).toMatchSnapshot()
   script = bnf.ParseScript('{a="b"} | line_format "{ \\"entry\\": \\"{{_entry}}\\", \\"intval\\": {{divide int 2}} }" | json')
-  q = transpiler.transpile_log_stream_selector(script.rootToken, transpiler.init_query())
+  q = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   ds = DataStream.fromArray([{ labels: { lbl1: 'a', int: 10 }, string: 'str' }])
   q.stream.forEach(s => { ds = s(ds) })
   expect(await ds.toArray()).toMatchSnapshot()
 
   q = {
-    ...transpiler.init_query(),
+    ...transpiler.initQuery(),
     ctx: { step: 1000 }
   }
   script = bnf.ParseScript('rate({a="b"} | line_format "{ \\"entry\\": \\"{{_entry}}\\", \\"intval\\": {{divide int 2}} }" | json | unwrap intval [1s])')
-  q = transpiler.transpile_unwrap_function(script.rootToken, q)
+  q = transpiler.transpileUnwrapFunction(script.rootToken, q)
   ds = DataStream.fromArray([{ labels: { lbl1: 'a', int: 10 }, timestamp_ms: 0, string: 'str' }, { EOF: true }])
   q.stream.forEach(s => { ds = s(ds) })
   expect(await ds.toArray()).toMatchSnapshot()
@@ -223,9 +236,9 @@ it('should transpile line format', async () => {
 
 it('should transpile plugins', async () => {
   const script = bnf.ParseScript('derivative({a="b"} | unwrap int [10s])')
-  const _q = transpiler.init_query()
+  const _q = transpiler.initQuery()
   _q.ctx = { step: 1000 }
-  const q = transpiler.transpile_unwrap_function(script.rootToken, _q)
+  const q = transpiler.transpileUnwrapFunction(script.rootToken, _q)
   let ds = DataStream.fromArray([
     { labels: { lbl1: 'a' }, unwrapped: 10, timestamp_ms: 0, string: 'str' },
     { labels: { lbl1: 'a' }, unwrapped: 20, timestamp_ms: 1000, string: 'str' },
@@ -238,6 +251,6 @@ it('should transpile plugins', async () => {
 
 it('should transpile macro', async () => {
   const script = bnf.ParseScript('test_macro("b")')
-  expect(transpiler.transpile_macro(script.rootToken.Child('user_macro')))
+  expect(transpiler.transpileMacro(script.rootToken.Child('user_macro')))
     .toMatch('{test_id="b"}')
 })
