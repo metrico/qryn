@@ -223,7 +223,7 @@ module.exports.eqExtraLabels = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {function({labels: Object}): boolean}
  */
-module.exports.eq_stream = (token, query) => {
+module.exports.eqStream = (token, query) => {
   const [label, value] = labelAndVal(token)
   return (e) => e.EOF || (e && e.labels && e.labels[label] && e.labels[label] === value)
 }

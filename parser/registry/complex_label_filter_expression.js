@@ -27,7 +27,7 @@ module.exports = (token, query) => {
   ex = ex[0] === 'and' ? ex.slice(1) : [ex]
   return hasExtraLabels(query)
     ? _and(query, ex)
-    : reg.simple_and(query, ex)
+    : reg.simpleAnd(query, ex)
 }
 
 /**
@@ -105,7 +105,7 @@ const processWhereExpression = (token, query) => {
           where = whereConcat(where, andOr, processWhereExpression(t, query))
       }
     }
-    if (t.name === 'andOr') {
+    if (t.name === 'and_or') {
       andOr = t.value
     }
   }
@@ -124,16 +124,16 @@ const getLabelFilterWhereExpression = (token, query) => {
   if (token.Child('string_label_filter_expression')) {
     switch (token.Child('operator').value) {
       case '=':
-        clauses = hasExtraLabels(query) ? reg.eq_extra_labels(token) : reg.eq_simple(token)
+        clauses = hasExtraLabels(query) ? reg.eqExtraLabels(token) : reg.eqSimple(token)
         break
       case '!=':
-        clauses = hasExtraLabels(query) ? reg.neq_extra_labels(token) : reg.neq_simple(token)
+        clauses = hasExtraLabels(query) ? reg.neqExtraLabels(token) : reg.neqSimple(token)
         break
       case '=~':
-        clauses = hasExtraLabels(query) ? reg.reg_extra_labels(token) : reg.nreg_extra_labels(token)
+        clauses = hasExtraLabels(query) ? reg.regExtraLabels(token) : reg.regSimple(token)
         break
       case '!~':
-        clauses = hasExtraLabels(query) ? reg.nreg_extra_labels(token) : reg.nreg_simple(token)
+        clauses = hasExtraLabels(query) ? reg.nregExtraLabels(token) : reg.nregSimple(token)
         break
       default:
         throw new Error('Unsupported operator')
@@ -146,7 +146,7 @@ const getLabelFilterWhereExpression = (token, query) => {
       throw new Error('Not supported')
     }
     const val = token.Child('number_value').value
-    const idx = hasExtraLabels(query) ? 'extra_labels_where' : 'simple_where'
+    const idx = hasExtraLabels(query) ? 'extraLabelsWhere' : 'simpleWhere'
     switch (token.Child('number_operator').value) {
       case '==':
         return numreg[idx].eq(label, val)
@@ -210,7 +210,7 @@ const processStreamExpression = (token, query) => {
         ? genericAnd(res, processStreamExpression(t, query))
         : genericOr(res, processStreamExpression(t, query))
     }
-    if (t.name === 'andOr') {
+    if (t.name === 'and_or') {
       andOr = t.value
     }
   }
@@ -227,13 +227,13 @@ const getLabelFilterStreamExpression = (token, query) => {
   if (token.Child('string_label_filter_expression')) {
     switch (token.Child('operator').value) {
       case '=':
-        return reg.eq_stream(token, query)
+        return reg.eqStream(token, query)
       case '!=':
-        return reg.neq_stream(token, query)
+        return reg.neqStream(token, query)
       case '=~':
-        return reg.reg_stream(token, query)
+        return reg.regStream(token, query)
       case '!~':
-        return reg.nreg_stream(token, query)
+        return reg.nregStream(token, query)
       default:
         throw new Error('Unsupported operator')
     }
@@ -246,17 +246,17 @@ const getLabelFilterStreamExpression = (token, query) => {
     const val = token.Child('number_value').value
     switch (token.Child('number_operator').value) {
       case '==':
-        return numreg.stream_where.eq(label, val)
+        return numreg.streamWhere.eq(label, val)
       case '!=':
-        return numreg.stream_where.neq(label, val)
+        return numreg.streamWhere.neq(label, val)
       case '>':
-        return numreg.stream_where.gt(label, val)
+        return numreg.streamWhere.gt(label, val)
       case '>=':
-        return numreg.stream_where.ge(label, val)
+        return numreg.streamWhere.ge(label, val)
       case '<':
-        return numreg.stream_where.lt(label, val)
+        return numreg.streamWhere.lt(label, val)
       case '<=':
-        return numreg.stream_where.le(label, val)
+        return numreg.streamWhere.le(label, val)
     }
   }
 }

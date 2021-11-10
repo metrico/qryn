@@ -8,10 +8,12 @@
     "extends": [
         "standard"
     ],
+
     "parserOptions": {
         "ecmaVersion": 2021
     },
     "plugins": ["jest"],
     "rules": {
+        "no-template-curly-in-string": "off"
     }
 }

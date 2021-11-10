@@ -20,7 +20,7 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  sumOverTime: (token, query) => {
+  sum_over_time: (token, query) => {
     if (query.stream) {
       return reg.sumOverTime.viaStream(token, query)
     }
@@ -32,7 +32,7 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  avgOverTime: (token, query) => {
+  avg_over_time: (token, query) => {
     if (query.stream) {
       return reg.avgOverTime.viaStream(token, query)
     }
@@ -44,7 +44,7 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  maxOverTime: (token, query) => {
+  max_over_time: (token, query) => {
     if (query.stream) {
       return reg.maxOverTime.viaStream(token, query)
     }
@@ -56,7 +56,7 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  minOverTime: (token, query) => {
+  min_over_time: (token, query) => {
     if (query.stream) {
       return reg.minOverTime.viaStream(token, query)
     }
@@ -80,7 +80,7 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  lastOverTime: (token, query) => {
+  last_over_time: (token, query) => {
     if (query.stream) {
       return reg.lastOverTime.viaStream(token, query)
     }
@@ -92,7 +92,7 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  stdvarOverTime: (token, query) => {
+  stdvar_over_time: (token, query) => {
     if (query.stream) {
       return reg.stdvarOverTime.viaStream(token, query)
     }
@@ -104,7 +104,7 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  stddevOverTime: (token, query) => {
+  stddev_over_time: (token, query) => {
     if (query.stream) {
       return reg.stddevOverTime.viaStream(token, query)
     }
@@ -116,7 +116,7 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  quantileOverTime: (token, query) => {
+  quantile_over_time: (token, query) => {
     if (query.stream) {
       return reg.quantileOverTime.viaStream(token, query)
     }
@@ -128,7 +128,7 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  absentOverTime: (token, query) => {
+  absent_over_time: (token, query) => {
     if (query.stream) {
       return reg.absentOverTime.viaStream(token, query)
     }

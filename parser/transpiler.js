@@ -2,8 +2,8 @@ const streamSelectorOperatorRegistry = require('./registry/stream_selector_opera
 const lineFilterOperatorRegistry = require('./registry/line_filter_operator_registry')
 const logRangeAggregationRegistry = require('./registry/log_range_aggregation_registry')
 const highLevelAggregationRegistry = require('./registry/high_level_aggregation_registry')
-const complexLabelFilterExpression = require('./registry/complex_label_filter_expression')
 const numberOperatorRegistry = require('./registry/number_operator_registry')
+const complexLabelFilterRegistry = require('./registry/complex_label_filter_expression')
 const lineFormat = require('./registry/line_format')
 const parserRegistry = require('./registry/parser_registry')
 const unwrap = require('./registry/unwrap')
@@ -68,8 +68,8 @@ module.exports.transpile = (request) => {
       end: end
     }
     query = _and(query, [
-            `timestamp_ms >= ${start}`,
-            `timestamp_ms <= ${end}`
+      `timestamp_ms >= ${start}`,
+      `timestamp_ms <= ${end}`
     ])
     query = module.exports.transpileAggregationOperator(token, query)
   } else if (token.Child('unwrap_function')) {
@@ -82,8 +82,8 @@ module.exports.transpile = (request) => {
       step: step
     }
     query = _and(query, [
-            `timestamp_ms >= ${start}`,
-            `timestamp_ms <= ${end}`
+      `timestamp_ms >= ${start}`,
+      `timestamp_ms <= ${end}`
     ])
     query = module.exports.transpileUnwrapFunction(token, query)
   } else if (token.Child('log_range_aggregation')) {
@@ -96,15 +96,15 @@ module.exports.transpile = (request) => {
       step: step
     }
     query = _and(query, [
-            `timestamp_ms >= ${start}`,
-            `timestamp_ms <= ${end}`
+      `timestamp_ms >= ${start}`,
+      `timestamp_ms <= ${end}`
     ])
     query = module.exports.transpileLogRangeAggregation(token, query)
   } else {
     query = module.exports.transpileLogStreamSelector(token, query)
     query = _and(query, [
-            `timestamp_ms >= ${start}`,
-            `timestamp_ms <= ${end}`
+      `timestamp_ms >= ${start}`,
+      `timestamp_ms <= ${end}`
     ])
     query = {
       ctx: query.ctx,
@@ -178,10 +178,10 @@ module.exports.transpileSeries = (request) => {
     return ''
   }
   /**
-     *
-     * @param req {string}
-     * @returns {registry_types.Request}
-     */
+   *
+   * @param req {string}
+   * @returns {registry_types.Request}
+   */
   const getQuery = (req) => {
     const expression = compiler.ParseScript(req.trim())
     const query = module.exports.transpileLogStreamSelector(expression.rootToken, module.exports.initQuery())
@@ -265,17 +265,11 @@ module.exports.transpileLogStreamSelector = (token, query) => {
       query = parserRegistry[op](pipeline, query)
       continue
     }
-    if (pipeline.Child('string_label_filter_expression')) {
-      const op = pipeline.Child('operator').value
-      query = streamSelectorOperatorRegistry[op](pipeline, query)
+    if (pipeline.Child('label_filter_pipeline')) {
+      query = module.exports.transpileLabelFilterPipeline(pipeline.Child('label_filter_pipeline'), query)
       continue
     }
-    if (pipeline.Child('number_label_filter_expression')) {
-      const op = pipeline.Child('number_operator').value
-      query = numberOperatorRegistry[op](pipeline, query)
-      continue
-    }
-    if (pipeline.Child('lineFormat_expression')) {
+    if (pipeline.Child('line_format_expression')) {
       query = lineFormat(pipeline, query)
       continue
     }
@@ -295,7 +289,7 @@ module.exports.transpileLogStreamSelector = (token, query) => {
  * @returns {registry_types.Request}
  */
 module.exports.transpileLabelFilterPipeline = (pipeline, query) => {
-  return complexLabelFilterExpression(pipeline.Child('complex_label_filter_expression'), query)
+  return complexLabelFilterRegistry(pipeline.Child('complex_label_filter_expression'), query)
 }
 
 /**
@@ -331,7 +325,7 @@ module.exports.requestToStr = (query) => {
   }
   let req = query.with
     ? 'WITH ' + Object.entries(query.with).filter(e => e[1])
-        .map(e => `${e[0]} as (${module.exports.requestToStr(e[1])})`).join(', ')
+      .map(e => `${e[0]} as (${module.exports.requestToStr(e[1])})`).join(', ')
     : ''
   req += ` SELECT ${query.distinct ? 'DISTINCT' : ''} ${query.select.join(', ')} FROM ${query.from} `
   for (const clause of query.left_join || []) {

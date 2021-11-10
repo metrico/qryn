@@ -197,6 +197,19 @@ it('shoud transpile unwrap', async () => {
     expect(res).toMatchSnapshot(); */
 })
 
+it('should transpile complex pipelines', async () => {
+  const q = transpiler.transpile({
+    query: '{test_id="${testID}"} | freq >= 4',
+    limit: 1000,
+    direction: 'forward',
+    start: '1',
+    end: '100000000000000',
+    step: 1,
+    stream: []
+  })
+  expect(q).toMatchSnapshot()
+})
+
 it('should transpile line format', async () => {
   let script = bnf.ParseScript('{a="b"} | line_format "{{_entry}} {{lbl1}} {{divide int 2}}"')
   let q = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
