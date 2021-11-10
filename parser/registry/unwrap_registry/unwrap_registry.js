@@ -4,9 +4,10 @@ const { getDuration, concatLabels, applyViaStream } = require('../common')
  *
  * @param viaRequest {function(Token, registry_types.Request): registry_types.Request}
  * @param viaStream {function(Token, registry_types.Request): registry_types.Request}
- * @returns {
- *  viaRequest: function(Token, registry_types.Request): registry_types.Request,
- *  viaStream: function(Token, registry_types.Request): registry_types.Request} }
+ * @returns {{
+ *  viaRequest: (function(Token, registry_types.Request): registry_types.Request),
+ *  viaStream: (function(Token, registry_types.Request): registry_types.Request)
+ *  }}
  */
 function builder (viaRequest, viaStream) {
   return {
@@ -44,12 +45,9 @@ function applyByWithoutLabels (token, query) {
  * @returns {registry_types.Request}
  */
 function applyViaRequest (token, query, valueExpr, lastValue) {
-  let labels = ''
-  if (token.Child('by_without_unwrap')) {
-    labels = applyByWithoutLabels(token.Child('opt_by_without_unwrap'), query)
-  } else {
-    labels = concatLabels(query)
-  }
+  const labels = token.Child('by_without_unwrap')
+    ? applyByWithoutLabels(token.Child('opt_by_without_unwrap'), query)
+    : concatLabels(query)
   const duration = getDuration(token, query)
   const step = query.ctx.step
   /**
@@ -139,7 +137,7 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  avg_over_time: builder((token, query) => {
+  avgOverTime: builder((token, query) => {
     return applyViaRequest(token, query, 'avg(unwrapped)')
   }, (token, query) => {
     return applyViaStream(token, query, (sum, val) => {
@@ -152,7 +150,7 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  max_over_time: builder((token, query) => {
+  maxOverTime: builder((token, query) => {
     return applyViaRequest(token, query, 'max(unwrapped)')
   }, (token, query) => {
     return applyViaStream(token, query, (sum, val) => {
@@ -165,7 +163,7 @@ module.exports = {
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  min_over_time: builder((token, query) => {
+  minOverTime: builder((token, query) => {
     return applyViaRequest(token, query, 'min(unwrapped)')
   }, (token, query) => {
     return applyViaStream(token, query, (sum, val) => {
@@ -173,12 +171,12 @@ module.exports = {
     }, (sum) => sum, false, 'by_without_unwrap')
   }),
   /**
-     * first_over_time(unwrapped-range): the first value of all points in the specified interval
+     * firstOverTime(unwrapped-range): the first value of all points in the specified interval
      * @param token {Token}
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  first_over_time: builder((token, query) => {
+  firstOverTime: builder((token, query) => {
     return applyViaRequest(token, query, 'argMin(unwrapped, uw_rate_a.timestamp_ms)')
   }, (token, query) => {
     return applyViaStream(token, query, (sum, val, time) => {
@@ -186,12 +184,12 @@ module.exports = {
     }, (sum) => sum.first, false, 'by_without_unwrap')
   }),
   /**
-     * last_over_time(unwrapped-range): the last value of all points in the specified interval
+     * lastOverTime(unwrapped-range): the last value of all points in the specified interval
      * @param token {Token}
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  last_over_time: builder((token, query) => {
+  lastOverTime: builder((token, query) => {
     return applyViaRequest(token, query, 'argMax(unwrapped, uw_rate_a.timestamp_ms)', true)
   }, (token, query) => {
     return applyViaStream(token, query, (sum, val, time) => {
@@ -199,45 +197,47 @@ module.exports = {
     }, (sum) => sum.first, false, 'by_without_unwrap')
   }),
   /**
-     * stdvar_over_time(unwrapped-range): the population standard variance of the values in the specified interval.
+     * stdvarOverTime(unwrapped-range): the population standard variance of the values in the specified interval.
      * @param token {Token}
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  stdvar_over_time: builder((token, query) => {
+  stdvarOverTime: builder((token, query) => {
     return applyViaRequest(token, query, 'varPop(unwrapped)')
   }, (token, query) => {
-    return applyViaStream(token, query, (sum, val) => {
+    return applyViaStream(token, query, (/* sum, val */) => {
       throw new Error('not implemented')
     }, (sum) => sum, false, 'by_without_unwrap')
   }),
   /**
-     * stddev_over_time(unwrapped-range): the population standard deviation of the values in the specified interval.
+     * stddevOverTime(unwrapped-range): the population standard deviation of the values in the specified interval.
      * @param token {Token}
      * @param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  stddev_over_time: builder((token, query) => {
+  stddevOverTime: builder((token, query) => {
     return applyViaRequest(token, query, 'stddevPop(unwrapped)')
   }, (token, query) => {
-    return applyViaStream(token, query, (sum, val) => {
+    return applyViaStream(token, query, (/* sum, val */) => {
       throw new Error('not implemented')
     }, (sum) => sum, false, 'by_without_unwrap')
   }),
   /**
-     * quantile_over_time(scalar,unwrapped-range): the φ-quantile (0 ≤ φ ≤ 1) of the values in the specified interval.
-     * @param token {Token}
-     * @param query {registry_types.Request}
+     * quantileOverTime(scalar,unwrapped-range): the φ-quantile (0 ≤ φ ≤ 1) of the values in the specified interval.
+     * //@param token {Token}
+     * //@param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  quantile_over_time: (token, query) => {
+  quantileOverTime: (/* token, query */) => {
+    throw new Error('Not implemented')
   },
   /**
-     * absent_over_time(unwrapped-range): returns an empty vector if the range vector passed to it has any elements and a 1-element vector with the value 1 if the range vector passed to it has no elements. (absent_over_time is useful for alerting on when no time series and logs stream exist for label combination for a certain amount of time.)
-     * @param token {Token}
-     * @param query {registry_types.Request}
+     * absentOverTime(unwrapped-range): returns an empty vector if the range vector passed to it has any elements and a 1-element vector with the value 1 if the range vector passed to it has no elements. (absentOverTime is useful for alerting on when no time series and logs stream exist for label combination for a certain amount of time.)
+     * //@param token {Token}
+     * //@param query {registry_types.Request}
      * @returns {registry_types.Request}
      */
-  absent_over_time: (token, query) => {
+  absentOverTime: (/* token, query */) => {
+    throw new Error('Not implemented')
   }
 }

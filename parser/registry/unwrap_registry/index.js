@@ -70,9 +70,9 @@ module.exports = {
      */
   first_over_time: (token, query) => {
     if (query.stream) {
-      return reg.first_over_time.viaStream(token, query)
+      return reg.firstOverTime.viaStream(token, query)
     }
-    return reg.first_over_time.viaRequest(token, query)
+    return reg.firstOverTime.viaRequest(token, query)
   },
   /**
      * lastOverTime(unwrapped-range): the last value of all points in the specified interval
