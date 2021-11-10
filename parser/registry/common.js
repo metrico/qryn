@@ -76,7 +76,7 @@ module.exports.durationToMs = (durationStr) => {
  * @returns {DataStream}
  */
 module.exports.map = (s, fn) => s.map((e) => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     setImmediate(() => {
       resolve(fn(e))
     })
@@ -242,7 +242,7 @@ module.exports.applyViaStream = (token, query,
              */
       (s) => s.remap((emit, e) => {
         if (!e || !e.labels) {
-          for (const [_, v] of results) { // TODO: Fix unused _
+          for (const v of results.values()) {
             const ts = [...Object.entries(v.values)]
             ts.sort()
             for (const _v of ts) {

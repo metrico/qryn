@@ -10,12 +10,13 @@
     "test": "jest",
     "start": "node cloki.js",
     "postinstall": "patch-package",
-    "lint": "npx standard --fix *.js lib parser plugins test"
+    "lint": "npx eslint --fix *.js lib parser plugins test"
   },
   "standard": {
     "env": [
       "jest"
     ]
+
   },
   "repository": {
     "type": "git",

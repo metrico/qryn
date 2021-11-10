@@ -8,8 +8,9 @@ const registryNames = [
   'parser_registry',
   'unwrap_registry'
 ]
+const path = require('path')
 const registries = registryNames.reduce((sum, n) => {
-  sum[n] = require(`${__dirname}/registry/${n}`)
+  sum[n] = require(path.join(__dirname, 'registry', n))
   return sum
 }, {})
 const fs = require('fs')
@@ -29,7 +30,7 @@ Token.prototype.Children = function (tokenType) {
   return tokens
 }
 
-let bnf = fs.readFileSync(__dirname + '/logql.bnf').toString()
+let bnf = fs.readFileSync(path.join(__dirname, 'logql.bnf')).toString()
 for (const reg of Object.keys(registries)) {
   const keys = Object.keys(registries[reg]).map(n => `"${n}"`)
   keys.sort((a, b) => b.length - a.length)

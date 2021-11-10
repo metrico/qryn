@@ -7,7 +7,7 @@ beforeAll(() => {
 })
 
 it('should transpile log_stream_selector', () => {
-  let scr = '{et_dolorem=`nemo doloremque`, quia=\"eum voluptatem non eligendi\"}'
+  let scr = '{et_dolorem=`nemo doloremque`, quia="eum voluptatem non eligendi"}'
   let script = bnf.ParseScript(scr)
   let query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   expect(query).toMatchSnapshot()
@@ -33,7 +33,7 @@ it('should transpile log_stream_selector', () => {
 })
 
 it('should transpile log_stream_selector with stream filter', () => {
-  let scr = '{et_dolorem=`nemo doloremque`, quia=\"eum voluptatem non eligendi\"} |= "at et"'
+  let scr = '{et_dolorem=`nemo doloremque`, quia="eum voluptatem non eligendi"} |= "at et"'
   let script = bnf.ParseScript(scr)
   let query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
   expect(query).toMatchSnapshot()

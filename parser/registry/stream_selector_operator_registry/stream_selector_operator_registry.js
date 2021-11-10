@@ -62,10 +62,10 @@ module.exports.simpleAnd = (query, clauses) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * //@param query {registry_types.Request}
  * @returns {string[]}
  */
-module.exports.neqSimple = (token, query) => {
+module.exports.neqSimple = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
   return selectorClauses(false, false, label, value)
 }
@@ -73,10 +73,10 @@ module.exports.neqSimple = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * //@param query {registry_types.Request}
  * @returns {string[]}
  */
-module.exports.neqExtraLabels = (token, query) => {
+module.exports.neqExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
   return [['OR', `arrayExists(x -> x.1 == '${label}' AND x.2 != '${value}', extra_labels) != 0`,
     [
@@ -89,20 +89,11 @@ module.exports.neqExtraLabels = (token, query) => {
 
 /**
  *
- * @param s {DataStream}
- * @param fn {function(Object): boolean}
- */
-function filter (s, fn) { // TODO: Are we using this function?
-  return s.filter(e => (e && e.labels && fn(e)) || isEOF(e))
-}
-
-/**
- *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * //@param query {registry_types.Request}
  * @returns {function({labels: Object}): boolean}
  */
-module.exports.neqStream = (token, query) => {
+module.exports.neqStream = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
   return (e) => e.labels[label] && e.labels[label] !== value
 }
@@ -110,10 +101,10 @@ module.exports.neqStream = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * //@param query {registry_types.Request}
  * @returns {string[]}
  */
-module.exports.nregSimple = (token, query) => {
+module.exports.nregSimple = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
   return selectorClauses(true, false, label, value)
 }
@@ -121,10 +112,10 @@ module.exports.nregSimple = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * //@param query {registry_types.Request}
  * @returns {string[]}
  */
-module.exports.nregExtraLabels = (token, query) => {
+module.exports.nregExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
 
   return [['OR', `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') == [], extra_labels) != 0`,
@@ -139,10 +130,10 @@ module.exports.nregExtraLabels = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * //@param query {registry_types.Request}
  * @returns {function({labels: Object}): boolean}
  */
-module.exports.nregStream = (token, query) => {
+module.exports.nregStream = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
   const re = new RegExp(value)
   return (e) => e.labels[label] && !e.labels[label].match(re)
@@ -151,10 +142,10 @@ module.exports.nregStream = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * //@param query {registry_types.Request}
  * @returns {string[]}
  */
-module.exports.regSimple = (token, query) => {
+module.exports.regSimple = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
   return selectorClauses(true, true, label, value)
 }
@@ -162,10 +153,10 @@ module.exports.regSimple = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * //@param query {registry_types.Request}
  * @returns {string[]}
  */
-module.exports.regExtraLabels = (token, query) => {
+module.exports.regExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
 
   return [['OR', `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') != [], extra_labels) != 0`,
@@ -180,32 +171,32 @@ module.exports.regExtraLabels = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * //@param query {registry_types.Request}
  * @returns {function({labels: Object}): boolean}
  */
-module.exports.regStream = (token, query) => {
+module.exports.regStream = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
   const re = new RegExp(value)
-  return (e) => e.EOF || (e && e.labels && e.labels[label] && e.labels[label].match(re))
+  return (e) => isEOF(e) || (e && e.labels && e.labels[label] && e.labels[label].match(re))
 }
 
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * //@param query {registry_types.Request}
  * @returns {string[]}
  */
-module.exports.eqSimple = (token, query) => {
+module.exports.eqSimple = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
   return selectorClauses(false, true, label, value)
 }
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * //@param query {registry_types.Request}
  * @returns {string[]}
  */
-module.exports.eqExtraLabels = (token, query) => {
+module.exports.eqExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
 
   return [['OR', `indexOf(extra_labels, ('${label}', '${value}')) > 0`,
@@ -220,10 +211,10 @@ module.exports.eqExtraLabels = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * //@param query {registry_types.Request}
  * @returns {function({labels: Object}): boolean}
  */
-module.exports.eqStream = (token, query) => {
+module.exports.eqStream = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
-  return (e) => e.EOF || (e && e.labels && e.labels[label] && e.labels[label] === value)
+  return (e) => isEOF(e) || (e && e.labels && e.labels[label] && e.labels[label] === value)
 }
