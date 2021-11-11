@@ -169,7 +169,8 @@ it('e2e', async () => {
   // hammering aggregation
   for (const fn of ['rate', 'sum_over_time', 'avg_over_time', 'max_over_time', 'min_over_time',
     'first_over_time', 'last_over_time'
-    /* , 'stdvar_over_time', 'stddev_over_time', 'quantile_over_time', 'absent_over_time' */]) {
+    // , 'stdvar_over_time', 'stddev_over_time', 'quantile_over_time', 'absent_over_time'
+  ]) {
     resp = await runRequest(`${fn}({test_id="${testID}_json"}|json` +
       '|lbl_repl="REPL"|unwrap int_lbl [3s]) by (test_id, lbl_repl)')
     try {
@@ -318,5 +319,12 @@ it('e2e', async () => {
   resp = await runRequest(`{test_id="${testID}_json"} | json | str_id < 2 or str_id >= 598 and str_id > 0`)
   adjustResult(resp, testID + '_json')
   expect(resp.data.data.result.map(s => [s.stream, s.values.length])).toMatchSnapshot()
-  // console.log(JSON.stringify(resp.data.data.result.map(s => [s.stream, s.values.length])));
+  resp = await runRequest(`sum_over_time({test_id="${testID}_json"}` +
+    '| json| label_to_row "str_id, int_lbl"| unwrap _entry [10s])')
+  resp.data.data.result = resp.data.data.result.map(stream => {
+    stream.values = stream.values.map(v => [v[0] - Math.floor(start / 1000), v[1]])
+    return stream
+  })
+  expect(resp.data).toMatchSnapshot()
+  // console.log(JSON.stringify(resp.data.data.result.map(s => [s.stream, s.values.length])))
 })

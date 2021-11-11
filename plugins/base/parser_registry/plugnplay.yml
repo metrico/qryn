@@ -1,0 +1,4 @@
+id: parser_registry
+name: Parser Base Plugin
+description: This is the parser plugin type base class
+loader: index.js

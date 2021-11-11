@@ -103,6 +103,12 @@ const getDuration = module.exports.getDuration
  */
 module.exports.isEOF = (eof) => eof.EOF
 
+/**
+ *
+ * @param type {string}
+ * @param cb {(function(any): any) | undefined}
+ * @returns {Object<string, (function(any): any)>}
+ */
 module.exports.getPlugins = (type, cb) => {
   const _plgs = getPlg({ type: type })
   const plgs = {}

@@ -1,0 +1,5 @@
+id: label_to_row
+name: Label to Time Series
+description: Convert label to  extra time series
+loader: index.js
+type: parser_registry

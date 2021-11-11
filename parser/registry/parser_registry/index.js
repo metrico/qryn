@@ -1,6 +1,6 @@
 const json = require('./json')
 const re = require('./regexp')
-const { hasExtraLabels } = require('../common')
+const { hasExtraLabels, getPlugins, isEOF } = require('../common')
 const _i = () => { throw new Error('Not implemented') }
 
 module.exports = {
@@ -35,5 +35,42 @@ module.exports = {
       console.log(e)
       return re.viaStream(token, query)
     }
-  }
+  },
+  ...getPlugins('parser_registry', (plugin) => {
+    if (plugin.map) {
+      return (token, query) => {
+        const mapper = plugin.map(token.Children('parameter').map(p => p.value))
+        return {
+          ...query,
+          stream: [
+            ...(query.stream || []),
+            (s) => s.map((e) => {
+              if (!e || isEOF(e) || !e.labels || !e.string) {
+                return e
+              }
+              return mapper(e)
+            })
+          ]
+        }
+      }
+    }
+    if (plugin.remap) {
+      return (token, query) => {
+        const remapper = plugin.remap(token.Children('parameter').map(p => p.value))
+        return {
+          ...query,
+          stream: [
+            ...(query.stream || []),
+            (s) => s.remap((emit, e) => {
+              if (!e || isEOF(e) || !e.labels || !e.string) {
+                emit(e)
+                return
+              }
+              remapper(emit, e)
+            })
+          ]
+        }
+      }
+    }
+  })
 }
