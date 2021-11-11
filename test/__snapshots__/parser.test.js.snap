@@ -198,3 +198,20 @@ Array [
   },
 ]
 `;
+
+exports[`should process regex 1`] = `
+Object {
+  "labels": Array [
+    Object {
+      "name": "helper",
+      "val": "[a-zA-Z0-9]+",
+    },
+    Object {
+      "name": "token",
+      "val": "[a-zA-Z]+",
+    },
+  ],
+  "re": "([a-zA-Z0-9]+)..
+.([a-zA-Z]+)",
+}
+`;

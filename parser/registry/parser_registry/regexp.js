@@ -68,16 +68,29 @@ const compile = (str) => {
 
 /**
  *
+ * @param regexp {string}
+ * @returns {{labels: {val:string, name: string}[], re: string}}
+ */
+const extractRegexp = (regexp) => {
+  const re = compile(unquote(regexp,
+    null,
+    (s) => s === '\\' ? '\\\\' : undefined))
+  const labels = walk(re, [])
+  const rmTok = rmNames(re)
+  return {
+    labels,
+    re: rmTok.value
+  }
+}
+
+/**
+ *
  * @param token {Token}
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
 module.exports.viaRequest = (token, query) => {
-  const re = compile(unquote(token.Child('parameter').value,
-    null,
-    (s) => s === '\\' ? '\\\\' : undefined))
-  const labels = walk(re, [])
-  const rmTok = rmNames(re)
+  const { labels, re } = extractRegexp(token.Child('parameter').value)
   const namesArray = '[' + labels.map(l => `'${l.name}'` || '').join(',') + ']'
 
   return {
@@ -85,7 +98,7 @@ module.exports.viaRequest = (token, query) => {
     select: [
       ...query.select.filter(f => !f.endsWith('as extra_values')),
             `arrayFilter(x -> x.1 != '' AND x.2 != '', arrayZip(${namesArray}, ` +
-                `arrayMap(x -> x[length(x)], extractAllGroupsHorizontal(string, '${rmTok.value}')))) as extra_labels`
+                `arrayMap(x -> x[length(x)], extractAllGroupsHorizontal(string, '${re}')))) as extra_labels`
     ]
   }
 }
@@ -122,5 +135,6 @@ module.exports.viaStream = (token, query) => {
 module.exports.internal = {
   rmNames: rmNames,
   walk: walk,
-  compile: compile
+  compile: compile,
+  extractRegexp: extractRegexp
 }

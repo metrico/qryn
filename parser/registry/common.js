@@ -317,6 +317,7 @@ module.exports.unquote = (str, custom, customSlash) => {
       }
     }
     if (slash) {
+      slash = false
       if (customSlash && customSlash(str[i])) {
         res += customSlash(str[i])
         continue
@@ -326,6 +327,9 @@ module.exports.unquote = (str, custom, customSlash) => {
         continue
       }
       switch (str[i]) {
+        case 'r':
+          res += '\r'
+          break
         case 'n':
           res += '\n'
           break

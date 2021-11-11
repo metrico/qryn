@@ -68,6 +68,11 @@ it('should compile regex', () => {
   expect(printTree(regexp.internal.compile('(a[\\(\\)]+(?<l2>b)(?<label1>[^\\[\\(\\)]bc))'), 0)).toMatchSnapshot()
 })
 
+it('should process regex', () => {
+  expect(regexp.internal.extractRegexp('"(?<helper>[a-zA-Z0-9]+)..\\r\\n.(?<token>[a-zA-Z]+)"'))
+    .toMatchSnapshot()
+})
+
 it('should get named groups', () => {
   const nGroups = (str) => {
     const t = regexp.internal.compile(str)
