@@ -17,6 +17,11 @@ for (const plg of plugins) {
   manager.require(plg.id)
 }
 
+/**
+ *
+ * @param options {{id: string | undefined, type: string | undefined}}
+ * @returns {{}|*|null}
+ */
 module.exports.getPlg = (options) => {
   if (options.id) {
     return [...plugins.values()].some(p => p.id === options.id) ? manager.require(options.id).exports : null
