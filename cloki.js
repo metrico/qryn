@@ -103,7 +103,17 @@ fastify.addContentTypeParser('application/x-protobuf', { parseAs: 'buffer' },
     }))
     return _data.streams
   })
-
+fastify.addContentTypeParser('*', function (request, payload, done) {
+  if (request.headers['content-type']) {
+    done(payload)
+    return
+  }
+  let data = ''
+  payload.on('data', chunk => { data += chunk })
+  payload.on('end', () => {
+    done(null, data)
+  })
+})
 /* 404 Handler */
 const handler404 = require('./lib/handlers/404.js').bind(this)
 fastify.setNotFoundHandler(handler404)
@@ -144,6 +154,9 @@ const handlerSeries = require('./lib/handlers/series.js').bind(this)
 fastify.get('/loki/api/v1/series', handlerSeries)
 
 fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/tail').bind(this))
+
+fastify.get('/alerts', require('./lib/handlers/alterts'))
+fastify.post('/alerts_data', require('./lib/handlers/alterts_data').bind(this))
 
 // Run API Service
 fastify.listen(

@@ -141,7 +141,7 @@ module.exports.transpile = (request) => {
 
 /**
  *
- * @param request {{query: string, stream?: (function(DataStream): DataStream)[]}}
+ * @param request {{query: string, suppressTime?: boolean, stream?: (function(DataStream): DataStream)[]}}
  * @returns {{query: string, stream: (function(DataStream): DataStream)[]}}
  */
 module.exports.transpileTail = (request) => {
@@ -153,9 +153,11 @@ module.exports.transpileTail = (request) => {
     }
   }
   let query = module.exports.initQuery()
-  query = _and(query, [
-    'timestamp_ms >= (toUnixTimestamp(now()) - 5) * 1000'
-  ])
+  if (!request.suppressTime) {
+    query = _and(query, [
+      'timestamp_ms >= (toUnixTimestamp(now()) - 5) * 1000'
+    ])
+  }
   query = module.exports.transpileLogStreamSelector(expression.rootToken, query)
   query.order_by = {
     name: ['timestamp_ms'],
@@ -164,6 +166,7 @@ module.exports.transpileTail = (request) => {
   query.limit = undefined
   return {
     query: module.exports.requestToStr(query),
+    raw: query,
     stream: query.stream || []
   }
 }
