@@ -1,0 +1,333 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="refresh" content="3;url=https://github.com/lmangani/cloki" />
+  <link rel="dns-prefetch" href="https://github.githubassets.com">
+  <link rel="dns-prefetch" href="https://avatars.githubusercontent.com">
+  <link rel="dns-prefetch" href="https://github-cloud.s3.amazonaws.com">
+  <link rel="dns-prefetch" href="https://user-images.githubusercontent.com/">
+  <link rel="preconnect" href="https://github.githubassets.com" crossorigin="">
+  <link rel="preconnect" href="https://avatars.githubusercontent.com">
+
+  <link crossorigin="anonymous" media="all" integrity="sha512-d4XC7S3D2O/G0TvZjbbtWpDgCLyqvsXCX4K0DUJVfSwpV8ySOlchU43C/9mcyyHtCnczq4eoCl/e3fzC9uXxGA==" rel="stylesheet" href="https://github.githubassets.com/assets/light-7785c2ed2dc3d8efc6d13bd98db6ed5a.css"><link data-color-theme="dark" crossorigin="anonymous" media="all" integrity="sha512-uEgC6AoKK1gK/XX3HlE4+2pdmfa3CUGgk9GV+7h+h0dtALsvueFLg+18JnwLD1axmkp744IzWjFcfHZTxmQyMQ==" rel="stylesheet" data-href="https://github.githubassets.com/assets/dark-b84802e80a0a2b580afd75f71e5138fb.css"><link data-color-theme="dark_dimmed" crossorigin="anonymous" media="all" integrity="sha512-KQFKp2zcS4QM9du72skcYxPfuDslYljsOd9hsZFHSQl7WnkzjR0KkkuMbY7KFRWTerb8KbAYy11eD2ZoFgVyJg==" rel="stylesheet" data-href="https://github.githubassets.com/assets/dark_dimmed-29014aa76cdc4b840cf5dbbbdac91c63.css"><link data-color-theme="dark_high_contrast" crossorigin="anonymous" media="all" integrity="sha512-Bldh8KfOmuQXEarLeCx5IxrQms1DznU4qGbQ6oCrAVNdd4jea40lyBHdddi7o1P4dhler91XHyO9+iBe7m6LzQ==" rel="stylesheet" data-href="https://github.githubassets.com/assets/dark_high_contrast-065761f0a7ce9ae41711aacb782c7923.css"><link data-color-theme="dark_colorblind" crossorigin="anonymous" media="all" integrity="sha512-eHFrYo8Bk54OL79J82xs3piY1rGcjSEJgFatv2yyt94w9+1uId7UyeMxmwiuxvhqBDBqYj5He5MWkzLwj+TczQ==" rel="stylesheet" data-href="https://github.githubassets.com/assets/dark_colorblind-78716b628f01939e0e2fbf49f36c6cde.css"><link data-color-theme="light_colorblind" crossorigin="anonymous" media="all" integrity="sha512-4B0zOHGKCF3VhiduN0P3tUdyrukJaYMOjDA3+oT+7Aht8hTQVyNdODvjyQUjM6Fg2uyid67gF0BphIVS19w5RQ==" rel="stylesheet" data-href="https://github.githubassets.com/assets/light_colorblind-e01d3338718a085dd586276e3743f7b5.css">
+  <link crossorigin="anonymous" media="all" integrity="sha512-aajwIFrGqLg5i21YYM1mFURRwy/oOfXk9Qqddi1wxlCujXDL2CL0nSLQhGqN+R3Hw4vn/mUZc1ztEY426nRXug==" rel="stylesheet" href="https://github.githubassets.com/assets/frameworks-69a8f0205ac6a8b8398b6d5860cd6615.css">
+  <link crossorigin="anonymous" media="all" integrity="sha512-c7vfDk7/ICqO3N8ki8daSNtsngVAk61yLMU/bLWHGJ7oWxb5PMKkkpw9+xlalFL6gJusxQQZrMrcoDM0Id2Jgg==" rel="stylesheet" href="https://github.githubassets.com/assets/behaviors-73bbdf0e4eff202a8edcdf248bc75a48.css">
+  <link crossorigin="anonymous" media="all" integrity="sha512-0oPJKIBlnwjUiV+CgIue/AxZjhZIFfqXrDpCOn5g5xtxBgq1guo+sUyKiQkq2TtZZjWGw4FOpBxv1hAnLcG31Q==" rel="stylesheet" href="https://github.githubassets.com/assets/github-d283c92880659f08d4895f82808b9efc.css">
+  <meta name="viewport" content="width=device-width">
+  
+  <title>cLoki: like Loki, but for Clickhouse</title>
+  <meta name="description" content="cLoki: like Grafana Loki, but for Clickhouse. Contribute to lmangani/cLoki development by creating an account on GitHub.">
+  <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="GitHub">
+  <link rel="fluid-icon" href="https://github.com/fluidicon.png" title="GitHub">
+
+  <meta name="optimizely-datafile" content="{&quot;version&quot;: &quot;4&quot;, &quot;rollouts&quot;: [], &quot;typedAudiences&quot;: [], &quot;anonymizeIP&quot;: true, &quot;projectId&quot;: &quot;16737760170&quot;, &quot;variables&quot;: [], &quot;featureFlags&quot;: [], &quot;experiments&quot;: [{&quot;status&quot;: &quot;Running&quot;, &quot;audienceIds&quot;: [], &quot;variations&quot;: [{&quot;variables&quot;: [], &quot;id&quot;: &quot;20438636352&quot;, &quot;key&quot;: &quot;control&quot;}, {&quot;variables&quot;: [], &quot;id&quot;: &quot;20484957397&quot;, &quot;key&quot;: &quot;treatment&quot;}], &quot;id&quot;: &quot;20479227424&quot;, &quot;key&quot;: &quot;growth_ghec_onboarding_experience&quot;, &quot;layerId&quot;: &quot;20467848595&quot;, &quot;trafficAllocation&quot;: [{&quot;entityId&quot;: &quot;20484957397&quot;, &quot;endOfRange&quot;: 1000}, {&quot;entityId&quot;: &quot;20438636352&quot;, &quot;endOfRange&quot;: 3000}, {&quot;entityId&quot;: &quot;20484957397&quot;, &quot;endOfRange&quot;: 5000}, {&quot;entityId&quot;: &quot;20484957397&quot;, &quot;endOfRange&quot;: 6000}, {&quot;entityId&quot;: &quot;20484957397&quot;, &quot;endOfRange&quot;: 8000}, {&quot;entityId&quot;: &quot;20484957397&quot;, &quot;endOfRange&quot;: 10000}], &quot;forcedVariations&quot;: {}}, {&quot;status&quot;: &quot;Running&quot;, &quot;audienceIds&quot;: [], &quot;variations&quot;: [{&quot;variables&quot;: [], &quot;id&quot;: &quot;20508232513&quot;, &quot;key&quot;: &quot;control&quot;}, {&quot;variables&quot;: [], &quot;id&quot;: &quot;20533742085&quot;, &quot;key&quot;: &quot;treatment&quot;}], &quot;id&quot;: &quot;20512531891&quot;, &quot;key&quot;: &quot;growth_pull_request_actions_prompt&quot;, &quot;layerId&quot;: &quot;20529822202&quot;, &quot;trafficAllocation&quot;: [{&quot;entityId&quot;: &quot;20533742085&quot;, &quot;endOfRange&quot;: 5000}, {&quot;entityId&quot;: &quot;20508232513&quot;, &quot;endOfRange&quot;: 10000}], &quot;forcedVariations&quot;: {}}, {&quot;status&quot;: &quot;Running&quot;, &quot;audienceIds&quot;: [], &quot;variations&quot;: [{&quot;variables&quot;: [], &quot;id&quot;: &quot;20543572345&quot;, &quot;key&quot;: &quot;control&quot;}, {&quot;variables&quot;: [], &quot;id&quot;: &quot;20510876757&quot;, &quot;key&quot;: &quot;treatment&quot;}], &quot;id&quot;: &quot;20518037255&quot;, &quot;key&quot;: &quot;growth_issue_actions_prompt&quot;, &quot;layerId&quot;: &quot;20522524291&quot;, &quot;trafficAllocation&quot;: [{&quot;entityId&quot;: &quot;20510876757&quot;, &quot;endOfRange&quot;: 5000}, {&quot;entityId&quot;: &quot;20543572345&quot;, &quot;endOfRange&quot;: 10000}], &quot;forcedVariations&quot;: {}}, {&quot;status&quot;: &quot;Running&quot;, &quot;audienceIds&quot;: [], &quot;variations&quot;: [{&quot;variables&quot;: [], &quot;id&quot;: &quot;20619540113&quot;, &quot;key&quot;: &quot;control&quot;}, {&quot;variables&quot;: [], &quot;id&quot;: &quot;20598530123&quot;, &quot;key&quot;: &quot;treatment&quot;}], &quot;id&quot;: &quot;20619150105&quot;, &quot;key&quot;: &quot;dynamic_seats&quot;, &quot;layerId&quot;: &quot;20615170077&quot;, &quot;trafficAllocation&quot;: [{&quot;entityId&quot;: &quot;20598530123&quot;, &quot;endOfRange&quot;: 5000}, {&quot;entityId&quot;: &quot;20619540113&quot;, &quot;endOfRange&quot;: 10000}], &quot;forcedVariations&quot;: {}}], &quot;audiences&quot;: [{&quot;conditions&quot;: &quot;[\&quot;or\&quot;, {\&quot;match\&quot;: \&quot;exact\&quot;, \&quot;name\&quot;: \&quot;$opt_dummy_attribute\&quot;, \&quot;type\&quot;: \&quot;custom_attribute\&quot;, \&quot;value\&quot;: \&quot;$opt_dummy_value\&quot;}]&quot;, &quot;id&quot;: &quot;$opt_dummy_audience&quot;, &quot;name&quot;: &quot;Optimizely-Generated Audience for Backwards Compatibility&quot;}], &quot;groups&quot;: [], &quot;sdkKey&quot;: &quot;WTc6awnGuYDdG98CYRban&quot;, &quot;environmentKey&quot;: &quot;production&quot;, &quot;attributes&quot;: [{&quot;id&quot;: &quot;16822470375&quot;, &quot;key&quot;: &quot;user_id&quot;}, {&quot;id&quot;: &quot;17143601254&quot;, &quot;key&quot;: &quot;spammy&quot;}, {&quot;id&quot;: &quot;18175660309&quot;, &quot;key&quot;: &quot;organization_plan&quot;}, {&quot;id&quot;: &quot;18813001570&quot;, &quot;key&quot;: &quot;is_logged_in&quot;}, {&quot;id&quot;: &quot;19073851829&quot;, &quot;key&quot;: &quot;geo&quot;}, {&quot;id&quot;: &quot;20175462351&quot;, &quot;key&quot;: &quot;requestedCurrency&quot;}, {&quot;id&quot;: &quot;20785470195&quot;, &quot;key&quot;: &quot;country_code&quot;}], &quot;botFiltering&quot;: false, &quot;accountId&quot;: &quot;16737760170&quot;, &quot;events&quot;: [{&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;17911811441&quot;, &quot;key&quot;: &quot;hydro_click.dashboard.teacher_toolbox_cta&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18124116703&quot;, &quot;key&quot;: &quot;submit.organizations.complete_sign_up&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18145892387&quot;, &quot;key&quot;: &quot;no_metric.tracked_outside_of_optimizely&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18178755568&quot;, &quot;key&quot;: &quot;click.org_onboarding_checklist.add_repo&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18180553241&quot;, &quot;key&quot;: &quot;submit.repository_imports.create&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18186103728&quot;, &quot;key&quot;: &quot;click.help.learn_more_about_repository_creation&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18188530140&quot;, &quot;key&quot;: &quot;test_event.do_not_use_in_production&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18191963644&quot;, &quot;key&quot;: &quot;click.empty_org_repo_cta.transfer_repository&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18195612788&quot;, &quot;key&quot;: &quot;click.empty_org_repo_cta.import_repository&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18210945499&quot;, &quot;key&quot;: &quot;click.org_onboarding_checklist.invite_members&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18211063248&quot;, &quot;key&quot;: &quot;click.empty_org_repo_cta.create_repository&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18215721889&quot;, &quot;key&quot;: &quot;click.org_onboarding_checklist.update_profile&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18224360785&quot;, &quot;key&quot;: &quot;click.org_onboarding_checklist.dismiss&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18234832286&quot;, &quot;key&quot;: &quot;submit.organization_activation.complete&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18252392383&quot;, &quot;key&quot;: &quot;submit.org_repository.create&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18257551537&quot;, &quot;key&quot;: &quot;submit.org_member_invitation.create&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18259522260&quot;, &quot;key&quot;: &quot;submit.organization_profile.update&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18564603625&quot;, &quot;key&quot;: &quot;view.classroom_select_organization&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18568612016&quot;, &quot;key&quot;: &quot;click.classroom_sign_in_click&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18572592540&quot;, &quot;key&quot;: &quot;view.classroom_name&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18574203855&quot;, &quot;key&quot;: &quot;click.classroom_create_organization&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18582053415&quot;, &quot;key&quot;: &quot;click.classroom_select_organization&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18589463420&quot;, &quot;key&quot;: &quot;click.classroom_create_classroom&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18591323364&quot;, &quot;key&quot;: &quot;click.classroom_create_first_classroom&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18591652321&quot;, &quot;key&quot;: &quot;click.classroom_grant_access&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;18607131425&quot;, &quot;key&quot;: &quot;view.classroom_creation&quot;}, {&quot;experimentIds&quot;: [&quot;20479227424&quot;, &quot;20619150105&quot;], &quot;id&quot;: &quot;18831680583&quot;, &quot;key&quot;: &quot;upgrade_account_plan&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;19064064515&quot;, &quot;key&quot;: &quot;click.signup&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;19075373687&quot;, &quot;key&quot;: &quot;click.view_account_billing_page&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;19077355841&quot;, &quot;key&quot;: &quot;click.dismiss_signup_prompt&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;19079713938&quot;, &quot;key&quot;: &quot;click.contact_sales&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;19120963070&quot;, &quot;key&quot;: &quot;click.compare_account_plans&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;19151690317&quot;, &quot;key&quot;: &quot;click.upgrade_account_cta&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;19424193129&quot;, &quot;key&quot;: &quot;click.open_account_switcher&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;19520330825&quot;, &quot;key&quot;: &quot;click.visit_account_profile&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;19540970635&quot;, &quot;key&quot;: &quot;click.switch_account_context&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;19730198868&quot;, &quot;key&quot;: &quot;submit.homepage_signup&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;19820830627&quot;, &quot;key&quot;: &quot;click.homepage_signup&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;19988571001&quot;, &quot;key&quot;: &quot;click.create_enterprise_trial&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20036538294&quot;, &quot;key&quot;: &quot;click.create_organization_team&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20040653299&quot;, &quot;key&quot;: &quot;click.input_enterprise_trial_form&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20062030003&quot;, &quot;key&quot;: &quot;click.continue_with_team&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20068947153&quot;, &quot;key&quot;: &quot;click.create_organization_free&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20086636658&quot;, &quot;key&quot;: &quot;click.signup_continue.username&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20091648988&quot;, &quot;key&quot;: &quot;click.signup_continue.create_account&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20103637615&quot;, &quot;key&quot;: &quot;click.signup_continue.email&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20111574253&quot;, &quot;key&quot;: &quot;click.signup_continue.password&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20120044111&quot;, &quot;key&quot;: &quot;view.pricing_page&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20152062109&quot;, &quot;key&quot;: &quot;submit.create_account&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20165800992&quot;, &quot;key&quot;: &quot;submit.upgrade_payment_form&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20171520319&quot;, &quot;key&quot;: &quot;submit.create_organization&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20222645674&quot;, &quot;key&quot;: &quot;click.recommended_plan_in_signup.discuss_your_needs&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20227443657&quot;, &quot;key&quot;: &quot;submit.verify_primary_user_email&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20234607160&quot;, &quot;key&quot;: &quot;click.recommended_plan_in_signup.try_enterprise&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20238175784&quot;, &quot;key&quot;: &quot;click.recommended_plan_in_signup.team&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20239847212&quot;, &quot;key&quot;: &quot;click.recommended_plan_in_signup.continue_free&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20251097193&quot;, &quot;key&quot;: &quot;recommended_plan&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20438619534&quot;, &quot;key&quot;: &quot;click.pricing_calculator.1_member&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20456699683&quot;, &quot;key&quot;: &quot;click.pricing_calculator.15_members&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20467868331&quot;, &quot;key&quot;: &quot;click.pricing_calculator.10_members&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20476267432&quot;, &quot;key&quot;: &quot;click.trial_days_remaining&quot;}, {&quot;experimentIds&quot;: [&quot;20479227424&quot;], &quot;id&quot;: &quot;20476357660&quot;, &quot;key&quot;: &quot;click.discover_feature&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20479287901&quot;, &quot;key&quot;: &quot;click.pricing_calculator.custom_members&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20481107083&quot;, &quot;key&quot;: &quot;click.recommended_plan_in_signup.apply_teacher_benefits&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20483089392&quot;, &quot;key&quot;: &quot;click.pricing_calculator.5_members&quot;}, {&quot;experimentIds&quot;: [&quot;20479227424&quot;], &quot;id&quot;: &quot;20484283944&quot;, &quot;key&quot;: &quot;click.onboarding_task&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20484996281&quot;, &quot;key&quot;: &quot;click.recommended_plan_in_signup.apply_student_benefits&quot;}, {&quot;experimentIds&quot;: [&quot;20479227424&quot;], &quot;id&quot;: &quot;20486713726&quot;, &quot;key&quot;: &quot;click.onboarding_task_breadcrumb&quot;}, {&quot;experimentIds&quot;: [&quot;20479227424&quot;], &quot;id&quot;: &quot;20490791319&quot;, &quot;key&quot;: &quot;click.upgrade_to_enterprise&quot;}, {&quot;experimentIds&quot;: [&quot;20479227424&quot;], &quot;id&quot;: &quot;20491786766&quot;, &quot;key&quot;: &quot;click.talk_to_us&quot;}, {&quot;experimentIds&quot;: [&quot;20479227424&quot;], &quot;id&quot;: &quot;20494144087&quot;, &quot;key&quot;: &quot;click.dismiss_enterprise_trial&quot;}, {&quot;experimentIds&quot;: [&quot;20479227424&quot;], &quot;id&quot;: &quot;20499722759&quot;, &quot;key&quot;: &quot;completed_all_tasks&quot;}, {&quot;experimentIds&quot;: [&quot;20479227424&quot;], &quot;id&quot;: &quot;20500710104&quot;, &quot;key&quot;: &quot;completed_onboarding_tasks&quot;}, {&quot;experimentIds&quot;: [&quot;20479227424&quot;], &quot;id&quot;: &quot;20513160672&quot;, &quot;key&quot;: &quot;click.read_doc&quot;}, {&quot;experimentIds&quot;: [&quot;20512531891&quot;], &quot;id&quot;: &quot;20516196762&quot;, &quot;key&quot;: &quot;actions_enabled&quot;}, {&quot;experimentIds&quot;: [&quot;20479227424&quot;], &quot;id&quot;: &quot;20518980986&quot;, &quot;key&quot;: &quot;click.dismiss_trial_banner&quot;}, {&quot;experimentIds&quot;: [&quot;20518037255&quot;], &quot;id&quot;: &quot;20535446721&quot;, &quot;key&quot;: &quot;click.issue_actions_prompt.dismiss_prompt&quot;}, {&quot;experimentIds&quot;: [&quot;20518037255&quot;], &quot;id&quot;: &quot;20557002247&quot;, &quot;key&quot;: &quot;click.issue_actions_prompt.setup_workflow&quot;}, {&quot;experimentIds&quot;: [&quot;20512531891&quot;], &quot;id&quot;: &quot;20595070227&quot;, &quot;key&quot;: &quot;click.pull_request_setup_workflow&quot;}, {&quot;experimentIds&quot;: [&quot;20619150105&quot;], &quot;id&quot;: &quot;20626600314&quot;, &quot;key&quot;: &quot;click.seats_input&quot;}, {&quot;experimentIds&quot;: [&quot;20619150105&quot;], &quot;id&quot;: &quot;20642310305&quot;, &quot;key&quot;: &quot;click.decrease_seats_number&quot;}, {&quot;experimentIds&quot;: [&quot;20619150105&quot;], &quot;id&quot;: &quot;20662990045&quot;, &quot;key&quot;: &quot;click.increase_seats_number&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20679620969&quot;, &quot;key&quot;: &quot;click.public_product_roadmap&quot;}, {&quot;experimentIds&quot;: [&quot;20479227424&quot;], &quot;id&quot;: &quot;20761240940&quot;, &quot;key&quot;: &quot;click.dismiss_survey_banner&quot;}, {&quot;experimentIds&quot;: [&quot;20479227424&quot;], &quot;id&quot;: &quot;20767210721&quot;, &quot;key&quot;: &quot;click.take_survey&quot;}, {&quot;experimentIds&quot;: [], &quot;id&quot;: &quot;20795281201&quot;, &quot;key&quot;: &quot;click.archive_list&quot;}], &quot;revision&quot;: &quot;915&quot;}">
+  <!-- To prevent page flashing, the optimizely JS needs to be loaded in the
+    <head> tag before the DOM renders -->
+  <script crossorigin="anonymous" defer="defer" integrity="sha512-W1dzUJ1IAUCK0Ot5zPIvoaIBcaPRYhC+KG5DwB7OwmeHR5QIaYNfnqkS9+0EUuhFZqCC87p8NbrRNZILCH//Bw==" type="application/javascript" src="https://github.githubassets.com/assets/optimizely-5b577350.js"></script>
+      <meta name="expected-hostname" content="github.com">
+
+  <meta name="browser-stats-url" content="https://api.github.com/_private/browser/stats">
+  <meta name="browser-errors-url" content="https://api.github.com/_private/browser/errors">
+  <meta name="browser-optimizely-client-errors-url" content="https://api.github.com/_private/browser/optimizely_client/errors">
+  <link rel="mask-icon" href="https://github.githubassets.com/pinned-octocat.svg" color="#000000">
+  <link rel="alternate icon" class="js-site-favicon" type="image/png" href="https://github.githubassets.com/favicons/favicon.png">
+  <link rel="icon" class="js-site-favicon" type="image/svg+xml" href="https://github.githubassets.com/favicons/favicon.svg">
+  <meta name="theme-color" content="#1e2327">
+  <meta name="color-scheme" content="light dark">
+
+<body>
+
+<div id="readme" class="Box-body readme blob js-code-block-container p-5 p-xl-6 gist-border-0">
+    <article class="markdown-body entry-content container-lg" itemprop="text">
+        <p><a target="_blank" rel="noopener noreferrer" href="https://user-images.githubusercontent.com/1423657/99822833-f9504780-2b53-11eb-8b28-99484eab6157.png">
+            <img src="https://user-images.githubusercontent.com/1423657/99822833-f9504780-2b53-11eb-8b28-99484eab6157.png" width="250" style="max-width: 100%;" id="clogo">
+        </p>
+<p><a href="https://g.codefresh.io/pipelines/cLoki/builds?repoOwner=lmangani&amp;repoName=cLoki&amp;serviceName=lmangani%2FcLoki&amp;filter=trigger:build~Build;branch:master;pipeline:5cdf4a833a13130275ac87a8~cLoki" rel="nofollow"><img src="https://camo.githubusercontent.com/5b24d888d1fa4c114946e113b561b9ec24b469796dd1ff3a85ddbed5abdad6d7/68747470733a2f2f672e636f646566726573682e696f2f6170692f6261646765732f706970656c696e652f6c6d616e67616e692f6c6d616e67616e69253246634c6f6b69253246634c6f6b693f6272616e63683d6d6173746572266b65793d65794a68624763694f694a49557a49314e694a392e4e546b784d7a49784e475a6c4e6a51784f5749774d4441324f5759315a6a55342e7331593776764537335a5741494759623459436b41546c65573631525a38734b79704f633856616531633026747970653d63662d31" alt="Codefresh build status" data-canonical-src="https://g.codefresh.io/api/badges/pipeline/lmangani/lmangani%2FcLoki%2FcLoki?branch=master&amp;key=eyJhbGciOiJIUzI1NiJ9.NTkxMzIxNGZlNjQxOWIwMDA2OWY1ZjU4.s1Y7vvE73ZWAIGYb4YCkATleW61RZ8sKypOc8Vae1c0&amp;type=cf-1" style="max-width: 100%;"></a>
+<a target="_blank" rel="noopener noreferrer" href="https://github.com/lmangani/cLoki/workflows/CodeQL/badge.svg"><img src="https://github.com/lmangani/cLoki/workflows/CodeQL/badge.svg" alt="CodeQL" style="max-width: 100%;"></a></p>
+<h1><a id="user-content-cloki" class="anchor" aria-hidden="true" href="#cloki"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a>cLoki</h1>
+<h3><a id="user-content-like-loki-but-for-clickhouse" class="anchor" aria-hidden="true" href="#like-loki-but-for-clickhouse"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a>like Loki, but for Clickhouse.</h3>
+<p>cLoki is a clear room design <a href="https://github.com/grafana/loki">Loki</a> API emulator made with NodeJS, <a href="https://github.com/fastify/fastify">Fastify</a> and <a href="https://clickhouse.yandex/" rel="nofollow">Clickhouse</a><br>
+APIs are compatible with <a href="http://docs.grafana.org/features/explore/" rel="nofollow">Grafana</a>, <a href="https://grafana.com/docs/loki/latest/logql/" rel="nofollow">LogQL</a> and <a href="https://github.com/sipcapture/paStash/wiki/Example:-Loki">paStash</a> for logs querying, processing and ingestion</p>
+<p>Performance is comparable to native Loki, with cLoki outperforming on large range filtered queries.</p>
+<p><g-emoji class="g-emoji" alias="bulb" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f4a1.png">💡</g-emoji> Get started using the <a href="https://github.com/lmangani/cLoki/wiki">cLoki Wiki</a><br>
+<g-emoji class="g-emoji" alias="postal_horn" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f4ef.png">📯</g-emoji> Allergic to NodeJS? Follow or join the development of <a href="https://github.com/qxip/cLoki-go">cLoki-go</a><br></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif"><img src="https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif" alt="ezgif com-optimize 15" style="max-width: 100%;"></a></p>
+<p><g-emoji class="g-emoji" alias="fire" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f525.png">🔥</g-emoji> <em>Beta Stage, Contributors and Testers are Welcome!</em> <img class="emoji" title=":octocat:" alt=":octocat:" src="https://github.githubassets.com/images/icons/emoji/octocat.png" height="20" width="20" align="absmiddle"></p>
+<h3><a id="user-content-project-background" class="anchor" aria-hidden="true" href="#project-background"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a>Project Background</h3>
+<p>The <em>Loki API</em> and its Grafana native integration are brilliant, simple and appealing - but we just love <strong>Clickhouse</strong>.</p>
+<p><strong>cLoki</strong> implements the same API functionality as Loki, buffered by a fast bulking <strong>LRU</strong> sitting on top of <strong>Clickhouse</strong> tables and relying on its <em>columnar search and insert performance alongside solid distribution and clustering capabilities</em> for stored data. Just like Loki, cLoki does not parse or index incoming logs, but rather groups log streams using the same label system as Prometheus.</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://user-images.githubusercontent.com/1423657/54091852-5ce91000-4385-11e9-849d-998c1e5d3243.png"><img src="https://user-images.githubusercontent.com/1423657/54091852-5ce91000-4385-11e9-849d-998c1e5d3243.png" width="700" style="max-width: 100%;"></a></p>
+<h3><a id="user-content-fire-logql-supported-features" class="anchor" aria-hidden="true" href="#fire-logql-supported-features"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a><g-emoji class="g-emoji" alias="fire" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f525.png">🔥</g-emoji> LogQL: Supported Features</h3>
+<p>cLoki implements a broad range of <a href="https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries">LogQL Queries</a> to provide transparent compatibility with the Loki API<br>
+The Grafana Loki datasource can be used to natively query <em>logs</em> and display extracted <em>timeseries</em><br></p>
+<p><g-emoji class="g-emoji" alias="tada" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f389.png">🎉</g-emoji> <em>No plugins needed</em></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://user-images.githubusercontent.com/1423657/135249640-5f5a61e5-0f94-4517-b052-76d47c3572f5.png"><img src="https://user-images.githubusercontent.com/1423657/135249640-5f5a61e5-0f94-4517-b052-76d47c3572f5.png" alt="image" style="max-width: 100%;"></a></p>
+<ul>
+<li><a href="https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#log-stream-selector">Log Stream Selector</a></li>
+<li><a href="https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#line-filter-expression">Line Filter Expression</a></li>
+<li><a href="https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#label-filter-expression">Label Filter Expression</a></li>
+<li><a href="https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#parser-expression">Parser Expression</a></li>
+<li><a href="https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#log-range-aggregations">Log Range Aggregations</a></li>
+<li><a href="https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#aggregation-operators">Aggregation operators</a></li>
+<li><a href="https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#unwrap-expression">Unwrap Expression.</a></li>
+<li><a href="https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#line-format-expression---handlebars--">Line Format Expression</a></li>
+</ul>
+<hr>
+<h3><a id="user-content-fuelpump-log-streams" class="anchor" aria-hidden="true" href="#fuelpump-log-streams"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a><g-emoji class="g-emoji" alias="fuelpump" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/26fd.png">⛽</g-emoji> Log Streams</h3>
+<p>cLoki supports input via Push API using <em>JSON</em> or <em>Protobuf</em> and it is compatible with <a href="https://grafana.com/docs/loki/latest/clients/promtail/" rel="nofollow">Promtail</a> and any other Loki compatible agent such as <em>Telegraf, Fluentbit, Logstash and others.</em></p>
+<p>Our <em>preferred</em> companion for parsing and shipping log streams to <strong>cLoki</strong> is <a href="https://github.com/sipcapture/paStash/wiki/Example:-Loki">paStash</a> with extensive interpolation capabilities to create tags and trim any log fat. Sending JSON formatted logs is <em>suggested</em> when dealing with metrics.</p>
+<hr>
+<h3><a id="user-content-fire-cliql-experimental-20-features" class="anchor" aria-hidden="true" href="#fire-cliql-experimental-20-features"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a><g-emoji class="g-emoji" alias="fire" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f525.png">🔥</g-emoji> CliQL: Experimental 2.0 Features</h3>
+<p>cLoki implements custom query functions for clickhouse timeseries extraction, allowing direct access to any existing table</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://user-images.githubusercontent.com/1423657/99530591-d0885080-29a1-11eb-87e6-870a046fb4de.gif"><img src="https://user-images.githubusercontent.com/1423657/99530591-d0885080-29a1-11eb-87e6-870a046fb4de.gif" alt="ezgif com-gif-maker" style="max-width: 100%;"></a></p>
+<h4><a id="user-content-timeseries" class="anchor" aria-hidden="true" href="#timeseries"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a>Timeseries</h4>
+<p>Convert columns to tagged timeseries using the emulated loki 2.0 query format</p>
+<div class="snippet-clipboard-content position-relative overflow-auto"><pre><code>&lt;aggr-op&gt; by (&lt;labels,&gt;) (&lt;function&gt;(&lt;metric&gt;[range_in_seconds])) from &lt;database&gt;.&lt;table&gt; where &lt;optional condition&gt;
+</code></pre><div class="zeroclipboard-container position-absolute right-0 top-0">
+    <clipboard-copy aria-label="Copy" class="ClipboardButton btn js-clipboard-copy m-2 p-0 tooltipped-no-delay" data-copy-feedback="Copied!" data-tooltip-direction="w" value="<aggr-op> by (<labels,>) (<function>(<metric>[range_in_seconds])) from <database>.<table> where <optional condition>
+" tabindex="0" role="button">
+      <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-copy js-clipboard-copy-icon m-2">
+    <path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path>
+</svg>
+      <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-check js-clipboard-check-icon color-text-success d-none m-2">
+    <path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path>
+</svg>
+    </clipboard-copy>
+  </div></div>
+<h6><a id="user-content-examples" class="anchor" aria-hidden="true" href="#examples"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a>Examples</h6>
+<pre><b>avg</b> by (<b>source_ip</b>) (rate(<b>mos</b>[<b>60</b>])) from <b>my_database.my_table</b>
+</pre>
+<pre><b>sum</b> by (<b>ruri_user, from_user</b>) (rate(<b>duration</b>[<b>300</b>])) from <b>my_database.my_table</b> where <b>duration &gt; 10</b>
+</pre>
+<h4><a id="user-content-clickhouse" class="anchor" aria-hidden="true" href="#clickhouse"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a>Clickhouse</h4>
+<p>Convert columns to tagged timeseries using the experimental <code>clickhouse</code> function</p>
+<h4><a id="user-content-example" class="anchor" aria-hidden="true" href="#example"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a>Example</h4>
+<pre>clickhouse({ 
+  db="<b>my_database</b>", 
+  table="<b>my_table</b>", 
+  tag="<b>source_ip</b>", 
+  metric="<b>avg(mos)</b>", 
+  where="<b>mos &gt; 0</b>", 
+  interval="<b>60</b>" 
+})
+</pre>
+<h6><a id="user-content-query-options" class="anchor" aria-hidden="true" href="#query-options"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a>Query Options</h6>
+<table>
+<thead>
+<tr>
+<th>parameter</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>db</td>
+<td>clickhouse database name</td>
+</tr>
+<tr>
+<td>table</td>
+<td>clickhouse table name</td>
+</tr>
+<tr>
+<td>tag</td>
+<td>column(s) for tags, comma separated</td>
+</tr>
+<tr>
+<td>metric</td>
+<td>function for metric values</td>
+</tr>
+<tr>
+<td>where</td>
+<td>where condition (optional)</td>
+</tr>
+<tr>
+<td>interval</td>
+<td>interval in seconds (optional)</td>
+</tr>
+<tr>
+<td>timefield</td>
+<td>time/date field name (optional)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3><a id="user-content-setup" class="anchor" aria-hidden="true" href="#setup"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a>Setup</h3>
+<h5><a id="user-content-busstop-git-manual" class="anchor" aria-hidden="true" href="#busstop-git-manual"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a><g-emoji class="g-emoji" alias="busstop" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f68f.png">🚏</g-emoji> GIT (Manual)</h5>
+<p>Clone this repository, install with <code>npm</code>and run using <code>nodejs</code> 12.x <em>(or higher)</em></p>
+<div class="highlight highlight-source-shell position-relative overflow-auto"><pre>npm install
+CLICKHOUSE_SERVER=<span class="pl-s"><span class="pl-pds">"</span>my.clickhouse.server<span class="pl-pds">"</span></span> CLICKHOUSE_AUTH=<span class="pl-s"><span class="pl-pds">"</span>default:password<span class="pl-pds">"</span></span> CLICKHOUSE_DB=<span class="pl-s"><span class="pl-pds">"</span>cloki<span class="pl-pds">"</span></span> node ./cloki.js</pre><div class="zeroclipboard-container position-absolute right-0 top-0">
+    <clipboard-copy aria-label="Copy" class="ClipboardButton btn js-clipboard-copy m-2 p-0 tooltipped-no-delay" data-copy-feedback="Copied!" data-tooltip-direction="w" value="npm install
+CLICKHOUSE_SERVER=&quot;my.clickhouse.server&quot; CLICKHOUSE_AUTH=&quot;default:password&quot; CLICKHOUSE_DB=&quot;cloki&quot; node ./cloki.js
+" tabindex="0" role="button">
+      <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-copy js-clipboard-copy-icon m-2">
+    <path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path>
+</svg>
+      <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-check js-clipboard-check-icon color-text-success d-none m-2">
+    <path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path>
+</svg>
+    </clipboard-copy>
+  </div></div>
+<h5><a id="user-content-busstop-npm" class="anchor" aria-hidden="true" href="#busstop-npm"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a><g-emoji class="g-emoji" alias="busstop" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f68f.png">🚏</g-emoji> NPM</h5>
+<p>Install <code>cloki</code> as global package on your system using <code>npm</code></p>
+<div class="highlight highlight-source-shell position-relative overflow-auto"><pre>sudo npm install -g cloki
+<span class="pl-c1">cd</span> <span class="pl-s"><span class="pl-pds">$(</span>dirname <span class="pl-s"><span class="pl-pds">$(</span>readlink -f <span class="pl-s"><span class="pl-pds">`</span>which cloki<span class="pl-pds">`</span></span><span class="pl-pds">)</span></span><span class="pl-pds">)</span></span> \
+  <span class="pl-k">&amp;&amp;</span> CLICKHOUSE_SERVER=<span class="pl-s"><span class="pl-pds">"</span>my.clickhouse.server<span class="pl-pds">"</span></span> CLICKHOUSE_AUTH=<span class="pl-s"><span class="pl-pds">"</span>default:password<span class="pl-pds">"</span></span> CLICKHOUSE_DB=<span class="pl-s"><span class="pl-pds">"</span>cloki<span class="pl-pds">"</span></span> cloki</pre><div class="zeroclipboard-container position-absolute right-0 top-0">
+    <clipboard-copy aria-label="Copy" class="ClipboardButton btn js-clipboard-copy m-2 p-0 tooltipped-no-delay" data-copy-feedback="Copied!" data-tooltip-direction="w" value="sudo npm install -g cloki
+cd $(dirname $(readlink -f `which cloki`)) \
+  &amp;&amp; CLICKHOUSE_SERVER=&quot;my.clickhouse.server&quot; CLICKHOUSE_AUTH=&quot;default:password&quot; CLICKHOUSE_DB=&quot;cloki&quot; cloki
+" tabindex="0" role="button">
+      <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-copy js-clipboard-copy-icon m-2">
+    <path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path>
+</svg>
+      <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-check js-clipboard-check-icon color-text-success d-none m-2">
+    <path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path>
+</svg>
+    </clipboard-copy>
+  </div></div>
+<h5><a id="user-content-busstop-pm2" class="anchor" aria-hidden="true" href="#busstop-pm2"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a><g-emoji class="g-emoji" alias="busstop" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f68f.png">🚏</g-emoji> PM2</h5>
+<div class="highlight highlight-source-shell position-relative overflow-auto"><pre>sudo npm install -g cloki pm2
+<span class="pl-c1">cd</span> <span class="pl-s"><span class="pl-pds">$(</span>dirname <span class="pl-s"><span class="pl-pds">$(</span>readlink -f <span class="pl-s"><span class="pl-pds">`</span>which cloki<span class="pl-pds">`</span></span><span class="pl-pds">)</span></span><span class="pl-pds">)</span></span> \
+  <span class="pl-k">&amp;&amp;</span> CLICKHOUSE_SERVER=<span class="pl-s"><span class="pl-pds">"</span>my.clickhouse.server<span class="pl-pds">"</span></span> CLICKHOUSE_AUTH=<span class="pl-s"><span class="pl-pds">"</span>default:password<span class="pl-pds">"</span></span> CLICKHOUSE_DB=<span class="pl-s"><span class="pl-pds">"</span>cloki<span class="pl-pds">"</span></span> pm2 start cloki
+pm2 save
+pm2 startup</pre><div class="zeroclipboard-container position-absolute right-0 top-0">
+    <clipboard-copy aria-label="Copy" class="ClipboardButton btn js-clipboard-copy m-2 p-0 tooltipped-no-delay" data-copy-feedback="Copied!" data-tooltip-direction="w" value="sudo npm install -g cloki pm2
+cd $(dirname $(readlink -f `which cloki`)) \
+  &amp;&amp; CLICKHOUSE_SERVER=&quot;my.clickhouse.server&quot; CLICKHOUSE_AUTH=&quot;default:password&quot; CLICKHOUSE_DB=&quot;cloki&quot; pm2 start cloki
+pm2 save
+pm2 startup
+" tabindex="0" role="button">
+      <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-copy js-clipboard-copy-icon m-2">
+    <path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path>
+</svg>
+      <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-check js-clipboard-check-icon color-text-success d-none m-2">
+    <path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path>
+</svg>
+    </clipboard-copy>
+  </div></div>
+<h5><a id="user-content-busstop-docker" class="anchor" aria-hidden="true" href="#busstop-docker"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a><g-emoji class="g-emoji" alias="busstop" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f68f.png">🚏</g-emoji> Docker</h5>
+<p>For a fully working demo, check the <a href="https://github.com/lmangani/cLoki/tree/master/docker">docker-compose</a> example</p>
+<hr>
+<h4><a id="user-content-configuration" class="anchor" aria-hidden="true" href="#configuration"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a>Configuration</h4>
+<p>The following ENV Variables can be used to control cLoki parameters and backend settings.</p>
+<table>
+<thead>
+<tr>
+<th>ENV</th>
+<th>Default</th>
+<th>Usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CLICKHOUSE_SERVER</td>
+<td>localhost</td>
+<td>Clickhouse Server address</td>
+</tr>
+<tr>
+<td>CLICKHOUSE_PORT</td>
+<td>8123</td>
+<td>Clickhouse Server port</td>
+</tr>
+<tr>
+<td>CLICKHOUSE_DB</td>
+<td>cloki</td>
+<td>Clickhouse Database Name</td>
+</tr>
+<tr>
+<td>CLICKHOUSE_AUTH</td>
+<td>default:</td>
+<td>Clickhouse Authentication (user:password)</td>
+</tr>
+<tr>
+<td>CLICKHOUSE_TIMEFIELD</td>
+<td>record_datetime</td>
+<td>Clickhouse DateTime column for native queries</td>
+</tr>
+<tr>
+<td>BULK_MAXAGE</td>
+<td>2000</td>
+<td>Max Age for Bulk Inserts</td>
+</tr>
+<tr>
+<td>BULK_MAXSIZE</td>
+<td>5000</td>
+<td>Max Size for Bulk Inserts</td>
+</tr>
+<tr>
+<td>BULK_MAXCACHE</td>
+<td>50000</td>
+<td>Max Labels in Memory Cache</td>
+</tr>
+<tr>
+<td>LABELS_DAYS</td>
+<td>7</td>
+<td>Max Days before Label rotation</td>
+</tr>
+<tr>
+<td>SAMPLES_DAYS</td>
+<td>7</td>
+<td>Max Days before Timeseries rotation</td>
+</tr>
+<tr>
+<td>HOST</td>
+<td>0.0.0.0</td>
+<td>cLOKi API IP</td>
+</tr>
+<tr>
+<td>PORT</td>
+<td>3100</td>
+<td>cLOKi API PORT</td>
+</tr>
+<tr>
+<td>CLOKI_LOGIN</td>
+<td>false</td>
+<td>Basic HTTP Username</td>
+</tr>
+<tr>
+<td>CLOKI_PASSWORD</td>
+<td>false</td>
+<td>Basic HTTP Password</td>
+</tr>
+<tr>
+<td>READONLY</td>
+<td>false</td>
+<td>Readonly Mode, no DB Init</td>
+</tr>
+<tr>
+<td>DEBUG</td>
+<td>false</td>
+<td>Debug Mode</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h5><a id="user-content-status" class="anchor" aria-hidden="true" href="#status"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a>Status</h5>
+<p>Consult the <a href="https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries">Wiki</a> for a detailed list of supported features</p>
+<hr>
+<h4><a id="user-content-acknowledgements" class="anchor" aria-hidden="true" href="#acknowledgements"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg></a>Acknowledgements</h4>
+<p>cLoki is not affiliated or endorsed by Grafana Labs. All rights belong to their respective owners.</p>
+</article>
+  </div>
+  
+  <!-- sir david -->
+  <!--
+  <audio preload="auto" id="welcome">
+    <source src="https://github.com/lmangani/cLoki/raw/gh-pages/include/this_is_cloki_short_sirdavid.mp3" type="audio/mp3">
+  </audio>
+  <script>
+      var logo = document.getElementById('clogo');
+      var audio = document.getElementById('welcome');
+      var once = true;
+      logo.onmouseover = function(){
+        if (!once) audio.play();
+        once = false;
+      };
+  </script>
+  -->
+ 
+    <div style="position:fixed; right:0; top:0; width: auto; height: 200px;">
+      <a href="https://github.com/lmangani/cloki"><img loading="lazy" width="149" height="149" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_darkblue_121621.png?resize=149%2C149" class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1"></a>
+    </div>
+   
+ </body>
+</html>
