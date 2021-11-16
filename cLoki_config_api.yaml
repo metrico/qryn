@@ -7,7 +7,7 @@ host: www
 schemes:
   - http
 paths:
-  /alerts:
+  /config/v1/alerts:
     post:
       description: Create an alerting rule
       operationId: createRule
@@ -65,7 +65,7 @@ paths:
           description: internal server error
           schema:
             $ref: '#/definitions/genericResponse'
-  /alerts/{name}:
+  /config/v1/alerts/{name}:
     get:
       description: get a single alert
       produces:
