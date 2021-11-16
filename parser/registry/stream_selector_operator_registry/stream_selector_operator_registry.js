@@ -31,7 +31,8 @@ const labelAndVal = (token) => {
  */
 const streamSelectQuery = () => {
   return {
-    select: ['fingerprint'],
+    select: ['fingerprint', 'labels'],
+    distinct: 1,
     from: `${DATABASE_NAME()}.time_series`,
     where: ['AND']
   }
@@ -51,12 +52,22 @@ module.exports.simpleAnd = (query, clauses) => {
     with: {
       ...(query.with || {}),
       str_sel: strSel
-    }
+    },
+    select: query.select.map(f => f.replace('time_series', 'str_sel')),
+    left_join: !isStrSel
+      ? [
+          ...(query.left_join || []).filter(j => j.name.indexOf('time_series') === -1),
+          {
+            name: 'str_sel',
+            on: ['AND', 'samples.fingerprint = str_sel.fingerprint']
+          }
+        ]
+      : query.left_join
   }
   if (isStrSel) {
     return query
   }
-  return querySelectorPostProcess(_and(query, ['samples.fingerprint IN str_sel']))
+  return querySelectorPostProcess(_and(query, ['samples.fingerprint IN (SELECT fingerprint FROM str_sel)']))
 }
 
 /**
