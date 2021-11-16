@@ -10,18 +10,20 @@ const unwrap = require('./registry/unwrap')
 const unwrapRegistry = require('./registry/unwrap_registry')
 const { _and, durationToMs } = require('./registry/common')
 const compiler = require('./bnf')
-const { parseMs, DATABASE_NAME } = require('../lib/utils')
+const { parseMs, DATABASE_NAME, samplesReadTableName } = require('../lib/utils')
 const { getPlg } = require('../plugins/engine')
 
 /**
- *
+ * @param options {{samplesTable?: string} | undefined}
  * @returns {registry_types.Request}
  */
-module.exports.initQuery = () => {
+module.exports.initQuery = (options) => {
+  options = options || {}
+  const samplesTable = options.samplesTable || samplesReadTableName
   return {
-    select: ['time_series.labels as labels', 'samples.string as string', 'time_series.fingerprint as fingerprint',
+    select: ['time_series.labels as labels', 'samples.string as string', 'samples.fingerprint as fingerprint',
       'samples.timestamp_ms as timestamp_ms'],
-    from: `${DATABASE_NAME()}.samples`,
+    from: `${DATABASE_NAME()}.${samplesTable} as samples`,
     left_join: [{
       name: `${DATABASE_NAME()}.time_series`,
       on: ['AND', 'samples.fingerprint = time_series.fingerprint']
@@ -30,8 +32,7 @@ module.exports.initQuery = () => {
     order_by: {
       name: ['timestamp_ms', 'labels'],
       order: 'desc'
-    },
-    distinct: true
+    }
   }
 }
 
@@ -141,7 +142,11 @@ module.exports.transpile = (request) => {
 
 /**
  *
- * @param request {{query: string, suppressTime?: boolean, stream?: (function(DataStream): DataStream)[]}}
+ * @param request {{
+ *  query: string,
+ *  suppressTime?: boolean,
+ *  stream?: (function(DataStream): DataStream)[],
+ *  samplesTable?: string}}
  * @returns {{query: string, stream: (function(DataStream): DataStream)[]}}
  */
 module.exports.transpileTail = (request) => {
@@ -152,7 +157,7 @@ module.exports.transpileTail = (request) => {
       throw new Error(`${d} is not supported. Only raw logs are supported`)
     }
   }
-  let query = module.exports.initQuery()
+  let query = module.exports.initQuery({ samplesTable: request.samplesTable })
   if (!request.suppressTime) {
     query = _and(query, [
       'timestamp_ms >= (toUnixTimestamp(now()) - 5) * 1000'
