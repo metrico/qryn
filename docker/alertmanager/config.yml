@@ -1,20 +1,19 @@
 global:
+  smtp_smarthost: smtp.gmail.com:587
+  smtp_auth_username: akvlad90@gmail.com
+  smtp_auth_password: mcfszsqqhlyftiaq
+  smtp_from: akvlad90@gmail.com
 route:
- group_by: [cluster]
- # If an alert isn't caught by a route, send it slack.
- receiver: slack_general
- routes:
-  # Send severity=slack alerts to slack.
-  - match:
-      severity: slack
-    receiver: slack_general
-
-receivers:
-- name: slack_general
-  slack_configs:
-  - api_url: 'https://hooks.slack.com/services/your_webhook'
-    channel: '#astricon18'
-
+ group_by: [test_id]
+ receiver: team-X-mails
+ group_wait: 30s
+ group_interval: 5m
+ repeat_interval: 3h
+#receivers:
+#- name: slack_general
+#  slack_configs:
+#  - api_url: 'https://hooks.slack.com/services/your_webhook'
+#    channel: '#astricon18'
 #    # The smarthost and SMTP sender used for mail notifications.
 #    smtp_smarthost: 'localhost:25'
 #    smtp_from: 'alertmanager@example.org'
@@ -106,10 +105,10 @@ receivers:
 #    equal: ['alertname']
 #  
 #  
-#  receivers:
-#  - name: 'team-X-mails'
-#    email_configs:
-#    - to: 'team-X+alerts@example.org, team-Y+alerts@example.org'
+receivers:
+- name: 'team-X-mails'
+  email_configs:
+  - to: 'akvlad90@gmail.com, lmangani@qxip.net, jachen@qxip.net'
 #  
 #  - name: 'team-X-pager'
 #    email_configs:
