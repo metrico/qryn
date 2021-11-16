@@ -89,6 +89,8 @@ paths:
           schema:
             $ref: '#/definitions/genericResponse'
     put:
+      description: update alert
+      operationId: updateAlert
       parameters:
         - name: name
           in: path
@@ -116,6 +118,8 @@ paths:
           schema:
             $ref: '#/definitions/genericResponse'
     delete:
+      description: delete alert
+      operationId: deleteAlert
       parameters:
         - name: name
           in: path
