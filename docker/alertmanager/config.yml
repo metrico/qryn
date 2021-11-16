@@ -1,8 +1,4 @@
 global:
-  smtp_smarthost: smtp.gmail.com:587
-  smtp_auth_username: akvlad90@gmail.com
-  smtp_auth_password: mcfszsqqhlyftiaq
-  smtp_from: akvlad90@gmail.com
 route:
  group_by: [test_id]
  receiver: team-X-mails
