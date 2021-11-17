@@ -114,9 +114,29 @@ fastify.addContentTypeParser('*', function (request, payload, done) {
     done(null, data)
   })
 })
+fastify.addSchema({
+  $id: 'http://cloki/alertRule.json',
+  type: 'object',
+  properties: {
+    name: {
+      type: 'string'
+    },
+    request: {
+      type: 'string'
+    },
+    labels: {
+      type: 'object',
+      additionalProperties: {
+        type: 'string'
+      }
+    }
+  },
+  required: ['name', 'request']
+})
 /* 404 Handler */
 const handler404 = require('./lib/handlers/404.js').bind(this)
 fastify.setNotFoundHandler(handler404)
+fastify.setErrorHandler(require('./lib/handlers/errors').handler.bind(this))
 
 /* Hello cloki test API */
 const handlerHello = require('./lib/handlers/ready').bind(this)
@@ -157,6 +177,26 @@ fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/ta
 
 fastify.get('/alerts', require('./lib/handlers/alterts'))
 fastify.post('/alerts_data', require('./lib/handlers/alterts_data').bind(this))
+
+fastify.post('/config/v1/alerts', {
+  handler: require('./lib/handlers/alerts_stubs').createRule.bind(this),
+  schema: {
+    body: {
+      $ref: 'http://cloki/alertRule.json#'
+    }
+  }
+})
+fastify.get('/config/v1/alerts', require('./lib/handlers/alerts_stubs').getAlerts.bind(this))
+fastify.get('/config/v1/alerts/:name', require('./lib/handlers/alerts_stubs').getAlert.bind(this))
+fastify.put('/config/v1/alerts/:name', {
+  handler: require('./lib/handlers/alerts_stubs').putAlert.bind(this),
+  schema: {
+    body: {
+      $ref: 'http://cloki/alertRule.json#'
+    }
+  }
+})
+fastify.delete('/config/v1/alerts/:name', require('./lib/handlers/alerts_stubs').deleteAlert.bind(this))
 
 // Run API Service
 fastify.listen(

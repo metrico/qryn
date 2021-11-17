@@ -68,6 +68,7 @@ paths:
   /config/v1/alerts/{name}:
     get:
       description: get a single alert
+      operationId: getAlert
       produces:
         - application/json
       parameters:
@@ -130,10 +131,6 @@ paths:
           description: ok
           schema:
             $ref: '#/definitions/genericResponse'
-        404:
-          description: not found
-          schema:
-            $ref: '#/definitions/genericResponse'
         500:
           description: internal server error
           schema:
@@ -159,9 +156,12 @@ definitions:
   genericResponse:
     type: object
     properties:
-      code:
+      statusCode:
         type: number
         description: http result code (from the header)
+      error:
+        type: string
+        description: short error name
       message:
         type: string
         description: error message (or ok message)
