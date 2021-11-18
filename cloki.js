@@ -179,24 +179,24 @@ fastify.get('/alerts', require('./lib/handlers/alterts'))
 fastify.post('/alerts_data', require('./lib/handlers/alterts_data').bind(this))
 
 fastify.post('/config/v1/alerts', {
-  handler: require('./lib/handlers/alerts_stubs').createRule.bind(this),
+  handler: require('./lib/handlers/alerts/post_rule').bind(this),
   schema: {
     body: {
       $ref: 'http://cloki/alertRule.json#'
     }
   }
 })
-fastify.get('/config/v1/alerts', require('./lib/handlers/alerts_stubs').getAlerts.bind(this))
-fastify.get('/config/v1/alerts/:name', require('./lib/handlers/alerts_stubs').getAlert.bind(this))
+fastify.get('/config/v1/alerts', require('./lib/handlers/alerts/get_rules').bind(this))
+fastify.get('/config/v1/alerts/:name', require('./lib/handlers/alerts/get_rule').bind(this))
 fastify.put('/config/v1/alerts/:name', {
-  handler: require('./lib/handlers/alerts_stubs').putAlert.bind(this),
+  handler: require('./lib/handlers/alerts/put_rule').putAlert.bind(this),
   schema: {
     body: {
       $ref: 'http://cloki/alertRule.json#'
     }
   }
 })
-fastify.delete('/config/v1/alerts/:name', require('./lib/handlers/alerts_stubs').deleteAlert.bind(this))
+fastify.delete('/config/v1/alerts/:name', require('./lib/handlers/alerts/delete_rule').deleteAlert.bind(this))
 
 // Run API Service
 fastify.listen(

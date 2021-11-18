@@ -331,46 +331,57 @@ it('e2e', async () => {
 })
 
 const checkAlertConfig = async () => {
-  await expect(axios.post('http://localhost:3100/config/v1/alerts', { request: '1234' }))
-    .rejects
-    .toHaveProperty(['response', 'data'], {
-      statusCode: 400,
-      error: 'Bad Request',
-      message: "body should have required property 'name'"
-    })
-  await expect(axios.post('http://localhost:3100/config/v1/alerts', { request: '1234', name: 'asd' }))
-    .rejects
-    .toHaveProperty(['response', 'data'], {
-      statusCode: 400,
-      error: 'Bad Request',
-      message: "Bad request '1234'"
-    })
-  expect(await axios.post('http://localhost:3100/config/v1/alerts', { name: 'asd', request: '{l1="v1"}' }))
-    .toHaveProperty('data', { name: 'asd', request: '{l1="v1"}' })
-  await expect(axios.post('http://localhost:3100/config/v1/alerts', { name: 'asd', request: '{l1="v1"}' }))
-    .rejects
-    .toHaveProperty(['response', 'data'], {
-      statusCode: 400,
-      error: 'Bad Request',
-      message: 'Rule with name \'asd\' already exists'
-    })
-  await expect(axios.get('http://localhost:3100/config/v1/alerts/123'))
-    .rejects
-    .toHaveProperty(['response', 'data'], {
-      statusCode: 404,
-      error: 'Not Found',
-      message: 'Rule with name \'123\' not found'
-    })
-  expect(await axios.get('http://localhost:3100/config/v1/alerts/asd'))
-    .toHaveProperty(['data'], { name: 'asd', request: '{l1="v1"}' })
-  expect(await axios.get('http://localhost:3100/config/v1/alerts'))
-    .toHaveProperty(['data'], { alerts: [{ name: 'asd', request: '{l1="v1"}' }], count: 1 })
-  expect(await axios.put('http://localhost:3100/config/v1/alerts/asd', { name: 'asd', request: '{l1="v2"}' }))
-    .toHaveProperty(['data'], { name: 'asd', request: '{l1="v2"}' })
-  expect(await axios.get('http://localhost:3100/config/v1/alerts/asd'))
-    .toHaveProperty(['data'], { name: 'asd', request: '{l1="v2"}' })
-  expect(await axios.delete('http://localhost:3100/config/v1/alerts/asd'))
-    .toHaveProperty(['data', 'statusCode'], 200)
-  expect(await axios.get('http://localhost:3100/config/v1/alerts'))
-    .toHaveProperty(['data'], { alerts: [], count: 0 })
+  try {
+    await expect(axios.post('http://localhost:3100/config/v1/alerts', { request: '1234' }))
+      .rejects
+      .toHaveProperty(['response', 'data'], {
+        statusCode: 400,
+        error: 'Bad Request',
+        message: "body should have required property 'name'"
+      })
+    await expect(axios.post('http://localhost:3100/config/v1/alerts', { request: '1234', name: 'asd' }))
+      .rejects
+      .toHaveProperty(['response', 'data'], {
+        statusCode: 400,
+        error: 'Bad Request',
+        message: "Bad request '1234'"
+      })
+    expect(await axios.post('http://localhost:3100/config/v1/alerts', { name: 'asd', request: '{l1="v1"}' }))
+      .toHaveProperty('data', { name: 'asd', request: '{l1="v1"}' })
+    await expect(axios.post('http://localhost:3100/config/v1/alerts', { name: 'asd', request: '{l1="v1"}' }))
+      .rejects
+      .toHaveProperty(['response', 'data'], {
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Rule with name \'asd\' already exists'
+      })
+    await expect(axios.get('http://localhost:3100/config/v1/alerts/123'))
+      .rejects
+      .toHaveProperty(['response', 'data'], {
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'Rule with name \'123\' not found'
+      })
+    expect(await axios.get('http://localhost:3100/config/v1/alerts/asd'))
+      .toHaveProperty(['data'],
+        { name: 'asd', request: '{l1="v1"}', labels: {} }
+      )
+    expect(await axios.get('http://localhost:3100/config/v1/alerts'))
+      .toHaveProperty(['data'], { alerts: [{ name: 'asd', request: '{l1="v1"}', labels: {} }], count: 1 })
+    expect(await axios.put('http://localhost:3100/config/v1/alerts/asd', {
+      name: 'asd',
+      request: '{l1="v2"}',
+      labels: {}
+    }))
+      .toHaveProperty(['data'], { name: 'asd', request: '{l1="v2"}', labels: {} })
+    expect(await axios.get('http://localhost:3100/config/v1/alerts/asd'))
+      .toHaveProperty(['data'], { name: 'asd', request: '{l1="v2"}', labels: {} })
+    expect(await axios.delete('http://localhost:3100/config/v1/alerts/asd'))
+      .toHaveProperty(['data', 'statusCode'], 200)
+    expect(await axios.get('http://localhost:3100/config/v1/alerts'))
+      .toHaveProperty(['data'], { alerts: [], count: 0 })
+  } catch (e) {
+    await axios.delete('http://localhost:3100/config/v1/alerts/asd').catch(console.log)
+    throw e
+  }
 }
