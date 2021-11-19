@@ -146,8 +146,10 @@ module.exports.transpile = (request) => {
  *  query: string,
  *  suppressTime?: boolean,
  *  stream?: (function(DataStream): DataStream)[],
- *  samplesTable?: string}}
- * @returns {{query: string, stream: (function(DataStream): DataStream)[]}}
+ *  samplesTable?: string,
+ *  rawRequest: boolean}}
+ * @returns {{query: string  | registry_types.Request,
+ * stream: (function(DataStream): DataStream)[]}}
  */
 module.exports.transpileTail = (request) => {
   const expression = compiler.ParseScript(request.query.trim())
@@ -170,7 +172,7 @@ module.exports.transpileTail = (request) => {
   }
   query.limit = undefined
   return {
-    query: module.exports.requestToStr(query),
+    query: request.rawRequest ? query : module.exports.requestToStr(query),
     raw: query,
     stream: query.stream || []
   }
