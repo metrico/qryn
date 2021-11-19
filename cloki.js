@@ -85,7 +85,7 @@ fastify.addContentTypeParser('text/plain', {
   }
 })
 
-if (!process.env.NO_SNAPPY) {
+try {
   const snappy = require('snappy')
   /* Protobuf Handler */
   fastify.addContentTypeParser('application/x-protobuf', { parseAs: 'buffer' },
@@ -104,6 +104,9 @@ if (!process.env.NO_SNAPPY) {
       }))
       return _data.streams
     })
+} catch (e) {
+  console.log(e)
+  console.log('Protobuf ingesting is unsupported')
 }
 
 /* 404 Handler */
