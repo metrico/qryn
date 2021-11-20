@@ -50,7 +50,7 @@ The Grafana Loki datasource can be used to natively query _logs_ and display ext
 
 ### :fuelpump: Log Streams
 
-cLoki supports input via Push API using *JSON* or *Protobuf* and it is compatible with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/) and any other Loki compatible agent such as _Telegraf, Fluentbit, Logstash and others._ 
+cLoki supports input via Push API using *JSON* or *Protobuf* and it is compatible with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/) and any other Loki [compatible agent](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki) such as _Telegraf, Fluentbit, Logstash and others._ 
 
 Our _preferred_ companion for parsing and shipping log streams to **cLoki** is [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) with extensive interpolation capabilities to create tags and trim any log fat. Sending JSON formatted logs is _suggested_ when dealing with metrics.
 
@@ -107,7 +107,7 @@ clickhouse({
 ### Setup
 
 ##### :busstop: GIT (Manual)
-Clone this repository, install with `npm`and run using `nodejs` 12.x *(or higher)*
+Clone this repository, install with `npm`and run using `nodejs` 14.x *(or higher)*
 ```bash
 npm install
 CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLICKHOUSE_DB="cloki" node ./cloki.js
