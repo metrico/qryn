@@ -61,7 +61,8 @@
     "eslint-plugin-jest": "^25.2.4",
     "jest": "^27.0.5",
     "logfmt": "^1.3.2",
-    "standard": "^16.0.4"
+    "standard": "^16.0.4",
+    "fastify-serve-swagger-ui": "^1.0.0"
   },
   "directories": {
     "lib": "lib"

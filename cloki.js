@@ -198,6 +198,16 @@ fastify.put('/config/v1/alerts/:name', {
 })
 fastify.delete('/config/v1/alerts/:name', require('./lib/handlers/alerts/delete_rule').deleteAlert.bind(this))
 
+fastify.register(require('fastify-serve-swagger-ui'), {
+  // swagger specification which should be exposed
+  specification: {
+    type: 'file',
+    path: 'cLoki_config_api.yaml'
+  },
+  // path under which swagger-ui will be available
+  path: 'swagger'
+})
+
 // Run API Service
 fastify.listen(
   process.env.PORT || 3100,
