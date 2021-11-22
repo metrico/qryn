@@ -16,7 +16,6 @@ require('./plugins/engine')
 
 const DATABASE = require('./lib/db/clickhouse')
 const UTILS = require('./lib/utils')
-const snappy = require('snappy')
 
 /* ProtoBuf Helper */
 const fs = require('fs')
@@ -86,23 +85,30 @@ fastify.addContentTypeParser('text/plain', {
   }
 })
 
-/* Protobuf Handler */
-fastify.addContentTypeParser('application/x-protobuf', { parseAs: 'buffer' },
-  async function (req, body, done) {
-    let _data = await snappy.uncompress(body)
-    _data = messages.PushRequest.decode(_data)
-    _data.streams = _data.streams.map(s => ({
-      ...s,
-      entries: s.entries.map(e => {
-        const millis = Math.floor(e.timestamp.nanos / 1000000)
-        return {
-          ...e,
-          timestamp: e.timestamp.seconds * 1000 + millis
-        }
-      })
-    }))
-    return _data.streams
-  })
+try {
+  const snappy = require('snappyjs')
+  /* Protobuf Handler */
+  fastify.addContentTypeParser('application/x-protobuf', { parseAs: 'buffer' },
+    async function (req, body, done) {
+      let _data = await snappy.uncompress(body)
+      _data = messages.PushRequest.decode(_data)
+      _data.streams = _data.streams.map(s => ({
+        ...s,
+        entries: s.entries.map(e => {
+          const millis = Math.floor(e.timestamp.nanos / 1000000)
+          return {
+            ...e,
+            timestamp: e.timestamp.seconds * 1000 + millis
+          }
+        })
+      }))
+      return _data.streams
+    })
+} catch (e) {
+  console.log(e)
+  console.log('Protobuf ingesting is unsupported')
+}
+
 fastify.addContentTypeParser('*', function (request, payload, done) {
   if (request.headers['content-type']) {
     done(payload)

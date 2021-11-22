@@ -1,0 +1,48 @@
+# small setup for e2e tests
+version: '2.1'
+
+volumes:
+    prometheus_data: {}
+    grafana_data: {}
+
+services:
+  alertman:
+    image: prom/alertmanager
+    container_name: alertman
+    volumes:
+      - ./alertmanager/config.yml:/etc/alertmanager/config.yml
+    entrypoint: alertmanager --config.file=/etc/alertmanager/config.yml
+
+  grafana:
+    image: grafana/grafana:master
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+      # - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+    environment:
+      - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_EXPLORE_ENABLED=true
+    restart: unless-stopped
+    expose:
+      - 3000
+    ports:
+      - 3000:3000
+    labels:
+      org.label-schema.group: "monitoring"
+
+  clickhouse-seed:
+    image: yandex/clickhouse-server
+    container_name: clickhouse-seed
+    ports:
+      - 8123:8123
+    labels:
+      org.label-schema.group: "backend"
+
+  loki:
+    image: grafana/loki
+    container_name: loki
+    ports:
+      - 3101:3100
