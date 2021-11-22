@@ -3,7 +3,7 @@ const axios = require('axios')
 const { WebSocket } = require('ws')
 // const pb = require("protobufjs");
 const e2e = () => process.env.INTEGRATION_E2E || process.env.INTEGRATION
-const clokiLocal = () => process.env.CLOKI_LOCAL || false
+const clokiLocal = () => process.env.CLOKI_LOCAL || process.env.CLOKI_EXT_URL || false
 let l = null
 
 // const root = pb.loadSync(__dirname + "/../lib/loki.proto");
@@ -49,6 +49,7 @@ it('e2e', async () => {
     return
   }
   console.log('Waiting 2s before all inits')
+  const clokiExtUrl = process.env.CLOKI_EXT_URL || 'localhost:3100'
   await new Promise(resolve => setTimeout(resolve, 2000))
   const testID = Math.random() + ''
   console.log(testID)
@@ -63,7 +64,7 @@ it('e2e', async () => {
     { fmt: 'json', lbl_repl: 'val_repl', int_lbl: '1' }, points,
     (i) => JSON.stringify({ lbl_repl: 'REPL', int_val: '1', new_lbl: 'new_val', str_id: i, arr: [1, 2, 3], obj: { o_1: 'v_1' } })
   )
-  await sendPoints('http://localhost:3100', points)
+  await sendPoints(`http://${clokiExtUrl}`, points)
   await new Promise(resolve => setTimeout(resolve, 4000))
   const adjustResult = (resp, id, _start) => {
     _start = _start || start
@@ -80,7 +81,7 @@ it('e2e', async () => {
     _end = _end || end
     _step = _step || 2
     return axios.get(
-            `http://localhost:3100/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=${encodeURIComponent(req)}&start=${_start}000000&end=${_end}000000&step=${_step}`
+            `http://${clokiExtUrl}/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=${encodeURIComponent(req)}&start=${_start}000000&end=${_end}000000&step=${_step}`
     )
   }
   const adjustMatrixResult = (resp, id) => {
@@ -257,7 +258,7 @@ it('e2e', async () => {
   resp = await runRequest(`first_over_time({test_id="${testID}", freq="0.5"} | regexp "^[^0-9]+(?<e>[0-9]+)$" | unwrap e [1s]) by(test_id)`, 1)
   adjustMatrixResult(resp, testID)
   expect(resp.data).toMatchSnapshot()
-  const ws = new WebSocket(`ws://localhost:3100/loki/api/v1/tail?query={test_id="${testID}_ws"}`)
+  const ws = new WebSocket(`ws://${clokiExtUrl}/loki/api/v1/tail?query={test_id="${testID}_ws"}`)
   resp = {
     data: {
       data: {
@@ -285,7 +286,7 @@ it('e2e', async () => {
   for (let i = 0; i < 5; i++) {
     const points = createPoints(testID + '_ws', 1, wsStart + i * 1000, wsStart + i * 1000 + 1000, {}, {},
       () => `MSG_${i}`)
-    sendPoints('http://localhost:3100', points)
+    sendPoints(`http://${clokiExtUrl}`, points)
     await new Promise(resolve => setTimeout(resolve, 1000))
   }
   await new Promise(resolve => setTimeout(resolve, 6000))
@@ -295,14 +296,14 @@ it('e2e', async () => {
   }
   adjustResult(resp, testID + '_ws', wsStart)
   expect(resp.data).toMatchSnapshot()
-  resp = await axios.get(`http://localhost:3100/loki/api/v1/series?match={test_id="${testID}"}&start=1636008723293000000&end=1636012323293000000`)
+  resp = await axios.get(`http://${clokiExtUrl}/loki/api/v1/series?match={test_id="${testID}"}&start=1636008723293000000&end=1636012323293000000`)
   resp.data.data = resp.data.data.map(l => {
     expect(l.test_id).toEqual(testID)
     return { ...l, test_id: 'TEST' }
   })
   resp.data.data.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
   expect(resp.data).toMatchSnapshot()
-  resp = await axios.get(`http://localhost:3100/loki/api/v1/series?match={test_id="${testID}"}&match={test_id="${testID}_json"}&start=1636008723293000000&end=1636012323293000000`)
+  resp = await axios.get(`http://${clokiExtUrl}/loki/api/v1/series?match={test_id="${testID}"}&match={test_id="${testID}_json"}&start=1636008723293000000&end=1636012323293000000`)
   resp.data.data = resp.data.data.map(l => {
     expect(l.test_id.startsWith(testID))
     return { ...l, test_id: l.test_id.replace(testID, 'TEST') }
