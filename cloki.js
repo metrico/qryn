@@ -86,7 +86,7 @@ fastify.addContentTypeParser('text/plain', {
 })
 
 try {
-  const snappy = require('snappy')
+  const snappy = require('snappyjs')
   /* Protobuf Handler */
   fastify.addContentTypeParser('application/x-protobuf', { parseAs: 'buffer' },
     async function (req, body, done) {
