@@ -37,6 +37,7 @@ this.labelParser = UTILS.labelParser
 const init = DATABASE.init
 this.reloadFingerprints = DATABASE.reloadFingerprints
 this.scanFingerprints = DATABASE.scanFingerprints
+this.instantQueryScan = DATABASE.instantQueryScan
 this.scanMetricFingerprints = DATABASE.scanMetricFingerprints
 this.scanClickhouse = DATABASE.scanClickhouse
 
