@@ -14,6 +14,7 @@ this.http_password = process.env.CLOKI_PASSWORD || false
 
 require('./plugins/engine')
 
+const path = require('path')
 const DATABASE = require('./lib/db/clickhouse')
 const UTILS = require('./lib/utils')
 
@@ -54,6 +55,13 @@ const fastify = require('fastify')({
 
 fastify.register(require('fastify-url-data'))
 fastify.register(require('fastify-websocket'))
+
+fastify.register((instance, opts, next) => {
+  instance.register(require('fastify-static'), {
+    root: path.join(__dirname, './frontend/dist')
+  })
+  next()
+})
 
 fastify.after((err) => {
   if (err) throw err

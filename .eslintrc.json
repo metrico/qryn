@@ -6,9 +6,9 @@
         "jest/globals": true
     },
     "extends": [
-        "standard"
+        "standard",
+        "plugin:react/recommended"
     ],
-
     "parserOptions": {
         "ecmaVersion": 2021
     },
@@ -16,5 +16,10 @@
     "rules": {
         "no-template-curly-in-string": "off",
         "no-useless-escape": "off"
+    },
+    "settings": {
+      "react": {
+        "version": "detect"
+      }
     }
 }
