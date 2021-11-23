@@ -10,7 +10,7 @@ const unwrap = require('./registry/unwrap')
 const unwrapRegistry = require('./registry/unwrap_registry')
 const { _and, durationToMs } = require('./registry/common')
 const compiler = require('./bnf')
-const { parseMs, DATABASE_NAME, samplesReadTableName } = require('../lib/utils')
+const { parseMs, DATABASE_NAME, samplesReadTableName, isClustered } = require('../lib/utils')
 const { getPlg } = require('../plugins/engine')
 
 /**
@@ -330,7 +330,7 @@ module.exports.requestToStr = (query) => {
     : ''
   req += ` SELECT ${query.distinct ? 'DISTINCT' : ''} ${query.select.join(', ')} FROM ${query.from} `
   for (const clause of query.left_join || []) {
-    req += ` LEFT JOIN ${clause.name} ON ${whereBuilder(clause.on)}`
+    req += ` ${isClustered ? 'GLOBAL ' : ''}LEFT JOIN ${clause.name} ON ${whereBuilder(clause.on)}`
   }
   req += query.where && query.where.length ? ` WHERE ${whereBuilder(query.where)} ` : ''
   req += query.group_by ? ` GROUP BY ${query.group_by.join(', ')}` : ''

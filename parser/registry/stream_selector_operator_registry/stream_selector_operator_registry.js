@@ -1,5 +1,5 @@
 const { _and, unquoteToken, querySelectorPostProcess, isEOF } = require('../common')
-const { DATABASE_NAME } = require('../../../lib/utils')
+const { DATABASE_NAME, isClustered } = require('../../../lib/utils')
 /**
  * @param regex {boolean}
  * @param eq {boolean}
@@ -58,7 +58,7 @@ module.exports.simpleAnd = (query, clauses) => {
       ? [
           ...(query.left_join || []).filter(j => j.name.indexOf('time_series') === -1),
           {
-            name: 'str_sel',
+            name: isClustered ? '(SELECT * FROM str_sel) as str_sel' : 'str_sel',
             on: ['AND', 'samples.fingerprint = str_sel.fingerprint']
           }
         ]
@@ -67,7 +67,8 @@ module.exports.simpleAnd = (query, clauses) => {
   if (isStrSel) {
     return query
   }
-  return querySelectorPostProcess(_and(query, ['samples.fingerprint IN (SELECT fingerprint FROM str_sel)']))
+  return querySelectorPostProcess(_and(query,
+    [`samples.fingerprint ${isClustered ? 'GLOBAL ' : ''}IN (SELECT fingerprint FROM str_sel)`]))
 }
 
 /**
