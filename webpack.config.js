@@ -2,7 +2,8 @@ require('dotenv').config({ path: './.env' })
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const path = require('path')
 
-const PORT = process.env.WEBPACK_DEV_SERVER_PORT
+const PORT = process.env.DEV_SERVER_PORT
+const API_PROXY_URL = process.env.DEV_API_PROXY_URL
 
 module.exports = {
   entry: './frontend/src/index.js',
@@ -37,10 +38,14 @@ module.exports = {
     ]
   },
   devServer: {
+    historyApiFallback: true,
     static: {
       directory: path.join(__dirname, './frontend/public')
     },
     compress: true,
-    port: PORT
+    port: PORT,
+    proxy: {
+      '/config': API_PROXY_URL
+    }
   }
 }

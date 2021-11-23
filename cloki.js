@@ -58,7 +58,7 @@ fastify.register(require('fastify-websocket'))
 
 fastify.register((instance, opts, next) => {
   instance.register(require('fastify-static'), {
-    root: path.join(__dirname, './frontend/dist')
+    root: path.join(__dirname, './frontend/dist'), prefix: '/'
   })
   next()
 })
