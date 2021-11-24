@@ -185,7 +185,15 @@ module.exports.transpileSeries = (request) => {
    */
   const getQuery = (req) => {
     const expression = compiler.ParseScript(req.trim())
-    const query = module.exports.transpileLogStreamSelector(expression.rootToken, module.exports.initQuery())
+    const q = module.exports.initQuery()
+    q.with = {
+      ...(q.with || {})
+    }
+    q.ctx = {
+      ...(q.ctx || {}),
+      clustered: false
+    }
+    const query = module.exports.transpileLogStreamSelector(expression.rootToken, q)
     return {
       ...query.with.str_sel,
       select: ['labels']
@@ -324,9 +332,13 @@ module.exports.requestToStr = (query) => {
   if (query.requests) {
     return query.requests.map(r => `(${module.exports.requestToStr(r)})`).join(' UNION ALL ')
   }
+  query = flatterizeCTEs(query)
+  if (query.with && !Object.entries(query.with).filter(e => e[1] && !e[1].inline).length) {
+    query.with = null
+  }
   let req = query.with
-    ? 'WITH ' + Object.entries(query.with).filter(e => e[1])
-      .map(e => `${e[0]} as (${module.exports.requestToStr(e[1])})`).join(', ')
+    ? 'WITH ' + Object.entries(query.with).filter(e => e[1] && !e[1].inline)
+      .map(e => `${e[0]} as (${e[1].stringified})`).join(', ')
     : ''
   req += ` SELECT ${query.distinct ? 'DISTINCT' : ''} ${query.select.join(', ')} FROM ${query.from} `
   for (const clause of query.left_join || []) {
@@ -340,6 +352,41 @@ module.exports.requestToStr = (query) => {
   req += typeof (query.offset) !== 'undefined' ? ` OFFSET ${query.offset}` : ''
   req += query.final ? ' FINAL' : ''
   return req
+}
+
+/**
+ *
+ * @param query {registry_types.Request}
+ * @param alias? {string}
+ * @param stringified? {string}
+ * @returns {registry_types.Request}
+ */
+const flatterizeCTEs = (query, alias, stringified) => {
+  if (alias && query.depends && query.depends[alias]) {
+    query = query.depends[alias].on_stringify(query, stringified)
+  }
+  if (!query.with) {
+    return query
+  }
+  const interestedCTEs = alias
+    ? Object.entries(query.with).filter(wth => wth[1] && wth[1].depends && wth[1].depends[alias])
+    : Object.entries(query.with).filter(wth => wth[1] && (!wth[1].depends || !Object.keys(wth[1].depends).length))
+  for (let [_alias, wth] of interestedCTEs) {
+    wth = wth.depends && wth.depends[alias]
+      ? wth.depends[alias].on_stringify(wth, stringified)
+      : wth
+    wth.stringified = module.exports.requestToStr(wth)
+    wth.depends = wth.depends
+      ? Object.entries(wth.depends).filter(e => e[0] !== alias)
+        .reduce((sum, e) => {
+          sum[e[0]] = e[1]
+          return sum
+        }, {})
+      : {}
+    query.with[_alias] = wth
+    query = flatterizeCTEs(query, _alias, wth.stringified)
+  }
+  return query
 }
 
 /**
