@@ -2,6 +2,12 @@ import {DataStream} from "scramjet";
 
 export namespace registry_types {
     interface Request {
+        inline?: boolean,
+        depends?: {
+            [alias: string] : {
+                on_stringify: (query: Request, str: string) => Request
+            }
+        }
         ctx?: {[k: string]: any},
         with?: {[k: string]: Request | UnionRequest}
         select: (string | Object)[],

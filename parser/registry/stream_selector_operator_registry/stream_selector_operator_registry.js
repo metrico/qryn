@@ -1,5 +1,15 @@
 const { _and, unquoteToken, querySelectorPostProcess, isEOF } = require('../common')
 const { DATABASE_NAME, isClustered } = require('../../../lib/utils')
+
+/**
+ *
+ * @param query {registry_types.Request}
+ */
+function getIsClustered (query) {
+  const qClustered = query.ctx ? query.ctx.clustered : undefined
+  return typeof qClustered !== 'undefined' ? qClustered : isClustered
+}
+
 /**
  * @param regex {boolean}
  * @param eq {boolean}
@@ -29,11 +39,12 @@ const labelAndVal = (token) => {
 /**
  * @returns {registry_types.Request}
  */
-const streamSelectQuery = () => {
+const streamSelectQuery = (isClustered) => {
   return {
+    inline: isClustered,
     select: ['fingerprint', 'labels'],
     distinct: 1,
-    from: `${DATABASE_NAME()}.time_series`,
+    from: `${DATABASE_NAME()}.time_series${isClustered ? '_standalone' : ''}`,
     where: ['AND']
   }
 }
@@ -45,20 +56,43 @@ const streamSelectQuery = () => {
  */
 module.exports.simpleAnd = (query, clauses) => {
   const isStrSel = query.with && query.with.str_sel
-  let strSel = isStrSel ? query.with.str_sel : streamSelectQuery()
+  const _isClustered = getIsClustered(query)
+  let strSel = isStrSel ? query.with.str_sel : streamSelectQuery(_isClustered)
   strSel = _and(strSel, clauses)
+  /**
+   *
+   * @type {registry_types.Request}
+   */
   query = {
     ...query,
     with: {
       ...(query.with || {}),
       str_sel: strSel
     },
+    depends: {
+      str_sel: {
+        /**
+         *
+         * @param query {registry_types.Request}
+         * @param str {string}
+         * @returns {registry_types.Request}
+         */
+        on_stringify: (query, str) => {
+          if (!_isClustered) { return query }
+          query.left_join.find(j => j.name.endsWith('as str_sel')).name = `(${str}) as str_sel`
+          query.where = query.where.map(w => w === 'samples.fingerprint IN (SELECT fingerprint FROM str_sel)'
+            ? `samples.fingerprint IN (SELECT fingerprint FROM (${str}))`
+            : w)
+          return query
+        }
+      }
+    },
     select: query.select.map(f => f.replace('time_series', 'str_sel')),
     left_join: !isStrSel
       ? [
           ...(query.left_join || []).filter(j => j.name.indexOf('time_series') === -1),
           {
-            name: isClustered ? '(SELECT * FROM str_sel) as str_sel' : 'str_sel',
+            name: '(SELECT * FROM str_sel) as str_sel',
             on: ['AND', 'samples.fingerprint = str_sel.fingerprint']
           }
         ]
@@ -68,7 +102,7 @@ module.exports.simpleAnd = (query, clauses) => {
     return query
   }
   return querySelectorPostProcess(_and(query,
-    [`samples.fingerprint ${isClustered ? 'GLOBAL ' : ''}IN (SELECT fingerprint FROM str_sel)`]))
+    ['samples.fingerprint IN (SELECT fingerprint FROM str_sel)']))
 }
 
 /**

@@ -67,6 +67,7 @@ module.exports = {
     }
     const duration = getDuration(token, query)
     const queryData = { ...query }
+    queryData.with = undefined
     queryData.select = ['labels', `floor(timestamp_ms / ${duration}) * ${duration} as timestamp_ms`,
       'toFloat64(0) as value']
     queryData.limit = undefined
@@ -91,6 +92,7 @@ module.exports = {
     return {
       ctx: query.ctx,
       with: {
+        ...query.with,
         rate_a: queryData,
         rate_b: queryGaps,
         rate_c: { requests: [{ select: ['*'], from: 'rate_a' }, { select: ['*'], from: 'rate_b' }] }

@@ -343,3 +343,19 @@ module.exports.unquote = (str, custom, customSlash) => {
   }
   return res
 }
+
+/**
+ *
+ * @param cteName {string}
+ * @param expressionGetter {(function(cteEntity: string): string)}
+ * @returns {(function(cteEntity: string): string | Function)}
+ */
+module.exports.withQuery = (cteName, expressionGetter) => {
+  const res = (readyQuery) => {
+    if (readyQuery && readyQuery.with && readyQuery.with[cteName] && readyQuery.with[cteName] instanceof String) {
+      return expressionGetter(readyQuery.with[cteName])
+    }
+    return res
+  }
+  return res
+}
