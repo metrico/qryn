@@ -3,7 +3,7 @@ info:
   title: cLoki configuration API
   description: cLoki configuration API
   version: 1.0.0
-host: www
+host: localhost:3100
 schemes:
   - http
 paths:

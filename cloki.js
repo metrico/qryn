@@ -20,6 +20,7 @@ const UTILS = require('./lib/utils')
 /* ProtoBuf Helper */
 const fs = require('fs')
 const protoBuff = require('protocol-buffers')
+const { startAlerting } = require('./lib/db/alerting')
 const messages = protoBuff(fs.readFileSync('lib/loki.proto'))
 
 /* Fingerprinting */
@@ -41,6 +42,10 @@ this.scanMetricFingerprints = DATABASE.scanMetricFingerprints
 this.scanClickhouse = DATABASE.scanClickhouse
 
 if (!this.readonly) init(process.env.CLICKHOUSE_DB || 'cloki')
+startAlerting().catch((err) => {
+  console.log(err)
+  process.exit(1)
+})
 
 /* Fastify Helper */
 const fastify = require('fastify')({
