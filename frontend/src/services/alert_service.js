@@ -9,10 +9,11 @@ export class AlertService {
     return await httpClient.post(API_PATH.ALERTS, body)
   }
 
-  async getAlerts ({ offset = 0, limit = 10 } = {}) {
+  async getAlerts ({ offset = 0, limit = 10, alertName } = {}) {
     const url = new URL(`http://placeholder/${API_PATH.ALERTS}`)
     if (Number.isInteger(offset)) url.searchParams.set('offset', offset)
     if (Number.isInteger(limit)) url.searchParams.set('limit', limit)
+    if (alertName) url.searchParams.set('name', alertName)
 
     return await httpClient.get(url.pathname + url.search)
   }

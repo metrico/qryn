@@ -42,7 +42,7 @@ export function validateForm (values) {
   return errors
 }
 
-export function AlertName ({ value, onChange, onBlur }) {
+export function AlertNameInput ({ value, onChange, onBlur }) {
   return (
     <>
       <label htmlFor="name">Name</label>
@@ -54,12 +54,13 @@ export function AlertName ({ value, onChange, onBlur }) {
         value={value}
         onChange={onChange}
         onBlur={onBlur}
+        style={{ width: 400 }}
       />
     </>
   )
 }
 
-export function AlertRequest ({ value, onChange, onBlur }) {
+export function AlertRequestInput ({ value, onChange, onBlur }) {
   return (
     <>
       <label htmlFor="request">Request</label>
@@ -71,12 +72,13 @@ export function AlertRequest ({ value, onChange, onBlur }) {
         value={value}
         onChange={onChange}
         onBlur={onBlur}
+        style={{ width: 400 }}
       />
     </>
   )
 }
 
-export function AlertLabels ({ value, onChange, onBlur }) {
+export function AlertLabelsInput ({ value, onChange, onBlur }) {
   return (
     <>
       <label htmlFor="labels">Labels</label>
@@ -89,6 +91,7 @@ export function AlertLabels ({ value, onChange, onBlur }) {
         value={value}
         onChange={onChange}
         onBlur={onBlur}
+        style={{ width: 400 }}
       />
     </>
   )
@@ -188,13 +191,13 @@ export function Alert () {
         }) => {
           return (
             <form onSubmit={handleSubmit}>
-              <AlertName value={values.name} onChange={handleChange} onBlur={handleBlur} />
+              <AlertNameInput value={values.name} onChange={handleChange} onBlur={handleBlur} />
               <FormikInputError error={getFormikError({ errors, touched, inputName: 'name' })} />
 
-              <AlertRequest value={values.request} onChange={handleChange} onBlur={handleBlur} />
+              <AlertRequestInput value={values.request} onChange={handleChange} onBlur={handleBlur} />
               <FormikInputError error={getFormikError({ errors, touched, inputName: 'request' })} />
 
-              <AlertLabels value={values.labels} onChange={handleChange} onBlur={handleBlur} />
+              <AlertLabelsInput value={values.labels} onChange={handleChange} onBlur={handleBlur} />
               <FormikInputError error={getFormikError({ errors, touched, inputName: 'labels' })} />
 
               <button type="submit" disabled={isSubmitting}>Save</button>
