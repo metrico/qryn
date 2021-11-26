@@ -64,7 +64,6 @@ export function Alerts () {
   }
 
   async function getAlerts ({ offset = alertsOffset, limit = alertsLimit, alertName = searchInput } = {}) {
-    console.log('---------------- getAlerts', offset, limit, alertName, searchInput)
     preRequestState()
     try {
       const { data } = await alertService.getAlerts({ offset, limit, alertName })

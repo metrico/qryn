@@ -16,13 +16,19 @@ export const DEFAULT_ALERT = {
 
 export function alertToFormik (alert) {
   const formik = { ...alert }
-  formik.labels = JSON.stringify(formik.labels)
+  const labels = JSON.stringify(formik.labels)
+  const isLabelsEmpty = !labels || labels === '{}'
+
+  if (isLabelsEmpty) delete formik.labels
+  else formik.labels = JSON.stringify(formik.labels, null, 2)
   return formik
 }
 
 export function formikToAlert (formik) {
   const alert = { ...formik }
-  if (alert.labels === '') {
+  const isLabelsEmpty = alert.labels === ''
+
+  if (isLabelsEmpty) {
     delete alert.labels
     return alert
   }
@@ -39,13 +45,22 @@ export function validateForm (values) {
   const errors = {}
   if (!values.name) errors.name = 'Required'
   if (!values.request) errors.request = 'Required'
+
+  if (values.labels) {
+    try {
+      JSON.parse(values.labels)
+    } catch (error) {
+      errors.labels = 'Required JSON value'
+    }
+  }
+
   return errors
 }
 
 export function AlertNameInput ({ value, onChange, onBlur }) {
   return (
     <>
-      <label htmlFor="name">Name</label>
+      <label htmlFor="name">Name *</label>
       <br />
       <input
         type="text"
@@ -63,7 +78,7 @@ export function AlertNameInput ({ value, onChange, onBlur }) {
 export function AlertRequestInput ({ value, onChange, onBlur }) {
   return (
     <>
-      <label htmlFor="request">Request</label>
+      <label htmlFor="request">Request *</label>
       <br />
       <input
         type="text"
@@ -83,14 +98,14 @@ export function AlertLabelsInput ({ value, onChange, onBlur }) {
     <>
       <label htmlFor="labels">Labels</label>
       <br />
-      <input
+      <textarea
         type="text"
         name="labels"
         id="labels"
-        disabled={true}
         value={value}
         onChange={onChange}
         onBlur={onBlur}
+        rows={10}
         style={{ width: 400 }}
       />
     </>
