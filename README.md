@@ -46,7 +46,7 @@ The Grafana Loki datasource can be used to natively query _logs_ and display ext
 - [Unwrap Expression.](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#unwrap-expression)
 - [Line Format Expression](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#line-format-expression---handlebars--)
 
-:fire: Follow our [examples](https://github.com/lmangani/cLoki/wiki/LogQL-for-Beginners) to get started in no time
+:fire: Follow our [examples](https://github.com/lmangani/cLoki/wiki/LogQL-for-Beginners) to get started
 
 --------
 
