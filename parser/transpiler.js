@@ -131,7 +131,6 @@ module.exports.transpile = (request) => {
     const op = token.Child('compared_agg_statement_cmp').Child('number_operator').value
     query = numberOperatorRegistry[op](token.Child('compared_agg_statement'), query)
   }
-
   return {
     query: module.exports.requestToStr(query),
     matrix: !!query.matrix,
@@ -300,7 +299,12 @@ module.exports.transpileLabelFilterPipeline = (pipeline, query) => {
  * @returns {registry_types.Request}
  */
 module.exports.transpileUnwrapFunction = (token, query) => {
-  query = module.exports.transpileUnwrapExpression(token.Child('unwrap_expression'), query)
+  query = module.exports.transpileLogStreamSelector(token, query)
+  if (token.Child('unwrap_expression')) {
+    query = module.exports.transpileUnwrapExpression(token.Child('unwrap_expression'), query)
+  } else if (token.Child('unwrapped_metrics')) {
+    query = transpileUnwrapMetrics(token, query)
+  }
   return unwrapRegistry[token.Child('unwrap_fn').value](token, query)
 }
 
@@ -310,8 +314,19 @@ module.exports.transpileUnwrapFunction = (token, query) => {
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
+const transpileUnwrapMetrics = (token, query) => {
+  query.from = `${DATABASE_NAME()}.metrics as samples`
+  query.select = [...query.select.filter(f => !f.endsWith('as string')), 'value as unwrapped']
+  return query
+}
+
+/**
+ *
+ * @param token {Token}
+ * @param query {registry_types.Request}
+ * @returns {registry_types.Request}
+ */
 module.exports.transpileUnwrapExpression = (token, query) => {
-  query = module.exports.transpileLogStreamSelector(token, query)
   return unwrap(token.Child('unwrap_statement'), query)
 }
 
