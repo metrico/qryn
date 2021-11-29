@@ -5,8 +5,10 @@
  * (C) 2018-2021 QXIP BV
  */
 
-this.debug = process.env.DEBUG || false
-// const debug = this.debug
+this.debug = false
+if (process.env.DEBUG === 'true'){
+  this.debug = true
+}
 
 this.readonly = process.env.READONLY || false
 this.http_user = process.env.CLOKI_LOGIN || false
