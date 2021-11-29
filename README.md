@@ -8,7 +8,7 @@
 ### like Loki, but for Clickhouse.
 
 cLoki is a clear room design [Loki](https://github.com/grafana/loki) API emulator made with NodeJS, [Fastify](https://github.com/fastify/fastify) and [Clickhouse](https://clickhouse.yandex/)<br/>
-APIs are compatible with [Grafana](http://docs.grafana.org/features/explore/), [LogQL](https://grafana.com/docs/loki/latest/logql/) and [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) for logs querying, processing and ingestion
+Core APIs are compatible with [Grafana](http://docs.grafana.org/features/explore/), [LogQL](https://grafana.com/docs/loki/latest/logql/) [Clients](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki) for logs querying, processing and ingestion
 
 Performance is comparable to native Loki, with cLoki outperforming on large range filtered queries.
 
@@ -45,6 +45,8 @@ The Grafana Loki datasource can be used to natively query _logs_ and display ext
 - [Aggregation operators](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#aggregation-operators)
 - [Unwrap Expression.](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#unwrap-expression)
 - [Line Format Expression](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#line-format-expression---handlebars--)
+
+:fire: Follow our [examples](https://github.com/lmangani/cLoki/wiki/LogQL-for-Beginners) to get started in no time
 
 --------
 
