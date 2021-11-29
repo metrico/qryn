@@ -8,7 +8,7 @@
 ### like Loki, but for Clickhouse.
 
 cLoki is a clear room design [Loki](https://github.com/grafana/loki) API emulator made with NodeJS, [Fastify](https://github.com/fastify/fastify) and [Clickhouse](https://clickhouse.yandex/)<br/>
-Core APIs are compatible with [Grafana](http://docs.grafana.org/features/explore/), [LogQL](https://grafana.com/docs/loki/latest/logql/) [Clients](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki) for logs querying, processing and ingestion
+APIs are compatible with [Grafana](http://docs.grafana.org/features/explore/) and [LogQL](https://grafana.com/docs/loki/latest/logql/) clients for [querying](https://github.com/lmangani/cLoki/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki) logs and events
 
 Performance is comparable to native Loki, with cLoki outperforming on large range filtered queries.
 
@@ -35,7 +35,7 @@ The Grafana Loki datasource can be used to natively query _logs_ and display ext
 
 :tada: _No plugins needed_ 
 
-![image](https://user-images.githubusercontent.com/1423657/135249640-5f5a61e5-0f94-4517-b052-76d47c3572f5.png)
+<img src="https://user-images.githubusercontent.com/1423657/135249640-5f5a61e5-0f94-4517-b052-76d47c3572f5.png" height=100>
 
 - [Log Stream Selector](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#log-stream-selector)
 - [Line Filter Expression](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries#line-filter-expression)
@@ -52,7 +52,7 @@ The Grafana Loki datasource can be used to natively query _logs_ and display ext
 
 ### :fuelpump: Log Streams
 
-cLoki supports input via Push API using *JSON* or *Protobuf* and it is compatible with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/) and any other Loki [compatible agent](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki) such as _Telegraf, Fluentbit, Logstash and others._ 
+cLoki supports input via Push API using *JSON* or *Protobuf* and it is compatible with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/) and any other [Loki compatible agent](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki)
 
 Our _preferred_ companion for parsing and shipping log streams to **cLoki** is [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) with extensive interpolation capabilities to create tags and trim any log fat. Sending JSON formatted logs is _suggested_ when dealing with metrics.
 
