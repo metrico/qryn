@@ -155,7 +155,7 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | CLOKI_LOGIN           | false             | Basic HTTP Username           |
 | CLOKI_PASSWORD        | false             | Basic HTTP Password           |
 | READONLY  			| false  	    | Readonly Mode, no DB Init  		|
-| FASTIFY_BODYLIMIT | 1048576   | API Maximum payload size in bytes |
+| FASTIFY_BODYLIMIT | 5242880   | API Maximum payload size in bytes |
 | DEBUG  			| false  	    | Debug Mode  		|
 
 
