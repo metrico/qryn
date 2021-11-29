@@ -12,12 +12,11 @@ This docker compose bundle will spin up a `cLoki`, `Clickhouse`, `Grafana` and `
 #### Core
 * cLoki 
 * clickhouse-server
-* pastash _(sending sample logs)_
-* Grafana _(w/ loki datasource)_
 
 #### Add-Ons
-* pastash [yml](https://github.com/metrico/cloki-docker-s3/blob/main/pastash.yml)
-
+* pastash _(sending host logs)_
+* Grafana _(w/ loki datasource)_
+* 
 ### Setup
 
 ```bash
