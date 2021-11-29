@@ -45,7 +45,9 @@ if (!this.readonly) init(process.env.CLICKHOUSE_DB || 'cloki')
 /* Fastify Helper */
 const fastify = require('fastify')({
   logger: false,
-  bodyLimit: parseInt(process.env.FASTIFY_BODYLIMIT) || 5242880
+  bodyLimit: parseInt(process.env.FASTIFY_BODYLIMIT) || 5242880,
+  requestTimeout:  parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
+  maxRequestsPerSocket: parseInt(process.env.FASTIFY_MAXREQUESTS) || 0
 })
 
 fastify.register(require('fastify-url-data'))
