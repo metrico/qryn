@@ -1,42 +1,24 @@
-# Grafana + cLoki + paStash
+<img src='https://user-images.githubusercontent.com/1423657/99822833-f9504780-2b53-11eb-8b28-99484eab6157.png' width=250>
 
-#### BETA VERSION! PLEASE REPORT BUGS AND IMPROVEMENTS
+## [cLoki](https://github.com/lmangani/cLoki) + Clickhouse
 
-This docker bundle will spin up a full system including Grafana, cLoki, paStash and Prometheus for testing and evaluation purposes.
+This docker compose bundle will spin up a `cLoki`, `Clickhouse`, `Grafana` and `paStash` to compose a working lab system.
 
---------
+#### THIS EXAMPLE IS INTENDED FOR TESTING PURPOSES!
 
-## Setup
+
+## Components
+
+#### Core
+* cLoki 
+* clickhouse-server
+
+#### Add-Ons
+* pastash _(sending host logs)_
+* Grafana _(w/ loki datasource)_
+* 
+### Setup
 
 ```bash
 docker-compose up
 ```
-
-to bring up:  
-
-* Grafana      localhost:3000 (admin/admin)
-* Prometheus   localhost:9090 (admin/admin)
-* Alertmanager localhost:9093 (admin/admin)
-
-When the Grafana dashboard autoprovisioning does not work for you make sure you have no old grafana volumes.
-
-## Configuration
-
-When you change some files inside the Prometheus or Alertmanager folder you can reload them without interruption.
-
-#### Prometheus
-```bash
-curl -s -XPOST localhost:9090/-/reload -u admin:admin
-```
-
-#### Alertmanager
-```bash
-curl -s -XPOST localhost:9093/-/reload -u admin:admin
-```
-
-#### Service
-When you need to change the docker-compose file i.e to setup smtp for Grafana:
-```bash
-docker-compose up -d
-```
-Docker will only restart the service you changed inside the docker-compose file. 
