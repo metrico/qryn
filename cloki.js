@@ -39,10 +39,11 @@ const init = DATABASE.init
 this.reloadFingerprints = DATABASE.reloadFingerprints
 this.scanFingerprints = DATABASE.scanFingerprints
 this.scanMetricFingerprints = DATABASE.scanMetricFingerprints
-this.scanClickhouse = DATABASE.scanClickhouse
-
-if (!this.readonly) init(process.env.CLICKHOUSE_DB || 'cloki')
-startAlerting().catch((err) => {
+this.scanClickhouse = DATABASE.scanClickhouse;
+(async () => {
+  if (!this.readonly) await init(process.env.CLICKHOUSE_DB || 'cloki')
+  await startAlerting()
+})().catch((err) => {
   console.log(err)
   process.exit(1)
 })
