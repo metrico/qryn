@@ -335,7 +335,5 @@ it('e2e', async () => {
   resp = await runRequest(`sum_over_time({test_id="${testID}_metrics"} | unwrap_value [10s])`)
   adjustMatrixResult(resp, `${testID}_metrics`)
   expect(resp.data).toMatchSnapshot()
-  resp = await runRequest(`sum_over_time({test_id=~"${testID}.*", fmt!="int"} | unwrap_value [10s])`)
-  expect(resp.data.data.result.length).toEqual(0)
   // console.log(JSON.stringify(resp.data.data.result.map(s => [s.stream, s.values.length])))
 })

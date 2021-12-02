@@ -315,7 +315,6 @@ module.exports.transpileUnwrapFunction = (token, query) => {
  * @returns {registry_types.Request}
  */
 const transpileUnwrapMetrics = (token, query) => {
-  query.from = `${DATABASE_NAME()}.metrics as samples`
   query.select = [...query.select.filter(f => !f.endsWith('as string')), 'value as unwrapped']
   return query
 }
