@@ -54,8 +54,8 @@ by_without ::= "by" | "without"
 label_list ::= <label> <OWSP> *("," <OWSP> <label>)
 
 unwrap_expression ::= <log_stream_selector> <OWSP> <unwrap_statement>
-unwrap_statement ::= "|" <OWSP> "unwrap" 1*<WSP> <label>
-unwrap_function ::= <unwrap_fn> <OWSP> "(" <OWSP> [<scalar_param> <OWSP> ","] <OWSP> <unwrappable_expression> <OWSP> "[" <duration_value> "]" <OWSP> ")" <OWSP> <opt_by_without_unwrap>
+unwrap_statement ::= "|" <OWSP> ("unwrap" 1*<WSP> <label> | <unwrap_value_statement>)
+unwrap_function ::= <unwrap_fn> <OWSP> "(" <OWSP> [<scalar_param> <OWSP> ","] <OWSP>  <unwrap_expression> <OWSP> "[" <duration_value> "]" <OWSP> ")" <OWSP> <opt_by_without_unwrap>
 scalar_param ::= <NUMBER>
 unwrap_fn ::= <unwrap_registry>
 opt_by_without_unwrap ::= <by_without_unwrap> <OWSP> "(" <OWSP> <label_list> <OWSP> ")" | <BLANK>
@@ -64,5 +64,4 @@ by_without_unwrap ::= "by" | "without"
 compared_agg_statement ::= (<aggregation_operator> | <log_range_aggregation> | <unwrap_function>) <OWSP> <compared_agg_statement_cmp>
 compared_agg_statement_cmp ::= <number_operator> <OWSP> <number_value>
 
-unwrapped_metrics ::= <log_stream_fp_selector> <OWSP> "|" <OWSP> "unwrap_value"
-unwrappable_expression ::= <unwrap_expression> | <unwrapped_metrics>
+unwrap_value_statement ::= "unwrap_value"

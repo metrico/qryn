@@ -300,10 +300,13 @@ module.exports.transpileLabelFilterPipeline = (pipeline, query) => {
  */
 module.exports.transpileUnwrapFunction = (token, query) => {
   query = module.exports.transpileLogStreamSelector(token, query)
-  if (token.Child('unwrap_expression')) {
-    query = module.exports.transpileUnwrapExpression(token.Child('unwrap_expression'), query)
-  } else if (token.Child('unwrapped_metrics')) {
+  if (token.Child('unwrap_value_statement')) {
+    if (token.Child('log_pipeline')) {
+      throw new Error('log pipeline not supported')
+    }
     query = transpileUnwrapMetrics(token, query)
+  } else {
+    query = module.exports.transpileUnwrapExpression(token.Child('unwrap_expression'), query)
   }
   return unwrapRegistry[token.Child('unwrap_fn').value](token, query)
 }
