@@ -64,6 +64,11 @@ it('e2e', async () => {
     { fmt: 'json', lbl_repl: 'val_repl', int_lbl: '1' }, points,
     (i) => JSON.stringify({ lbl_repl: 'REPL', int_val: '1', new_lbl: 'new_val', str_id: i, arr: [1, 2, 3], obj: { o_1: 'v_1' } })
   )
+  points = createPoints(testID + '_metrics', 1, start, end,
+    { fmt: 'int', lbl_repl: 'val_repl', int_lbl: '1' }, points,
+    (i) => '',
+    (i) => i % 10
+  )
   await sendPoints(`http://${clokiExtUrl}`, points)
   await new Promise(resolve => setTimeout(resolve, 4000))
   const adjustResult = (resp, id, _start) => {
@@ -326,6 +331,9 @@ it('e2e', async () => {
     stream.values = stream.values.map(v => [v[0] - Math.floor(start / 1000), v[1]])
     return stream
   })
+  expect(resp.data).toMatchSnapshot()
+  resp = await runRequest(`sum_over_time({test_id="${testID}_metrics"} | unwrap_value [10s])`)
+  adjustMatrixResult(resp, `${testID}_metrics`)
   expect(resp.data).toMatchSnapshot()
   // console.log(JSON.stringify(resp.data.data.result.map(s => [s.stream, s.values.length])))
 })

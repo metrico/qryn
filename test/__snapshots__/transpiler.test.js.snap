@@ -1,5 +1,404 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`log_range_aggregation 1 1`] = `
+Object {
+  "ctx": Object {
+    "duration": 300000,
+    "end": 3600000,
+    "start": 0,
+  },
+  "from": "rate_b",
+  "group_by": Array [
+    "labels",
+    "timestamp_ms",
+  ],
+  "matrix": true,
+  "order_by": Object {
+    "name": Array [
+      "labels",
+      "timestamp_ms",
+    ],
+    "order": "asc",
+  },
+  "select": Array [
+    "labels",
+    "timestamp_ms",
+    "sum(value) as value",
+  ],
+  "stream": undefined,
+  "with": Object {
+    "rate_a": Object {
+      "ctx": undefined,
+      "from": "loki.samples_read as samples",
+      "left_join": Array [
+        Object {
+          "name": "str_sel",
+          "on": Array [
+            "AND",
+            "samples.fingerprint = str_sel.fingerprint",
+          ],
+        },
+      ],
+      "limit": undefined,
+      "order_by": Object {
+        "name": Array [
+          "timestamp_ms",
+          "labels",
+        ],
+        "order": "desc",
+      },
+      "select": Array [
+        "str_sel.labels as labels",
+        "samples.string as string",
+        "samples.fingerprint as fingerprint",
+        "samples.timestamp_ms as timestamp_ms",
+      ],
+      "stream": undefined,
+      "where": Array [
+        "AND",
+        "samples.fingerprint IN (SELECT fingerprint FROM str_sel)",
+      ],
+      "with": undefined,
+    },
+    "rate_b": Object {
+      "from": "rate_a",
+      "group_by": Array [
+        "labels",
+        "timestamp_ms",
+      ],
+      "order_by": Object {
+        "name": Array [
+          "labels",
+          "timestamp_ms",
+        ],
+        "order": "asc",
+      },
+      "select": Array [
+        "JSONExtractKeysAndValues(labels, 'String') as labels",
+        "floor(timestamp_ms / 300000) * 300000 as timestamp_ms",
+        "toFloat64(count(1)) * 1000 / 300000 as value",
+      ],
+    },
+    "rate_c": undefined,
+    "str_sel": Object {
+      "distinct": 1,
+      "from": "loki.time_series",
+      "select": Array [
+        "fingerprint",
+        "labels",
+      ],
+      "where": Array [
+        "AND",
+        "JSONHas(labels, 'minus_nam')",
+        "JSONExtractString(labels, 'minus_nam') = 'aut illo'",
+      ],
+    },
+  },
+}
+`;
+
+exports[`log_range_aggregation 1 2`] = `"WITH str_sel as ( SELECT DISTINCT fingerprint, labels FROM loki.time_series  WHERE JSONHas(labels, 'minus_nam') AND JSONExtractString(labels, 'minus_nam') = 'aut illo' ), rate_a as ( SELECT  str_sel.labels as labels, samples.string as string, samples.fingerprint as fingerprint, samples.timestamp_ms as timestamp_ms FROM loki.samples_read as samples  LEFT JOIN str_sel ON samples.fingerprint = str_sel.fingerprint WHERE samples.fingerprint IN (SELECT fingerprint FROM str_sel)  ORDER BY timestamp_ms desc, labels desc ), rate_b as ( SELECT  JSONExtractKeysAndValues(labels, 'String') as labels, floor(timestamp_ms / 300000) * 300000 as timestamp_ms, toFloat64(count(1)) * 1000 / 300000 as value FROM rate_a  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc ) SELECT  labels, timestamp_ms, sum(value) as value FROM rate_b  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc "`;
+
+exports[`log_range_aggregation 2 1`] = `
+Object {
+  "ctx": Object {
+    "duration": 300000,
+    "end": 3600000,
+    "start": 0,
+  },
+  "from": "rate_b",
+  "group_by": Array [
+    "labels",
+    "timestamp_ms",
+  ],
+  "matrix": true,
+  "order_by": Object {
+    "name": Array [
+      "labels",
+      "timestamp_ms",
+    ],
+    "order": "asc",
+  },
+  "select": Array [
+    "labels",
+    "timestamp_ms",
+    "sum(value) as value",
+  ],
+  "stream": undefined,
+  "with": Object {
+    "rate_a": Object {
+      "ctx": undefined,
+      "from": "loki.samples_read as samples",
+      "left_join": Array [
+        Object {
+          "name": "str_sel",
+          "on": Array [
+            "AND",
+            "samples.fingerprint = str_sel.fingerprint",
+          ],
+        },
+      ],
+      "limit": undefined,
+      "order_by": Object {
+        "name": Array [
+          "timestamp_ms",
+          "labels",
+        ],
+        "order": "desc",
+      },
+      "select": Array [
+        "str_sel.labels as labels",
+        "samples.string as string",
+        "samples.fingerprint as fingerprint",
+        "samples.timestamp_ms as timestamp_ms",
+      ],
+      "stream": undefined,
+      "where": Array [
+        "AND",
+        "samples.fingerprint IN (SELECT fingerprint FROM str_sel)",
+        "position(string, 'consequatur nam soluta') == 0",
+      ],
+      "with": undefined,
+    },
+    "rate_b": Object {
+      "from": "rate_a",
+      "group_by": Array [
+        "labels",
+        "timestamp_ms",
+      ],
+      "order_by": Object {
+        "name": Array [
+          "labels",
+          "timestamp_ms",
+        ],
+        "order": "asc",
+      },
+      "select": Array [
+        "JSONExtractKeysAndValues(labels, 'String') as labels",
+        "floor(timestamp_ms / 300000) * 300000 as timestamp_ms",
+        "toFloat64(count(1)) * 1000 / 300000 as value",
+      ],
+    },
+    "rate_c": undefined,
+    "str_sel": Object {
+      "distinct": 1,
+      "from": "loki.time_series",
+      "select": Array [
+        "fingerprint",
+        "labels",
+      ],
+      "where": Array [
+        "AND",
+        "JSONHas(labels, 'rerum_laborum')",
+        "extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != []",
+      ],
+    },
+  },
+}
+`;
+
+exports[`log_range_aggregation 2 2`] = `"WITH str_sel as ( SELECT DISTINCT fingerprint, labels FROM loki.time_series  WHERE JSONHas(labels, 'rerum_laborum') AND extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != [] ), rate_a as ( SELECT  str_sel.labels as labels, samples.string as string, samples.fingerprint as fingerprint, samples.timestamp_ms as timestamp_ms FROM loki.samples_read as samples  LEFT JOIN str_sel ON samples.fingerprint = str_sel.fingerprint WHERE samples.fingerprint IN (SELECT fingerprint FROM str_sel) AND position(string, 'consequatur nam soluta') == 0  ORDER BY timestamp_ms desc, labels desc ), rate_b as ( SELECT  JSONExtractKeysAndValues(labels, 'String') as labels, floor(timestamp_ms / 300000) * 300000 as timestamp_ms, toFloat64(count(1)) * 1000 / 300000 as value FROM rate_a  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc ) SELECT  labels, timestamp_ms, sum(value) as value FROM rate_b  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc "`;
+
+exports[`log_range_aggregation 3 1`] = `
+Object {
+  "ctx": Object {
+    "duration": 300000,
+    "end": 3600000,
+    "start": 0,
+  },
+  "from": "rate_b",
+  "group_by": Array [
+    "labels",
+    "timestamp_ms",
+  ],
+  "matrix": true,
+  "order_by": Object {
+    "name": Array [
+      "labels",
+      "timestamp_ms",
+    ],
+    "order": "asc",
+  },
+  "select": Array [
+    "labels",
+    "timestamp_ms",
+    "sum(value) as value",
+  ],
+  "stream": undefined,
+  "with": Object {
+    "rate_a": Object {
+      "ctx": undefined,
+      "from": "loki.samples_read as samples",
+      "left_join": Array [
+        Object {
+          "name": "str_sel",
+          "on": Array [
+            "AND",
+            "samples.fingerprint = str_sel.fingerprint",
+          ],
+        },
+      ],
+      "limit": undefined,
+      "order_by": Object {
+        "name": Array [
+          "timestamp_ms",
+          "labels",
+        ],
+        "order": "desc",
+      },
+      "select": Array [
+        "str_sel.labels as labels",
+        "samples.string as string",
+        "samples.fingerprint as fingerprint",
+        "samples.timestamp_ms as timestamp_ms",
+      ],
+      "stream": undefined,
+      "where": Array [
+        "AND",
+        "samples.fingerprint IN (SELECT fingerprint FROM str_sel)",
+        "extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)') != []",
+      ],
+      "with": undefined,
+    },
+    "rate_b": Object {
+      "from": "rate_a",
+      "group_by": Array [
+        "labels",
+        "timestamp_ms",
+      ],
+      "order_by": Object {
+        "name": Array [
+          "labels",
+          "timestamp_ms",
+        ],
+        "order": "asc",
+      },
+      "select": Array [
+        "JSONExtractKeysAndValues(labels, 'String') as labels",
+        "floor(timestamp_ms / 300000) * 300000 as timestamp_ms",
+        "toFloat64(count(1)) * 1000 / 300000 as value",
+      ],
+    },
+    "rate_c": undefined,
+    "str_sel": Object {
+      "distinct": 1,
+      "from": "loki.time_series",
+      "select": Array [
+        "fingerprint",
+        "labels",
+      ],
+      "where": Array [
+        "AND",
+        "JSONHas(labels, 'et_dolorem')",
+        "JSONExtractString(labels, 'et_dolorem') != 'nemo doloremque'",
+      ],
+    },
+  },
+}
+`;
+
+exports[`log_range_aggregation 3 2`] = `"WITH str_sel as ( SELECT DISTINCT fingerprint, labels FROM loki.time_series  WHERE JSONHas(labels, 'et_dolorem') AND JSONExtractString(labels, 'et_dolorem') != 'nemo doloremque' ), rate_a as ( SELECT  str_sel.labels as labels, samples.string as string, samples.fingerprint as fingerprint, samples.timestamp_ms as timestamp_ms FROM loki.samples_read as samples  LEFT JOIN str_sel ON samples.fingerprint = str_sel.fingerprint WHERE samples.fingerprint IN (SELECT fingerprint FROM str_sel) AND extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)') != []  ORDER BY timestamp_ms desc, labels desc ), rate_b as ( SELECT  JSONExtractKeysAndValues(labels, 'String') as labels, floor(timestamp_ms / 300000) * 300000 as timestamp_ms, toFloat64(count(1)) * 1000 / 300000 as value FROM rate_a  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc ) SELECT  labels, timestamp_ms, sum(value) as value FROM rate_b  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc "`;
+
+exports[`log_range_aggregation 4 1`] = `
+Object {
+  "ctx": Object {
+    "duration": 300000,
+    "end": 3600000,
+    "start": 0,
+  },
+  "from": "rate_b",
+  "group_by": Array [
+    "labels",
+    "timestamp_ms",
+  ],
+  "matrix": true,
+  "order_by": Object {
+    "name": Array [
+      "labels",
+      "timestamp_ms",
+    ],
+    "order": "asc",
+  },
+  "select": Array [
+    "labels",
+    "timestamp_ms",
+    "sum(value) as value",
+  ],
+  "stream": undefined,
+  "with": Object {
+    "rate_a": Object {
+      "ctx": undefined,
+      "from": "loki.samples_read as samples",
+      "left_join": Array [
+        Object {
+          "name": "str_sel",
+          "on": Array [
+            "AND",
+            "samples.fingerprint = str_sel.fingerprint",
+          ],
+        },
+      ],
+      "limit": undefined,
+      "order_by": Object {
+        "name": Array [
+          "timestamp_ms",
+          "labels",
+        ],
+        "order": "desc",
+      },
+      "select": Array [
+        "str_sel.labels as labels",
+        "samples.string as string",
+        "samples.fingerprint as fingerprint",
+        "samples.timestamp_ms as timestamp_ms",
+      ],
+      "stream": undefined,
+      "where": Array [
+        "AND",
+        "samples.fingerprint IN (SELECT fingerprint FROM str_sel)",
+        "extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') == []",
+      ],
+      "with": undefined,
+    },
+    "rate_b": Object {
+      "from": "rate_a",
+      "group_by": Array [
+        "labels",
+        "timestamp_ms",
+      ],
+      "order_by": Object {
+        "name": Array [
+          "labels",
+          "timestamp_ms",
+        ],
+        "order": "asc",
+      },
+      "select": Array [
+        "JSONExtractKeysAndValues(labels, 'String') as labels",
+        "floor(timestamp_ms / 300000) * 300000 as timestamp_ms",
+        "toFloat64(count(1)) * 1000 / 300000 as value",
+      ],
+    },
+    "rate_c": undefined,
+    "str_sel": Object {
+      "distinct": 1,
+      "from": "loki.time_series",
+      "select": Array [
+        "fingerprint",
+        "labels",
+      ],
+      "where": Array [
+        "AND",
+        "JSONHas(labels, 'rerum_laborum')",
+        "extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') == []",
+      ],
+    },
+  },
+}
+`;
+
+exports[`log_range_aggregation 4 2`] = `"WITH str_sel as ( SELECT DISTINCT fingerprint, labels FROM loki.time_series  WHERE JSONHas(labels, 'rerum_laborum') AND extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') == [] ), rate_a as ( SELECT  str_sel.labels as labels, samples.string as string, samples.fingerprint as fingerprint, samples.timestamp_ms as timestamp_ms FROM loki.samples_read as samples  LEFT JOIN str_sel ON samples.fingerprint = str_sel.fingerprint WHERE samples.fingerprint IN (SELECT fingerprint FROM str_sel) AND extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') == []  ORDER BY timestamp_ms desc, labels desc ), rate_b as ( SELECT  JSONExtractKeysAndValues(labels, 'String') as labels, floor(timestamp_ms / 300000) * 300000 as timestamp_ms, toFloat64(count(1)) * 1000 / 300000 as value FROM rate_a  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc ) SELECT  labels, timestamp_ms, sum(value) as value FROM rate_b  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc "`;
+
 exports[`shoud transpile unwrap 1`] = `
 Object {
   "ctx": Object {
@@ -792,258 +1191,6 @@ Array [
   },
 ]
 `;
-
-exports[`should transpile log_range_aggregation 1`] = `
-Object {
-  "ctx": Object {
-    "duration": 300000,
-    "end": 3600000,
-    "start": 0,
-  },
-  "from": "rate_b",
-  "group_by": Array [
-    "labels",
-    "timestamp_ms",
-  ],
-  "matrix": true,
-  "order_by": Object {
-    "name": Array [
-      "labels",
-      "timestamp_ms",
-    ],
-    "order": "asc",
-  },
-  "select": Array [
-    "labels",
-    "timestamp_ms",
-    "sum(value) as value",
-  ],
-  "stream": undefined,
-  "with": Object {
-    "rate_a": Object {
-      "ctx": undefined,
-      "from": "loki.samples_read as samples",
-      "left_join": Array [
-        Object {
-          "name": "str_sel",
-          "on": Array [
-            "AND",
-            "samples.fingerprint = str_sel.fingerprint",
-          ],
-        },
-      ],
-      "limit": undefined,
-      "order_by": Object {
-        "name": Array [
-          "timestamp_ms",
-          "labels",
-        ],
-        "order": "desc",
-      },
-      "select": Array [
-        "str_sel.labels as labels",
-        "samples.string as string",
-        "samples.fingerprint as fingerprint",
-        "samples.timestamp_ms as timestamp_ms",
-      ],
-      "stream": undefined,
-      "where": Array [
-        "AND",
-        "samples.fingerprint IN (SELECT fingerprint FROM str_sel)",
-      ],
-      "with": undefined,
-    },
-    "rate_b": Object {
-      "from": "rate_a",
-      "group_by": Array [
-        "labels",
-        "timestamp_ms",
-      ],
-      "order_by": Object {
-        "name": Array [
-          "labels",
-          "timestamp_ms",
-        ],
-        "order": "asc",
-      },
-      "select": Array [
-        "JSONExtractKeysAndValues(labels, 'String') as labels",
-        "floor(timestamp_ms / 300000) * 300000 as timestamp_ms",
-        "toFloat64(count(1)) * 1000 / 300000 as value",
-      ],
-    },
-    "rate_c": undefined,
-    "str_sel": Object {
-      "distinct": 1,
-      "from": "loki.time_series",
-      "select": Array [
-        "fingerprint",
-        "labels",
-      ],
-      "where": Array [
-        "AND",
-        "JSONHas(labels, 'minus_nam')",
-        "JSONExtractString(labels, 'minus_nam') = 'aut illo'",
-      ],
-    },
-  },
-}
-`;
-
-exports[`should transpile log_range_aggregation 2`] = `"WITH str_sel as ( SELECT DISTINCT fingerprint, labels FROM loki.time_series  WHERE JSONHas(labels, 'minus_nam') AND JSONExtractString(labels, 'minus_nam') = 'aut illo' ), rate_a as ( SELECT  str_sel.labels as labels, samples.string as string, samples.fingerprint as fingerprint, samples.timestamp_ms as timestamp_ms FROM loki.samples_read as samples  LEFT JOIN str_sel ON samples.fingerprint = str_sel.fingerprint WHERE samples.fingerprint IN (SELECT fingerprint FROM str_sel)  ORDER BY timestamp_ms desc, labels desc ), rate_b as ( SELECT  JSONExtractKeysAndValues(labels, 'String') as labels, floor(timestamp_ms / 300000) * 300000 as timestamp_ms, toFloat64(count(1)) * 1000 / 300000 as value FROM rate_a  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc ) SELECT  labels, timestamp_ms, sum(value) as value FROM rate_b  GROUP BY labels, timestamp_ms ORDER BY labels asc, timestamp_ms asc "`;
-
-exports[`should transpile log_range_aggregation 3`] = `
-Object {
-  "from": "loki.samples_read as samples",
-  "left_join": Array [
-    Object {
-      "name": "str_sel",
-      "on": Array [
-        "AND",
-        "samples.fingerprint = str_sel.fingerprint",
-      ],
-    },
-  ],
-  "limit": 1000,
-  "order_by": Object {
-    "name": Array [
-      "timestamp_ms",
-      "labels",
-    ],
-    "order": "desc",
-  },
-  "select": Array [
-    "str_sel.labels as labels",
-    "samples.string as string",
-    "samples.fingerprint as fingerprint",
-    "samples.timestamp_ms as timestamp_ms",
-  ],
-  "where": Array [
-    "AND",
-    "samples.fingerprint IN (SELECT fingerprint FROM str_sel)",
-    "position(string, 'consequatur nam soluta') == 0",
-  ],
-  "with": Object {
-    "str_sel": Object {
-      "distinct": 1,
-      "from": "loki.time_series",
-      "select": Array [
-        "fingerprint",
-        "labels",
-      ],
-      "where": Array [
-        "AND",
-        "JSONHas(labels, 'rerum_laborum')",
-        "extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != []",
-      ],
-    },
-  },
-}
-`;
-
-exports[`should transpile log_range_aggregation 4`] = `"WITH str_sel as ( SELECT DISTINCT fingerprint, labels FROM loki.time_series  WHERE JSONHas(labels, 'rerum_laborum') AND extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != [] ) SELECT  str_sel.labels as labels, samples.string as string, samples.fingerprint as fingerprint, samples.timestamp_ms as timestamp_ms FROM loki.samples_read as samples  LEFT JOIN str_sel ON samples.fingerprint = str_sel.fingerprint WHERE samples.fingerprint IN (SELECT fingerprint FROM str_sel) AND position(string, 'consequatur nam soluta') == 0  ORDER BY timestamp_ms desc, labels desc  LIMIT 1000"`;
-
-exports[`should transpile log_range_aggregation 5`] = `
-Object {
-  "from": "loki.samples_read as samples",
-  "left_join": Array [
-    Object {
-      "name": "str_sel",
-      "on": Array [
-        "AND",
-        "samples.fingerprint = str_sel.fingerprint",
-      ],
-    },
-  ],
-  "limit": 1000,
-  "order_by": Object {
-    "name": Array [
-      "timestamp_ms",
-      "labels",
-    ],
-    "order": "desc",
-  },
-  "select": Array [
-    "str_sel.labels as labels",
-    "samples.string as string",
-    "samples.fingerprint as fingerprint",
-    "samples.timestamp_ms as timestamp_ms",
-  ],
-  "where": Array [
-    "AND",
-    "samples.fingerprint IN (SELECT fingerprint FROM str_sel)",
-    "extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)') != []",
-  ],
-  "with": Object {
-    "str_sel": Object {
-      "distinct": 1,
-      "from": "loki.time_series",
-      "select": Array [
-        "fingerprint",
-        "labels",
-      ],
-      "where": Array [
-        "AND",
-        "JSONHas(labels, 'et_dolorem')",
-        "JSONExtractString(labels, 'et_dolorem') != 'nemo doloremque'",
-      ],
-    },
-  },
-}
-`;
-
-exports[`should transpile log_range_aggregation 6`] = `"WITH str_sel as ( SELECT DISTINCT fingerprint, labels FROM loki.time_series  WHERE JSONHas(labels, 'et_dolorem') AND JSONExtractString(labels, 'et_dolorem') != 'nemo doloremque' ) SELECT  str_sel.labels as labels, samples.string as string, samples.fingerprint as fingerprint, samples.timestamp_ms as timestamp_ms FROM loki.samples_read as samples  LEFT JOIN str_sel ON samples.fingerprint = str_sel.fingerprint WHERE samples.fingerprint IN (SELECT fingerprint FROM str_sel) AND extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)') != []  ORDER BY timestamp_ms desc, labels desc  LIMIT 1000"`;
-
-exports[`should transpile log_range_aggregation 7`] = `
-Object {
-  "from": "loki.samples_read as samples",
-  "left_join": Array [
-    Object {
-      "name": "str_sel",
-      "on": Array [
-        "AND",
-        "samples.fingerprint = str_sel.fingerprint",
-      ],
-    },
-  ],
-  "limit": 1000,
-  "order_by": Object {
-    "name": Array [
-      "timestamp_ms",
-      "labels",
-    ],
-    "order": "desc",
-  },
-  "select": Array [
-    "str_sel.labels as labels",
-    "samples.string as string",
-    "samples.fingerprint as fingerprint",
-    "samples.timestamp_ms as timestamp_ms",
-  ],
-  "where": Array [
-    "AND",
-    "samples.fingerprint IN (SELECT fingerprint FROM str_sel)",
-    "extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') == []",
-  ],
-  "with": Object {
-    "str_sel": Object {
-      "distinct": 1,
-      "from": "loki.time_series",
-      "select": Array [
-        "fingerprint",
-        "labels",
-      ],
-      "where": Array [
-        "AND",
-        "JSONHas(labels, 'rerum_laborum')",
-        "extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') == []",
-      ],
-    },
-  },
-}
-`;
-
-exports[`should transpile log_range_aggregation 8`] = `"WITH str_sel as ( SELECT DISTINCT fingerprint, labels FROM loki.time_series  WHERE JSONHas(labels, 'rerum_laborum') AND extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') == [] ) SELECT  str_sel.labels as labels, samples.string as string, samples.fingerprint as fingerprint, samples.timestamp_ms as timestamp_ms FROM loki.samples_read as samples  LEFT JOIN str_sel ON samples.fingerprint = str_sel.fingerprint WHERE samples.fingerprint IN (SELECT fingerprint FROM str_sel) AND extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') == []  ORDER BY timestamp_ms desc, labels desc  LIMIT 1000"`;
 
 exports[`should transpile log_stream_selector 1`] = `
 Object {
