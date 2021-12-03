@@ -129,11 +129,11 @@ module.exports.getPlugins = (type, cb) => {
 
 /**
  *
- * @param query {registry_types.Request}
+ * @param query {Select}
  * @returns {boolean}
  */
 module.exports.hasExtraLabels = (query) => {
-  return query.select.some(f => f.endsWith('as extra_labels'))
+  return query.select().some(f => f[1] === 'extra_labels')
 }
 
 /**

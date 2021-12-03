@@ -1,5 +1,5 @@
-const { _and, unquoteToken, querySelectorPostProcess, isEOF } = require('../common')
-const { DATABASE_NAME } = require('../../../lib/utils')
+const { unquoteToken, isEOF } = require('../common')
+const Sql = require('clickhouse-sql')
 /**
  * @param regex {boolean}
  * @param eq {boolean}
@@ -27,47 +27,44 @@ const labelAndVal = (token) => {
 }
 
 /**
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {With}
  */
-const streamSelectQuery = () => {
-  return {
-    select: ['fingerprint', 'labels'],
-    distinct: 1,
-    from: `${DATABASE_NAME()}.time_series`,
-    where: ['AND']
-  }
+const streamSelectQuery = (query) => {
+  const param = query.getParam('timeSeriesTable') || Sql.Parameter('timeSeriesTable')
+  query.addParam(param)
+  return new Sql.With(
+    'str_sel',
+    (new Sql.Select())
+      .select('fingerprint', 'labels')
+      .distinct(true)
+      .from(param)
+  )
 }
 
 /**
- * @param query {registry_types.Request}
- * @param clauses {string[]}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @param clauses {Conditions | string[]}
+ * @returns {Select}
  */
 module.exports.simpleAnd = (query, clauses) => {
-  const isStrSel = query.with && query.with.str_sel
-  let strSel = isStrSel ? query.with.str_sel : streamSelectQuery()
-  strSel = _and(strSel, clauses)
-  query = {
-    ...query,
-    with: {
-      ...(query.with || {}),
-      str_sel: strSel
-    },
-    select: query.select.map(f => f.replace('time_series', 'str_sel')),
-    left_join: !isStrSel
-      ? [
-          ...(query.left_join || []).filter(j => j.name.indexOf('time_series') === -1),
-          {
-            name: 'str_sel',
-            on: ['AND', 'samples.fingerprint = str_sel.fingerprint']
-          }
-        ]
-      : query.left_join
+  const isStrSel = query.with() && query.with().str_sel
+  /**
+   * @type {With}
+   */
+  const strSel = isStrSel ? query.with().str_sel : streamSelectQuery(query)
+  if (Array.isArray(clauses)) {
+    strSel.query.where(...clauses)
+  } else {
+    strSel.query.where(clauses)
   }
-  if (isStrSel) {
-    return query
+  query.with(strSel)
+  if (!isStrSel) {
+    query.where(new Sql.In('samples.fingerprint', 'in',
+      (new Sql.Select()).select('fingerprint').from(new Sql.WithReference(strSel))
+    ))
   }
-  return querySelectorPostProcess(_and(query, ['samples.fingerprint IN (SELECT fingerprint FROM str_sel)']))
+  return query
 }
 
 /**
@@ -85,17 +82,16 @@ module.exports.neqSimple = (token/*, query */) => {
  *
  * @param token {Token}
  * //@param query {registry_types.Request}
- * @returns {string[]}
+ * @returns {Conditions}
  */
 module.exports.neqExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
-  return [['OR', `arrayExists(x -> x.1 == '${label}' AND x.2 != '${value}', extra_labels) != 0`,
-    [
-      'AND',
-                `arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
-                ...selectorClauses(false, false, label, value)
-    ]
-  ]]
+  return new Sql.Or(
+    `arrayExists(x -> x.1 == '${label}' AND x.2 != '${value}', extra_labels) != 0`,
+    new Sql.And(
+      `arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
+      ...selectorClauses(false, false, label, value)
+    ))
 }
 
 /**
@@ -124,18 +120,15 @@ module.exports.nregSimple = (token/*, query */) => {
  *
  * @param token {Token}
  * //@param query {registry_types.Request}
- * @returns {string[]}
+ * @returns {Conditions}
  */
 module.exports.nregExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
-
-  return [['OR', `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') == [], extra_labels) != 0`,
-    [
-      'AND',
-                `arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
-                ...selectorClauses(true, true, label, value)
-    ]
-  ]]
+  return new Sql.Or(
+    `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') == [], extra_labels) != 0`,
+    new Sql.And(
+      `arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
+      ...selectorClauses(true, true, label, value)))
 }
 
 /**
@@ -165,18 +158,15 @@ module.exports.regSimple = (token/*, query */) => {
  *
  * @param token {Token}
  * //@param query {registry_types.Request}
- * @returns {string[]}
+ * @returns {Conditions}
  */
 module.exports.regExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
 
-  return [['OR', `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') != [], extra_labels) != 0`,
-    [
-      'AND',
-                `arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
-                ...selectorClauses(true, true, label, value)
-    ]
-  ]]
+  return new Sql.Or(
+    `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') != [], extra_labels) != 0`,
+    new Sql.And(`arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
+      ...selectorClauses(true, true, label, value)))
 }
 
 /**
@@ -205,18 +195,16 @@ module.exports.eqSimple = (token/*, query */) => {
  *
  * @param token {Token}
  * //@param query {registry_types.Request}
- * @returns {string[]}
+ * @returns {Conditions}
  */
 module.exports.eqExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
 
-  return [['OR', `indexOf(extra_labels, ('${label}', '${value}')) > 0`,
-    [
-      'AND',
-        `arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
-        ...selectorClauses(false, true, label, value)
-    ]
-  ]]
+  return new Sql.Or(
+    `indexOf(extra_labels, ('${label}', '${value}')) > 0`,
+    new Sql.And(
+      `arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
+      ...selectorClauses(false, true, label, value)))
 }
 
 /**

@@ -10,30 +10,34 @@ const unwrap = require('./registry/unwrap')
 const unwrapRegistry = require('./registry/unwrap_registry')
 const { _and, durationToMs } = require('./registry/common')
 const compiler = require('./bnf')
-const { parseMs, DATABASE_NAME, samplesReadTableName } = require('../lib/utils')
+const { parseMs } = require('../lib/utils')
 const { getPlg } = require('../plugins/engine')
+const Sql = require('clickhouse-sql')
 
 /**
- * @param options {{samplesTable?: string} | undefined}
- * @returns {registry_types.Request}
+ * @returns {Select}
  */
-module.exports.initQuery = (options) => {
-  options = options || {}
-  const samplesTable = options.samplesTable || samplesReadTableName
-  return {
-    select: ['time_series.labels as labels', 'samples.string as string', 'samples.fingerprint as fingerprint',
-      'samples.timestamp_ms as timestamp_ms'],
-    from: `${DATABASE_NAME()}.${samplesTable} as samples`,
-    left_join: [{
-      name: `${DATABASE_NAME()}.time_series`,
-      on: ['AND', 'samples.fingerprint = time_series.fingerprint']
-    }],
-    limit: 1000,
-    order_by: {
-      name: ['timestamp_ms', 'labels'],
-      order: 'desc'
-    }
-  }
+module.exports.initQuery = () => {
+  const samplesTable = new Sql.Parameter('samplesTable')
+  const timeSeriesTable = new Sql.Parameter('timeSeriesTable')
+  const from = new Sql.Parameter('from')
+  const to = new Sql.Parameter('to')
+  const limit = new Sql.Parameter('limit')
+  limit.set(2000)
+  return (new Sql.Select())
+    .select(['time_series.labels', 'labels'], ['samples.string', 'string'],
+      ['samples.fingerprint', 'fingerprint'], ['samples.timestamp_ms', 'timestamp_ms'])
+    .from([samplesTable, 'samples'])
+    .join([timeSeriesTable, 'time_series'], 'left',
+      Sql.Eq('samples.fingerprint', 'time_series.fingerprint'))
+    .orderBy(['timestamp_ms', 'desc'], ['labels', 'desc'])
+    .where(Sql.between('samples.timestamp_ms', from, to))
+    .limit(limit)
+    .addParam(samplesTable)
+    .addParam(timeSeriesTable)
+    .addParam(from)
+    .addParam(to)
+    .addParam(limit)
 }
 
 /**
@@ -57,9 +61,10 @@ module.exports.transpile = (request) => {
   const step = request.step ? parseInt(request.step) * 1000 : 0
   let query = module.exports.initQuery()
   if (request.limit) {
-    query.limit = request.limit
+    query.limit(request.limit)
   }
-  query.order_by.order = request.direction === 'forward' ? 'asc' : 'desc'
+  const order = request.direction === 'forward' ? 'asc' : 'desc'
+  query.orderBy(query.orderBy().map(o => [o[0], order]))
   if (token.Child('aggregation_operator')) {
     const duration = durationToMs(token.Child('duration_value').value)
     start = Math.floor(start / duration) * duration
@@ -68,10 +73,7 @@ module.exports.transpile = (request) => {
       start: start,
       end: end
     }
-    query = _and(query, [
-      `timestamp_ms >= ${start}`,
-      `timestamp_ms <= ${end}`
-    ])
+    query.where(`timestamp_ms >= ${start}`, `timestamp_ms <= ${end}`)
     query = module.exports.transpileAggregationOperator(token, query)
   } else if (token.Child('unwrap_function')) {
     const duration = durationToMs(token.Child('unwrap_function').Child('duration_value').value)
@@ -102,30 +104,13 @@ module.exports.transpile = (request) => {
     ])
     query = module.exports.transpileLogRangeAggregation(token, query)
   } else {
-    query = module.exports.transpileLogStreamSelector(token, query)
-    query = _and(query, [
-      `timestamp_ms >= ${start}`,
-      `timestamp_ms <= ${end}`
-    ])
-    query = {
-      ctx: query.ctx,
-      stream: query.stream,
-      with: {
-        ...query.with || {},
-        sel_a: {
-          ...query,
-          ctx: undefined,
-          with: undefined,
-          stream: undefined
-        }
-      },
-      select: ['*'],
-      from: 'sel_a',
-      order_by: {
-        name: ['labels', 'timestamp_ms'],
-        order: query.order_by.order
-      }
-    }
+    const _query = module.exports.transpileLogStreamSelector(token, query)
+    const wth = new Sql.With('sel_a', _query)
+    query = (new Sql.Select())
+      .with(wth)
+      .select('*')
+      .from(new Sql.WithReference(wth))
+      .orderBy(['labels', order], ['timestamp_ms', order])
   }
   if (token.Child('compared_agg_statement')) {
     const op = token.Child('compared_agg_statement_cmp').Child('number_operator').value
@@ -246,8 +231,8 @@ module.exports.transpileLogRangeAggregation = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Sql.Select}
+ * @returns {Sql.Select}
  */
 module.exports.transpileLogStreamSelector = (token, query) => {
   const rules = token.Children('log_stream_selector_rule')
