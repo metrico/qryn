@@ -1,5 +1,6 @@
 const { hashLabels, parseLabels } = require('../../common')
 const { getPlg } = require('../../plugins/engine')
+const Sql = require('clickhouse-sql')
 
 /**
  * @param query {registry_types.Request | string[]}
@@ -211,11 +212,11 @@ function addTimestamp (values, timestamp, value, duration, step, counterFn) {
 
 /**
  *
- * @param query {registry_types.Request}
+ * @param query {Select}
  * @returns {boolean}
  */
 module.exports.hasExtraLabels = (query) => {
-  return query.select.some((x) => x.endsWith('as extra_labels'))
+  return query.select().some((x) => x[1] === 'extra_labels')
 }
 
 /**
@@ -342,4 +343,12 @@ module.exports.unquote = (str, custom, customSlash) => {
     }
   }
   return res
+}
+
+module.exports.sharedParamNames = {
+  samplesTable: 'samplesTable',
+  timeSeriesTable: 'timeSeriesTable',
+  from: 'from',
+  to: 'to',
+  limit: 'limit'
 }

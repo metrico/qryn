@@ -108,7 +108,7 @@ it('e2e', async () => {
   adjustResult(resp)
   expect(resp.data).toMatchSnapshot()
   // two clauses and filter
-  resp = await runRequest(`{test_id="${testID}", freq="2"} |~ "2[0-9]$"`)
+  /* resp = await runRequest(`{test_id="${testID}", freq="2"} |~ "2[0-9]$"`)
   adjustResult(resp)
   expect(resp.data).toMatchSnapshot()
   // aggregation
@@ -326,6 +326,6 @@ it('e2e', async () => {
     stream.values = stream.values.map(v => [v[0] - Math.floor(start / 1000), v[1]])
     return stream
   })
-  expect(resp.data).toMatchSnapshot()
+  expect(resp.data).toMatchSnapshot()  */
   // console.log(JSON.stringify(resp.data.data.result.map(s => [s.stream, s.values.length])))
 })

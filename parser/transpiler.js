@@ -8,9 +8,9 @@ const lineFormat = require('./registry/line_format')
 const parserRegistry = require('./registry/parser_registry')
 const unwrap = require('./registry/unwrap')
 const unwrapRegistry = require('./registry/unwrap_registry')
-const { _and, durationToMs } = require('./registry/common')
+const { _and, durationToMs, sharedParamNames } = require('./registry/common')
 const compiler = require('./bnf')
-const { parseMs } = require('../lib/utils')
+const { parseMs, DATABASE_NAME, samplesReadTableName } = require('../lib/utils')
 const { getPlg } = require('../plugins/engine')
 const Sql = require('clickhouse-sql')
 
@@ -18,18 +18,18 @@ const Sql = require('clickhouse-sql')
  * @returns {Select}
  */
 module.exports.initQuery = () => {
-  const samplesTable = new Sql.Parameter('samplesTable')
-  const timeSeriesTable = new Sql.Parameter('timeSeriesTable')
-  const from = new Sql.Parameter('from')
-  const to = new Sql.Parameter('to')
-  const limit = new Sql.Parameter('limit')
+  const samplesTable = new Sql.Parameter(sharedParamNames.samplesTable)
+  const timeSeriesTable = new Sql.Parameter(sharedParamNames.timeSeriesTable)
+  const from = new Sql.Parameter(sharedParamNames.from)
+  const to = new Sql.Parameter(sharedParamNames.to)
+  const limit = new Sql.Parameter(sharedParamNames.limit)
   limit.set(2000)
   return (new Sql.Select())
     .select(['time_series.labels', 'labels'], ['samples.string', 'string'],
       ['samples.fingerprint', 'fingerprint'], ['samples.timestamp_ms', 'timestamp_ms'])
     .from([samplesTable, 'samples'])
     .join([timeSeriesTable, 'time_series'], 'left',
-      Sql.Eq('samples.fingerprint', 'time_series.fingerprint'))
+      Sql.Eq('samples.fingerprint', Sql.quoteTerm('time_series.fingerprint')))
     .orderBy(['timestamp_ms', 'desc'], ['labels', 'desc'])
     .where(Sql.between('samples.timestamp_ms', from, to))
     .limit(limit)
@@ -60,9 +60,7 @@ module.exports.transpile = (request) => {
   let end = parseMs(request.end, Date.now())
   const step = request.step ? parseInt(request.step) * 1000 : 0
   let query = module.exports.initQuery()
-  if (request.limit) {
-    query.limit(request.limit)
-  }
+  const limit = request.limit ? request.limit : 2000
   const order = request.direction === 'forward' ? 'asc' : 'desc'
   query.orderBy(query.orderBy().map(o => [o[0], order]))
   if (token.Child('aggregation_operator')) {
@@ -116,12 +114,28 @@ module.exports.transpile = (request) => {
     const op = token.Child('compared_agg_statement_cmp').Child('number_operator').value
     query = numberOperatorRegistry[op](token.Child('compared_agg_statement'), query)
   }
-
+  setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
+  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName}`)
+  setQueryParam(query, sharedParamNames.from, start)
+  setQueryParam(query, sharedParamNames.to, end)
+  setQueryParam(query, sharedParamNames.limit, limit)
   return {
-    query: module.exports.requestToStr(query),
+    query: query.toString(),
     matrix: !!query.matrix,
     duration: query.ctx && query.ctx.duration ? query.ctx.duration : 1000,
     stream: query.stream
+  }
+}
+
+/**
+ *
+ * @param query {Select}
+ * @param name {string}
+ * @param val {any}
+ */
+const setQueryParam = (query, name, val) => {
+  if (query.getParam(name)) {
+    query.getParam(name).set(val)
   }
 }
 
