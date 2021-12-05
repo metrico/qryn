@@ -127,8 +127,12 @@ const handlerPush = require('./lib/handlers/push.js').bind(this)
 fastify.post('/loki/api/v1/push', handlerPush)
 
 /* Tempo Write Handler */
-const handlerPush = require('./lib/handlers/tempo_push.js').bind(this)
-fastify.post('/tempo/api/push', handlerPush)
+const handlerTempoPush = require('./lib/handlers/tempo_push.js').bind(this)
+fastify.post('/tempo/api/push', handlerTempoPush)
+
+/* Tempo Traces Query Handler */
+const handlerTempoTraces = require('./lib/handlers/tempo_traces.js').bind(this)
+fastify.get('/api/traces/:traceId', handlerTempoTraces)
 
 /* Telegraf HTTP Bulk handler */
 const handlerTelegraf = require('./lib/handlers/telegraf.js').bind(this)
