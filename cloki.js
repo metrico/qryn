@@ -126,6 +126,10 @@ fastify.get('/ready', handlerHello)
 const handlerPush = require('./lib/handlers/push.js').bind(this)
 fastify.post('/loki/api/v1/push', handlerPush)
 
+/* Tempo Write Handler */
+const handlerPush = require('./lib/handlers/tempo_push.js').bind(this)
+fastify.post('/tempo/api/push', handlerPush)
+
 /* Telegraf HTTP Bulk handler */
 const handlerTelegraf = require('./lib/handlers/telegraf.js').bind(this)
 fastify.post('/telegraf', handlerTelegraf)
