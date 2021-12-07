@@ -1,7 +1,6 @@
 version: '2.1'
 
 volumes:
-    prometheus_data: {}
     grafana_data: {}
 
 services:
@@ -19,16 +18,12 @@ services:
     restart: unless-stopped
     expose:
       - 3000
-    labels:
-      org.label-schema.group: "monitoring"
 
   clickhouse-seed:
     image: yandex/clickhouse-server
     container_name: clickhouse-seed
     ports:
       - 8123:8123
-    labels:
-      org.label-schema.group: "backend"
 
   clickhouse-client:
     container_name: clickhouse-client
@@ -48,13 +43,9 @@ services:
       - "3100:3100"
     environment:
       - CLICKHOUSE_SERVER=clickhouse-seed
-#     - CLOKI_LOGIN=logger
-#     - CLOKI_PASSWORD=password
-      - DEBUG=false
+      - DEBUG=true
     depends_on:
       - clickhouse-seed
-    labels:
-      org.label-schema.group: "monitoring"
 
   pastash:
     image: qxip/pastash-loki
@@ -62,20 +53,3 @@ services:
     volumes:
       - ./loki/pastash.json:/config/loki.conf
       - /var/log:/var/log:ro
-
-  caddy:
-    image: stefanprodan/caddy
-    container_name: caddy
-    ports:
-      - "3000:3000"
-      - "9090:9090"
-      - "9093:9093"
-      - "9080:9080"
-    volumes:
-      - ./caddy/:/etc/caddy/
-    environment:
-      - ADMIN_USER=${ADMIN_USER:-admin}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
-    restart: unless-stopped
-    labels:
-      org.label-schema.group: "monitoring"

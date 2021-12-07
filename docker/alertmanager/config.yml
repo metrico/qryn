@@ -13,7 +13,7 @@ receivers:
 - name: slack_general
   slack_configs:
   - api_url: 'https://hooks.slack.com/services/your_webhook'
-    channel: '#astricon18'
+    channel: '#cloki'
 
 #    # The smarthost and SMTP sender used for mail notifications.
 #    smtp_smarthost: 'localhost:25'

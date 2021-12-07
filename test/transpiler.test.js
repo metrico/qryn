@@ -57,36 +57,24 @@ it('should transpile log_stream_selector with stream filter', () => {
   expect(query).toMatchSnapshot()
   expect(transpiler.requestToStr(query)).toMatchSnapshot()
 })
-
-it('should transpile log_range_aggregation', () => {
-  let scr = 'rate({minus_nam="aut illo"}[5m])'
-  let script = bnf.ParseScript(scr)
-  const q = transpiler.initQuery()
-  q.ctx = {
-    start: 0,
-    end: 3600 * 1000
+describe('log_range_aggregation', () => {
+  const test = (scr) => {
+    const script = bnf.ParseScript(scr)
+    const q = transpiler.initQuery()
+    q.ctx = {
+      start: 0,
+      end: 3600 * 1000
+    }
+    const query = transpiler.transpileLogRangeAggregation(script.rootToken, q)
+    expect(query).toMatchSnapshot()
+    expect(transpiler.requestToStr(query)).toMatchSnapshot()
   }
-  let query = transpiler.transpileLogRangeAggregation(script.rootToken, q)
-  expect(query).toMatchSnapshot()
-  expect(transpiler.requestToStr(query)).toMatchSnapshot()
-
-  scr = 'rate({rerum_laborum=~`^con.+q.at[a-z]r`} != "consequatur nam soluta" [5m])'
-  script = bnf.ParseScript(scr)
-  query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
-  expect(query).toMatchSnapshot()
-  expect(transpiler.requestToStr(query)).toMatchSnapshot()
-
-  scr = 'rate({et_dolorem!=`nemo doloremque`} |~ "^mol[eE][^ ]+e +voluptatibus" [5m])'
-  script = bnf.ParseScript(scr)
-  query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
-  expect(query).toMatchSnapshot()
-  expect(transpiler.requestToStr(query)).toMatchSnapshot()
-
-  scr = 'rate({rerum_laborum!~`^con.+q.at[a-z]r`} !~ "cons[eE][^ ]+r nam soluta" [5m])'
-  script = bnf.ParseScript(scr)
-  query = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
-  expect(query).toMatchSnapshot()
-  expect(transpiler.requestToStr(query)).toMatchSnapshot()
+  it('1', () => {
+    test('rate({minus_nam="aut illo"}[5m])')
+  })
+  it('2', () => test('rate({rerum_laborum=~`^con.+q.at[a-z]r`} != "consequatur nam soluta" [5m])'))
+  it('3', () => test('rate({et_dolorem!=`nemo doloremque`} |~ "^mol[eE][^ ]+e +voluptatibus" [5m])'))
+  it('4', () => test('rate({rerum_laborum!~`^con.+q.at[a-z]r`} !~ "cons[eE][^ ]+r nam soluta" [5m])'))
 })
 
 it('should transpile aggregation_operator', () => {
@@ -197,6 +185,9 @@ it('shoud transpile unwrap', async () => {
   })
   const res = await ds.toArray()
   expect(res).toEqual([{ labels: { freq: '1' }, timestamp_ms: '0', value: 2 }, { EOF: true }])
+
+  expect(() => transpiler.transpile({ query: 'rate({test_id="1"} |~ "123" | unwrap_value [1s])' }))
+    .toThrowError('log pipeline not supported')
 
   /* expect(res).toMatchSnapshot();
     script = bnf.ParseScript(`{test_id="0.7857680014573265_json"}| json| unwrap int_lbl`);
