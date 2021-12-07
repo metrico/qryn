@@ -88,7 +88,7 @@ module.exports.viaStream = (token, query) => {
   const extractLabels = (line) => {
     let key = ''
     let value = ''
-    let isNumber = true
+    const isNumber = true
     let isKey = false
     let inValue = false
     let inQuote = false
