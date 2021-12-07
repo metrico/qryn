@@ -1,6 +1,6 @@
 const { Compiler } = require('bnf/Compiler')
 const { _and, map } = require('../common')
-const debug = true
+const debug = false
 /**
  *
  * @type {function(Token): Object | undefined}
@@ -17,13 +17,13 @@ const getLabels = (() => {
   * @returns {Object | undefined}
   */
   return (token) => {
-    if (debug)console.log('logfmt: testing1')
+    if (debug) console.log('logfmt: testing getLabels')
     if (!token.Children('parameter').length) {
       return undefined
     }
     return token.Children('parameter').reduce((sum, p) => {
       const label = p.Child('label').value
-      if (debug)console.log('logfmt: getting', label, sum, p)
+      if (debug) console.log('logfmt: parameter', label, sum, p)
       let val = compiler.ParseScript(JSON.parse(p.Child('quoted_str').value))
       val = [
         val.rootToken.Child('first_part').value,
@@ -42,7 +42,7 @@ const getLabels = (() => {
  * @returns {registry_types.Request}
  */
 module.exports.viaClickhouseQuery = (token, query) => {
-  if (debug)console.log('logfmt: testing2')
+  if (debug) console.log('logfmt: with parameters ')
   const labels = getLabels(token)
   let exprs = Object.entries(labels).map(lbl => {
     const path = lbl[1].map(path => {
@@ -78,7 +78,7 @@ module.exports.viaClickhouseQuery = (token, query) => {
 module.exports.viaStream = (token, query) => {
   const labels = getLabels(token)
 
-  if (debug)console.log('logfmt: testing4 - undefined', labels)
+  if (debug)console.log('logfmt: no parameters ', labels)
 
   /**
     *
@@ -155,10 +155,10 @@ module.exports.viaStream = (token, query) => {
      * @return {DataStream}
      */
   const stream = (stream) => {
-    if (debug)console.log('logfmt: testing5', stream)
+    if (debug) console.log('logfmt: on receipt of stream', stream)
     return map(stream, (e) => {
-      if (debug)console.log('logfmt: testing6 - e', e)
-      if (debug)console.log('logfmt: testing7 - data', e.string)
+      if (debug) console.log('logfmt: stream.e ', e)
+      if (debug) console.log('logfmt: stream.data ', e.string)
       if (!e || !e.labels) {
         return { ...e }
       }

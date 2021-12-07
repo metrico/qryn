@@ -64,6 +64,12 @@ it('e2e', async () => {
     { fmt: 'json', lbl_repl: 'val_repl', int_lbl: '1' }, points,
     (i) => JSON.stringify({ lbl_repl: 'REPL', int_val: '1', new_lbl: 'new_val', str_id: i, arr: [1, 2, 3], obj: { o_1: 'v_1' } })
   )
+
+  points = createPoints(testID + '_logfmt', 1, start, end,
+    { fmt: 'logfmt', lbl_repl: 'val_repl', int_lbl: '1' }, points,
+    (i) => 'lbl_repl="REPL" int_val=1 new_lbl="new_val" str_id="' + i + '" '
+  )
+
   await sendPoints(`http://${clokiExtUrl}`, points)
   await new Promise(resolve => setTimeout(resolve, 4000))
   const adjustResult = (resp, id, _start) => {
@@ -167,6 +173,23 @@ it('e2e', async () => {
     '|lbl_repl="REPL"|unwrap int_lbl [3s]) by (test_id, lbl_repl)')
   adjustMatrixResult(resp, testID + '_json')
   expect(resp.data).toMatchSnapshot()
+  // logfmt without params
+  resp = await runRequest(`{test_id="${testID}_logfmt"}|logfmt`)
+  adjustResult(resp, testID + '_logfmt')
+  expect(resp.data).toMatchSnapshot()
+  // logfmt with no params / stream_selector
+  resp = await runRequest(`{test_id="${testID}_logfmt"}|logfmt|fmt=~"[jk]son"`)
+  adjustResult(resp, testID + '_logfmt')
+  expect(resp.data).toMatchSnapshot()
+  // logfmt no params / stream_selector
+  resp = await runRequest(`{test_id="${testID}_logmft"}|logfmt|lbl_repl="REPL"`)
+  adjustResult(resp, testID + '_logfmt')
+  expect(resp.data).toMatchSnapshot()
+  resp = await runRequest(`sum_over_time({test_id="${testID}_logfmt"}|logfmt` +
+    '|lbl_repl="REPL"|unwrap int_lbl [3s]) by (test_id, lbl_repl)')
+  adjustMatrixResult(resp, testID + '_logfmt')
+  expect(resp.data).toMatchSnapshot()
+
   // hammering aggregation
   for (const fn of ['rate', 'sum_over_time', 'avg_over_time', 'max_over_time', 'min_over_time',
     'first_over_time', 'last_over_time'
