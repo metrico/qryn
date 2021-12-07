@@ -220,7 +220,7 @@ it('e2e', async () => {
   resp = await runRequest(`derivative({test_id="${testID}_json"}| json | unwrap str_id [10s]) by (test_id)`)
   adjustMatrixResult(resp, testID + '_json')
   expect(resp.data).toMatchSnapshot()
-  /* resp = await runRequest(`rate({test_id="${testID}"} [1s]) == 2`)
+  resp = await runRequest(`rate({test_id="${testID}"} [1s]) == 2`)
   adjustMatrixResult(resp, testID)
   expect(resp.data).toMatchSnapshot()
   resp = await runRequest(`sum(rate({test_id="${testID}"} [1s])) by (test_id) > 4`)
@@ -327,6 +327,6 @@ it('e2e', async () => {
     stream.values = stream.values.map(v => [v[0] - Math.floor(start / 1000), v[1]])
     return stream
   })
-  expect(resp.data).toMatchSnapshot() */
+  expect(resp.data).toMatchSnapshot()
   // console.log(JSON.stringify(resp.data.data.result.map(s => [s.stream, s.values.length])))
 })

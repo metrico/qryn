@@ -96,7 +96,7 @@ module.exports.viaRequest = (token, query) => {
   query.select_list = query.select_list.filter(f => f[1] !== 'extra_labels')
   query.select([
     new Sql.Raw(`arrayFilter(x -> x.1 != '' AND x.2 != '', arrayZip(${namesArray}, ` +
-      `arrayMap(x -> x[length(x)], extractAllGroupsHorizontal(string, '${re}')))) as extra_labels`),
+      `arrayMap(x -> x[length(x)], extractAllGroupsHorizontal(string, '${re}'))))`),
     'extra_labels'])
   return query
 }

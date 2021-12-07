@@ -1,10 +1,11 @@
-const { hasExtraLabels, _and } = require('../common')
+const { hasExtraLabels, hasStream, addStream } = require('../common')
+const Sql = require('clickhouse-sql')
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * @param query {Select}
  * @param index {string}
- * @returns {registry_types.Request}
+ * @returns {Select}
  */
 const genericReq = (token, query, index) => {
   if (token.Child('number_value').Child('duration_value') ||
@@ -16,54 +17,46 @@ const genericReq = (token, query, index) => {
   if (isNaN(val)) {
     throw new Error(token.Child('number_value').value + 'is not a number')
   }
-  if (query.stream && query.stream.length) {
-    return {
-      ...query,
-      stream: [...(query.stream || []),
-        /**
-                 *
-                 * @param s {DataStream}
-                 */
-        (s) => s.filter(module.exports.streamWhere[index](label, val))
-      ]
-
-    }
+  if (hasStream(query)) {
+    return addStream(query, (s) => s.filter(module.exports.streamWhere[index](label, val)))
   }
   if (hasExtraLabels(query)) {
-    return _and(query, [module.exports.extraLabelsWhere[index](label, val)])
+    return query.where(module.exports.extraLabelsWhere[index](label, val))
   }
-  return _and(query, module.exports.simpleWhere[index](label, val))
+  return query.where(module.exports.simpleWhere[index](label, val))
 }
 
 /**
  *
  * @param label {string}
  * @param val {string}
- * @param sign {string}
- * @returns {[string]}
+ * @param sign {Function}
+ * @returns {Conditions}
  */
 const genericSimpleLabelSearch =
-    (label, val, sign) => [
-      'and',
-      `JSONHas(labels, '${label}')`,
-      `toFloat64OrNull(JSONExtractString(labels, '${label}')) ${sign} ${val}`]
+    (label, val, sign) => Sql.And(
+      Sql.Eq(new Sql.Raw(`JSONHas(labels, '${label}')`), 1),
+      sign(new Sql.Raw(`toFloat64OrNull(JSONExtractString(labels, '${label}'))`), val)
+    )
 
 /**
  *
  * @param lbl {string}
  * @param val {string}
- * @param sign {string}
- * @returns {[string]}
+ * @param sign {Function}
+ * @returns {Conditions}
  */
 const genericExtraLabelSearch =
-    (lbl, val, sign) => ['or',
-        `arrayExists(x -> x.1 == '${lbl}' AND (coalesce(toFloat64OrNull(x.2) ${sign} ${val}, 0)), extra_labels) != 0`,
-        [
-          'AND',
-            `arrayExists(x -> x.1 == '${lbl}', extra_labels) == 0`,
-            ...(genericSimpleLabelSearch(lbl, val, sign).slice(1))
-        ]
-    ]
+    (lbl, val, sign) => Sql.Or(
+      Sql.Ne(new Sql.Raw(
+        `arrayExists(x -> x.1 == '${lbl}' AND (coalesce(` +
+          sign(new Sql.Raw('toFloat64OrNull(x.2)'), val).toString() + ', 0)), extra_labels)'
+      ), 0),
+      Sql.And(
+        Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${lbl}', extra_labels)`), 0),
+        genericSimpleLabelSearch(lbl, val, sign)
+      )
+    )
 
 const genericStreamSearch = (label, fn) =>
   (e) => {
@@ -81,21 +74,21 @@ const genericStreamSearch = (label, fn) =>
   }
 
 module.exports.simpleWhere = {
-  eq: (label, val) => genericSimpleLabelSearch(label, val, '=='),
-  neq: (label, val) => genericSimpleLabelSearch(label, val, '!='),
-  ge: (label, val) => genericSimpleLabelSearch(label, val, '>='),
-  gt: (label, val) => genericSimpleLabelSearch(label, val, '>'),
-  le: (label, val) => genericSimpleLabelSearch(label, val, '<='),
-  lt: (label, val) => genericSimpleLabelSearch(label, val, '<')
+  eq: (label, val) => genericSimpleLabelSearch(label, val, Sql.Eq),
+  neq: (label, val) => genericSimpleLabelSearch(label, val, Sql.Ne),
+  ge: (label, val) => genericSimpleLabelSearch(label, val, Sql.Gte),
+  gt: (label, val) => genericSimpleLabelSearch(label, val, Sql.Gt),
+  le: (label, val) => genericSimpleLabelSearch(label, val, Sql.Lte),
+  lt: (label, val) => genericSimpleLabelSearch(label, val, Sql.Lt)
 }
 
 module.exports.extraLabelsWhere = {
-  eq: (label, val) => genericExtraLabelSearch(label, val, '=='),
-  neq: (label, val) => genericExtraLabelSearch(label, val, '!='),
-  ge: (label, val) => genericExtraLabelSearch(label, val, '>='),
-  gt: (label, val) => genericExtraLabelSearch(label, val, '>'),
-  le: (label, val) => genericExtraLabelSearch(label, val, '<='),
-  lt: (label, val) => genericExtraLabelSearch(label, val, '<')
+  eq: (label, val) => genericExtraLabelSearch(label, val, Sql.Eq),
+  neq: (label, val) => genericExtraLabelSearch(label, val, Sql.Ne),
+  ge: (label, val) => genericExtraLabelSearch(label, val, Sql.Gte),
+  gt: (label, val) => genericExtraLabelSearch(label, val, Sql.Gt),
+  le: (label, val) => genericExtraLabelSearch(label, val, Sql.Lte),
+  lt: (label, val) => genericExtraLabelSearch(label, val, Sql.Lt)
 }
 
 module.exports.streamWhere = {
@@ -110,8 +103,8 @@ module.exports.streamWhere = {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.eq = (token, query) => {
   return genericReq(token, query, 'eq')
@@ -120,8 +113,8 @@ module.exports.eq = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.neq = (token, query) => {
   return genericReq(token, query, 'neq')
@@ -130,8 +123,8 @@ module.exports.neq = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.gt = (token, query) => {
   return genericReq(token, query, 'gt')
@@ -140,8 +133,8 @@ module.exports.gt = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.ge = (token, query) => {
   return genericReq(token, query, 'ge')
@@ -150,8 +143,8 @@ module.exports.ge = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.lt = (token, query) => {
   return genericReq(token, query, 'lt')
@@ -160,8 +153,8 @@ module.exports.lt = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.le = (token, query) => {
   return genericReq(token, query, 'le')

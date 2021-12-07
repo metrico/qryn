@@ -37,6 +37,7 @@ function unwrapLine (query) {
  * @returns {Select}
  */
 function viaQuery (label, query) {
+  query.limit(undefined, undefined)
   return query.select(
     [new Sql.Raw(`toFloat64OrNull(JSONExtractString(labels,'${label}'))`, 'unwrapped')]
   ).where(
@@ -52,6 +53,7 @@ function viaQuery (label, query) {
  * @returns {Select}
  */
 function viaQueryWithExtraLabels (label, query) {
+  query.limit(undefined, undefined)
   return query.select(
     [new Sql.Raw(`toFloat64OrNull(if(arrayExists(x -> x.1 == '${label}', extra_labels), ` +
       `arrayFirst(x -> x.1 == '${label}', extra_labels).2, ` +
@@ -69,6 +71,7 @@ function viaQueryWithExtraLabels (label, query) {
  * @returns {Select}
  */
 function viaStream (label, query) {
+  query.limit(undefined, undefined)
   const isUnwrapString = label === '_entry'
   return addStream(query, (stream) => map(stream, e => {
     if (!e || !e.labels) {

@@ -11,6 +11,7 @@ const Sql = require('clickhouse-sql')
 const genericRate = (valueExpr, token, query) => {
   const duration = getDuration(token)
   query.ctx.matrix = true
+  query.ctx.duration = duration
   query.limit(undefined, undefined)
   const step = query.ctx.step
   const rateA = new Sql.With('rate_a', query)
@@ -48,6 +49,7 @@ module.exports.genericRate = genericRate
  */
 module.exports.rateStream = (token, query) => {
   const duration = getDuration(token, query)
+  query.limit(undefined, undefined)
   return applyViaStream(token, query, (sum) => {
     sum = sum || 0
     ++sum

@@ -8,9 +8,9 @@ const lineFormat = require('./registry/line_format')
 const parserRegistry = require('./registry/parser_registry')
 const unwrap = require('./registry/unwrap')
 const unwrapRegistry = require('./registry/unwrap_registry')
-const { _and, durationToMs, sharedParamNames, getStream } = require('./registry/common')
+const { durationToMs, sharedParamNames, getStream } = require('./registry/common')
 const compiler = require('./bnf')
-const { parseMs, DATABASE_NAME, samplesReadTableName } = require('../lib/utils')
+const { parseMs, DATABASE_NAME, samplesReadTableName, samplesTableName } = require('../lib/utils')
 const { getPlg } = require('../plugins/engine')
 const Sql = require('clickhouse-sql')
 
@@ -24,6 +24,13 @@ module.exports.initQuery = () => {
   const to = new Sql.Parameter(sharedParamNames.to)
   const limit = new Sql.Parameter(sharedParamNames.limit)
   limit.set(2000)
+  const tsClause = new Sql.Raw('')
+  tsClause.toString = () => {
+    if (to.get()) {
+      return Sql.between('samples.timestamp_ms', from, to).toString()
+    }
+    return Sql.Gt('samples.timestamp_ms', from).toString()
+  }
   return (new Sql.Select())
     .select(['time_series.labels', 'labels'], ['samples.string', 'string'],
       ['samples.fingerprint', 'fingerprint'], ['samples.timestamp_ms', 'timestamp_ms'])
@@ -31,7 +38,7 @@ module.exports.initQuery = () => {
     .join([timeSeriesTable, 'time_series'], 'left',
       Sql.Eq('samples.fingerprint', Sql.quoteTerm('time_series.fingerprint')))
     .orderBy(['timestamp_ms', 'desc'], ['labels', 'desc'])
-    .where(Sql.between('samples.timestamp_ms', from, to))
+    .where(tsClause)
     .limit(limit)
     .addParam(samplesTable)
     .addParam(timeSeriesTable)
@@ -132,18 +139,17 @@ module.exports.transpileTail = (request) => {
       throw new Error(`${d} is not supported. Only raw logs are supported`)
     }
   }
-  let query = module.exports.initQuery({ samplesTable: request.samplesTable })
-  query = _and(query, [
-    'timestamp_ms >= (toUnixTimestamp(now()) - 5) * 1000'
-  ])
+
+  let query = module.exports.initQuery()
   query = module.exports.transpileLogStreamSelector(expression.rootToken, query)
-  query.order_by = {
-    name: ['timestamp_ms'],
-    order: 'ASC'
-  }
-  query.limit = undefined
+  setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
+  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesTableName}`)
+  setQueryParam(query, sharedParamNames.from, new Sql.Raw('(toUnixTimestamp(now()) - 5) * 1000'))
+  query.order_expressions = []
+  query.orderBy(['timestamp_ms', 'asc'])
+  query.limit(undefined, undefined)
   return {
-    query: module.exports.requestToStr(query),
+    query: query.toString(),
     stream: getStream(query)
   }
 }
@@ -165,23 +171,19 @@ module.exports.transpileSeries = (request) => {
   const getQuery = (req) => {
     const expression = compiler.ParseScript(req.trim())
     const query = module.exports.transpileLogStreamSelector(expression.rootToken, module.exports.initQuery())
-    return {
-      ...query.with.str_sel,
-      select: ['labels']
-    }
+    const _query = query.withs.str_sel.query
+    _query.params = query.params
+    _query.columns = []
+    return _query.select('labels')
   }
-  if (request.length === 1) {
-    return module.exports.requestToStr({
-      ...getQuery(request[0]),
-      distinct: true
-    })
+  const query = getQuery(request[0])
+  for (const req of request.slice(1)) {
+    const _query = getQuery(req)
+    query.orWhere(...(Array.isArray(_query.conditions) ? _query.conditions : [_query.conditions]))
   }
-  const queries = request.map(getQuery)
-  return module.exports.requestToStr({
-    ...queries[0],
-    distinct: true,
-    where: ['OR', ...queries.map(q => q.where)]
-  })
+  setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
+  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName}`)
+  return query.toString()
 }
 
 /**
