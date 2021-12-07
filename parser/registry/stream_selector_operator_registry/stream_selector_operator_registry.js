@@ -5,15 +5,21 @@ const Sql = require('clickhouse-sql')
  * @param eq {boolean}
  * @param label {string}
  * @param value {string}
- * @returns {string[]}
+ * @returns {Conditions}
  */
 function selectorClauses (regex, eq, label, value) {
-  return [
+  const call = regex
+    ? [new Sql.Raw(`extractAllGroups(JSONExtractString(labels, '${label}'), '(${value})')`), '[]']
+    : [new Sql.Raw(`JSONExtractString(labels, '${label}')`), value]
+  return Sql.And(
+    Sql.Eq(new Sql.Raw(`JSONHas(labels, '${label}')`), 1),
+    eq ? Sql.Eq(call[0], call[1]) : Sql.Ne(call[0], call[1])
+  ) /* [
         `JSONHas(labels, '${label}')`,
         regex
           ? `extractAllGroups(JSONExtractString(labels, '${label}'), '(${value})') ${eq ? '!=' : '=='} []`
           : `JSONExtractString(labels, '${label}') ${eq ? '=' : '!='} '${value}'`
-  ]
+  ] */
 }
 
 /**
@@ -31,7 +37,7 @@ const labelAndVal = (token) => {
  * @returns {With}
  */
 const streamSelectQuery = (query) => {
-  const param = query.getParam('timeSeriesTable') || Sql.Parameter('timeSeriesTable')
+  const param = query.getParam('timeSeriesTable') || new Sql.Parameter('timeSeriesTable')
   query.addParam(param)
   return new Sql.With(
     'str_sel',
@@ -59,6 +65,9 @@ module.exports.simpleAnd = (query, clauses) => {
     strSel.query.where(clauses)
   }
   query.with(strSel)
+  query.joins = query.joins.filter(j => j.table[1] !== 'time_series')
+  query.join([new Sql.WithReference(strSel), 'time_series'], 'left',
+    Sql.Eq('samples.fingerprint', Sql.quoteTerm('time_series.fingerprint')))
   if (!isStrSel) {
     query.where(new Sql.In('samples.fingerprint', 'in',
       (new Sql.Select()).select('fingerprint').from(new Sql.WithReference(strSel))
@@ -71,7 +80,7 @@ module.exports.simpleAnd = (query, clauses) => {
  *
  * @param token {Token}
  * //@param query {registry_types.Request}
- * @returns {string[]}
+ * @returns {Conditions}
  */
 module.exports.neqSimple = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
@@ -86,11 +95,11 @@ module.exports.neqSimple = (token/*, query */) => {
  */
 module.exports.neqExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
-  return new Sql.Or(
-    `arrayExists(x -> x.1 == '${label}' AND x.2 != '${value}', extra_labels) != 0`,
-    new Sql.And(
-      `arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
-      ...selectorClauses(false, false, label, value)
+  return Sql.Or(
+    new Sql.Ne(new Sql.Raw(`arrayExists(x -> x.1 == '${label}' AND x.2 != '${value}', extra_labels)`), 0),
+    Sql.And(
+      Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${label}', extra_labels)`), 0),
+      selectorClauses(false, false, label, value)
     ))
 }
 
@@ -109,7 +118,7 @@ module.exports.neqStream = (token/*, query */) => {
  *
  * @param token {Token}
  * //@param query {registry_types.Request}
- * @returns {string[]}
+ * @returns {Conditions}
  */
 module.exports.nregSimple = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
@@ -124,11 +133,14 @@ module.exports.nregSimple = (token/*, query */) => {
  */
 module.exports.nregExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
-  return new Sql.Or(
-    `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') == [], extra_labels) != 0`,
-    new Sql.And(
-      `arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
-      ...selectorClauses(true, true, label, value)))
+  return Sql.Or(
+    Sql.Eq(
+      new Sql.Raw(
+        `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') == [], extra_labels)`), 0
+    ),
+    Sql.And(
+      Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${label}', extra_labels)`), 0),
+      selectorClauses(true, true, label, value)))
 }
 
 /**
@@ -147,7 +159,7 @@ module.exports.nregStream = (token/*, query */) => {
  *
  * @param token {Token}
  * //@param query {registry_types.Request}
- * @returns {string[]}
+ * @returns {Conditions}
  */
 module.exports.regSimple = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
@@ -163,10 +175,13 @@ module.exports.regSimple = (token/*, query */) => {
 module.exports.regExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
 
-  return new Sql.Or(
-    `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') != [], extra_labels) != 0`,
-    new Sql.And(`arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
-      ...selectorClauses(true, true, label, value)))
+  return Sql.Or(
+    Sql.Eq(
+      new Sql.Raw(
+        `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') != [], extra_labels)`), 0
+    ),
+    Sql.And(`arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
+      selectorClauses(true, true, label, value)))
 }
 
 /**
@@ -185,7 +200,7 @@ module.exports.regStream = (token/*, query */) => {
  *
  * @param token {Token}
  * //@param query {registry_types.Request}
- * @returns {string[]}
+ * @returns {Conditions}
  */
 module.exports.eqSimple = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
@@ -200,11 +215,11 @@ module.exports.eqSimple = (token/*, query */) => {
 module.exports.eqExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
 
-  return new Sql.Or(
-    `indexOf(extra_labels, ('${label}', '${value}')) > 0`,
-    new Sql.And(
-      `arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
-      ...selectorClauses(false, true, label, value)))
+  return Sql.Or(
+    Sql.Gt(new Sql.Raw(`indexOf(extra_labels, ('${label}', '${value}'))`), 0),
+    Sql.And(
+      Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${label}', extra_labels)`), 0),
+      selectorClauses(false, true, label, value)))
 }
 
 /**

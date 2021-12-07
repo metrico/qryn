@@ -1,52 +1,49 @@
-const { _and, unquoteToken, querySelectorPostProcess } = require('./common')
+const { unquoteToken } = require('./common')
+const Sql = require('clickhouse-sql')
 
 module.exports = {
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   '|=': (token, query) => {
     const val = unquoteToken(token)
-    return querySelectorPostProcess(_and(query, [
-            `position(string, '${val}') != 0`
-    ]))
+    query.where(Sql.Ne(new Sql.Raw(`position(string, '${val}')`, 0)))
+    return query
   },
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   '|~': (token, query) => {
     const val = unquoteToken(token)
-    return querySelectorPostProcess(_and(query, [
-            `extractAllGroups(string, '(${val})') != []`
-    ]))
+    query.where(Sql.Ne(new Sql.Raw(`extractAllGroups(string, '(${val})')`), new Sql.Raw('[]')))
+    return query
   },
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   '!=': (token, query) => {
     const val = unquoteToken(token)
-    return querySelectorPostProcess(_and(query, [
-            `position(string, '${val}') == 0`
-    ]))
+    query.where(Sql.Eq(new Sql.Raw(`position(string, '${val}')`, 0)))
+    return query
   },
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   '!~': (token, query) => {
     const val = unquoteToken(token)
-    return querySelectorPostProcess(_and(query, [
-            `extractAllGroups(string, '(${val})') == []`
-    ]))
+    query.where(Sql.Eq(new Sql.Raw(`extractAllGroups(string, '(${val})')`), new Sql.Raw('[]')))
+    return query
   }
 }

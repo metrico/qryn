@@ -1,113 +1,74 @@
 const reg = require('./stream_selector_operator_registry/stream_selector_operator_registry')
 const numreg = require('./number_operator_registry/compared_label_reg')
-const { hasExtraLabels, _and } = require('./common')
+const { hasExtraLabels, hasStream, addStream } = require('./common')
+const Sql = require('clickhouse-sql')
 
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports = (token, query) => {
-  if (query.stream) {
+  if (hasStream(query)) {
     const pred = processStreamExpression(token, query)
-    return {
-      ...query,
-      stream: [...(query.stream ? query.stream : []),
-        /**
-                 *
-                 * @param e {DataStream}
-                 * @returns {DataStream}
-                 */
-        (e) => e.filter(pred)
-      ]
-    }
+    return addStream(query,
+      /**
+       *
+       * @param e {DataStream}
+       * @returns {DataStream}
+       */
+      (e) => e.filter(pred))
   }
-  let ex = processWhereExpression(token, query)
-  ex = ex[0] === 'and' ? ex.slice(1) : [ex]
+  const ex = processWhereExpression(token, query)
   return hasExtraLabels(query)
-    ? _and(query, ex)
+    ? query.where(ex)
     : reg.simpleAnd(query, ex)
 }
 
 /**
  *
- * @param where {string[]}
- * @returns {string | string[]}
+ * @param andOr {string}
+ * @param cond {Conditions}
  */
-const derefWhereExp = (where) => where.length > 0 && where.length < 3 ? where[1] : where
-
-/**
- *
- * @param where1 {string | string[]}
- * @param op {string}
- * @param where2 {string | string[]}
- * @returns {string[]}
- */
-const whereConcat = (where1, op, where2) => {
-  where1 = Array.isArray(where1) ? derefWhereExp(where1) : where1
-  let where = null
-  if (Array.isArray(where1)) {
-    where = [op, ...(where1[0] === op ? where1.slice(1) : [where1])]
-  } else {
-    where = [op, where1]
-  }
-  if (!where2) {
-    return where
-  }
-  where2 = Array.isArray(where2) ? derefWhereExp(where2) : where2
-  if (Array.isArray(where2)) {
-    where.push.apply(where, where2[0] === op ? where2.slice(1) : [where2])
-  } else {
-    where.push(where2)
-  }
-  return where
+const checkAndOrType = (andOr, cond) => {
+  return (andOr === 'and' && cond instanceof Sql.Conjunction) ||
+    (andOr === 'or' && cond instanceof Sql.Disjunction)
 }
 
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {string[]}
+ * @param query {Select}
+ * @returns {Conditions}
  */
 const processWhereExpression = (token, query) => {
-  let where = []
+  let where = null
   let andOr = null
   for (const t of token.tokens) {
-    if (t.name === 'label_filter_expression') {
-      andOr = (andOr || 'and').toLowerCase()
-      const ex = getLabelFilterWhereExpression(t, query)
-      switch (where.length) {
-        case 0:
-        case 1:
-          where = Array.isArray(ex) ? ex : [andOr, ex]
-          break
-        case 2:
-          where = whereConcat(where[1], andOr, ex)
-          break
-        default:
-          where = whereConcat(where, andOr, ex)
-      }
-      andOr = null
-    }
-    if (t.name === 'bracketed_label_filter_expression' || t.name === 'complex_label_filter_expression') {
-      andOr = (andOr || 'and').toLowerCase()
-
-      switch (where.length) {
-        case 0:
-        case 1:
-          where = processWhereExpression(t, query)
-          break
-        case 2:
-          where = whereConcat(where[1], andOr, processWhereExpression(t, query))
-          break
-        default:
-          where = whereConcat(where, andOr, processWhereExpression(t, query))
-      }
-    }
     if (t.name === 'and_or') {
       andOr = t.value
+      continue
     }
+    andOr = (andOr || 'and').toLowerCase()
+    let ex = null
+    if (t.name === 'label_filter_expression') {
+      ex = getLabelFilterWhereExpression(t, query)
+    } else if (t.name === 'bracketed_label_filter_expression' || t.name === 'complex_label_filter_expression') {
+      ex = processWhereExpression(t, query)
+    } else {
+      continue
+    }
+    if (!where) {
+      where = ex
+    } else if (checkAndOrType(andOr, where)) {
+      where.args.push(ex)
+    } else if (andOr === 'and') {
+      where = Sql.And(where, ex)
+    } else if (andOr === 'or') {
+      where = Sql.Or(where, ex)
+    }
+    andOr = null
   }
   return where
 }
@@ -115,7 +76,7 @@ const processWhereExpression = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * @param query {Select}
  * @returns {string | string[]}
  */
 const getLabelFilterWhereExpression = (token, query) => {
@@ -138,7 +99,7 @@ const getLabelFilterWhereExpression = (token, query) => {
       default:
         throw new Error('Unsupported operator')
     }
-    return derefWhereExp(['and', ...clauses])
+    return clauses
   }
   if (token.Child('number_label_filter_expression')) {
     const label = token.Child('label').value

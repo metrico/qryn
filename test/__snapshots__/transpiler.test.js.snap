@@ -1453,6 +1453,51 @@ Object {
 
 exports[`should transpile log_stream_selector with stream filter 8`] = `"WITH str_sel as ( SELECT DISTINCT fingerprint, labels FROM loki.time_series  WHERE JSONHas(labels, 'rerum_laborum') AND extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') == [] ) SELECT  str_sel.labels as labels, samples.string as string, samples.fingerprint as fingerprint, samples.timestamp_ms as timestamp_ms FROM loki.samples_read as samples  LEFT JOIN str_sel ON samples.fingerprint = str_sel.fingerprint WHERE samples.fingerprint IN (SELECT fingerprint FROM str_sel) AND extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') == []  ORDER BY timestamp_ms desc, labels desc  LIMIT 1000"`;
 
+exports[`should transpile new style 1 1`] = `
+Object {
+  "duration": 1000,
+  "matrix": false,
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.7387779420506657'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638802620000 and 1638803220000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ms\` desc",
+  "stream": Array [],
+}
+`;
+
+exports[`should transpile new style 2 1`] = `
+Object {
+  "duration": 1000,
+  "matrix": false,
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.2119268970232')) and ((JSONHas(labels, 'freq') = 1) and (JSONExtractString(labels, 'freq') = '2'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638810060000 and 1638810660000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(2[0-9]$)') != []) order by \`timestamp_ms\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ms\` desc",
+  "stream": Array [],
+}
+`;
+
+exports[`should transpile new style 3 1`] = `
+Object {
+  "duration": 1000,
+  "matrix": true,
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.7026038163617259')) and ((JSONHas(labels, 'freq') = 1) and (JSONExtractString(labels, 'freq') = '2'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638813300000 and 1638813900000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(2[0-9]$)') != []) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,floor(timestamp_ms / 1000) * 1000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 1000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select \`labels\`,floor(timestamp_ms / 2000) * 2000 as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc",
+  "stream": Array [],
+}
+`;
+
+exports[`should transpile new style 4 1`] = `
+Object {
+  "duration": 1000,
+  "matrix": true,
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.7026038163617259')) and ((JSONHas(labels, 'freq') = 1) and (JSONExtractString(labels, 'freq') = '2'))), rate_a AS (select \`labels\`,toUInt64(intDiv(timestamp_ms, 1000) * 1000) as \`timestamp_ms\`,toFloat64(0) as \`value\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638813300000 and 1638813900000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(2[0-9]$)') != []) group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select \`labels\`,\`timestamp_ms\`,min(value) as \`value\` from (select * from rate_a as \`rate_a\` UNION ALL select \`a1\`.\`labels\`,number * 1000 + 1638813300000 as \`timestamp_ms\`,toFloat64(1) as \`value\` from (select \`labels\` from str_sel) as \`a1\`,numbers(600) as \`a2\`) group by \`labels\`,\`timestamp_ms\` order by \`labels\`,\`timestamp_ms\`",
+  "stream": Array [],
+}
+`;
+
+exports[`should transpile new style 6 1`] = `
+Object {
+  "duration": 1000,
+  "matrix": false,
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.2053747382122484_json'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\`,arrayFilter((x) -> x.2 != '', [('lbl_repl', if(JSONType(samples.string, 'new_lbl') == 'String', JSONExtractString(samples.string, 'new_lbl'), JSONExtractRaw(samples.string, 'new_lbl')))]) as \`extra_labels\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638863040000 and 1638863640000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (isValidJSON(samples.string) = 1) and ((indexOf(extra_labels, ('lbl_repl', 'new_val')) > 0) or ((arrayExists(x -> x.1 == 'lbl_repl', extra_labels) = 0) and ((JSONHas(labels, 'lbl_repl') = 1) and (JSONExtractString(labels, 'lbl_repl') = 'new_val')))) order by \`timestamp_ms\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ms\` desc",
+  "stream": Array [],
+}
+`;
+
 exports[`should transpile plugins 1`] = `
 Array [
   Object {

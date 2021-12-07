@@ -31,7 +31,7 @@
     "@apla/clickhouse": "^1.6.4",
     "axios": "^0.21.4",
     "bnf": "^1.0.1",
-    "clickhouse-sql": "git+https://github.com/metrico/node-clickhouse-sql.git",
+    "clickhouse-sql": "file:../node-clickhouse-sql",
     "fastify": "^3.24.1",
     "fastify-basic-auth": "^0.4.0",
     "fastify-static": "^4.5.0",

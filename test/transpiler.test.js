@@ -254,3 +254,83 @@ it('should transpile macro', async () => {
   expect(transpiler.transpileMacro(script.rootToken.Child('user_macro')))
     .toMatch('{test_id="b"}')
 })
+
+describe('should transpile new style', () => {
+  it('1', () => {
+    const res = transpiler.transpile({
+      direction: 'BACKWARD',
+      limit: '2000',
+      query: '{test_id=\"0.7387779420506657\"}',
+      start: '1638802620000000000',
+      end: '1638803220000000000',
+      step: '2'
+    })
+    expect(res).toMatchSnapshot()
+  })
+  it('2', () => {
+    const res = transpiler.transpile({
+      direction: 'BACKWARD',
+      limit: '2000',
+      query: '{test_id=\"0.2119268970232\", freq=\"2\"} |~ \"2[0-9]$\"',
+      start: '1638810060000000000',
+      end: '1638810660000000000',
+      step: '2'
+    })
+    expect(res).toMatchSnapshot()
+  })
+  it('3', () => {
+    const res = transpiler.transpile({
+      direction: 'BACKWARD',
+      limit: '2000',
+      query: 'rate({test_id=\"0.7026038163617259\", freq=\"2\"} |~ \"2[0-9]$\" [1s])',
+      start: '1638813300000000000',
+      end: '1638813900000000000',
+      step: '2'
+    })
+    expect(res).toMatchSnapshot()
+  })
+  it('4', () => {
+    const res = transpiler.transpile({
+      direction: 'BACKWARD',
+      limit: '2000',
+      query: 'absent_over_time({test_id=\"0.7026038163617259\", freq=\"2\"} |~ \"2[0-9]$\" [1s])',
+      start: '1638813300000000000',
+      end: '1638813900000000000',
+      step: '2'
+    })
+    expect(res).toMatchSnapshot()
+  })
+  it('5', () => {
+    const res = transpiler.transpile({
+      direction: 'BACKWARD',
+      limit: '2000',
+      query: '{test_id="0.000341166036469831_json"}|json',
+      start: '1638860340000000000',
+      end: '1638860940000000000',
+      step: '2'
+    })
+    console.log(res)
+  })
+  it('6', () => {
+    const res = transpiler.transpile({
+      direction: 'BACKWARD',
+      limit: '2000',
+      query: '{test_id=\"0.2053747382122484_json\"}|json lbl_repl=\"new_lbl\"|lbl_repl=\"new_val\"',
+      start: '1638863040000000000',
+      end: '1638863640000000000',
+      step: '2'
+    })
+    expect(res).toMatchSnapshot()
+  })
+  it('7', () => {
+    const res = transpiler.transpile({
+      direction: 'BACKWARD',
+      limit: '2000',
+      query: 'sum_over_time({test_id=\"0.1547558751138609_json\"}|json|lbl_repl=\"REPL\"|unwrap int_lbl [3s]) by (test_id, lbl_repl)',
+      start: '1638866220000000000',
+      end: '1638866820000000000',
+      step: '2'
+    })
+    console.log(res)
+  })
+})

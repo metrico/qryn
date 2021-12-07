@@ -1,5 +1,5 @@
-const { applyViaStream } = require('../common')
-
+const { applyViaStream, hasStream } = require('../common')
+const Sql = require('clickhouse-sql')
 /**
  *
  * @param token {Token}
@@ -17,59 +17,45 @@ function getByWithout (token) {
 /**
  *
  * @param expression {string}
- * @param stream {(function(Token, registry_types.Request): registry_types.Request)}
- * @returns {(function(Token, registry_types.Request): registry_types.Request)}
+ * @param stream {(function(Token, Select): Select)}
+ * @returns {(function(Token, Select): Select)}
  */
 module.exports.genericRequest = (expression, stream) => {
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   return (token, query) => {
-    if (query.stream && query.stream.length) {
+    if (hasStream(query)) {
       return stream(token, query)
     }
     const [byWithout, labelList] = getByWithout(token)
     if (!byWithout) {
       return query
     }
-    const labelsFilterClause = `arrayFilter(x -> x.1 ${byWithout === 'by' ? 'IN' : 'NOT IN'} ` +
-            `(${labelList.map(l => `'${l}'`).join(',')}), labels)`
-    return {
-      ctx: query.ctx,
-      with: {
-        ...(query.with ? query.with : {}),
-        agg_a: {
-          ...query,
-          ctx: undefined,
-          with: undefined,
-          stream: undefined
-        }
-      },
-      select: [
-                `${labelsFilterClause} as labels`,
-                'timestamp_ms',
-                `${expression} as value` // 'sum(value) as value'
-      ],
-      from: 'agg_a',
-      group_by: ['labels', 'timestamp_ms'],
-      order_by: {
-        name: ['labels', 'timestamp_ms'],
-        order: 'asc'
-      },
-      matrix: true,
-      stream: query.stream
-    }
+    const labelsFilterClause = new Sql.Raw(`arrayFilter(x -> x.1 ${byWithout === 'by' ? 'IN' : 'NOT IN'} ` +
+            `(${labelList.map(l => `'${l}'`).join(',')}), labels)`)
+    query.ctx.matrix = true
+    const aggA = new Sql.With('agg_a', query)
+    return (new Sql.Select())
+      .with(aggA)
+      .select(
+        [labelsFilterClause, 'labels'],
+        'timestamp_ms',
+        [new Sql.Raw(expression), 'value'])
+      .from(new Sql.WithReference(aggA))
+      .groupBy('labels', 'timestamp_ms')
+      .orderBy('labels', 'timestamp_ms')
   }
 }
 
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.streamSum = (token, query) => {
   return applyViaStream(token, query, (sum, e) => {
@@ -81,8 +67,8 @@ module.exports.streamSum = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.streamMin = (token, query) => {
   return applyViaStream(token, query, (sum, e) => {
@@ -93,8 +79,8 @@ module.exports.streamMin = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.streamMax = (token, query) => {
   return applyViaStream(token, query, (sum, e) => {
@@ -105,8 +91,8 @@ module.exports.streamMax = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.streamAvg = (token, query) => {
   return applyViaStream(token, query, (sum, e) => {
@@ -117,8 +103,8 @@ module.exports.streamAvg = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.streamStddev = (token, query) => {
   throw new Error('Not implemented')
@@ -127,8 +113,8 @@ module.exports.streamStddev = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.streamStdvar = (token, query) => {
   throw new Error('Not implemented')
@@ -137,8 +123,8 @@ module.exports.streamStdvar = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.streamCount = (token, query) => {
   return applyViaStream(token, query, (sum) => {
