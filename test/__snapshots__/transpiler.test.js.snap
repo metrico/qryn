@@ -1600,6 +1600,20 @@ Object {
 
 exports[`should transpile log_stream_selector with stream filter 8`] = `"WITH str_sel as ( SELECT DISTINCT fingerprint, labels FROM loki.time_series  WHERE JSONHas(labels, 'rerum_laborum') AND extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') == [] ) SELECT  str_sel.labels as labels, samples.string as string, samples.fingerprint as fingerprint, samples.timestamp_ms as timestamp_ms FROM loki.samples_read as samples  LEFT JOIN str_sel ON samples.fingerprint = str_sel.fingerprint WHERE samples.fingerprint IN (SELECT fingerprint FROM str_sel) AND extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') == []  ORDER BY timestamp_ms desc, labels desc  LIMIT 1000"`;
 
+exports[`should transpile logfmt requests 1`] = `
+Array [
+  Object {
+    "labels": Object {
+      "autem_quis": "quidem sit",
+      "l1": "v3",
+      "l2": "v2",
+      "l3": "v4",
+    },
+    "string": "l1=\\"v3\\" l3=\\"v4\\" ",
+  },
+]
+`;
+
 exports[`should transpile plugins 1`] = `
 Array [
   Object {
