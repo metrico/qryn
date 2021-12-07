@@ -146,6 +146,18 @@ it('should transpile json requests', async () => {
   expect(res).toMatchSnapshot()
 })
 
+it('should transpile logfmt requests', async () => {
+  const script = bnf.ParseScript('{autem_quis="quidem sit"}| logfmt')
+  let res = transpiler.transpileLogStreamSelector(script.rootToken, transpiler.initQuery())
+  let stream = DataStream.from([{
+    labels: { autem_quis: 'quidem sit', l1: 'v1', l2: 'v2' },
+    string: 'l1="v3" l3="v4" '
+  }])
+  res.stream.forEach(f => { stream = f(stream) })
+  res = await stream.toArray()
+  expect(res).toMatchSnapshot()
+})
+
 it('shoud transpile unwrap', async () => {
   const q = {
     ...transpiler.initQuery(),
