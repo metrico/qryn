@@ -85,14 +85,10 @@ describe('log_range_aggregation', () => {
   const test = (scr) => {
     const script = bnf.ParseScript(scr)
     const q = transpiler.initQuery()
-    q.ctx = {
-      start: 0,
-      end: 3600 * 1000
-    }
     const query = transpiler.transpileLogRangeAggregation(script.rootToken, q)
     setParams(query)
     expect(query).toMatchSnapshot()
-    expect(transpiler.requestToStr(query)).toMatchSnapshot()
+    expect(query.toString()).toMatchSnapshot()
   }
   it('1', () => {
     test('rate({minus_nam="aut illo"}[5m])')

@@ -1,73 +1,5 @@
-const { Compiler } = require('bnf/Compiler')
-const { _and, map } = require('../common')
+const { map, addStream } = require('../common')
 const debug = false
-/**
- *
- * @type {function(Token): Object | undefined}
- */
-const getLabels = (() => {
-  const compiler = new Compiler()
-  compiler.AddLanguage(`
-    <SYNTAX> ::= first_part *(part)
-    <first_part> ::= 1*(<ALPHA> | "_" | <DIGITS>)
-    <part> ::= ("." <first_part>) | "[" <QLITERAL> "]" | "[" <DIGITS> "]"
-      `, 'logfmt')
-  /**
-  * @param token {Token}
-  * @returns {Object | undefined}
-  */
-  return (token) => {
-    if (debug) console.log('logfmt: testing getLabels')
-    if (!token.Children('parameter').length) {
-      return undefined
-    }
-    return token.Children('parameter').reduce((sum, p) => {
-      const label = p.Child('label').value
-      if (debug) console.log('logfmt: parameter', label, sum, p)
-      let val = compiler.ParseScript(JSON.parse(p.Child('quoted_str').value))
-      val = [
-        val.rootToken.Child('first_part').value,
-        ...val.rootToken.Children('part').map(t => t.value)
-      ]
-      sum[label] = val
-      return sum
-    }, {})
-  }
-})()
-
-/**
- *
- * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
- */
-module.exports.viaClickhouseQuery = (token, query) => {
-  if (debug) console.log('logfmt: with parameters ')
-  const labels = getLabels(token)
-  let exprs = Object.entries(labels).map(lbl => {
-    const path = lbl[1].map(path => {
-      if (path.startsWith('.')) {
-        return `'${path.substring(1)}'`
-      }
-      if (path.startsWith('["')) {
-        return `'${JSON.parse(path.substring(1, path.length - 1))}'`
-      }
-      if (path.startsWith('[')) {
-        return (parseInt(path.substring(1, path.length - 1)) + 1).toString()
-      }
-      return `'${path}'`
-    })
-    const expr = `if(JSONType(samples.string, ${path.join(',')}) == 'String', ` +
-            `JSONExtractString(samples.string, ${path.join(',')}), ` +
-            `JSONExtractRaw(samples.string, ${path.join(',')}))`
-    return `('${lbl[0]}', ${expr})`
-  })
-  exprs = "arrayFilter((x) -> x.2 != '', [" + exprs.join(',') + '])'
-  return _and({
-    ...query,
-    select: [...query.select.filter(f => !f.endsWith('as extra_labels')), `${exprs} as extra_labels`]
-  }, ['isValidJSON(samples.string)'])
-}
 
 /**
  *
@@ -76,10 +8,6 @@ module.exports.viaClickhouseQuery = (token, query) => {
  * @returns {registry_types.Request}
  */
 module.exports.viaStream = (token, query) => {
-  const labels = getLabels(token)
-
-  if (debug)console.log('logfmt: no parameters ', labels)
-
   /**
     *
     * @param {string} line
@@ -88,7 +16,6 @@ module.exports.viaStream = (token, query) => {
   const extractLabels = (line) => {
     let key = ''
     let value = ''
-    const isNumber = true
     let isKey = false
     let inValue = false
     let inQuote = false
@@ -171,8 +98,5 @@ module.exports.viaStream = (token, query) => {
       }
     })
   }
-  return {
-    ...query,
-    stream: [...(query.stream ? query.stream : []), stream]
-  }
+  return addStream(query, stream)
 }

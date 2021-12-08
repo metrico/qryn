@@ -2,8 +2,6 @@ const json = require('./json')
 const re = require('./regexp')
 const { hasExtraLabels, getPlugins, isEOF, hasStream, addStream } = require('../common')
 const logfmt = require('./logfmt')
-const debug = false
-const _i = () => { throw new Error('Not implemented') }
 
 module.exports = {
   /**
@@ -23,16 +21,11 @@ module.exports = {
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   logfmt: (token, query) => {
-    if (debug) console.log('logfmt - index.js', token.Children('parameter'), query)
-    if (!token.Children('parameter').length || (query.stream && query.stream.length) ||
-          hasExtraLabels(query)) {
-      return logfmt.viaStream(token, query)
-    }
-    return _i //  logfmt.viaClickhouseQuery(token, query)
+    return logfmt.viaStream(token, query)
   },
 
   /**

@@ -294,13 +294,13 @@ module.exports.transpileUnwrapFunction = (token, query) => {
 }
 
 /**
- * TODO: REDO
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 const transpileUnwrapMetrics = (token, query) => {
-  query.select = [...query.select.filter(f => !f.endsWith('as string')), 'value as unwrapped']
+  query.select_list = query.select_list.filter(f => f[1] !== 'string')
+  query.select(['value', 'unwrapped'])
   return query
 }
 
