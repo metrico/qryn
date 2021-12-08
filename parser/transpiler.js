@@ -281,8 +281,27 @@ module.exports.transpileLabelFilterPipeline = (pipeline, query) => {
  * @returns {Select}
  */
 module.exports.transpileUnwrapFunction = (token, query) => {
-  query = module.exports.transpileUnwrapExpression(token.Child('unwrap_expression'), query)
+  query = module.exports.transpileLogStreamSelector(token, query)
+  if (token.Child('unwrap_value_statement')) {
+    if (token.Child('log_pipeline')) {
+      throw new Error('log pipeline not supported')
+    }
+    query = transpileUnwrapMetrics(token, query)
+  } else {
+    query = module.exports.transpileUnwrapExpression(token.Child('unwrap_expression'), query)
+  }
   return unwrapRegistry[token.Child('unwrap_fn').value](token, query)
+}
+
+/**
+ * TODO: REDO
+ * @param token {Token}
+ * @param query {registry_types.Request}
+ * @returns {registry_types.Request}
+ */
+const transpileUnwrapMetrics = (token, query) => {
+  query.select = [...query.select.filter(f => !f.endsWith('as string')), 'value as unwrapped']
+  return query
 }
 
 /**
@@ -292,7 +311,6 @@ module.exports.transpileUnwrapFunction = (token, query) => {
  * @returns {Select}
  */
 module.exports.transpileUnwrapExpression = (token, query) => {
-  query = module.exports.transpileLogStreamSelector(token, query)
   return unwrap(token.Child('unwrap_statement'), query)
 }
 

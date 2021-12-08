@@ -64,6 +64,15 @@ it('e2e', async () => {
     { fmt: 'json', lbl_repl: 'val_repl', int_lbl: '1' }, points,
     (i) => JSON.stringify({ lbl_repl: 'REPL', int_val: '1', new_lbl: 'new_val', str_id: i, arr: [1, 2, 3], obj: { o_1: 'v_1' } })
   )
+  points = createPoints(testID + '_metrics', 1, start, end,
+    { fmt: 'int', lbl_repl: 'val_repl', int_lbl: '1' }, points,
+    (i) => '',
+    (i) => i % 10
+  )
+  points = createPoints(testID + '_logfmt', 1, start, end,
+    { fmt: 'logfmt', lbl_repl: 'val_repl', int_lbl: '1' }, points,
+    (i) => 'lbl_repl="REPL" int_val=1 new_lbl="new_val" str_id="' + i + '" '
+  )
   await sendPoints(`http://${clokiExtUrl}`, points)
   await new Promise(resolve => setTimeout(resolve, 4000))
   const adjustResult = (resp, id, _start) => {
@@ -259,6 +268,7 @@ it('e2e', async () => {
   resp = await runRequest(`first_over_time({test_id="${testID}", freq="0.5"} | regexp "^[^0-9]+(?<e>[0-9]+)$" | unwrap e [1s]) by(test_id)`, 1)
   adjustMatrixResult(resp, testID)
   expect(resp.data).toMatchSnapshot()
+
   const ws = new WebSocket(`ws://${clokiExtUrl}/loki/api/v1/tail?query={test_id="${testID}_ws"}`)
   resp = {
     data: {
@@ -328,5 +338,65 @@ it('e2e', async () => {
     return stream
   })
   expect(resp.data).toMatchSnapshot()
+  resp = await runRequest(`sum_over_time({test_id="${testID}_metrics"} | unwrap_value [10s])`)
+  adjustMatrixResult(resp, `${testID}_metrics`)
+  expect(resp.data).toMatchSnapshot()
   // console.log(JSON.stringify(resp.data.data.result.map(s => [s.stream, s.values.length])))
+  // logfmt without params
+  resp = await runRequest(`{test_id="${testID}_logfmt"}|logfmt`)
+  adjustResult(resp, testID + '_logfmt')
+  expect(resp.data).toMatchSnapshot()
+  // logfmt with no params / stream_selector
+  resp = await runRequest(`{test_id="${testID}_logfmt"}|logfmt|fmt=~"[jk]son"`)
+  adjustResult(resp, testID + '_logfmt')
+  expect(resp.data).toMatchSnapshot()
+  // logfmt no params / stream_selector
+  resp = await runRequest(`{test_id="${testID}_logmft"}|logfmt|lbl_repl="REPL"`)
+  adjustResult(resp, testID + '_logfmt')
+  expect(resp.data).toMatchSnapshot()
+  resp = await runRequest(`sum_over_time({test_id="${testID}_logfmt"}|logfmt` +
+    '|lbl_repl="REPL"|unwrap int_lbl [3s]) by (test_id, lbl_repl)')
+  adjustMatrixResult(resp, testID + '_logfmt')
+  expect(resp.data).toMatchSnapshot()
+  // hammering aggregation
+  for (const fn of ['rate', 'sum_over_time', 'avg_over_time', 'max_over_time', 'min_over_time',
+    'first_over_time', 'last_over_time'
+    // , 'stdvar_over_time', 'stddev_over_time', 'quantile_over_time', 'absent_over_time'
+  ]) {
+    resp = await runRequest(`${fn}({test_id="${testID}_logfmt"}|logfmt` +
+      '|lbl_repl="REPL"|unwrap int_lbl [3s]) by (test_id, lbl_repl)')
+    try {
+      expect(resp.data.data.result.length).toBeTruthy()
+    } catch (e) {
+      console.log(fn)
+      throw e
+    }
+  }
+  resp = await runRequest(`rate({test_id="${testID}"}` +
+    '| line_format "str=\\"{{_entry}}\\" freq2={{divide freq 2}}"' +
+    '| logfmt | unwrap freq2 [1s]) by (test_id, freq2)')
+  adjustMatrixResult(resp, testID)
+  expect(resp.data).toMatchSnapshot()
+  resp = await runRequest(`rate({test_id="${testID}"}` +
+    '| line_format "str=\\"{{_entry}}\\" freq2={{divide freq 2}}"' +
+    '| logfmt | unwrap freq2 [1s]) by (test_id, freq2)', 60)
+  adjustMatrixResult(resp, testID)
+  expect(resp.data).toMatchSnapshot()
+  resp = await runRequest(`sum(rate({test_id="${testID}_logfmt"}| logfmt [5s])) by (test_id)`)
+  adjustMatrixResult(resp, testID + '_logfmt')
+  expect(resp.data).toMatchSnapshot()
+  resp = await runRequest(`sum(sum_over_time({test_id="${testID}_logfmt"}| logfmt | unwrap int_val [10s]) by (test_id, str_id)) by (test_id)`)
+  adjustMatrixResult(resp, testID + '_logfmt')
+  expect(resp.data).toMatchSnapshot()
+  resp = await runRequest(`derivative({test_id="${testID}_logfmt"}| logfmt | unwrap str_id [10s]) by (test_id)`)
+  adjustMatrixResult(resp, testID + '_logfmt')
+  resp = await runRequest(`sum(sum_over_time({test_id="${testID}_logfmt"}| logfmt | unwrap str_id [10s]) by (test_id, str_id)) by (test_id) > 1000`)
+  adjustMatrixResult(resp, testID + '_logfmt')
+  expect(resp.data).toMatchSnapshot()
+  resp = await runRequest(`derivative({test_id="${testID}_logfmt"}| logfmt | unwrap str_id [10s]) by (test_id) > 1`)
+  adjustMatrixResult(resp, testID + '_logfmt')
+  expect(resp.data).toMatchSnapshot()
+  resp = await runRequest(`{test_id="${testID}_logfmt"} | logfmt | str_id >= 598`)
+  adjustResult(resp, testID + '_logfmt')
+  expect(resp.data).toMatchSnapshot()
 })
