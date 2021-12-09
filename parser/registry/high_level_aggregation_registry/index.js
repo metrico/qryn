@@ -6,8 +6,8 @@ module.exports = {
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   sum: genericRequest('sum(value)', reg.streamSum),
   min: genericRequest('min(value)', reg.streamMin),

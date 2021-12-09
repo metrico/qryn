@@ -1,4 +1,5 @@
-const { _and } = require('../common')
+const { hasStream, addStream } = require('../common')
+const Sql = require('clickhouse-sql')
 /**
  *
  * @param token {Token}
@@ -14,111 +15,102 @@ function getVal (token) {
 
 /**
  *
- * @param query {registry_types.Request}
+ * @param query {Select}
  * @param streamProc {(function({value: number}): boolean)}
- * @param whereClause {string}
- * @returns {registry_types.Request}
+ * @param whereClause {Conditions | Condition}
+ * @returns {Select}
  */
 function genericReq (query, streamProc, whereClause) {
-  if (query.stream && query.stream.length) {
-    return {
-      ...query,
-      stream: [
-        ...(query.stream || []),
-        (s) => s.filter((e) => e.EOF || streamProc(e))
-      ]
-    }
+  if (hasStream(query)) {
+    return addStream(query, (s) => s.filter((e) => e.EOF || streamProc(e)))
   }
-  if (query.group_by && query.group_by.length) {
-    return {
-      ...query,
-      having: _and(query.having || [], [whereClause])
-    }
+  if (query.aggregations.length) {
+    return query.having(whereClause)
   }
-  return _and(query, [whereClause])
+  return query.where(whereClause)
 }
 
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.eq = (token, query) => {
   const val = getVal(token)
   return genericReq(query,
     (e) => Math.abs(e.value - val) < 0.0000000001,
-        `value == ${val}`
+    Sql.Eq('value', val)
   )
 }
 
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.neq = (token, query) => {
   const val = getVal(token)
   return genericReq(query,
     (e) => Math.abs(e.value - val) > 0.0000000001,
-        `value != ${val}`
+    Sql.Ne('value', val)
   )
 }
 
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.gt = (token, query) => {
   const val = getVal(token)
   return genericReq(query,
     (e) =>
       e.value > val,
-        `value > ${val}`
+    Sql.Gt('value', val)
   )
 }
 
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.ge = (token, query) => {
   const val = getVal(token)
   return genericReq(query,
     (e) => e.value >= val,
-        `value >= ${val}`
+    Sql.Gte('value', val)
   )
 }
 
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.lt = (token, query) => {
   const val = getVal(token)
   return genericReq(query,
     (e) => e.value < val,
-        `value < ${val}`
+    Sql.Lt('value', val)
   )
 }
 
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.le = (token, query) => {
   const val = getVal(token)
   return genericReq(query,
     (e) => e.value <= val,
-        `value <= ${val}`
+    Sql.Lte('value', val)
   )
 }

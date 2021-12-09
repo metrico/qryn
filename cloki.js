@@ -38,6 +38,7 @@ this.labelParser = UTILS.labelParser
 const init = DATABASE.init
 this.reloadFingerprints = DATABASE.reloadFingerprints
 this.scanFingerprints = DATABASE.scanFingerprints
+this.instantQueryScan = DATABASE.instantQueryScan
 this.scanMetricFingerprints = DATABASE.scanMetricFingerprints
 this.scanClickhouse = DATABASE.scanClickhouse;
 (async () => {
@@ -50,7 +51,10 @@ this.scanClickhouse = DATABASE.scanClickhouse;
 
 /* Fastify Helper */
 const fastify = require('fastify')({
-  logger: false
+  logger: false,
+  bodyLimit: parseInt(process.env.FASTIFY_BODYLIMIT) || 5242880,
+  requestTimeout:  parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
+  maxRequestsPerSocket: parseInt(process.env.FASTIFY_MAXREQUESTS) || 0
 })
 
 fastify.register(require('fastify-url-data'))

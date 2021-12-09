@@ -4,10 +4,10 @@ const labelReg = require('./compared_label_reg')
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @param aggregatedProcessor {(function(Token, registry_types.Request): registry_types.Request)}
- * @param labelComparer {(function(Token, registry_types.Request): registry_types.Request)}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @param aggregatedProcessor {(function(Token, Select): Select)}
+ * @param labelComparer {(function(Token, Select): Select)}
+ * @returns {Select}
  */
 function genericReq (token, query,
   aggregatedProcessor, labelComparer) {
@@ -24,8 +24,8 @@ module.exports = {
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   '==': (token, query) => {
     return genericReq(token, query, aggReg.eq, labelReg.eq)
@@ -34,8 +34,8 @@ module.exports = {
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   '>': (token, query) => {
     return genericReq(token, query, aggReg.gt, labelReg.gt)
@@ -44,8 +44,8 @@ module.exports = {
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   '>=': (token, query) => {
     return genericReq(token, query, aggReg.ge, labelReg.ge)
@@ -54,8 +54,8 @@ module.exports = {
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   '<': (token, query) => {
     return genericReq(token, query, aggReg.lt, labelReg.lt)
@@ -64,8 +64,8 @@ module.exports = {
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   '<=': (token, query) => {
     return genericReq(token, query, aggReg.le, labelReg.le)
@@ -74,8 +74,8 @@ module.exports = {
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   '!=': (token, query) => {
     return genericReq(token, query, aggReg.neq, labelReg.neq)
