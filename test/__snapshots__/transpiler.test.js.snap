@@ -3364,7 +3364,7 @@ Select {
     ],
     Array [
       Raw {
-        "raw": "if (intDiv(timestamp_ms, 60000) * 60000 % 120000 < 60000, intDiv(intDiv(timestamp_ms, 60000) * 60000, 120000) * step, 0)",
+        "raw": "intDiv(intDiv(timestamp_ms, 60000) * 60000, 120000) * 120000",
       },
       "timestamp_ms",
     ],
@@ -4168,7 +4168,7 @@ Select {
     ],
     Array [
       Raw {
-        "raw": "if (intDiv(timestamp_ms, 60000) * 60000 % 120000 < 60000, intDiv(intDiv(timestamp_ms, 60000) * 60000, 120000) * step, 0)",
+        "raw": "intDiv(intDiv(timestamp_ms, 60000) * 60000, 120000) * 120000",
       },
       "timestamp_ms",
     ],
@@ -5030,7 +5030,7 @@ Select {
     ],
     Array [
       Raw {
-        "raw": "if (intDiv(timestamp_ms, 60000) * 60000 % 120000 < 60000, intDiv(intDiv(timestamp_ms, 60000) * 60000, 120000) * step, 0)",
+        "raw": "intDiv(intDiv(timestamp_ms, 60000) * 60000, 120000) * 120000",
       },
       "timestamp_ms",
     ],
