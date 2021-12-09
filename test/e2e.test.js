@@ -172,11 +172,12 @@ it('e2e', async () => {
   resp = await runRequest(`{test_id="${testID}_json"}|json|lbl_repl="REPL"`)
   adjustResult(resp, testID + '_json')
   expect(resp.data).toMatchSnapshot()
+  // unwrap
   resp = await runRequest(`sum_over_time({test_id="${testID}_json"}|json` +
     '|lbl_repl="REPL"|unwrap int_lbl [3s]) by (test_id, lbl_repl)')
   adjustMatrixResult(resp, testID + '_json')
   expect(resp.data).toMatchSnapshot()
-  // hammering aggregation
+  // hammering unwrap
   for (const fn of ['rate', 'sum_over_time', 'avg_over_time', 'max_over_time', 'min_over_time',
     'first_over_time', 'last_over_time'
     // , 'stdvar_over_time', 'stddev_over_time', 'quantile_over_time', 'absent_over_time'

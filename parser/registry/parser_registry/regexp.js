@@ -1,5 +1,6 @@
 const { Compiler } = require('bnf/Compiler')
-const { unquote } = require('../common')
+const { unquote, addStream } = require('../common')
+const Sql = require('clickhouse-sql')
 
 const reBnf = `
 <SYNTAX> ::= *(<literal> | <any_group>)
@@ -86,50 +87,42 @@ const extractRegexp = (regexp) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.viaRequest = (token, query) => {
   const { labels, re } = extractRegexp(token.Child('parameter').value)
   const namesArray = '[' + labels.map(l => `'${l.name}'` || '').join(',') + ']'
-
-  return {
-    ...query,
-    select: [
-      ...query.select.filter(f => !f.endsWith('as extra_values')),
-            `arrayFilter(x -> x.1 != '' AND x.2 != '', arrayZip(${namesArray}, ` +
-                `arrayMap(x -> x[length(x)], extractAllGroupsHorizontal(string, '${re}')))) as extra_labels`
-    ]
-  }
+  query.select_list = query.select_list.filter(f => f[1] !== 'extra_labels')
+  query.select([
+    new Sql.Raw(`arrayFilter(x -> x.1 != '' AND x.2 != '', arrayZip(${namesArray}, ` +
+      `arrayMap(x -> x[length(x)], extractAllGroupsHorizontal(string, '${re}'))))`),
+    'extra_labels'])
+  return query
 }
 
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.viaStream = (token, query) => {
   const re = new RegExp(unquote(token.Child('parameter').value))
   const getLabels = (m) => {
     return m && m.groups ? m.groups : {}
   }
-  return {
-    ...query,
-    stream: [...(query.stream || []),
-      (s) => s.map(e => {
-        return e.labels
-          ? {
-              ...e,
-              labels: {
-                ...e.labels,
-                ...getLabels(e.string.match(re))
-              }
-            }
-          : e
-      })
-    ]
-  }
+  addStream(query, (s) => s.map(e => {
+    return e.labels
+      ? {
+          ...e,
+          labels: {
+            ...e.labels,
+            ...getLabels(e.string.match(re))
+          }
+        }
+      : e
+  }))
 }
 
 module.exports.internal = {

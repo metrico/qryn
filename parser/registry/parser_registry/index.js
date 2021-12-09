@@ -1,16 +1,14 @@
 const json = require('./json')
 const re = require('./regexp')
+const { hasExtraLabels, getPlugins, isEOF, hasStream, addStream } = require('../common')
 const logfmt = require('./logfmt')
-const { hasExtraLabels, getPlugins, isEOF } = require('../common')
-const debug = false
-const _i = () => { throw new Error('Not implemented') }
 
 module.exports = {
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   json: (token, query) => {
     if (!token.Children('parameter').length || (query.stream && query.stream.length) ||
@@ -23,26 +21,21 @@ module.exports = {
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   logfmt: (token, query) => {
-    if (debug) console.log('logfmt - index.js', token.Children('parameter'), query)
-    if (!token.Children('parameter').length || (query.stream && query.stream.length) ||
-          hasExtraLabels(query)) {
-      return logfmt.viaStream(token, query)
-    }
-    return _i //  logfmt.viaClickhouseQuery(token, query)
+    return logfmt.viaStream(token, query)
   },
 
   /**
      *
      * @param token {Token}
-     * @param query {registry_types.Request}
-     * @returns {registry_types.Request}
+     * @param query {Select}
+     * @returns {Select}
      */
   regexp: (token, query) => {
-    if ((query.stream && query.stream.length) || hasExtraLabels(query)) {
+    if (hasStream(query) || hasExtraLabels(query)) {
       return re.viaStream(token, query)
     }
     try {
@@ -56,36 +49,24 @@ module.exports = {
     if (plugin.map) {
       return (token, query) => {
         const mapper = plugin.map(token.Children('parameter').map(p => p.value))
-        return {
-          ...query,
-          stream: [
-            ...(query.stream || []),
-            (s) => s.map((e) => {
-              if (!e || isEOF(e) || !e.labels || !e.string) {
-                return e
-              }
-              return mapper(e)
-            })
-          ]
-        }
+        return addStream(query, (s) => s.map((e) => {
+          if (!e || isEOF(e) || !e.labels || !e.string) {
+            return e
+          }
+          return mapper(e)
+        }))
       }
     }
     if (plugin.remap) {
       return (token, query) => {
         const remapper = plugin.remap(token.Children('parameter').map(p => p.value))
-        return {
-          ...query,
-          stream: [
-            ...(query.stream || []),
-            (s) => s.remap((emit, e) => {
-              if (!e || isEOF(e) || !e.labels || !e.string) {
-                emit(e)
-                return
-              }
-              remapper(emit, e)
-            })
-          ]
-        }
+        return addStream(query, (s) => s.remap((emit, e) => {
+          if (!e || isEOF(e) || !e.labels || !e.string) {
+            emit(e)
+            return
+          }
+          remapper(emit, e)
+        }))
       }
     }
   })
