@@ -155,7 +155,7 @@ module.exports.transpileTail = (request) => {
   query.orderBy(['timestamp_ms', 'asc'])
   query.limit(undefined, undefined)
   return {
-    query: query.toString(),
+    query: request.rawRequest ? query : query.toString(),
     stream: getStream(query)
   }
 }

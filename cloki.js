@@ -53,7 +53,7 @@ this.scanClickhouse = DATABASE.scanClickhouse;
 const fastify = require('fastify')({
   logger: false,
   bodyLimit: parseInt(process.env.FASTIFY_BODYLIMIT) || 5242880,
-  requestTimeout:  parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
+  requestTimeout: parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
   maxRequestsPerSocket: parseInt(process.env.FASTIFY_MAXREQUESTS) || 0
 })
 
