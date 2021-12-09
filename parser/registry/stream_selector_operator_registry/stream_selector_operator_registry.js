@@ -9,11 +9,12 @@ const Sql = require('clickhouse-sql')
  */
 function selectorClauses (regex, eq, label, value) {
   const call = regex
-    ? [new Sql.Raw(`extractAllGroups(JSONExtractString(labels, '${label}'), '(${value})')`), '[]']
-    : [new Sql.Raw(`JSONExtractString(labels, '${label}')`), value]
+    ? [new Sql.Raw(`extractAllGroups(JSONExtractString(labels, '${label}'), '(${value})')`),
+        '[]', eq ? Sql.Ne : Sql.Eq]
+    : [new Sql.Raw(`JSONExtractString(labels, '${label}')`), value, eq ? Sql.Eq : Sql.Ne]
   return Sql.And(
     Sql.Eq(new Sql.Raw(`JSONHas(labels, '${label}')`), 1),
-    eq ? Sql.Eq(call[0], call[1]) : Sql.Ne(call[0], call[1])
+    call[2](call[0], call[1])
   ) /* [
         `JSONHas(labels, '${label}')`,
         regex
