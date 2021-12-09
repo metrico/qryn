@@ -1018,7 +1018,7 @@ Select {
               },
               "operator": "=",
               "value": Value {
-                "value": undefined,
+                "value": 0,
               },
             },
           ],
@@ -1380,7 +1380,7 @@ Select {
                         },
                         "operator": "=",
                         "value": Value {
-                          "value": undefined,
+                          "value": 0,
                         },
                       },
                     ],
@@ -1632,7 +1632,7 @@ Select {
 }
 `;
 
-exports[`log_range_aggregation 2 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') = '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = '') order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,floor(timestamp_ms / 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select \`labels\`,floor(timestamp_ms / undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc"`;
+exports[`log_range_aggregation 2 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') = '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,floor(timestamp_ms / 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select \`labels\`,floor(timestamp_ms / undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc"`;
 
 exports[`log_range_aggregation 3 1`] = `
 Select {
@@ -7281,7 +7281,7 @@ Select {
               },
               "operator": "=",
               "value": Value {
-                "value": undefined,
+                "value": 0,
               },
             },
           ],
@@ -7752,7 +7752,7 @@ Select {
                         },
                         "operator": "=",
                         "value": Value {
-                          "value": undefined,
+                          "value": 0,
                         },
                       },
                     ],
@@ -8006,7 +8006,7 @@ Select {
 }
 `;
 
-exports[`should transpile aggregation_operator 4`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') = '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = '') order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,floor(timestamp_ms / 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc), agg_a AS (select \`labels\`,floor(timestamp_ms / undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ms\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ms\` order by \`labels\`,\`timestamp_ms\`"`;
+exports[`should transpile aggregation_operator 4`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') = '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,floor(timestamp_ms / 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc), agg_a AS (select \`labels\`,floor(timestamp_ms / undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ms\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ms\` order by \`labels\`,\`timestamp_ms\`"`;
 
 exports[`should transpile aggregation_operator 5`] = `
 Select {
@@ -11143,7 +11143,7 @@ Select {
         },
         "operator": "!=",
         "value": Value {
-          "value": undefined,
+          "value": 0,
         },
       },
     ],
@@ -11446,7 +11446,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector with stream filter 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'et_dolorem') = 1) and (JSONExtractString(labels, 'et_dolorem') = 'nemo doloremque')) and ((JSONHas(labels, 'quia') = 1) and (JSONExtractString(labels, 'quia') = 'eum voluptatem non eligendi'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'at et') != '') order by \`timestamp_ms\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector with stream filter 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'et_dolorem') = 1) and (JSONExtractString(labels, 'et_dolorem') = 'nemo doloremque')) and ((JSONHas(labels, 'quia') = 1) and (JSONExtractString(labels, 'quia') = 'eum voluptatem non eligendi'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'at et') != 0) order by \`timestamp_ms\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector with stream filter 3`] = `
 Select {
@@ -11575,7 +11575,7 @@ Select {
         },
         "operator": "=",
         "value": Value {
-          "value": undefined,
+          "value": 0,
         },
       },
     ],
@@ -11822,7 +11822,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector with stream filter 4`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') = '[]'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = '') order by \`timestamp_ms\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector with stream filter 4`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') = '[]'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ms\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector with stream filter 5`] = `
 Select {
