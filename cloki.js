@@ -51,7 +51,8 @@ this.scanClickhouse = DATABASE.scanClickhouse;
 
 /* Fastify Helper */
 const fastify = require('fastify')({
-  logger: false,
+
+  logger: true,
   bodyLimit: parseInt(process.env.FASTIFY_BODYLIMIT) || 5242880,
   requestTimeout: parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
   maxRequestsPerSocket: parseInt(process.env.FASTIFY_MAXREQUESTS) || 0
@@ -202,8 +203,8 @@ fastify.post('/config/v1/alerts', {
     }
   }
 })
-fastify.get('/config/v1/alerts', require('./lib/handlers/alerts/get_rules').bind(this))
-fastify.get('/config/v1/alerts/:name', require('./lib/handlers/alerts/get_rule').bind(this))
+fastify.get('/api/prom/rules', require('./lib/handlers/alerts/get_rules').bind(this))
+fastify.get('/api/prom/rules/:ns/:rule', require('./lib/handlers/alerts/get_rule').bind(this))
 fastify.put('/config/v1/alerts/:name', {
   handler: require('./lib/handlers/alerts/put_rule').putAlert.bind(this),
   schema: {
