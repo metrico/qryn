@@ -1,7 +1,7 @@
 const { getDuration, hasStream } = require('../common')
 const reg = require('./log_range_agg_reg')
 const { genericRate } = reg
-const Sql = require('clickhouse-sql')
+const Sql = require('@cloki/clickhouse-sql')
 
 module.exports = {
   /**

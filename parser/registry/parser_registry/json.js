@@ -1,6 +1,6 @@
 const { Compiler } = require('bnf/Compiler')
 const { map, addStream } = require('../common')
-const Sql = require('clickhouse-sql')
+const Sql = require('@cloki/clickhouse-sql')
 
 /**
  *

@@ -1,5 +1,5 @@
 const { map, hasExtraLabels, hasStream, addStream } = require('./common')
-const Sql = require('clickhouse-sql')
+const Sql = require('@cloki/clickhouse-sql')
 /**
  *
  * @param token {Token}
