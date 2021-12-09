@@ -10,7 +10,7 @@ module.exports = {
      */
   '|=': (token, query) => {
     const val = unquoteToken(token)
-    query.where(Sql.Ne(new Sql.Raw(`position(string, '${val}')`, 0)))
+    query.where(Sql.Ne(new Sql.Raw(`position(string, '${val}')`), 0))
     return query
   },
   /**
@@ -32,7 +32,7 @@ module.exports = {
      */
   '!=': (token, query) => {
     const val = unquoteToken(token)
-    query.where(Sql.Eq(new Sql.Raw(`position(string, '${val}')`, 0)))
+    query.where(Sql.Eq(new Sql.Raw(`position(string, '${val}')`), 0))
     return query
   },
   /**

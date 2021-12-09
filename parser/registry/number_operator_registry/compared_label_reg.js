@@ -60,11 +60,11 @@ const genericExtraLabelSearch =
 
 const genericStreamSearch = (label, fn) =>
   (e) => {
-    if (e.EOF) {
-      return true
-    }
     if (!e || !e.labels || !e.labels[label]) {
       return false
+    }
+    if (e.EOF) {
+      return true
     }
     const val = parseFloat(e.labels[label])
     if (isNaN(val)) {
