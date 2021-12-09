@@ -1,5 +1,5 @@
 const { unquoteToken, isEOF } = require('../common')
-const Sql = require('clickhouse-sql')
+const Sql = require('@cloki/clickhouse-sql')
 /**
  * @param regex {boolean}
  * @param eq {boolean}

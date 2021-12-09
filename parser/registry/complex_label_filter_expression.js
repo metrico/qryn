@@ -1,7 +1,7 @@
 const reg = require('./stream_selector_operator_registry/stream_selector_operator_registry')
 const numreg = require('./number_operator_registry/compared_label_reg')
 const { hasExtraLabels, hasStream, addStream } = require('./common')
-const Sql = require('clickhouse-sql')
+const Sql = require('@cloki/clickhouse-sql')
 
 /**
  *

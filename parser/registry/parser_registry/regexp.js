@@ -1,6 +1,6 @@
 const { Compiler } = require('bnf/Compiler')
 const { unquote, addStream } = require('../common')
-const Sql = require('clickhouse-sql')
+const Sql = require('@cloki/clickhouse-sql')
 
 const reBnf = `
 <SYNTAX> ::= *(<literal> | <any_group>)

@@ -1,5 +1,5 @@
 const { getDuration, concatLabels, applyViaStream } = require('../common')
-const Sql = require('clickhouse-sql')
+const Sql = require('@cloki/clickhouse-sql')
 
 /**
  *

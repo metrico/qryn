@@ -12,7 +12,7 @@ const { durationToMs, sharedParamNames, getStream } = require('./registry/common
 const compiler = require('./bnf')
 const { parseMs, DATABASE_NAME, samplesReadTableName, samplesTableName } = require('../lib/utils')
 const { getPlg } = require('../plugins/engine')
-const Sql = require('clickhouse-sql')
+const Sql = require('@cloki/clickhouse-sql')
 
 /**
  * @returns {Select}

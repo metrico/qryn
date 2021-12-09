@@ -1,6 +1,6 @@
 const { hashLabels, parseLabels } = require('../../common')
 const { getPlg } = require('../../plugins/engine')
-const Sql = require('clickhouse-sql')
+const Sql = require('@cloki/clickhouse-sql')
 
 /**
  * @param query {registry_types.Request | string[]}
