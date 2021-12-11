@@ -22,6 +22,7 @@ const fs = require('fs')
 const protoBuff = require('protocol-buffers')
 const { startAlerting } = require('./lib/db/alerting')
 const messages = protoBuff(fs.readFileSync('lib/loki.proto'))
+const yaml = require('yaml')
 
 /* Fingerprinting */
 this.fingerPrint = UTILS.fingerPrint
@@ -89,6 +90,18 @@ fastify.addContentTypeParser('text/plain', {
 }, function (req, body, done) {
   try {
     const json = JSON.parse(body)
+    done(null, json)
+  } catch (err) {
+    err.statusCode = 400
+    done(err, undefined)
+  }
+})
+
+fastify.addContentTypeParser('application/yaml', {
+  parseAs: 'string'
+}, function (req, body, done) {
+  try {
+    const json = yaml.parse(body)
     done(null, json)
   } catch (err) {
     err.statusCode = 400
@@ -192,28 +205,18 @@ fastify.get('/loki/api/v1/series', handlerSeries)
 
 fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/tail').bind(this))
 
-fastify.get('/alerts', require('./lib/handlers/alterts'))
-fastify.post('/alerts_data', require('./lib/handlers/alterts_data').bind(this))
-
-fastify.post('/config/v1/alerts', {
-  handler: require('./lib/handlers/alerts/post_rule').bind(this),
-  schema: {
-    body: {
-      $ref: 'http://cloki/alertRule.json#'
-    }
-  }
-})
 fastify.get('/api/prom/rules', require('./lib/handlers/alerts/get_rules').bind(this))
-fastify.get('/api/prom/rules/:ns/:rule', require('./lib/handlers/alerts/get_rule').bind(this))
-fastify.put('/config/v1/alerts/:name', {
-  handler: require('./lib/handlers/alerts/put_rule').putAlert.bind(this),
+fastify.get('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/get_group').bind(this))
+fastify.post('/api/prom/rules/:ns', {
+  handler: require('./lib/handlers/alerts/post_group').bind(this)/* ,
   schema: {
     body: {
       $ref: 'http://cloki/alertRule.json#'
     }
-  }
+  } */
 })
-fastify.delete('/config/v1/alerts/:name', require('./lib/handlers/alerts/delete_rule').deleteAlert.bind(this))
+fastify.delete('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/del_group').bind(this))
+fastify.delete('/api/prom/rules/:ns', require('./lib/handlers/alerts/del_ns').bind(this))
 
 fastify.register(require('fastify-serve-swagger-ui'), {
   // swagger specification which should be exposed

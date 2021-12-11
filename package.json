@@ -61,10 +61,10 @@
     "eslint-plugin-jest": "^25.3.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^5.2.0",
-    "jest": "^27.4.3",
+    "fastify-serve-swagger-ui": "^1.0.0",
+    "jest": "^27.4.4",
     "logfmt": "^1.3.2",
-    "standard": "^16.0.4",
-    "fastify-serve-swagger-ui": "^1.0.0"
+    "standard": "^16.0.4"
   },
   "directories": {
     "lib": "lib"
