@@ -53,7 +53,7 @@ this.scanClickhouse = DATABASE.scanClickhouse;
 /* Fastify Helper */
 const fastify = require('fastify')({
 
-  logger: true,
+  logger: false,
   bodyLimit: parseInt(process.env.FASTIFY_BODYLIMIT) || 5242880,
   requestTimeout: parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
   maxRequestsPerSocket: parseInt(process.env.FASTIFY_MAXREQUESTS) || 0
@@ -217,6 +217,7 @@ fastify.post('/api/prom/rules/:ns', {
 })
 fastify.delete('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/del_group').bind(this))
 fastify.delete('/api/prom/rules/:ns', require('./lib/handlers/alerts/del_ns').bind(this))
+fastify.get('/prometheus/api/v1/rules', require('./lib/handlers/alerts/prom_get_rules').bind(this))
 
 fastify.register(require('fastify-serve-swagger-ui'), {
   // swagger specification which should be exposed

@@ -51,7 +51,8 @@
     "short-hash": "^1.0.0",
     "snappyjs": "^0.6.1",
     "ws": "^8.3.0",
-    "yaml": "^1.10.2"
+    "yaml": "^1.10.2",
+    "date-fns": "^2.27.0"
   },
   "devDependencies": {
     "casual": "^1.6.2",
