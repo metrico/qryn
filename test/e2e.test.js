@@ -1,6 +1,7 @@
 const { createPoints, sendPoints } = require('./common')
 const axios = require('axios')
 const { WebSocket } = require('ws')
+const yaml = require('yaml')
 // const pb = require("protobufjs");
 const e2e = () => process.env.INTEGRATION_E2E || process.env.INTEGRATION
 const clokiLocal = () => process.env.CLOKI_LOCAL || process.env.CLOKI_EXT_URL || false
@@ -403,56 +404,39 @@ it('e2e', async () => {
 
 const checkAlertConfig = async () => {
   try {
-    await expect(axios.post('http://localhost:3100/config/v1/alerts', { request: '1234' }))
-      .rejects
-      .toHaveProperty(['response', 'data'], {
-        statusCode: 400,
-        error: 'Bad Request',
-        message: "body should have required property 'name'"
-      })
-    await expect(axios.post('http://localhost:3100/config/v1/alerts', { request: '1234', name: 'asd' }))
-      .rejects
-      .toHaveProperty(['response', 'data'], {
-        statusCode: 400,
-        error: 'Bad Request',
-        message: "Bad request '1234'"
-      })
-    expect(await axios.post('http://localhost:3100/config/v1/alerts', { name: 'asd', request: '{l1="v1"}' }))
-      .toHaveProperty('data', { name: 'asd', request: '{l1="v1"}' })
-    await expect(axios.post('http://localhost:3100/config/v1/alerts', { name: 'asd', request: '{l1="v1"}' }))
-      .rejects
-      .toHaveProperty(['response', 'data'], {
-        statusCode: 400,
-        error: 'Bad Request',
-        message: 'Rule with name \'asd\' already exists'
-      })
-    await expect(axios.get('http://localhost:3100/config/v1/alerts/123'))
-      .rejects
-      .toHaveProperty(['response', 'data'], {
-        statusCode: 404,
-        error: 'Not Found',
-        message: 'Rule with name \'123\' not found'
-      })
-    expect(await axios.get('http://localhost:3100/config/v1/alerts/asd'))
-      .toHaveProperty(['data'],
-        { name: 'asd', request: '{l1="v1"}', labels: {} }
-      )
-    expect(await axios.get('http://localhost:3100/config/v1/alerts'))
-      .toHaveProperty(['data'], { alerts: [{ name: 'asd', request: '{l1="v1"}', labels: {} }], count: 1 })
-    expect(await axios.put('http://localhost:3100/config/v1/alerts/asd', {
-      name: 'asd',
-      request: '{l1="v2"}',
-      labels: {}
-    }))
-      .toHaveProperty(['data'], { name: 'asd', request: '{l1="v2"}', labels: {} })
-    expect(await axios.get('http://localhost:3100/config/v1/alerts/asd'))
-      .toHaveProperty(['data'], { name: 'asd', request: '{l1="v2"}', labels: {} })
-    expect(await axios.delete('http://localhost:3100/config/v1/alerts/asd'))
-      .toHaveProperty(['data', 'statusCode'], 200)
-    expect(await axios.get('http://localhost:3100/config/v1/alerts'))
-      .toHaveProperty(['data'], { alerts: [], count: 0 })
+    expect(await axios({
+      method: 'POST',
+      url: 'http://localhost:3100/api/prom/rules/test_ns',
+      data: yaml.stringify({
+        name: 'test_group',
+        interval: '1s',
+        rules: [{
+          alert: 'test_rul',
+          for: '1m',
+          annotations: { summary: 'ssssss' },
+          labels: { lllll: 'vvvvv' },
+          expr: '{test_id="alert_test"}'
+        }]
+      }),
+      headers: {
+        'Content-Type': 'application/yaml'
+      }
+    })).toHaveProperty('data', { msg: 'ok' })
+    expect(yaml.parse((await axios.get('http://localhost:3100/api/prom/rules')).data))
+      .toHaveProperty('test_ns', [{
+        name: 'test_group',
+        interval: '1s',
+        rules: [{
+          alert: 'test_rul',
+          for: '1m',
+          annotations: { summary: 'ssssss' },
+          labels: { lllll: 'vvvvv' },
+          expr: '{test_id="alert_test"}'
+        }]
+      }])
+    await axios.delete('http://localhost:3100/api/prom/rules/test_ns').catch(console.log)
   } catch (e) {
-    await axios.delete('http://localhost:3100/config/v1/alerts/asd').catch(console.log)
+    await axios.delete('http://localhost:3100/api/prom/rules/test_ns').catch(console.log)
     throw e
   }
 }

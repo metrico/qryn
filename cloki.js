@@ -20,7 +20,7 @@ const UTILS = require('./lib/utils')
 /* ProtoBuf Helper */
 const fs = require('fs')
 const protoBuff = require('protocol-buffers')
-const { startAlerting } = require('./lib/db/alerting')
+const { startAlerting, stop } = require('./lib/db/alerting')
 const messages = protoBuff(fs.readFileSync('lib/loki.proto'))
 const yaml = require('yaml')
 
@@ -144,25 +144,6 @@ fastify.addContentTypeParser('*', function (request, payload, done) {
     done(null, data)
   })
 })
-fastify.addSchema({
-  $id: 'http://cloki/alertRule.json',
-  type: 'object',
-  properties: {
-    name: {
-      type: 'string'
-    },
-    request: {
-      type: 'string'
-    },
-    labels: {
-      type: 'object',
-      additionalProperties: {
-        type: 'string'
-      }
-    }
-  },
-  required: ['name', 'request']
-})
 /* 404 Handler */
 const handler404 = require('./lib/handlers/404.js').bind(this)
 fastify.setNotFoundHandler(handler404)
@@ -205,29 +186,14 @@ fastify.get('/loki/api/v1/series', handlerSeries)
 
 fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/tail').bind(this))
 
+// ALERT MANAGER
+
 fastify.get('/api/prom/rules', require('./lib/handlers/alerts/get_rules').bind(this))
 fastify.get('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/get_group').bind(this))
-fastify.post('/api/prom/rules/:ns', {
-  handler: require('./lib/handlers/alerts/post_group').bind(this)/* ,
-  schema: {
-    body: {
-      $ref: 'http://cloki/alertRule.json#'
-    }
-  } */
-})
+fastify.post('/api/prom/rules/:ns', require('./lib/handlers/alerts/post_group').bind(this))
 fastify.delete('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/del_group').bind(this))
 fastify.delete('/api/prom/rules/:ns', require('./lib/handlers/alerts/del_ns').bind(this))
 fastify.get('/prometheus/api/v1/rules', require('./lib/handlers/alerts/prom_get_rules').bind(this))
-
-fastify.register(require('fastify-serve-swagger-ui'), {
-  // swagger specification which should be exposed
-  specification: {
-    type: 'file',
-    path: 'cLoki_config_api.yaml'
-  },
-  // path under which swagger-ui will be available
-  path: 'swagger'
-})
 
 // Run API Service
 fastify.listen(
@@ -243,4 +209,5 @@ fastify.listen(
 module.exports.stop = () => {
   fastify.close()
   DATABASE.stop()
+  stop()
 }
