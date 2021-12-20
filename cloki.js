@@ -47,7 +47,7 @@ if (!this.readonly) init(process.env.CLICKHOUSE_DB || 'cloki')
 const fastify = require('fastify')({
   logger: false,
   bodyLimit: parseInt(process.env.FASTIFY_BODYLIMIT) || 5242880,
-  requestTimeout:  parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
+  requestTimeout: parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
   maxRequestsPerSocket: parseInt(process.env.FASTIFY_MAXREQUESTS) || 0
 })
 
@@ -168,4 +168,5 @@ fastify.listen(
 module.exports.stop = () => {
   fastify.close()
   DATABASE.stop()
+  require('./parser/transpiler').stop()
 }

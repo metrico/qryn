@@ -32,3 +32,5 @@ module.exports.hashLabels = (labels) => {
   }
   return labels
 }
+
+module.exports.LineFmtOption = () => process.env.LINE_FMT || 'handlebars'
