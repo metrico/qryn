@@ -53,7 +53,7 @@ function applyViaRequest (token, query, valueExpr, lastValue) {
   query.ctx.matrix = true
   query.ctx.duration = duration
   const step = query.ctx.step
-  if (step < duration) {
+  if (step > duration) {
     query.where(Sql.Lt(new Sql.Raw(`intDiv(timestamp_ms, ${duration}) * ${duration} % ${step}`), duration))
   }
   const uwRateA = new Sql.With('uw_rate_a', query)
