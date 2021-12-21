@@ -3516,6 +3516,15 @@ Select {
                     },
                   },
                 },
+                Condition {
+                  "column": Raw {
+                    "raw": "intDiv(timestamp_ms, 60000) * 60000 % 120000",
+                  },
+                  "operator": "<",
+                  "value": Value {
+                    "value": 60000,
+                  },
+                },
               ],
             },
             "ctx": Object {
@@ -3907,6 +3916,15 @@ Select {
                 "value": Value {
                   "value": 1,
                 },
+              },
+            },
+            Condition {
+              "column": Raw {
+                "raw": "intDiv(timestamp_ms, 60000) * 60000 % 120000",
+              },
+              "operator": "<",
+              "value": Value {
+                "value": 60000,
               },
             },
           ],
@@ -4342,6 +4360,15 @@ Select {
                     },
                   },
                 },
+                Condition {
+                  "column": Raw {
+                    "raw": "intDiv(timestamp_ms, 60000) * 60000 % 120000",
+                  },
+                  "operator": "<",
+                  "value": Value {
+                    "value": 60000,
+                  },
+                },
               ],
             },
             "ctx": Object {
@@ -4762,6 +4789,15 @@ Select {
                 "value": Value {
                   "value": 1,
                 },
+              },
+            },
+            Condition {
+              "column": Raw {
+                "raw": "intDiv(timestamp_ms, 60000) * 60000 % 120000",
+              },
+              "operator": "<",
+              "value": Value {
+                "value": 60000,
               },
             },
           ],
@@ -5204,6 +5240,15 @@ Select {
                     },
                   },
                 },
+                Condition {
+                  "column": Raw {
+                    "raw": "intDiv(timestamp_ms, 60000) * 60000 % 120000",
+                  },
+                  "operator": "<",
+                  "value": Value {
+                    "value": 60000,
+                  },
+                },
               ],
             },
             "ctx": Object {
@@ -5624,6 +5669,15 @@ Select {
                 "value": Value {
                   "value": 1,
                 },
+              },
+            },
+            Condition {
+              "column": Raw {
+                "raw": "intDiv(timestamp_ms, 60000) * 60000 % 120000",
+              },
+              "operator": "<",
+              "value": Value {
+                "value": 60000,
               },
             },
           ],

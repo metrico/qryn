@@ -399,6 +399,9 @@ it('e2e', async () => {
   resp = await runRequest(`{test_id="${testID}_logfmt"} | logfmt | str_id >= 598`)
   adjustResult(resp, testID + '_logfmt')
   expect(resp.data).toMatchSnapshot()
+  resp = await runRequest(`rate({test_id="${testID}_json"} | json int_val="int_val" | unwrap int_val [1m]) by (test_id)`,
+    0.05)
+  expect(resp.data.data.result.length > 0).toBeTruthy()
   await checkAlertConfig()
 })
 
