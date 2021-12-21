@@ -15,10 +15,19 @@ const genericRate = (valueExpr, token, query) => {
   query.limit(undefined, undefined)
   const step = query.ctx.step
   const rateA = new Sql.With('rate_a', query)
+  const tsMoveParam = new Sql.Parameter('timestamp_shift')
+  query.addParam(tsMoveParam)
+  const tsGroupingExpr = new Sql.Raw('')
+  tsGroupingExpr.toString = () => {
+    if (!tsMoveParam.get()) {
+      return `intDiv(timestamp_ms, ${duration}) * ${duration}`
+    }
+    return `intDiv(timestamp_ms - ${tsMoveParam.toString()}, ${duration}) * ${duration} + ${tsMoveParam.toString()}`
+  }
   const rateB = (new Sql.Select())
     .select(
       [concatLabels(query), 'labels'],
-      [new Sql.Raw(`floor(timestamp_ms / ${duration}) * ${duration}`), 'timestamp_ms'],
+      [tsGroupingExpr, 'timestamp_ms'],
       [valueExpr, 'value']
     )
     .from(new Sql.WithReference(rateA))
@@ -30,7 +39,7 @@ const genericRate = (valueExpr, token, query) => {
   const rateC = (new Sql.Select())
     .select(
       'labels',
-      [new Sql.Raw(`floor(timestamp_ms / ${step}) * ${step}`), 'timestamp_ms'],
+      [tsGroupingExpr, 'timestamp_ms'],
       [new Sql.Raw('argMin(rate_b.value, rate_b.timestamp_ms)'), 'value']
     )
     .from('rate_b')

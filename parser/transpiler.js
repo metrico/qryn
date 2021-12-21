@@ -49,9 +49,17 @@ module.exports.initQuery = () => {
 
 /**
  *
- * @param request {{query: string, limit: number, direction: string, start: string, end: string, step: string,
- *      stream?: (function(DataStream): DataStream)[]}}
- * @returns {{query: string, matrix: boolean, duration: number | undefined}}
+ * @param request {{
+ * query: string,
+ * limit: number,
+ * direction: string,
+ * start: string,
+ * end: string,
+ * step: string,
+ * stream?: (function(DataStream): DataStream)[],
+ * rawQuery: boolean
+ * }}
+ * @returns {{query: string, stream: (function (DataStream): DataStream)[], matrix: boolean, duration: number | undefined}}
  */
 module.exports.transpile = (request) => {
   const expression = compiler.ParseScript(request.query.trim())
@@ -105,9 +113,9 @@ module.exports.transpile = (request) => {
   setQueryParam(query, sharedParamNames.from, start)
   setQueryParam(query, sharedParamNames.to, end)
   setQueryParam(query, sharedParamNames.limit, limit)
-  const q = query.toString()
+  // console.log(query.toString())
   return {
-    query: q,
+    query: request.rawQuery ? query : query.toString(),
     matrix: !!query.ctx.matrix,
     duration: query.ctx && query.ctx.duration ? query.ctx.duration : 1000,
     stream: getStream(query)
