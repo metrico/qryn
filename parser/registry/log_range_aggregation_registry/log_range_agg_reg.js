@@ -39,7 +39,7 @@ const genericRate = (valueExpr, token, query) => {
   const rateC = (new Sql.Select())
     .select(
       'labels',
-      [tsGroupingExpr, 'timestamp_ms'],
+      [new Sql.Raw(`intDiv(timestamp_ms, ${step}) * ${step}`), 'timestamp_ms'],
       [new Sql.Raw('argMin(rate_b.value, rate_b.timestamp_ms)'), 'value']
     )
     .from('rate_b')

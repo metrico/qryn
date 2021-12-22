@@ -85,6 +85,7 @@ describe('log_range_aggregation', () => {
   const test = (scr) => {
     const script = bnf.ParseScript(scr)
     const q = transpiler.initQuery()
+    q.ctx.step = 5000
     const query = transpiler.transpileLogRangeAggregation(script.rootToken, q)
     setParams(query)
     expect(query).toMatchSnapshot()
@@ -95,7 +96,7 @@ describe('log_range_aggregation', () => {
   })
   it('2', () => test('rate({rerum_laborum=~`^con.+q.at[a-z]r`} != "consequatur nam soluta" [5m])'))
   it('3', () => test('rate({et_dolorem!=`nemo doloremque`} |~ "^mol[eE][^ ]+e +voluptatibus" [5m])'))
-  it('4', () => test('rate({rerum_laborum!~`^con.+q.at[a-z]r`} !~ "cons[eE][^ ]+r nam soluta" [5m])'))
+  it('4', () => test('rate({rerum_laborum!~`^con.+q.at[a-z]r`} !~ "cons[eE][^ ]+r nam soluta" [1s])'))
 })
 
 it('should transpile aggregation_operator', () => {

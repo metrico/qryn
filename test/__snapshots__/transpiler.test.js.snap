@@ -12,6 +12,7 @@ Select {
   "ctx": Object {
     "duration": 300000,
     "matrix": true,
+    "step": 5000,
   },
   "dist": false,
   "fmt": undefined,
@@ -48,6 +49,10 @@ Select {
       "name": "timeSeriesTable",
       "value": "loki.time_series",
     },
+    "timestamp_shift": Parameter {
+      "name": "timestamp_shift",
+      "value": null,
+    },
     "to": Parameter {
       "name": "to",
       "value": 2,
@@ -59,24 +64,328 @@ Select {
   "request_totals": undefined,
   "sampling": undefined,
   "select_list": Array [
-    "labels",
     Array [
       Raw {
-        "raw": "floor(timestamp_ms / undefined) * undefined",
+        "raw": "JSONExtractKeysAndValues(labels, 'String')",
+      },
+      "labels",
+    ],
+    Array [
+      Raw {
+        "raw": "",
+        "toString": [Function],
       },
       "timestamp_ms",
     ],
     Array [
       Raw {
-        "raw": "argMin(rate_b.value, rate_b.timestamp_ms)",
+        "raw": "toFloat64(count(1)) * 1000 / 300000",
       },
       "value",
     ],
   ],
   "tables": Array [
     Array [
-      Term {
-        "term": "rate_b",
+      WithReference {
+        "ref": With {
+          "alias": "rate_a",
+          "inline": undefined,
+          "query": Select {
+            "aggregations": Array [],
+            "conditions": Conjunction {
+              "args": Array [
+                Condition {
+                  "column": Raw {
+                    "raw": "",
+                    "toString": [Function],
+                  },
+                  "operator": undefined,
+                  "value": Value {
+                    "value": undefined,
+                  },
+                },
+                In {
+                  "column": Term {
+                    "term": "samples.fingerprint",
+                  },
+                  "operator": "in",
+                  "value": Select {
+                    "aggregations": Array [],
+                    "conditions": Conjunction {
+                      "args": Array [],
+                    },
+                    "ctx": Object {},
+                    "dist": false,
+                    "fmt": undefined,
+                    "having_conditions": Conjunction {
+                      "args": Array [],
+                    },
+                    "joins": Array [],
+                    "limitbycolumns": undefined,
+                    "limits": undefined,
+                    "order_expressions": Array [],
+                    "params": Object {},
+                    "preconditions": Conjunction {
+                      "args": Array [],
+                    },
+                    "request_totals": undefined,
+                    "sampling": undefined,
+                    "select_list": Array [
+                      "fingerprint",
+                    ],
+                    "tables": Array [
+                      Array [
+                        WithReference {
+                          "ref": With {
+                            "alias": "str_sel",
+                            "inline": undefined,
+                            "query": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Raw {
+                                            "raw": "JSONHas(labels, 'minus_nam')",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": 1,
+                                          },
+                                        },
+                                        Condition {
+                                          "column": Raw {
+                                            "raw": "JSONExtractString(labels, 'minus_nam')",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "aut illo",
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "operator": undefined,
+                                    "value": Value {
+                                      "value": undefined,
+                                    },
+                                  },
+                                ],
+                              },
+                              "ctx": Object {},
+                              "dist": true,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                                "labels",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  Parameter {
+                                    "name": "timeSeriesTable",
+                                    "value": "loki.time_series",
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                        },
+                      ],
+                    ],
+                    "withs": Object {},
+                  },
+                },
+              ],
+            },
+            "ctx": Object {
+              "duration": 300000,
+              "matrix": true,
+              "step": 5000,
+            },
+            "dist": false,
+            "fmt": undefined,
+            "having_conditions": Conjunction {
+              "args": Array [],
+            },
+            "joins": Array [
+              Object {
+                "conditions": Array [
+                  Condition {
+                    "column": Term {
+                      "term": "samples.fingerprint",
+                    },
+                    "operator": "=",
+                    "value": Term {
+                      "term": "time_series.fingerprint",
+                    },
+                  },
+                ],
+                "table": Array [
+                  WithReference {
+                    "ref": With {
+                      "alias": "str_sel",
+                      "inline": undefined,
+                      "query": Select {
+                        "aggregations": Array [],
+                        "conditions": Conjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Raw {
+                                      "raw": "JSONHas(labels, 'minus_nam')",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": 1,
+                                    },
+                                  },
+                                  Condition {
+                                    "column": Raw {
+                                      "raw": "JSONExtractString(labels, 'minus_nam')",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "aut illo",
+                                    },
+                                  },
+                                ],
+                              },
+                              "operator": undefined,
+                              "value": Value {
+                                "value": undefined,
+                              },
+                            },
+                          ],
+                        },
+                        "ctx": Object {},
+                        "dist": true,
+                        "fmt": undefined,
+                        "having_conditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "joins": Array [],
+                        "limitbycolumns": undefined,
+                        "limits": undefined,
+                        "order_expressions": Array [],
+                        "params": Object {},
+                        "preconditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "request_totals": undefined,
+                        "sampling": undefined,
+                        "select_list": Array [
+                          "fingerprint",
+                          "labels",
+                        ],
+                        "tables": Array [
+                          Array [
+                            Parameter {
+                              "name": "timeSeriesTable",
+                              "value": "loki.time_series",
+                            },
+                          ],
+                        ],
+                        "withs": Object {},
+                      },
+                    },
+                  },
+                  "time_series",
+                ],
+                "type": "left",
+              },
+            ],
+            "limitbycolumns": undefined,
+            "limits": undefined,
+            "order_expressions": Array [
+              Array [
+                "timestamp_ms",
+                "desc",
+              ],
+              Array [
+                "labels",
+                "desc",
+              ],
+            ],
+            "params": Object {
+              "from": Parameter {
+                "name": "from",
+                "value": 1,
+              },
+              "limit": Parameter {
+                "name": "limit",
+                "value": 3,
+              },
+              "samplesTable": Parameter {
+                "name": "samplesTable",
+                "value": "loki.samples_read",
+              },
+              "timeSeriesTable": Parameter {
+                "name": "timeSeriesTable",
+                "value": "loki.time_series",
+              },
+              "timestamp_shift": Parameter {
+                "name": "timestamp_shift",
+                "value": null,
+              },
+              "to": Parameter {
+                "name": "to",
+                "value": 2,
+              },
+            },
+            "preconditions": Conjunction {
+              "args": Array [],
+            },
+            "request_totals": undefined,
+            "sampling": undefined,
+            "select_list": Array [
+              Array [
+                "time_series.labels",
+                "labels",
+              ],
+              Array [
+                "samples.string",
+                "string",
+              ],
+              Array [
+                "samples.fingerprint",
+                "fingerprint",
+              ],
+              Array [
+                "samples.timestamp_ms",
+                "timestamp_ms",
+              ],
+            ],
+            "tables": Array [
+              Array [
+                Parameter {
+                  "name": "samplesTable",
+                  "value": "loki.samples_read",
+                },
+                Term {
+                  "term": "samples",
+                },
+              ],
+            ],
+            "withs": Object {},
+          },
+        },
       },
     ],
   ],
@@ -209,6 +518,7 @@ Select {
         "ctx": Object {
           "duration": 300000,
           "matrix": true,
+          "step": 5000,
         },
         "dist": false,
         "fmt": undefined,
@@ -333,6 +643,10 @@ Select {
             "name": "timeSeriesTable",
             "value": "loki.time_series",
           },
+          "timestamp_shift": Parameter {
+            "name": "timestamp_shift",
+            "value": null,
+          },
           "to": Parameter {
             "name": "to",
             "value": 2,
@@ -369,365 +683,6 @@ Select {
             },
             Term {
               "term": "samples",
-            },
-          ],
-        ],
-        "withs": Object {},
-      },
-    },
-    "rate_b": With {
-      "alias": "rate_b",
-      "inline": undefined,
-      "query": Select {
-        "aggregations": Array [
-          "labels",
-          "timestamp_ms",
-        ],
-        "conditions": Conjunction {
-          "args": Array [],
-        },
-        "ctx": Object {},
-        "dist": false,
-        "fmt": undefined,
-        "having_conditions": Conjunction {
-          "args": Array [],
-        },
-        "joins": Array [],
-        "limitbycolumns": undefined,
-        "limits": undefined,
-        "order_expressions": Array [
-          Array [
-            "labels",
-            "asc",
-          ],
-          Array [
-            "timestamp_ms",
-            "asc",
-          ],
-        ],
-        "params": Object {},
-        "preconditions": Conjunction {
-          "args": Array [],
-        },
-        "request_totals": undefined,
-        "sampling": undefined,
-        "select_list": Array [
-          Array [
-            Raw {
-              "raw": "JSONExtractKeysAndValues(labels, 'String')",
-            },
-            "labels",
-          ],
-          Array [
-            Raw {
-              "raw": "floor(timestamp_ms / 300000) * 300000",
-            },
-            "timestamp_ms",
-          ],
-          Array [
-            Raw {
-              "raw": "toFloat64(count(1)) * 1000 / 300000",
-            },
-            "value",
-          ],
-        ],
-        "tables": Array [
-          Array [
-            WithReference {
-              "ref": With {
-                "alias": "rate_a",
-                "inline": undefined,
-                "query": Select {
-                  "aggregations": Array [],
-                  "conditions": Conjunction {
-                    "args": Array [
-                      Condition {
-                        "column": Raw {
-                          "raw": "",
-                          "toString": [Function],
-                        },
-                        "operator": undefined,
-                        "value": Value {
-                          "value": undefined,
-                        },
-                      },
-                      In {
-                        "column": Term {
-                          "term": "samples.fingerprint",
-                        },
-                        "operator": "in",
-                        "value": Select {
-                          "aggregations": Array [],
-                          "conditions": Conjunction {
-                            "args": Array [],
-                          },
-                          "ctx": Object {},
-                          "dist": false,
-                          "fmt": undefined,
-                          "having_conditions": Conjunction {
-                            "args": Array [],
-                          },
-                          "joins": Array [],
-                          "limitbycolumns": undefined,
-                          "limits": undefined,
-                          "order_expressions": Array [],
-                          "params": Object {},
-                          "preconditions": Conjunction {
-                            "args": Array [],
-                          },
-                          "request_totals": undefined,
-                          "sampling": undefined,
-                          "select_list": Array [
-                            "fingerprint",
-                          ],
-                          "tables": Array [
-                            Array [
-                              WithReference {
-                                "ref": With {
-                                  "alias": "str_sel",
-                                  "inline": undefined,
-                                  "query": Select {
-                                    "aggregations": Array [],
-                                    "conditions": Conjunction {
-                                      "args": Array [
-                                        Condition {
-                                          "column": Conjunction {
-                                            "args": Array [
-                                              Condition {
-                                                "column": Raw {
-                                                  "raw": "JSONHas(labels, 'minus_nam')",
-                                                },
-                                                "operator": "=",
-                                                "value": Value {
-                                                  "value": 1,
-                                                },
-                                              },
-                                              Condition {
-                                                "column": Raw {
-                                                  "raw": "JSONExtractString(labels, 'minus_nam')",
-                                                },
-                                                "operator": "=",
-                                                "value": Value {
-                                                  "value": "aut illo",
-                                                },
-                                              },
-                                            ],
-                                          },
-                                          "operator": undefined,
-                                          "value": Value {
-                                            "value": undefined,
-                                          },
-                                        },
-                                      ],
-                                    },
-                                    "ctx": Object {},
-                                    "dist": true,
-                                    "fmt": undefined,
-                                    "having_conditions": Conjunction {
-                                      "args": Array [],
-                                    },
-                                    "joins": Array [],
-                                    "limitbycolumns": undefined,
-                                    "limits": undefined,
-                                    "order_expressions": Array [],
-                                    "params": Object {},
-                                    "preconditions": Conjunction {
-                                      "args": Array [],
-                                    },
-                                    "request_totals": undefined,
-                                    "sampling": undefined,
-                                    "select_list": Array [
-                                      "fingerprint",
-                                      "labels",
-                                    ],
-                                    "tables": Array [
-                                      Array [
-                                        Parameter {
-                                          "name": "timeSeriesTable",
-                                          "value": "loki.time_series",
-                                        },
-                                      ],
-                                    ],
-                                    "withs": Object {},
-                                  },
-                                },
-                              },
-                            ],
-                          ],
-                          "withs": Object {},
-                        },
-                      },
-                    ],
-                  },
-                  "ctx": Object {
-                    "duration": 300000,
-                    "matrix": true,
-                  },
-                  "dist": false,
-                  "fmt": undefined,
-                  "having_conditions": Conjunction {
-                    "args": Array [],
-                  },
-                  "joins": Array [
-                    Object {
-                      "conditions": Array [
-                        Condition {
-                          "column": Term {
-                            "term": "samples.fingerprint",
-                          },
-                          "operator": "=",
-                          "value": Term {
-                            "term": "time_series.fingerprint",
-                          },
-                        },
-                      ],
-                      "table": Array [
-                        WithReference {
-                          "ref": With {
-                            "alias": "str_sel",
-                            "inline": undefined,
-                            "query": Select {
-                              "aggregations": Array [],
-                              "conditions": Conjunction {
-                                "args": Array [
-                                  Condition {
-                                    "column": Conjunction {
-                                      "args": Array [
-                                        Condition {
-                                          "column": Raw {
-                                            "raw": "JSONHas(labels, 'minus_nam')",
-                                          },
-                                          "operator": "=",
-                                          "value": Value {
-                                            "value": 1,
-                                          },
-                                        },
-                                        Condition {
-                                          "column": Raw {
-                                            "raw": "JSONExtractString(labels, 'minus_nam')",
-                                          },
-                                          "operator": "=",
-                                          "value": Value {
-                                            "value": "aut illo",
-                                          },
-                                        },
-                                      ],
-                                    },
-                                    "operator": undefined,
-                                    "value": Value {
-                                      "value": undefined,
-                                    },
-                                  },
-                                ],
-                              },
-                              "ctx": Object {},
-                              "dist": true,
-                              "fmt": undefined,
-                              "having_conditions": Conjunction {
-                                "args": Array [],
-                              },
-                              "joins": Array [],
-                              "limitbycolumns": undefined,
-                              "limits": undefined,
-                              "order_expressions": Array [],
-                              "params": Object {},
-                              "preconditions": Conjunction {
-                                "args": Array [],
-                              },
-                              "request_totals": undefined,
-                              "sampling": undefined,
-                              "select_list": Array [
-                                "fingerprint",
-                                "labels",
-                              ],
-                              "tables": Array [
-                                Array [
-                                  Parameter {
-                                    "name": "timeSeriesTable",
-                                    "value": "loki.time_series",
-                                  },
-                                ],
-                              ],
-                              "withs": Object {},
-                            },
-                          },
-                        },
-                        "time_series",
-                      ],
-                      "type": "left",
-                    },
-                  ],
-                  "limitbycolumns": undefined,
-                  "limits": undefined,
-                  "order_expressions": Array [
-                    Array [
-                      "timestamp_ms",
-                      "desc",
-                    ],
-                    Array [
-                      "labels",
-                      "desc",
-                    ],
-                  ],
-                  "params": Object {
-                    "from": Parameter {
-                      "name": "from",
-                      "value": 1,
-                    },
-                    "limit": Parameter {
-                      "name": "limit",
-                      "value": 3,
-                    },
-                    "samplesTable": Parameter {
-                      "name": "samplesTable",
-                      "value": "loki.samples_read",
-                    },
-                    "timeSeriesTable": Parameter {
-                      "name": "timeSeriesTable",
-                      "value": "loki.time_series",
-                    },
-                    "to": Parameter {
-                      "name": "to",
-                      "value": 2,
-                    },
-                  },
-                  "preconditions": Conjunction {
-                    "args": Array [],
-                  },
-                  "request_totals": undefined,
-                  "sampling": undefined,
-                  "select_list": Array [
-                    Array [
-                      "time_series.labels",
-                      "labels",
-                    ],
-                    Array [
-                      "samples.string",
-                      "string",
-                    ],
-                    Array [
-                      "samples.fingerprint",
-                      "fingerprint",
-                    ],
-                    Array [
-                      "samples.timestamp_ms",
-                      "timestamp_ms",
-                    ],
-                  ],
-                  "tables": Array [
-                    Array [
-                      Parameter {
-                        "name": "samplesTable",
-                        "value": "loki.samples_read",
-                      },
-                      Term {
-                        "term": "samples",
-                      },
-                    ],
-                  ],
-                  "withs": Object {},
-                },
-              },
             },
           ],
         ],
@@ -806,7 +761,7 @@ Select {
 }
 `;
 
-exports[`log_range_aggregation 1 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'minus_nam') = 1) and (JSONExtractString(labels, 'minus_nam') = 'aut illo'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,floor(timestamp_ms / 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select \`labels\`,floor(timestamp_ms / undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc"`;
+exports[`log_range_aggregation 1 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'minus_nam') = 1) and (JSONExtractString(labels, 'minus_nam') = 'aut illo'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc) select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc"`;
 
 exports[`log_range_aggregation 2 1`] = `
 Select {
@@ -820,6 +775,7 @@ Select {
   "ctx": Object {
     "duration": 300000,
     "matrix": true,
+    "step": 5000,
   },
   "dist": false,
   "fmt": undefined,
@@ -856,6 +812,10 @@ Select {
       "name": "timeSeriesTable",
       "value": "loki.time_series",
     },
+    "timestamp_shift": Parameter {
+      "name": "timestamp_shift",
+      "value": null,
+    },
     "to": Parameter {
       "name": "to",
       "value": 2,
@@ -867,24 +827,337 @@ Select {
   "request_totals": undefined,
   "sampling": undefined,
   "select_list": Array [
-    "labels",
     Array [
       Raw {
-        "raw": "floor(timestamp_ms / undefined) * undefined",
+        "raw": "JSONExtractKeysAndValues(labels, 'String')",
+      },
+      "labels",
+    ],
+    Array [
+      Raw {
+        "raw": "",
+        "toString": [Function],
       },
       "timestamp_ms",
     ],
     Array [
       Raw {
-        "raw": "argMin(rate_b.value, rate_b.timestamp_ms)",
+        "raw": "toFloat64(count(1)) * 1000 / 300000",
       },
       "value",
     ],
   ],
   "tables": Array [
     Array [
-      Term {
-        "term": "rate_b",
+      WithReference {
+        "ref": With {
+          "alias": "rate_a",
+          "inline": undefined,
+          "query": Select {
+            "aggregations": Array [],
+            "conditions": Conjunction {
+              "args": Array [
+                Condition {
+                  "column": Raw {
+                    "raw": "",
+                    "toString": [Function],
+                  },
+                  "operator": undefined,
+                  "value": Value {
+                    "value": undefined,
+                  },
+                },
+                In {
+                  "column": Term {
+                    "term": "samples.fingerprint",
+                  },
+                  "operator": "in",
+                  "value": Select {
+                    "aggregations": Array [],
+                    "conditions": Conjunction {
+                      "args": Array [],
+                    },
+                    "ctx": Object {},
+                    "dist": false,
+                    "fmt": undefined,
+                    "having_conditions": Conjunction {
+                      "args": Array [],
+                    },
+                    "joins": Array [],
+                    "limitbycolumns": undefined,
+                    "limits": undefined,
+                    "order_expressions": Array [],
+                    "params": Object {},
+                    "preconditions": Conjunction {
+                      "args": Array [],
+                    },
+                    "request_totals": undefined,
+                    "sampling": undefined,
+                    "select_list": Array [
+                      "fingerprint",
+                    ],
+                    "tables": Array [
+                      Array [
+                        WithReference {
+                          "ref": With {
+                            "alias": "str_sel",
+                            "inline": undefined,
+                            "query": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Raw {
+                                            "raw": "JSONHas(labels, 'rerum_laborum')",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": 1,
+                                          },
+                                        },
+                                        Condition {
+                                          "column": Raw {
+                                            "raw": "extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)')",
+                                          },
+                                          "operator": "!=",
+                                          "value": Value {
+                                            "value": "[]",
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "operator": undefined,
+                                    "value": Value {
+                                      "value": undefined,
+                                    },
+                                  },
+                                ],
+                              },
+                              "ctx": Object {},
+                              "dist": true,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                                "labels",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  Parameter {
+                                    "name": "timeSeriesTable",
+                                    "value": "loki.time_series",
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                        },
+                      ],
+                    ],
+                    "withs": Object {},
+                  },
+                },
+                Condition {
+                  "column": Raw {
+                    "raw": "position(string, 'consequatur nam soluta')",
+                  },
+                  "operator": "=",
+                  "value": Value {
+                    "value": 0,
+                  },
+                },
+              ],
+            },
+            "ctx": Object {
+              "duration": 300000,
+              "matrix": true,
+              "step": 5000,
+            },
+            "dist": false,
+            "fmt": undefined,
+            "having_conditions": Conjunction {
+              "args": Array [],
+            },
+            "joins": Array [
+              Object {
+                "conditions": Array [
+                  Condition {
+                    "column": Term {
+                      "term": "samples.fingerprint",
+                    },
+                    "operator": "=",
+                    "value": Term {
+                      "term": "time_series.fingerprint",
+                    },
+                  },
+                ],
+                "table": Array [
+                  WithReference {
+                    "ref": With {
+                      "alias": "str_sel",
+                      "inline": undefined,
+                      "query": Select {
+                        "aggregations": Array [],
+                        "conditions": Conjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Raw {
+                                      "raw": "JSONHas(labels, 'rerum_laborum')",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": 1,
+                                    },
+                                  },
+                                  Condition {
+                                    "column": Raw {
+                                      "raw": "extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)')",
+                                    },
+                                    "operator": "!=",
+                                    "value": Value {
+                                      "value": "[]",
+                                    },
+                                  },
+                                ],
+                              },
+                              "operator": undefined,
+                              "value": Value {
+                                "value": undefined,
+                              },
+                            },
+                          ],
+                        },
+                        "ctx": Object {},
+                        "dist": true,
+                        "fmt": undefined,
+                        "having_conditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "joins": Array [],
+                        "limitbycolumns": undefined,
+                        "limits": undefined,
+                        "order_expressions": Array [],
+                        "params": Object {},
+                        "preconditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "request_totals": undefined,
+                        "sampling": undefined,
+                        "select_list": Array [
+                          "fingerprint",
+                          "labels",
+                        ],
+                        "tables": Array [
+                          Array [
+                            Parameter {
+                              "name": "timeSeriesTable",
+                              "value": "loki.time_series",
+                            },
+                          ],
+                        ],
+                        "withs": Object {},
+                      },
+                    },
+                  },
+                  "time_series",
+                ],
+                "type": "left",
+              },
+            ],
+            "limitbycolumns": undefined,
+            "limits": undefined,
+            "order_expressions": Array [
+              Array [
+                "timestamp_ms",
+                "desc",
+              ],
+              Array [
+                "labels",
+                "desc",
+              ],
+            ],
+            "params": Object {
+              "from": Parameter {
+                "name": "from",
+                "value": 1,
+              },
+              "limit": Parameter {
+                "name": "limit",
+                "value": 3,
+              },
+              "samplesTable": Parameter {
+                "name": "samplesTable",
+                "value": "loki.samples_read",
+              },
+              "timeSeriesTable": Parameter {
+                "name": "timeSeriesTable",
+                "value": "loki.time_series",
+              },
+              "timestamp_shift": Parameter {
+                "name": "timestamp_shift",
+                "value": null,
+              },
+              "to": Parameter {
+                "name": "to",
+                "value": 2,
+              },
+            },
+            "preconditions": Conjunction {
+              "args": Array [],
+            },
+            "request_totals": undefined,
+            "sampling": undefined,
+            "select_list": Array [
+              Array [
+                "time_series.labels",
+                "labels",
+              ],
+              Array [
+                "samples.string",
+                "string",
+              ],
+              Array [
+                "samples.fingerprint",
+                "fingerprint",
+              ],
+              Array [
+                "samples.timestamp_ms",
+                "timestamp_ms",
+              ],
+            ],
+            "tables": Array [
+              Array [
+                Parameter {
+                  "name": "samplesTable",
+                  "value": "loki.samples_read",
+                },
+                Term {
+                  "term": "samples",
+                },
+              ],
+            ],
+            "withs": Object {},
+          },
+        },
       },
     ],
   ],
@@ -1026,6 +1299,7 @@ Select {
         "ctx": Object {
           "duration": 300000,
           "matrix": true,
+          "step": 5000,
         },
         "dist": false,
         "fmt": undefined,
@@ -1150,6 +1424,10 @@ Select {
             "name": "timeSeriesTable",
             "value": "loki.time_series",
           },
+          "timestamp_shift": Parameter {
+            "name": "timestamp_shift",
+            "value": null,
+          },
           "to": Parameter {
             "name": "to",
             "value": 2,
@@ -1186,374 +1464,6 @@ Select {
             },
             Term {
               "term": "samples",
-            },
-          ],
-        ],
-        "withs": Object {},
-      },
-    },
-    "rate_b": With {
-      "alias": "rate_b",
-      "inline": undefined,
-      "query": Select {
-        "aggregations": Array [
-          "labels",
-          "timestamp_ms",
-        ],
-        "conditions": Conjunction {
-          "args": Array [],
-        },
-        "ctx": Object {},
-        "dist": false,
-        "fmt": undefined,
-        "having_conditions": Conjunction {
-          "args": Array [],
-        },
-        "joins": Array [],
-        "limitbycolumns": undefined,
-        "limits": undefined,
-        "order_expressions": Array [
-          Array [
-            "labels",
-            "asc",
-          ],
-          Array [
-            "timestamp_ms",
-            "asc",
-          ],
-        ],
-        "params": Object {},
-        "preconditions": Conjunction {
-          "args": Array [],
-        },
-        "request_totals": undefined,
-        "sampling": undefined,
-        "select_list": Array [
-          Array [
-            Raw {
-              "raw": "JSONExtractKeysAndValues(labels, 'String')",
-            },
-            "labels",
-          ],
-          Array [
-            Raw {
-              "raw": "floor(timestamp_ms / 300000) * 300000",
-            },
-            "timestamp_ms",
-          ],
-          Array [
-            Raw {
-              "raw": "toFloat64(count(1)) * 1000 / 300000",
-            },
-            "value",
-          ],
-        ],
-        "tables": Array [
-          Array [
-            WithReference {
-              "ref": With {
-                "alias": "rate_a",
-                "inline": undefined,
-                "query": Select {
-                  "aggregations": Array [],
-                  "conditions": Conjunction {
-                    "args": Array [
-                      Condition {
-                        "column": Raw {
-                          "raw": "",
-                          "toString": [Function],
-                        },
-                        "operator": undefined,
-                        "value": Value {
-                          "value": undefined,
-                        },
-                      },
-                      In {
-                        "column": Term {
-                          "term": "samples.fingerprint",
-                        },
-                        "operator": "in",
-                        "value": Select {
-                          "aggregations": Array [],
-                          "conditions": Conjunction {
-                            "args": Array [],
-                          },
-                          "ctx": Object {},
-                          "dist": false,
-                          "fmt": undefined,
-                          "having_conditions": Conjunction {
-                            "args": Array [],
-                          },
-                          "joins": Array [],
-                          "limitbycolumns": undefined,
-                          "limits": undefined,
-                          "order_expressions": Array [],
-                          "params": Object {},
-                          "preconditions": Conjunction {
-                            "args": Array [],
-                          },
-                          "request_totals": undefined,
-                          "sampling": undefined,
-                          "select_list": Array [
-                            "fingerprint",
-                          ],
-                          "tables": Array [
-                            Array [
-                              WithReference {
-                                "ref": With {
-                                  "alias": "str_sel",
-                                  "inline": undefined,
-                                  "query": Select {
-                                    "aggregations": Array [],
-                                    "conditions": Conjunction {
-                                      "args": Array [
-                                        Condition {
-                                          "column": Conjunction {
-                                            "args": Array [
-                                              Condition {
-                                                "column": Raw {
-                                                  "raw": "JSONHas(labels, 'rerum_laborum')",
-                                                },
-                                                "operator": "=",
-                                                "value": Value {
-                                                  "value": 1,
-                                                },
-                                              },
-                                              Condition {
-                                                "column": Raw {
-                                                  "raw": "extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)')",
-                                                },
-                                                "operator": "!=",
-                                                "value": Value {
-                                                  "value": "[]",
-                                                },
-                                              },
-                                            ],
-                                          },
-                                          "operator": undefined,
-                                          "value": Value {
-                                            "value": undefined,
-                                          },
-                                        },
-                                      ],
-                                    },
-                                    "ctx": Object {},
-                                    "dist": true,
-                                    "fmt": undefined,
-                                    "having_conditions": Conjunction {
-                                      "args": Array [],
-                                    },
-                                    "joins": Array [],
-                                    "limitbycolumns": undefined,
-                                    "limits": undefined,
-                                    "order_expressions": Array [],
-                                    "params": Object {},
-                                    "preconditions": Conjunction {
-                                      "args": Array [],
-                                    },
-                                    "request_totals": undefined,
-                                    "sampling": undefined,
-                                    "select_list": Array [
-                                      "fingerprint",
-                                      "labels",
-                                    ],
-                                    "tables": Array [
-                                      Array [
-                                        Parameter {
-                                          "name": "timeSeriesTable",
-                                          "value": "loki.time_series",
-                                        },
-                                      ],
-                                    ],
-                                    "withs": Object {},
-                                  },
-                                },
-                              },
-                            ],
-                          ],
-                          "withs": Object {},
-                        },
-                      },
-                      Condition {
-                        "column": Raw {
-                          "raw": "position(string, 'consequatur nam soluta')",
-                        },
-                        "operator": "=",
-                        "value": Value {
-                          "value": 0,
-                        },
-                      },
-                    ],
-                  },
-                  "ctx": Object {
-                    "duration": 300000,
-                    "matrix": true,
-                  },
-                  "dist": false,
-                  "fmt": undefined,
-                  "having_conditions": Conjunction {
-                    "args": Array [],
-                  },
-                  "joins": Array [
-                    Object {
-                      "conditions": Array [
-                        Condition {
-                          "column": Term {
-                            "term": "samples.fingerprint",
-                          },
-                          "operator": "=",
-                          "value": Term {
-                            "term": "time_series.fingerprint",
-                          },
-                        },
-                      ],
-                      "table": Array [
-                        WithReference {
-                          "ref": With {
-                            "alias": "str_sel",
-                            "inline": undefined,
-                            "query": Select {
-                              "aggregations": Array [],
-                              "conditions": Conjunction {
-                                "args": Array [
-                                  Condition {
-                                    "column": Conjunction {
-                                      "args": Array [
-                                        Condition {
-                                          "column": Raw {
-                                            "raw": "JSONHas(labels, 'rerum_laborum')",
-                                          },
-                                          "operator": "=",
-                                          "value": Value {
-                                            "value": 1,
-                                          },
-                                        },
-                                        Condition {
-                                          "column": Raw {
-                                            "raw": "extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)')",
-                                          },
-                                          "operator": "!=",
-                                          "value": Value {
-                                            "value": "[]",
-                                          },
-                                        },
-                                      ],
-                                    },
-                                    "operator": undefined,
-                                    "value": Value {
-                                      "value": undefined,
-                                    },
-                                  },
-                                ],
-                              },
-                              "ctx": Object {},
-                              "dist": true,
-                              "fmt": undefined,
-                              "having_conditions": Conjunction {
-                                "args": Array [],
-                              },
-                              "joins": Array [],
-                              "limitbycolumns": undefined,
-                              "limits": undefined,
-                              "order_expressions": Array [],
-                              "params": Object {},
-                              "preconditions": Conjunction {
-                                "args": Array [],
-                              },
-                              "request_totals": undefined,
-                              "sampling": undefined,
-                              "select_list": Array [
-                                "fingerprint",
-                                "labels",
-                              ],
-                              "tables": Array [
-                                Array [
-                                  Parameter {
-                                    "name": "timeSeriesTable",
-                                    "value": "loki.time_series",
-                                  },
-                                ],
-                              ],
-                              "withs": Object {},
-                            },
-                          },
-                        },
-                        "time_series",
-                      ],
-                      "type": "left",
-                    },
-                  ],
-                  "limitbycolumns": undefined,
-                  "limits": undefined,
-                  "order_expressions": Array [
-                    Array [
-                      "timestamp_ms",
-                      "desc",
-                    ],
-                    Array [
-                      "labels",
-                      "desc",
-                    ],
-                  ],
-                  "params": Object {
-                    "from": Parameter {
-                      "name": "from",
-                      "value": 1,
-                    },
-                    "limit": Parameter {
-                      "name": "limit",
-                      "value": 3,
-                    },
-                    "samplesTable": Parameter {
-                      "name": "samplesTable",
-                      "value": "loki.samples_read",
-                    },
-                    "timeSeriesTable": Parameter {
-                      "name": "timeSeriesTable",
-                      "value": "loki.time_series",
-                    },
-                    "to": Parameter {
-                      "name": "to",
-                      "value": 2,
-                    },
-                  },
-                  "preconditions": Conjunction {
-                    "args": Array [],
-                  },
-                  "request_totals": undefined,
-                  "sampling": undefined,
-                  "select_list": Array [
-                    Array [
-                      "time_series.labels",
-                      "labels",
-                    ],
-                    Array [
-                      "samples.string",
-                      "string",
-                    ],
-                    Array [
-                      "samples.fingerprint",
-                      "fingerprint",
-                    ],
-                    Array [
-                      "samples.timestamp_ms",
-                      "timestamp_ms",
-                    ],
-                  ],
-                  "tables": Array [
-                    Array [
-                      Parameter {
-                        "name": "samplesTable",
-                        "value": "loki.samples_read",
-                      },
-                      Term {
-                        "term": "samples",
-                      },
-                    ],
-                  ],
-                  "withs": Object {},
-                },
-              },
             },
           ],
         ],
@@ -1632,7 +1542,7 @@ Select {
 }
 `;
 
-exports[`log_range_aggregation 2 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,floor(timestamp_ms / 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select \`labels\`,floor(timestamp_ms / undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc"`;
+exports[`log_range_aggregation 2 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ms\` desc,\`labels\` desc) select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc"`;
 
 exports[`log_range_aggregation 3 1`] = `
 Select {
@@ -1646,6 +1556,7 @@ Select {
   "ctx": Object {
     "duration": 300000,
     "matrix": true,
+    "step": 5000,
   },
   "dist": false,
   "fmt": undefined,
@@ -1682,6 +1593,10 @@ Select {
       "name": "timeSeriesTable",
       "value": "loki.time_series",
     },
+    "timestamp_shift": Parameter {
+      "name": "timestamp_shift",
+      "value": null,
+    },
     "to": Parameter {
       "name": "to",
       "value": 2,
@@ -1693,24 +1608,337 @@ Select {
   "request_totals": undefined,
   "sampling": undefined,
   "select_list": Array [
-    "labels",
     Array [
       Raw {
-        "raw": "floor(timestamp_ms / undefined) * undefined",
+        "raw": "JSONExtractKeysAndValues(labels, 'String')",
+      },
+      "labels",
+    ],
+    Array [
+      Raw {
+        "raw": "",
+        "toString": [Function],
       },
       "timestamp_ms",
     ],
     Array [
       Raw {
-        "raw": "argMin(rate_b.value, rate_b.timestamp_ms)",
+        "raw": "toFloat64(count(1)) * 1000 / 300000",
       },
       "value",
     ],
   ],
   "tables": Array [
     Array [
-      Term {
-        "term": "rate_b",
+      WithReference {
+        "ref": With {
+          "alias": "rate_a",
+          "inline": undefined,
+          "query": Select {
+            "aggregations": Array [],
+            "conditions": Conjunction {
+              "args": Array [
+                Condition {
+                  "column": Raw {
+                    "raw": "",
+                    "toString": [Function],
+                  },
+                  "operator": undefined,
+                  "value": Value {
+                    "value": undefined,
+                  },
+                },
+                In {
+                  "column": Term {
+                    "term": "samples.fingerprint",
+                  },
+                  "operator": "in",
+                  "value": Select {
+                    "aggregations": Array [],
+                    "conditions": Conjunction {
+                      "args": Array [],
+                    },
+                    "ctx": Object {},
+                    "dist": false,
+                    "fmt": undefined,
+                    "having_conditions": Conjunction {
+                      "args": Array [],
+                    },
+                    "joins": Array [],
+                    "limitbycolumns": undefined,
+                    "limits": undefined,
+                    "order_expressions": Array [],
+                    "params": Object {},
+                    "preconditions": Conjunction {
+                      "args": Array [],
+                    },
+                    "request_totals": undefined,
+                    "sampling": undefined,
+                    "select_list": Array [
+                      "fingerprint",
+                    ],
+                    "tables": Array [
+                      Array [
+                        WithReference {
+                          "ref": With {
+                            "alias": "str_sel",
+                            "inline": undefined,
+                            "query": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Raw {
+                                            "raw": "JSONHas(labels, 'et_dolorem')",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": 1,
+                                          },
+                                        },
+                                        Condition {
+                                          "column": Raw {
+                                            "raw": "JSONExtractString(labels, 'et_dolorem')",
+                                          },
+                                          "operator": "!=",
+                                          "value": Value {
+                                            "value": "nemo doloremque",
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "operator": undefined,
+                                    "value": Value {
+                                      "value": undefined,
+                                    },
+                                  },
+                                ],
+                              },
+                              "ctx": Object {},
+                              "dist": true,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                                "labels",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  Parameter {
+                                    "name": "timeSeriesTable",
+                                    "value": "loki.time_series",
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                        },
+                      ],
+                    ],
+                    "withs": Object {},
+                  },
+                },
+                Condition {
+                  "column": Raw {
+                    "raw": "extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)')",
+                  },
+                  "operator": "!=",
+                  "value": Raw {
+                    "raw": "[]",
+                  },
+                },
+              ],
+            },
+            "ctx": Object {
+              "duration": 300000,
+              "matrix": true,
+              "step": 5000,
+            },
+            "dist": false,
+            "fmt": undefined,
+            "having_conditions": Conjunction {
+              "args": Array [],
+            },
+            "joins": Array [
+              Object {
+                "conditions": Array [
+                  Condition {
+                    "column": Term {
+                      "term": "samples.fingerprint",
+                    },
+                    "operator": "=",
+                    "value": Term {
+                      "term": "time_series.fingerprint",
+                    },
+                  },
+                ],
+                "table": Array [
+                  WithReference {
+                    "ref": With {
+                      "alias": "str_sel",
+                      "inline": undefined,
+                      "query": Select {
+                        "aggregations": Array [],
+                        "conditions": Conjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Raw {
+                                      "raw": "JSONHas(labels, 'et_dolorem')",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": 1,
+                                    },
+                                  },
+                                  Condition {
+                                    "column": Raw {
+                                      "raw": "JSONExtractString(labels, 'et_dolorem')",
+                                    },
+                                    "operator": "!=",
+                                    "value": Value {
+                                      "value": "nemo doloremque",
+                                    },
+                                  },
+                                ],
+                              },
+                              "operator": undefined,
+                              "value": Value {
+                                "value": undefined,
+                              },
+                            },
+                          ],
+                        },
+                        "ctx": Object {},
+                        "dist": true,
+                        "fmt": undefined,
+                        "having_conditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "joins": Array [],
+                        "limitbycolumns": undefined,
+                        "limits": undefined,
+                        "order_expressions": Array [],
+                        "params": Object {},
+                        "preconditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "request_totals": undefined,
+                        "sampling": undefined,
+                        "select_list": Array [
+                          "fingerprint",
+                          "labels",
+                        ],
+                        "tables": Array [
+                          Array [
+                            Parameter {
+                              "name": "timeSeriesTable",
+                              "value": "loki.time_series",
+                            },
+                          ],
+                        ],
+                        "withs": Object {},
+                      },
+                    },
+                  },
+                  "time_series",
+                ],
+                "type": "left",
+              },
+            ],
+            "limitbycolumns": undefined,
+            "limits": undefined,
+            "order_expressions": Array [
+              Array [
+                "timestamp_ms",
+                "desc",
+              ],
+              Array [
+                "labels",
+                "desc",
+              ],
+            ],
+            "params": Object {
+              "from": Parameter {
+                "name": "from",
+                "value": 1,
+              },
+              "limit": Parameter {
+                "name": "limit",
+                "value": 3,
+              },
+              "samplesTable": Parameter {
+                "name": "samplesTable",
+                "value": "loki.samples_read",
+              },
+              "timeSeriesTable": Parameter {
+                "name": "timeSeriesTable",
+                "value": "loki.time_series",
+              },
+              "timestamp_shift": Parameter {
+                "name": "timestamp_shift",
+                "value": null,
+              },
+              "to": Parameter {
+                "name": "to",
+                "value": 2,
+              },
+            },
+            "preconditions": Conjunction {
+              "args": Array [],
+            },
+            "request_totals": undefined,
+            "sampling": undefined,
+            "select_list": Array [
+              Array [
+                "time_series.labels",
+                "labels",
+              ],
+              Array [
+                "samples.string",
+                "string",
+              ],
+              Array [
+                "samples.fingerprint",
+                "fingerprint",
+              ],
+              Array [
+                "samples.timestamp_ms",
+                "timestamp_ms",
+              ],
+            ],
+            "tables": Array [
+              Array [
+                Parameter {
+                  "name": "samplesTable",
+                  "value": "loki.samples_read",
+                },
+                Term {
+                  "term": "samples",
+                },
+              ],
+            ],
+            "withs": Object {},
+          },
+        },
       },
     ],
   ],
@@ -1852,6 +2080,7 @@ Select {
         "ctx": Object {
           "duration": 300000,
           "matrix": true,
+          "step": 5000,
         },
         "dist": false,
         "fmt": undefined,
@@ -1976,6 +2205,10 @@ Select {
             "name": "timeSeriesTable",
             "value": "loki.time_series",
           },
+          "timestamp_shift": Parameter {
+            "name": "timestamp_shift",
+            "value": null,
+          },
           "to": Parameter {
             "name": "to",
             "value": 2,
@@ -2012,374 +2245,6 @@ Select {
             },
             Term {
               "term": "samples",
-            },
-          ],
-        ],
-        "withs": Object {},
-      },
-    },
-    "rate_b": With {
-      "alias": "rate_b",
-      "inline": undefined,
-      "query": Select {
-        "aggregations": Array [
-          "labels",
-          "timestamp_ms",
-        ],
-        "conditions": Conjunction {
-          "args": Array [],
-        },
-        "ctx": Object {},
-        "dist": false,
-        "fmt": undefined,
-        "having_conditions": Conjunction {
-          "args": Array [],
-        },
-        "joins": Array [],
-        "limitbycolumns": undefined,
-        "limits": undefined,
-        "order_expressions": Array [
-          Array [
-            "labels",
-            "asc",
-          ],
-          Array [
-            "timestamp_ms",
-            "asc",
-          ],
-        ],
-        "params": Object {},
-        "preconditions": Conjunction {
-          "args": Array [],
-        },
-        "request_totals": undefined,
-        "sampling": undefined,
-        "select_list": Array [
-          Array [
-            Raw {
-              "raw": "JSONExtractKeysAndValues(labels, 'String')",
-            },
-            "labels",
-          ],
-          Array [
-            Raw {
-              "raw": "floor(timestamp_ms / 300000) * 300000",
-            },
-            "timestamp_ms",
-          ],
-          Array [
-            Raw {
-              "raw": "toFloat64(count(1)) * 1000 / 300000",
-            },
-            "value",
-          ],
-        ],
-        "tables": Array [
-          Array [
-            WithReference {
-              "ref": With {
-                "alias": "rate_a",
-                "inline": undefined,
-                "query": Select {
-                  "aggregations": Array [],
-                  "conditions": Conjunction {
-                    "args": Array [
-                      Condition {
-                        "column": Raw {
-                          "raw": "",
-                          "toString": [Function],
-                        },
-                        "operator": undefined,
-                        "value": Value {
-                          "value": undefined,
-                        },
-                      },
-                      In {
-                        "column": Term {
-                          "term": "samples.fingerprint",
-                        },
-                        "operator": "in",
-                        "value": Select {
-                          "aggregations": Array [],
-                          "conditions": Conjunction {
-                            "args": Array [],
-                          },
-                          "ctx": Object {},
-                          "dist": false,
-                          "fmt": undefined,
-                          "having_conditions": Conjunction {
-                            "args": Array [],
-                          },
-                          "joins": Array [],
-                          "limitbycolumns": undefined,
-                          "limits": undefined,
-                          "order_expressions": Array [],
-                          "params": Object {},
-                          "preconditions": Conjunction {
-                            "args": Array [],
-                          },
-                          "request_totals": undefined,
-                          "sampling": undefined,
-                          "select_list": Array [
-                            "fingerprint",
-                          ],
-                          "tables": Array [
-                            Array [
-                              WithReference {
-                                "ref": With {
-                                  "alias": "str_sel",
-                                  "inline": undefined,
-                                  "query": Select {
-                                    "aggregations": Array [],
-                                    "conditions": Conjunction {
-                                      "args": Array [
-                                        Condition {
-                                          "column": Conjunction {
-                                            "args": Array [
-                                              Condition {
-                                                "column": Raw {
-                                                  "raw": "JSONHas(labels, 'et_dolorem')",
-                                                },
-                                                "operator": "=",
-                                                "value": Value {
-                                                  "value": 1,
-                                                },
-                                              },
-                                              Condition {
-                                                "column": Raw {
-                                                  "raw": "JSONExtractString(labels, 'et_dolorem')",
-                                                },
-                                                "operator": "!=",
-                                                "value": Value {
-                                                  "value": "nemo doloremque",
-                                                },
-                                              },
-                                            ],
-                                          },
-                                          "operator": undefined,
-                                          "value": Value {
-                                            "value": undefined,
-                                          },
-                                        },
-                                      ],
-                                    },
-                                    "ctx": Object {},
-                                    "dist": true,
-                                    "fmt": undefined,
-                                    "having_conditions": Conjunction {
-                                      "args": Array [],
-                                    },
-                                    "joins": Array [],
-                                    "limitbycolumns": undefined,
-                                    "limits": undefined,
-                                    "order_expressions": Array [],
-                                    "params": Object {},
-                                    "preconditions": Conjunction {
-                                      "args": Array [],
-                                    },
-                                    "request_totals": undefined,
-                                    "sampling": undefined,
-                                    "select_list": Array [
-                                      "fingerprint",
-                                      "labels",
-                                    ],
-                                    "tables": Array [
-                                      Array [
-                                        Parameter {
-                                          "name": "timeSeriesTable",
-                                          "value": "loki.time_series",
-                                        },
-                                      ],
-                                    ],
-                                    "withs": Object {},
-                                  },
-                                },
-                              },
-                            ],
-                          ],
-                          "withs": Object {},
-                        },
-                      },
-                      Condition {
-                        "column": Raw {
-                          "raw": "extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)')",
-                        },
-                        "operator": "!=",
-                        "value": Raw {
-                          "raw": "[]",
-                        },
-                      },
-                    ],
-                  },
-                  "ctx": Object {
-                    "duration": 300000,
-                    "matrix": true,
-                  },
-                  "dist": false,
-                  "fmt": undefined,
-                  "having_conditions": Conjunction {
-                    "args": Array [],
-                  },
-                  "joins": Array [
-                    Object {
-                      "conditions": Array [
-                        Condition {
-                          "column": Term {
-                            "term": "samples.fingerprint",
-                          },
-                          "operator": "=",
-                          "value": Term {
-                            "term": "time_series.fingerprint",
-                          },
-                        },
-                      ],
-                      "table": Array [
-                        WithReference {
-                          "ref": With {
-                            "alias": "str_sel",
-                            "inline": undefined,
-                            "query": Select {
-                              "aggregations": Array [],
-                              "conditions": Conjunction {
-                                "args": Array [
-                                  Condition {
-                                    "column": Conjunction {
-                                      "args": Array [
-                                        Condition {
-                                          "column": Raw {
-                                            "raw": "JSONHas(labels, 'et_dolorem')",
-                                          },
-                                          "operator": "=",
-                                          "value": Value {
-                                            "value": 1,
-                                          },
-                                        },
-                                        Condition {
-                                          "column": Raw {
-                                            "raw": "JSONExtractString(labels, 'et_dolorem')",
-                                          },
-                                          "operator": "!=",
-                                          "value": Value {
-                                            "value": "nemo doloremque",
-                                          },
-                                        },
-                                      ],
-                                    },
-                                    "operator": undefined,
-                                    "value": Value {
-                                      "value": undefined,
-                                    },
-                                  },
-                                ],
-                              },
-                              "ctx": Object {},
-                              "dist": true,
-                              "fmt": undefined,
-                              "having_conditions": Conjunction {
-                                "args": Array [],
-                              },
-                              "joins": Array [],
-                              "limitbycolumns": undefined,
-                              "limits": undefined,
-                              "order_expressions": Array [],
-                              "params": Object {},
-                              "preconditions": Conjunction {
-                                "args": Array [],
-                              },
-                              "request_totals": undefined,
-                              "sampling": undefined,
-                              "select_list": Array [
-                                "fingerprint",
-                                "labels",
-                              ],
-                              "tables": Array [
-                                Array [
-                                  Parameter {
-                                    "name": "timeSeriesTable",
-                                    "value": "loki.time_series",
-                                  },
-                                ],
-                              ],
-                              "withs": Object {},
-                            },
-                          },
-                        },
-                        "time_series",
-                      ],
-                      "type": "left",
-                    },
-                  ],
-                  "limitbycolumns": undefined,
-                  "limits": undefined,
-                  "order_expressions": Array [
-                    Array [
-                      "timestamp_ms",
-                      "desc",
-                    ],
-                    Array [
-                      "labels",
-                      "desc",
-                    ],
-                  ],
-                  "params": Object {
-                    "from": Parameter {
-                      "name": "from",
-                      "value": 1,
-                    },
-                    "limit": Parameter {
-                      "name": "limit",
-                      "value": 3,
-                    },
-                    "samplesTable": Parameter {
-                      "name": "samplesTable",
-                      "value": "loki.samples_read",
-                    },
-                    "timeSeriesTable": Parameter {
-                      "name": "timeSeriesTable",
-                      "value": "loki.time_series",
-                    },
-                    "to": Parameter {
-                      "name": "to",
-                      "value": 2,
-                    },
-                  },
-                  "preconditions": Conjunction {
-                    "args": Array [],
-                  },
-                  "request_totals": undefined,
-                  "sampling": undefined,
-                  "select_list": Array [
-                    Array [
-                      "time_series.labels",
-                      "labels",
-                    ],
-                    Array [
-                      "samples.string",
-                      "string",
-                    ],
-                    Array [
-                      "samples.fingerprint",
-                      "fingerprint",
-                    ],
-                    Array [
-                      "samples.timestamp_ms",
-                      "timestamp_ms",
-                    ],
-                  ],
-                  "tables": Array [
-                    Array [
-                      Parameter {
-                        "name": "samplesTable",
-                        "value": "loki.samples_read",
-                      },
-                      Term {
-                        "term": "samples",
-                      },
-                    ],
-                  ],
-                  "withs": Object {},
-                },
-              },
             },
           ],
         ],
@@ -2458,7 +2323,7 @@ Select {
 }
 `;
 
-exports[`log_range_aggregation 3 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'et_dolorem') = 1) and (JSONExtractString(labels, 'et_dolorem') != 'nemo doloremque'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)') != []) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,floor(timestamp_ms / 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select \`labels\`,floor(timestamp_ms / undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc"`;
+exports[`log_range_aggregation 3 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'et_dolorem') = 1) and (JSONExtractString(labels, 'et_dolorem') != 'nemo doloremque'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)') != []) order by \`timestamp_ms\` desc,\`labels\` desc) select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc"`;
 
 exports[`log_range_aggregation 4 1`] = `
 Select {
@@ -2470,8 +2335,9 @@ Select {
     "args": Array [],
   },
   "ctx": Object {
-    "duration": 300000,
+    "duration": 1000,
     "matrix": true,
+    "step": 5000,
   },
   "dist": false,
   "fmt": undefined,
@@ -2508,6 +2374,10 @@ Select {
       "name": "timeSeriesTable",
       "value": "loki.time_series",
     },
+    "timestamp_shift": Parameter {
+      "name": "timestamp_shift",
+      "value": null,
+    },
     "to": Parameter {
       "name": "to",
       "value": 2,
@@ -2522,7 +2392,7 @@ Select {
     "labels",
     Array [
       Raw {
-        "raw": "floor(timestamp_ms / undefined) * undefined",
+        "raw": "intDiv(timestamp_ms, 5000) * 5000",
       },
       "timestamp_ms",
     ],
@@ -2676,8 +2546,9 @@ Select {
           ],
         },
         "ctx": Object {
-          "duration": 300000,
+          "duration": 1000,
           "matrix": true,
+          "step": 5000,
         },
         "dist": false,
         "fmt": undefined,
@@ -2802,6 +2673,10 @@ Select {
             "name": "timeSeriesTable",
             "value": "loki.time_series",
           },
+          "timestamp_shift": Parameter {
+            "name": "timestamp_shift",
+            "value": null,
+          },
           "to": Parameter {
             "name": "to",
             "value": 2,
@@ -2889,13 +2764,14 @@ Select {
           ],
           Array [
             Raw {
-              "raw": "floor(timestamp_ms / 300000) * 300000",
+              "raw": "",
+              "toString": [Function],
             },
             "timestamp_ms",
           ],
           Array [
             Raw {
-              "raw": "toFloat64(count(1)) * 1000 / 300000",
+              "raw": "toFloat64(count(1)) * 1000 / 1000",
             },
             "value",
           ],
@@ -3038,8 +2914,9 @@ Select {
                     ],
                   },
                   "ctx": Object {
-                    "duration": 300000,
+                    "duration": 1000,
                     "matrix": true,
+                    "step": 5000,
                   },
                   "dist": false,
                   "fmt": undefined,
@@ -3164,6 +3041,10 @@ Select {
                       "name": "timeSeriesTable",
                       "value": "loki.time_series",
                     },
+                    "timestamp_shift": Parameter {
+                      "name": "timestamp_shift",
+                      "value": null,
+                    },
                     "to": Parameter {
                       "name": "to",
                       "value": 2,
@@ -3284,7 +3165,7 @@ Select {
 }
 `;
 
-exports[`log_range_aggregation 4 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') = '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') = []) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,floor(timestamp_ms / 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select \`labels\`,floor(timestamp_ms / undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc"`;
+exports[`log_range_aggregation 4 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') = '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') = []) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 1000) * 1000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 1000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select \`labels\`,intDiv(timestamp_ms, 5000) * 5000 as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc"`;
 
 exports[`shoud transpile unwrap 1`] = `
 Select {
@@ -3339,6 +3220,10 @@ Select {
       "name": "timeSeriesTable",
       "value": null,
     },
+    "timestamp_shift": Parameter {
+      "name": "timestamp_shift",
+      "value": null,
+    },
     "to": Parameter {
       "name": "to",
       "value": null,
@@ -3364,7 +3249,8 @@ Select {
     ],
     Array [
       Raw {
-        "raw": "intDiv(intDiv(timestamp_ms, 60000) * 60000, 120000) * 120000",
+        "raw": "",
+        "toString": [Function],
       },
       "timestamp_ms",
     ],
@@ -3518,7 +3404,8 @@ Select {
                 },
                 Condition {
                   "column": Raw {
-                    "raw": "intDiv(timestamp_ms, 60000) * 60000 % 120000",
+                    "raw": "",
+                    "toString": [Function],
                   },
                   "operator": "<",
                   "value": Value {
@@ -3653,6 +3540,10 @@ Select {
               },
               "timeSeriesTable": Parameter {
                 "name": "timeSeriesTable",
+                "value": null,
+              },
+              "timestamp_shift": Parameter {
+                "name": "timestamp_shift",
                 "value": null,
               },
               "to": Parameter {
@@ -3920,7 +3811,8 @@ Select {
             },
             Condition {
               "column": Raw {
-                "raw": "intDiv(timestamp_ms, 60000) * 60000 % 120000",
+                "raw": "",
+                "toString": [Function],
               },
               "operator": "<",
               "value": Value {
@@ -4057,6 +3949,10 @@ Select {
             "name": "timeSeriesTable",
             "value": null,
           },
+          "timestamp_shift": Parameter {
+            "name": "timestamp_shift",
+            "value": null,
+          },
           "to": Parameter {
             "name": "to",
             "value": null,
@@ -4161,6 +4057,10 @@ Select {
       "name": "timeSeriesTable",
       "value": null,
     },
+    "timestamp_shift": Parameter {
+      "name": "timestamp_shift",
+      "value": null,
+    },
     "to": Parameter {
       "name": "to",
       "value": null,
@@ -4186,7 +4086,8 @@ Select {
     ],
     Array [
       Raw {
-        "raw": "intDiv(intDiv(timestamp_ms, 60000) * 60000, 120000) * 120000",
+        "raw": "",
+        "toString": [Function],
       },
       "timestamp_ms",
     ],
@@ -4362,7 +4263,8 @@ Select {
                 },
                 Condition {
                   "column": Raw {
-                    "raw": "intDiv(timestamp_ms, 60000) * 60000 % 120000",
+                    "raw": "",
+                    "toString": [Function],
                   },
                   "operator": "<",
                   "value": Value {
@@ -4497,6 +4399,10 @@ Select {
               },
               "timeSeriesTable": Parameter {
                 "name": "timeSeriesTable",
+                "value": null,
+              },
+              "timestamp_shift": Parameter {
+                "name": "timestamp_shift",
                 "value": null,
               },
               "to": Parameter {
@@ -4793,7 +4699,8 @@ Select {
             },
             Condition {
               "column": Raw {
-                "raw": "intDiv(timestamp_ms, 60000) * 60000 % 120000",
+                "raw": "",
+                "toString": [Function],
               },
               "operator": "<",
               "value": Value {
@@ -4930,6 +4837,10 @@ Select {
             "name": "timeSeriesTable",
             "value": null,
           },
+          "timestamp_shift": Parameter {
+            "name": "timestamp_shift",
+            "value": null,
+          },
           "to": Parameter {
             "name": "to",
             "value": null,
@@ -5041,6 +4952,10 @@ Select {
       "name": "timeSeriesTable",
       "value": null,
     },
+    "timestamp_shift": Parameter {
+      "name": "timestamp_shift",
+      "value": null,
+    },
     "to": Parameter {
       "name": "to",
       "value": null,
@@ -5066,7 +4981,8 @@ Select {
     ],
     Array [
       Raw {
-        "raw": "intDiv(intDiv(timestamp_ms, 60000) * 60000, 120000) * 120000",
+        "raw": "",
+        "toString": [Function],
       },
       "timestamp_ms",
     ],
@@ -5242,7 +5158,8 @@ Select {
                 },
                 Condition {
                   "column": Raw {
-                    "raw": "intDiv(timestamp_ms, 60000) * 60000 % 120000",
+                    "raw": "",
+                    "toString": [Function],
                   },
                   "operator": "<",
                   "value": Value {
@@ -5377,6 +5294,10 @@ Select {
               },
               "timeSeriesTable": Parameter {
                 "name": "timeSeriesTable",
+                "value": null,
+              },
+              "timestamp_shift": Parameter {
+                "name": "timestamp_shift",
                 "value": null,
               },
               "to": Parameter {
@@ -5673,7 +5594,8 @@ Select {
             },
             Condition {
               "column": Raw {
-                "raw": "intDiv(timestamp_ms, 60000) * 60000 % 120000",
+                "raw": "",
+                "toString": [Function],
               },
               "operator": "<",
               "value": Value {
@@ -5810,6 +5732,10 @@ Select {
             "name": "timeSeriesTable",
             "value": null,
           },
+          "timestamp_shift": Parameter {
+            "name": "timestamp_shift",
+            "value": null,
+          },
           "to": Parameter {
             "name": "to",
             "value": null,
@@ -5912,6 +5838,10 @@ Select {
       "name": "timeSeriesTable",
       "value": "loki.time_series",
     },
+    "timestamp_shift": Parameter {
+      "name": "timestamp_shift",
+      "value": null,
+    },
     "to": Parameter {
       "name": "to",
       "value": 2,
@@ -5992,6 +5922,10 @@ Select {
                 "name": "timeSeriesTable",
                 "value": "loki.time_series",
               },
+              "timestamp_shift": Parameter {
+                "name": "timestamp_shift",
+                "value": null,
+              },
               "to": Parameter {
                 "name": "to",
                 "value": 2,
@@ -6006,7 +5940,7 @@ Select {
               "labels",
               Array [
                 Raw {
-                  "raw": "floor(timestamp_ms / undefined) * undefined",
+                  "raw": "intDiv(timestamp_ms, undefined) * undefined",
                 },
                 "timestamp_ms",
               ],
@@ -6083,6 +6017,10 @@ Select {
             "name": "timeSeriesTable",
             "value": "loki.time_series",
           },
+          "timestamp_shift": Parameter {
+            "name": "timestamp_shift",
+            "value": null,
+          },
           "to": Parameter {
             "name": "to",
             "value": 2,
@@ -6097,7 +6035,7 @@ Select {
           "labels",
           Array [
             Raw {
-              "raw": "floor(timestamp_ms / undefined) * undefined",
+              "raw": "intDiv(timestamp_ms, undefined) * undefined",
             },
             "timestamp_ms",
           ],
@@ -6372,6 +6310,10 @@ Select {
             "name": "timeSeriesTable",
             "value": "loki.time_series",
           },
+          "timestamp_shift": Parameter {
+            "name": "timestamp_shift",
+            "value": null,
+          },
           "to": Parameter {
             "name": "to",
             "value": 2,
@@ -6459,7 +6401,8 @@ Select {
           ],
           Array [
             Raw {
-              "raw": "floor(timestamp_ms / 300000) * 300000",
+              "raw": "",
+              "toString": [Function],
             },
             "timestamp_ms",
           ],
@@ -6727,6 +6670,10 @@ Select {
                       "name": "timeSeriesTable",
                       "value": "loki.time_series",
                     },
+                    "timestamp_shift": Parameter {
+                      "name": "timestamp_shift",
+                      "value": null,
+                    },
                     "to": Parameter {
                       "name": "to",
                       "value": 2,
@@ -6847,7 +6794,7 @@ Select {
 }
 `;
 
-exports[`should transpile aggregation_operator 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'minus_nam') = 1) and (JSONExtractString(labels, 'minus_nam') = 'aut illo'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,floor(timestamp_ms / 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc), agg_a AS (select \`labels\`,floor(timestamp_ms / undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ms\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ms\` order by \`labels\`,\`timestamp_ms\`"`;
+exports[`should transpile aggregation_operator 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'minus_nam') = 1) and (JSONExtractString(labels, 'minus_nam') = 'aut illo'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc), agg_a AS (select \`labels\`,intDiv(timestamp_ms, undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ms\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ms\` order by \`labels\`,\`timestamp_ms\`"`;
 
 exports[`should transpile aggregation_operator 3`] = `
 Select {
@@ -6892,6 +6839,10 @@ Select {
     "timeSeriesTable": Parameter {
       "name": "timeSeriesTable",
       "value": "loki.time_series",
+    },
+    "timestamp_shift": Parameter {
+      "name": "timestamp_shift",
+      "value": null,
     },
     "to": Parameter {
       "name": "to",
@@ -6973,6 +6924,10 @@ Select {
                 "name": "timeSeriesTable",
                 "value": "loki.time_series",
               },
+              "timestamp_shift": Parameter {
+                "name": "timestamp_shift",
+                "value": null,
+              },
               "to": Parameter {
                 "name": "to",
                 "value": 2,
@@ -6987,7 +6942,7 @@ Select {
               "labels",
               Array [
                 Raw {
-                  "raw": "floor(timestamp_ms / undefined) * undefined",
+                  "raw": "intDiv(timestamp_ms, undefined) * undefined",
                 },
                 "timestamp_ms",
               ],
@@ -7064,6 +7019,10 @@ Select {
             "name": "timeSeriesTable",
             "value": "loki.time_series",
           },
+          "timestamp_shift": Parameter {
+            "name": "timestamp_shift",
+            "value": null,
+          },
           "to": Parameter {
             "name": "to",
             "value": 2,
@@ -7078,7 +7037,7 @@ Select {
           "labels",
           Array [
             Raw {
-              "raw": "floor(timestamp_ms / undefined) * undefined",
+              "raw": "intDiv(timestamp_ms, undefined) * undefined",
             },
             "timestamp_ms",
           ],
@@ -7469,6 +7428,10 @@ Select {
             "name": "timeSeriesTable",
             "value": "loki.time_series",
           },
+          "timestamp_shift": Parameter {
+            "name": "timestamp_shift",
+            "value": null,
+          },
           "to": Parameter {
             "name": "to",
             "value": 2,
@@ -7556,7 +7519,8 @@ Select {
           ],
           Array [
             Raw {
-              "raw": "floor(timestamp_ms / 300000) * 300000",
+              "raw": "",
+              "toString": [Function],
             },
             "timestamp_ms",
           ],
@@ -7940,6 +7904,10 @@ Select {
                       "name": "timeSeriesTable",
                       "value": "loki.time_series",
                     },
+                    "timestamp_shift": Parameter {
+                      "name": "timestamp_shift",
+                      "value": null,
+                    },
                     "to": Parameter {
                       "name": "to",
                       "value": 2,
@@ -8060,7 +8028,7 @@ Select {
 }
 `;
 
-exports[`should transpile aggregation_operator 4`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,floor(timestamp_ms / 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc), agg_a AS (select \`labels\`,floor(timestamp_ms / undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ms\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ms\` order by \`labels\`,\`timestamp_ms\`"`;
+exports[`should transpile aggregation_operator 4`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc), agg_a AS (select \`labels\`,intDiv(timestamp_ms, undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ms\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ms\` order by \`labels\`,\`timestamp_ms\`"`;
 
 exports[`should transpile aggregation_operator 5`] = `
 Select {
@@ -8105,6 +8073,10 @@ Select {
     "timeSeriesTable": Parameter {
       "name": "timeSeriesTable",
       "value": "loki.time_series",
+    },
+    "timestamp_shift": Parameter {
+      "name": "timestamp_shift",
+      "value": null,
     },
     "to": Parameter {
       "name": "to",
@@ -8186,6 +8158,10 @@ Select {
                 "name": "timeSeriesTable",
                 "value": "loki.time_series",
               },
+              "timestamp_shift": Parameter {
+                "name": "timestamp_shift",
+                "value": null,
+              },
               "to": Parameter {
                 "name": "to",
                 "value": 2,
@@ -8200,7 +8176,7 @@ Select {
               "labels",
               Array [
                 Raw {
-                  "raw": "floor(timestamp_ms / undefined) * undefined",
+                  "raw": "intDiv(timestamp_ms, undefined) * undefined",
                 },
                 "timestamp_ms",
               ],
@@ -8277,6 +8253,10 @@ Select {
             "name": "timeSeriesTable",
             "value": "loki.time_series",
           },
+          "timestamp_shift": Parameter {
+            "name": "timestamp_shift",
+            "value": null,
+          },
           "to": Parameter {
             "name": "to",
             "value": 2,
@@ -8291,7 +8271,7 @@ Select {
           "labels",
           Array [
             Raw {
-              "raw": "floor(timestamp_ms / undefined) * undefined",
+              "raw": "intDiv(timestamp_ms, undefined) * undefined",
             },
             "timestamp_ms",
           ],
@@ -8566,6 +8546,10 @@ Select {
             "name": "timeSeriesTable",
             "value": "loki.time_series",
           },
+          "timestamp_shift": Parameter {
+            "name": "timestamp_shift",
+            "value": null,
+          },
           "to": Parameter {
             "name": "to",
             "value": 2,
@@ -8653,7 +8637,8 @@ Select {
           ],
           Array [
             Raw {
-              "raw": "floor(timestamp_ms / 300000) * 300000",
+              "raw": "",
+              "toString": [Function],
             },
             "timestamp_ms",
           ],
@@ -8921,6 +8906,10 @@ Select {
                       "name": "timeSeriesTable",
                       "value": "loki.time_series",
                     },
+                    "timestamp_shift": Parameter {
+                      "name": "timestamp_shift",
+                      "value": null,
+                    },
                     "to": Parameter {
                       "name": "to",
                       "value": 2,
@@ -9041,7 +9030,7 @@ Select {
 }
 `;
 
-exports[`should transpile aggregation_operator 6`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'minus_nam') = 1) and (JSONExtractString(labels, 'minus_nam') = 'aut illo'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,floor(timestamp_ms / 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc), agg_a AS (select \`labels\`,floor(timestamp_ms / undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ms\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ms\` order by \`labels\`,\`timestamp_ms\`"`;
+exports[`should transpile aggregation_operator 6`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'minus_nam') = 1) and (JSONExtractString(labels, 'minus_nam') = 'aut illo'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc), agg_a AS (select \`labels\`,intDiv(timestamp_ms, undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ms\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ms\` order by \`labels\`,\`timestamp_ms\`"`;
 
 exports[`should transpile complex pipelines 1`] = `
 Object {
@@ -12666,7 +12655,7 @@ exports[`should transpile new style 3 1`] = `
 Object {
   "duration": 1000,
   "matrix": true,
-  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.7026038163617259')) and ((JSONHas(labels, 'freq') = 1) and (JSONExtractString(labels, 'freq') = '2'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638802620000 and 1638803220000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(2[0-9]$)') != []) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,floor(timestamp_ms / 1000) * 1000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 1000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select \`labels\`,floor(timestamp_ms / 2000) * 2000 as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc",
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.7026038163617259')) and ((JSONHas(labels, 'freq') = 1) and (JSONExtractString(labels, 'freq') = '2'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638802620000 and 1638803220000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(2[0-9]$)') != []) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 1000) * 1000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 1000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select \`labels\`,intDiv(timestamp_ms, 2000) * 2000 as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc",
   "stream": Array [],
 }
 `;

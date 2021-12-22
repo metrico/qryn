@@ -53,8 +53,21 @@ function applyViaRequest (token, query, valueExpr, lastValue) {
   query.ctx.matrix = true
   query.ctx.duration = duration
   const step = query.ctx.step
+  const tsMoveParam = new Sql.Parameter('timestamp_shift')
+  query.addParam(tsMoveParam)
+  const tsGroupingExpr = new Sql.Raw('')
+  tsGroupingExpr.toString = () => {
+    if (!tsMoveParam.get()) {
+      return `intDiv(timestamp_ms, ${duration}) * ${duration}`
+    }
+    return `intDiv(timestamp_ms - ${tsMoveParam.toString()}, ${duration}) * ${duration} + ${tsMoveParam.toString()}`
+  }
   if (step > duration) {
-    query.where(Sql.Lt(new Sql.Raw(`intDiv(timestamp_ms, ${duration}) * ${duration} % ${step}`), duration))
+    const tsStepAdjust = new Sql.Raw('')
+    tsStepAdjust.toString = () => {
+      return `${tsGroupingExpr} % ${step}`
+    }
+    query.where(Sql.Lt(tsStepAdjust, duration))
   }
   const uwRateA = new Sql.With('uw_rate_a', query)
   /**
@@ -71,17 +84,15 @@ function applyViaRequest (token, query, valueExpr, lastValue) {
   groupingQuery.with(uwRateA)
   if (step <= duration) {
     return groupingQuery.select(
-      [new Sql.Raw(`intDiv(timestamp_ms, ${duration}) * ${duration}`), 'timestamp_ms']
+      [tsGroupingExpr, 'timestamp_ms']
     )
   }
-
+  const _tsGroupingExpr = new Sql.Raw('')
+  _tsGroupingExpr.toString = () => {
+    return `intDiv(${tsGroupingExpr}, ${step}) * ${step}`
+  }
   groupingQuery
-    .select(
-      [
-        new Sql.Raw(`intDiv(intDiv(timestamp_ms, ${duration}) * ${duration}, ${step}) * ${step}`),
-        'timestamp_ms'
-      ]
-    )
+    .select([_tsGroupingExpr, 'timestamp_ms'])
     .having(Sql.Ne('timestamp_ms', 0))
 
   return groupingQuery
