@@ -341,6 +341,10 @@ module.exports.requestToStr = (query) => {
   return req
 }
 
+module.exports.stop = () => {
+  require('./registry/line_format/go_native_fmt').stop()
+}
+
 /**
  *
  * @param clause {(string | string[])[]}
