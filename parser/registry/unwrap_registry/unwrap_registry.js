@@ -52,6 +52,7 @@ function applyViaRequest (token, query, valueExpr, lastValue) {
   const duration = getDuration(token, query)
   query.ctx.matrix = true
   query.ctx.duration = duration
+  query.limit(undefined, undefined)
   const step = query.ctx.step
   const tsMoveParam = new Sql.Parameter('timestamp_shift')
   query.addParam(tsMoveParam)
@@ -62,40 +63,28 @@ function applyViaRequest (token, query, valueExpr, lastValue) {
     }
     return `intDiv(timestamp_ms - ${tsMoveParam.toString()}, ${duration}) * ${duration} + ${tsMoveParam.toString()}`
   }
-  if (step > duration) {
-    const tsStepAdjust = new Sql.Raw('')
-    tsStepAdjust.toString = () => {
-      return `${tsGroupingExpr} % ${step}`
-    }
-    query.where(Sql.Lt(tsStepAdjust, duration))
-  }
   const uwRateA = new Sql.With('uw_rate_a', query)
-  /**
-     *
-     * @type {Select}
-     */
   const groupingQuery = (new Sql.Select())
     .select(
       [labels, 'labels'],
-      [valueExpr, 'value']
+      [valueExpr, 'value'],
+      [tsGroupingExpr, 'timestamp_ms']
     ).from(new Sql.WithReference(uwRateA))
     .groupBy('labels', 'timestamp_ms')
     .orderBy('labels', 'timestamp_ms')
-  groupingQuery.with(uwRateA)
   if (step <= duration) {
-    return groupingQuery.select(
-      [tsGroupingExpr, 'timestamp_ms']
+    return groupingQuery.with(uwRateA)
+  }
+  const groupingQueryWith = new Sql.With('uw_rate_b', groupingQuery)
+  return (new Sql.Select())
+    .with(uwRateA, groupingQueryWith)
+    .select('labels',
+      [new Sql.Raw(`intDiv(timestamp_ms, ${step}) * ${step}`), 'timestamp_ms'],
+      [new Sql.Raw('argMin(uw_rate_b.value, uw_rate_b.timestamp_ms)'), 'value']
     )
-  }
-  const _tsGroupingExpr = new Sql.Raw('')
-  _tsGroupingExpr.toString = () => {
-    return `intDiv(${tsGroupingExpr}, ${step}) * ${step}`
-  }
-  groupingQuery
-    .select([_tsGroupingExpr, 'timestamp_ms'])
-    .having(Sql.Ne('timestamp_ms', 0))
-
-  return groupingQuery
+    .from(new Sql.WithReference(groupingQueryWith))
+    .groupBy('labels', 'timestamp_ms')
+    .orderBy(['labels', 'asc'], ['timestamp_ms', 'asc'])
 }
 
 module.exports = {

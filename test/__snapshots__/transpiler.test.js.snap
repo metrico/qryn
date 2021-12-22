@@ -3184,24 +3184,20 @@ Select {
   "dist": false,
   "fmt": undefined,
   "having_conditions": Conjunction {
-    "args": Array [
-      Condition {
-        "column": Term {
-          "term": "timestamp_ms",
-        },
-        "operator": "!=",
-        "value": Value {
-          "value": 0,
-        },
-      },
-    ],
+    "args": Array [],
   },
   "joins": Array [],
   "limitbycolumns": undefined,
   "limits": undefined,
   "order_expressions": Array [
-    "labels",
-    "timestamp_ms",
+    Array [
+      "labels",
+      "asc",
+    ],
+    Array [
+      "timestamp_ms",
+      "asc",
+    ],
   ],
   "params": Object {
     "from": Parameter {
@@ -3235,117 +3231,106 @@ Select {
   "request_totals": undefined,
   "sampling": undefined,
   "select_list": Array [
+    "labels",
     Array [
       Raw {
-        "raw": "arraySort(arrayFilter(x -> arrayExists(y -> x.1 == y, ['fmt']) != 0, JSONExtractKeysAndValues(labels, 'String')))",
-      },
-      "labels",
-    ],
-    Array [
-      Raw {
-        "raw": "SUM(unwrapped) / 60",
-      },
-      "value",
-    ],
-    Array [
-      Raw {
-        "raw": "",
-        "toString": [Function],
+        "raw": "intDiv(timestamp_ms, 120000) * 120000",
       },
       "timestamp_ms",
+    ],
+    Array [
+      Raw {
+        "raw": "argMin(uw_rate_b.value, uw_rate_b.timestamp_ms)",
+      },
+      "value",
     ],
   ],
   "tables": Array [
     Array [
       WithReference {
         "ref": With {
-          "alias": "uw_rate_a",
+          "alias": "uw_rate_b",
           "inline": undefined,
           "query": Select {
-            "aggregations": Array [],
+            "aggregations": Array [
+              "labels",
+              "timestamp_ms",
+            ],
             "conditions": Conjunction {
-              "args": Array [
-                Condition {
-                  "column": Raw {
-                    "raw": "",
-                    "toString": [Function],
-                  },
-                  "operator": undefined,
-                  "value": Value {
-                    "value": undefined,
-                  },
+              "args": Array [],
+            },
+            "ctx": Object {},
+            "dist": false,
+            "fmt": undefined,
+            "having_conditions": Conjunction {
+              "args": Array [],
+            },
+            "joins": Array [],
+            "limitbycolumns": undefined,
+            "limits": undefined,
+            "order_expressions": Array [
+              "labels",
+              "timestamp_ms",
+            ],
+            "params": Object {},
+            "preconditions": Conjunction {
+              "args": Array [],
+            },
+            "request_totals": undefined,
+            "sampling": undefined,
+            "select_list": Array [
+              Array [
+                Raw {
+                  "raw": "arraySort(arrayFilter(x -> arrayExists(y -> x.1 == y, ['fmt']) != 0, JSONExtractKeysAndValues(labels, 'String')))",
                 },
-                In {
-                  "column": Term {
-                    "term": "samples.fingerprint",
-                  },
-                  "operator": "in",
-                  "value": Select {
-                    "aggregations": Array [],
-                    "conditions": Conjunction {
-                      "args": Array [],
-                    },
-                    "ctx": Object {},
-                    "dist": false,
-                    "fmt": undefined,
-                    "having_conditions": Conjunction {
-                      "args": Array [],
-                    },
-                    "joins": Array [],
-                    "limitbycolumns": undefined,
-                    "limits": undefined,
-                    "order_expressions": Array [],
-                    "params": Object {},
-                    "preconditions": Conjunction {
-                      "args": Array [],
-                    },
-                    "request_totals": undefined,
-                    "sampling": undefined,
-                    "select_list": Array [
-                      "fingerprint",
-                    ],
-                    "tables": Array [
-                      Array [
-                        WithReference {
-                          "ref": With {
-                            "alias": "str_sel",
-                            "inline": undefined,
-                            "query": Select {
+                "labels",
+              ],
+              Array [
+                Raw {
+                  "raw": "SUM(unwrapped) / 60",
+                },
+                "value",
+              ],
+              Array [
+                Raw {
+                  "raw": "",
+                  "toString": [Function],
+                },
+                "timestamp_ms",
+              ],
+            ],
+            "tables": Array [
+              Array [
+                WithReference {
+                  "ref": With {
+                    "alias": "uw_rate_a",
+                    "inline": undefined,
+                    "query": Select {
+                      "aggregations": Array [],
+                      "conditions": Conjunction {
+                        "args": Array [
+                          Condition {
+                            "column": Raw {
+                              "raw": "",
+                              "toString": [Function],
+                            },
+                            "operator": undefined,
+                            "value": Value {
+                              "value": undefined,
+                            },
+                          },
+                          In {
+                            "column": Term {
+                              "term": "samples.fingerprint",
+                            },
+                            "operator": "in",
+                            "value": Select {
                               "aggregations": Array [],
                               "conditions": Conjunction {
-                                "args": Array [
-                                  Condition {
-                                    "column": Conjunction {
-                                      "args": Array [
-                                        Condition {
-                                          "column": Raw {
-                                            "raw": "JSONHas(labels, 'test_id')",
-                                          },
-                                          "operator": "=",
-                                          "value": Value {
-                                            "value": 1,
-                                          },
-                                        },
-                                        Condition {
-                                          "column": Raw {
-                                            "raw": "JSONExtractString(labels, 'test_id')",
-                                          },
-                                          "operator": "=",
-                                          "value": Value {
-                                            "value": "0.7857680014573265_json",
-                                          },
-                                        },
-                                      ],
-                                    },
-                                    "operator": undefined,
-                                    "value": Value {
-                                      "value": undefined,
-                                    },
-                                  },
-                                ],
+                                "args": Array [],
                               },
                               "ctx": Object {},
-                              "dist": true,
+                              "dist": false,
                               "fmt": undefined,
                               "having_conditions": Conjunction {
                                 "args": Array [],
@@ -3362,231 +3347,286 @@ Select {
                               "sampling": undefined,
                               "select_list": Array [
                                 "fingerprint",
-                                "labels",
                               ],
                               "tables": Array [
                                 Array [
-                                  Parameter {
-                                    "name": "timeSeriesTable",
-                                    "value": null,
+                                  WithReference {
+                                    "ref": With {
+                                      "alias": "str_sel",
+                                      "inline": undefined,
+                                      "query": Select {
+                                        "aggregations": Array [],
+                                        "conditions": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Conjunction {
+                                                "args": Array [
+                                                  Condition {
+                                                    "column": Raw {
+                                                      "raw": "JSONHas(labels, 'test_id')",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": 1,
+                                                    },
+                                                  },
+                                                  Condition {
+                                                    "column": Raw {
+                                                      "raw": "JSONExtractString(labels, 'test_id')",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "0.7857680014573265_json",
+                                                    },
+                                                  },
+                                                ],
+                                              },
+                                              "operator": undefined,
+                                              "value": Value {
+                                                "value": undefined,
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "ctx": Object {},
+                                        "dist": true,
+                                        "fmt": undefined,
+                                        "having_conditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "joins": Array [],
+                                        "limitbycolumns": undefined,
+                                        "limits": undefined,
+                                        "order_expressions": Array [],
+                                        "params": Object {},
+                                        "preconditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "request_totals": undefined,
+                                        "sampling": undefined,
+                                        "select_list": Array [
+                                          "fingerprint",
+                                          "labels",
+                                        ],
+                                        "tables": Array [
+                                          Array [
+                                            Parameter {
+                                              "name": "timeSeriesTable",
+                                              "value": null,
+                                            },
+                                          ],
+                                        ],
+                                        "withs": Object {},
+                                      },
+                                    },
                                   },
                                 ],
                               ],
                               "withs": Object {},
                             },
                           },
+                          Condition {
+                            "column": Condition {
+                              "column": Raw {
+                                "raw": "JSONHas(labels, 'int_lbl')",
+                              },
+                              "operator": "=",
+                              "value": Value {
+                                "value": 1,
+                              },
+                            },
+                            "operator": "=",
+                            "value": Condition {
+                              "column": Raw {
+                                "raw": "isNotNull(unwrapped)",
+                              },
+                              "operator": "=",
+                              "value": Value {
+                                "value": 1,
+                              },
+                            },
+                          },
+                        ],
+                      },
+                      "ctx": Object {
+                        "duration": 60000,
+                        "matrix": true,
+                        "step": 120000,
+                      },
+                      "dist": false,
+                      "fmt": undefined,
+                      "having_conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "joins": Array [
+                        Object {
+                          "conditions": Array [
+                            Condition {
+                              "column": Term {
+                                "term": "samples.fingerprint",
+                              },
+                              "operator": "=",
+                              "value": Term {
+                                "term": "time_series.fingerprint",
+                              },
+                            },
+                          ],
+                          "table": Array [
+                            WithReference {
+                              "ref": With {
+                                "alias": "str_sel",
+                                "inline": undefined,
+                                "query": Select {
+                                  "aggregations": Array [],
+                                  "conditions": Conjunction {
+                                    "args": Array [
+                                      Condition {
+                                        "column": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Raw {
+                                                "raw": "JSONHas(labels, 'test_id')",
+                                              },
+                                              "operator": "=",
+                                              "value": Value {
+                                                "value": 1,
+                                              },
+                                            },
+                                            Condition {
+                                              "column": Raw {
+                                                "raw": "JSONExtractString(labels, 'test_id')",
+                                              },
+                                              "operator": "=",
+                                              "value": Value {
+                                                "value": "0.7857680014573265_json",
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "operator": undefined,
+                                        "value": Value {
+                                          "value": undefined,
+                                        },
+                                      },
+                                    ],
+                                  },
+                                  "ctx": Object {},
+                                  "dist": true,
+                                  "fmt": undefined,
+                                  "having_conditions": Conjunction {
+                                    "args": Array [],
+                                  },
+                                  "joins": Array [],
+                                  "limitbycolumns": undefined,
+                                  "limits": undefined,
+                                  "order_expressions": Array [],
+                                  "params": Object {},
+                                  "preconditions": Conjunction {
+                                    "args": Array [],
+                                  },
+                                  "request_totals": undefined,
+                                  "sampling": undefined,
+                                  "select_list": Array [
+                                    "fingerprint",
+                                    "labels",
+                                  ],
+                                  "tables": Array [
+                                    Array [
+                                      Parameter {
+                                        "name": "timeSeriesTable",
+                                        "value": null,
+                                      },
+                                    ],
+                                  ],
+                                  "withs": Object {},
+                                },
+                              },
+                            },
+                            "time_series",
+                          ],
+                          "type": "left",
                         },
                       ],
-                    ],
-                    "withs": Object {},
-                  },
-                },
-                Condition {
-                  "column": Condition {
-                    "column": Raw {
-                      "raw": "JSONHas(labels, 'int_lbl')",
-                    },
-                    "operator": "=",
-                    "value": Value {
-                      "value": 1,
-                    },
-                  },
-                  "operator": "=",
-                  "value": Condition {
-                    "column": Raw {
-                      "raw": "isNotNull(unwrapped)",
-                    },
-                    "operator": "=",
-                    "value": Value {
-                      "value": 1,
-                    },
-                  },
-                },
-                Condition {
-                  "column": Raw {
-                    "raw": "",
-                    "toString": [Function],
-                  },
-                  "operator": "<",
-                  "value": Value {
-                    "value": 60000,
-                  },
-                },
-              ],
-            },
-            "ctx": Object {
-              "duration": 60000,
-              "matrix": true,
-              "step": 120000,
-            },
-            "dist": false,
-            "fmt": undefined,
-            "having_conditions": Conjunction {
-              "args": Array [],
-            },
-            "joins": Array [
-              Object {
-                "conditions": Array [
-                  Condition {
-                    "column": Term {
-                      "term": "samples.fingerprint",
-                    },
-                    "operator": "=",
-                    "value": Term {
-                      "term": "time_series.fingerprint",
-                    },
-                  },
-                ],
-                "table": Array [
-                  WithReference {
-                    "ref": With {
-                      "alias": "str_sel",
-                      "inline": undefined,
-                      "query": Select {
-                        "aggregations": Array [],
-                        "conditions": Conjunction {
-                          "args": Array [
-                            Condition {
-                              "column": Conjunction {
-                                "args": Array [
-                                  Condition {
-                                    "column": Raw {
-                                      "raw": "JSONHas(labels, 'test_id')",
-                                    },
-                                    "operator": "=",
-                                    "value": Value {
-                                      "value": 1,
-                                    },
-                                  },
-                                  Condition {
-                                    "column": Raw {
-                                      "raw": "JSONExtractString(labels, 'test_id')",
-                                    },
-                                    "operator": "=",
-                                    "value": Value {
-                                      "value": "0.7857680014573265_json",
-                                    },
-                                  },
-                                ],
-                              },
-                              "operator": undefined,
-                              "value": Value {
-                                "value": undefined,
-                              },
-                            },
-                          ],
+                      "limitbycolumns": undefined,
+                      "limits": undefined,
+                      "order_expressions": Array [
+                        Array [
+                          "timestamp_ms",
+                          "desc",
+                        ],
+                        Array [
+                          "labels",
+                          "desc",
+                        ],
+                      ],
+                      "params": Object {
+                        "from": Parameter {
+                          "name": "from",
+                          "value": null,
                         },
-                        "ctx": Object {},
-                        "dist": true,
-                        "fmt": undefined,
-                        "having_conditions": Conjunction {
-                          "args": Array [],
+                        "limit": Parameter {
+                          "name": "limit",
+                          "value": 2000,
                         },
-                        "joins": Array [],
-                        "limitbycolumns": undefined,
-                        "limits": undefined,
-                        "order_expressions": Array [],
-                        "params": Object {},
-                        "preconditions": Conjunction {
-                          "args": Array [],
+                        "samplesTable": Parameter {
+                          "name": "samplesTable",
+                          "value": null,
                         },
-                        "request_totals": undefined,
-                        "sampling": undefined,
-                        "select_list": Array [
-                          "fingerprint",
+                        "timeSeriesTable": Parameter {
+                          "name": "timeSeriesTable",
+                          "value": null,
+                        },
+                        "timestamp_shift": Parameter {
+                          "name": "timestamp_shift",
+                          "value": null,
+                        },
+                        "to": Parameter {
+                          "name": "to",
+                          "value": null,
+                        },
+                      },
+                      "preconditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "request_totals": undefined,
+                      "sampling": undefined,
+                      "select_list": Array [
+                        Array [
+                          "time_series.labels",
                           "labels",
                         ],
-                        "tables": Array [
-                          Array [
-                            Parameter {
-                              "name": "timeSeriesTable",
-                              "value": null,
-                            },
-                          ],
+                        Array [
+                          "samples.string",
+                          "string",
                         ],
-                        "withs": Object {},
-                      },
+                        Array [
+                          "samples.fingerprint",
+                          "fingerprint",
+                        ],
+                        Array [
+                          "samples.timestamp_ms",
+                          "timestamp_ms",
+                        ],
+                        Array [
+                          Raw {
+                            "raw": "toFloat64OrNull(JSONExtractString(labels,'int_lbl'))",
+                          },
+                        ],
+                      ],
+                      "tables": Array [
+                        Array [
+                          Parameter {
+                            "name": "samplesTable",
+                            "value": null,
+                          },
+                          Term {
+                            "term": "samples",
+                          },
+                        ],
+                      ],
+                      "withs": Object {},
                     },
                   },
-                  "time_series",
-                ],
-                "type": "left",
-              },
-            ],
-            "limitbycolumns": undefined,
-            "limits": undefined,
-            "order_expressions": Array [
-              Array [
-                "timestamp_ms",
-                "desc",
-              ],
-              Array [
-                "labels",
-                "desc",
-              ],
-            ],
-            "params": Object {
-              "from": Parameter {
-                "name": "from",
-                "value": null,
-              },
-              "limit": Parameter {
-                "name": "limit",
-                "value": 2000,
-              },
-              "samplesTable": Parameter {
-                "name": "samplesTable",
-                "value": null,
-              },
-              "timeSeriesTable": Parameter {
-                "name": "timeSeriesTable",
-                "value": null,
-              },
-              "timestamp_shift": Parameter {
-                "name": "timestamp_shift",
-                "value": null,
-              },
-              "to": Parameter {
-                "name": "to",
-                "value": null,
-              },
-            },
-            "preconditions": Conjunction {
-              "args": Array [],
-            },
-            "request_totals": undefined,
-            "sampling": undefined,
-            "select_list": Array [
-              Array [
-                "time_series.labels",
-                "labels",
-              ],
-              Array [
-                "samples.string",
-                "string",
-              ],
-              Array [
-                "samples.fingerprint",
-                "fingerprint",
-              ],
-              Array [
-                "samples.timestamp_ms",
-                "timestamp_ms",
-              ],
-              Array [
-                Raw {
-                  "raw": "toFloat64OrNull(JSONExtractString(labels,'int_lbl'))",
-                },
-              ],
-            ],
-            "tables": Array [
-              Array [
-                Parameter {
-                  "name": "samplesTable",
-                  "value": null,
-                },
-                Term {
-                  "term": "samples",
                 },
               ],
             ],
@@ -3809,16 +3849,6 @@ Select {
                 },
               },
             },
-            Condition {
-              "column": Raw {
-                "raw": "",
-                "toString": [Function],
-              },
-              "operator": "<",
-              "value": Value {
-                "value": 60000,
-              },
-            },
           ],
         },
         "ctx": Object {
@@ -4000,149 +4030,230 @@ Select {
         "withs": Object {},
       },
     },
-  },
-}
-`;
-
-exports[`shoud transpile unwrap 2`] = `
-Select {
-  "aggregations": Array [
-    "labels",
-    "timestamp_ms",
-  ],
-  "conditions": Conjunction {
-    "args": Array [],
-  },
-  "ctx": Object {
-    "duration": 60000,
-    "matrix": true,
-    "step": 120000,
-  },
-  "dist": false,
-  "fmt": undefined,
-  "having_conditions": Conjunction {
-    "args": Array [
-      Condition {
-        "column": Term {
-          "term": "timestamp_ms",
+    "uw_rate_b": With {
+      "alias": "uw_rate_b",
+      "inline": undefined,
+      "query": Select {
+        "aggregations": Array [
+          "labels",
+          "timestamp_ms",
+        ],
+        "conditions": Conjunction {
+          "args": Array [],
         },
-        "operator": "!=",
-        "value": Value {
-          "value": 0,
+        "ctx": Object {},
+        "dist": false,
+        "fmt": undefined,
+        "having_conditions": Conjunction {
+          "args": Array [],
         },
-      },
-    ],
-  },
-  "joins": Array [],
-  "limitbycolumns": undefined,
-  "limits": undefined,
-  "order_expressions": Array [
-    "labels",
-    "timestamp_ms",
-  ],
-  "params": Object {
-    "from": Parameter {
-      "name": "from",
-      "value": null,
-    },
-    "limit": Parameter {
-      "name": "limit",
-      "value": 2000,
-    },
-    "samplesTable": Parameter {
-      "name": "samplesTable",
-      "value": null,
-    },
-    "timeSeriesTable": Parameter {
-      "name": "timeSeriesTable",
-      "value": null,
-    },
-    "timestamp_shift": Parameter {
-      "name": "timestamp_shift",
-      "value": null,
-    },
-    "to": Parameter {
-      "name": "to",
-      "value": null,
-    },
-  },
-  "preconditions": Conjunction {
-    "args": Array [],
-  },
-  "request_totals": undefined,
-  "sampling": undefined,
-  "select_list": Array [
-    Array [
-      Raw {
-        "raw": "arraySort(arrayFilter(x -> arrayExists(y -> x.1 == y, ['fmt']) != 0, arraySort(arrayConcat(arrayFilter(x -> arrayExists(y -> y.1 == x.1, extra_labels) == 0, JSONExtractKeysAndValues(labels, 'String')), extra_labels))))",
-      },
-      "labels",
-    ],
-    Array [
-      Raw {
-        "raw": "SUM(unwrapped) / 60",
-      },
-      "value",
-    ],
-    Array [
-      Raw {
-        "raw": "",
-        "toString": [Function],
-      },
-      "timestamp_ms",
-    ],
-  ],
-  "tables": Array [
-    Array [
-      WithReference {
-        "ref": With {
-          "alias": "uw_rate_a",
-          "inline": undefined,
-          "query": Select {
-            "aggregations": Array [],
-            "conditions": Conjunction {
-              "args": Array [
-                Condition {
-                  "column": Raw {
-                    "raw": "",
-                    "toString": [Function],
-                  },
-                  "operator": undefined,
-                  "value": Value {
-                    "value": undefined,
-                  },
-                },
-                In {
-                  "column": Term {
-                    "term": "samples.fingerprint",
-                  },
-                  "operator": "in",
-                  "value": Select {
-                    "aggregations": Array [],
-                    "conditions": Conjunction {
-                      "args": Array [],
-                    },
-                    "ctx": Object {},
-                    "dist": false,
-                    "fmt": undefined,
-                    "having_conditions": Conjunction {
-                      "args": Array [],
-                    },
-                    "joins": Array [],
-                    "limitbycolumns": undefined,
-                    "limits": undefined,
-                    "order_expressions": Array [],
-                    "params": Object {},
-                    "preconditions": Conjunction {
-                      "args": Array [],
-                    },
-                    "request_totals": undefined,
-                    "sampling": undefined,
-                    "select_list": Array [
-                      "fingerprint",
+        "joins": Array [],
+        "limitbycolumns": undefined,
+        "limits": undefined,
+        "order_expressions": Array [
+          "labels",
+          "timestamp_ms",
+        ],
+        "params": Object {},
+        "preconditions": Conjunction {
+          "args": Array [],
+        },
+        "request_totals": undefined,
+        "sampling": undefined,
+        "select_list": Array [
+          Array [
+            Raw {
+              "raw": "arraySort(arrayFilter(x -> arrayExists(y -> x.1 == y, ['fmt']) != 0, JSONExtractKeysAndValues(labels, 'String')))",
+            },
+            "labels",
+          ],
+          Array [
+            Raw {
+              "raw": "SUM(unwrapped) / 60",
+            },
+            "value",
+          ],
+          Array [
+            Raw {
+              "raw": "",
+              "toString": [Function],
+            },
+            "timestamp_ms",
+          ],
+        ],
+        "tables": Array [
+          Array [
+            WithReference {
+              "ref": With {
+                "alias": "uw_rate_a",
+                "inline": undefined,
+                "query": Select {
+                  "aggregations": Array [],
+                  "conditions": Conjunction {
+                    "args": Array [
+                      Condition {
+                        "column": Raw {
+                          "raw": "",
+                          "toString": [Function],
+                        },
+                        "operator": undefined,
+                        "value": Value {
+                          "value": undefined,
+                        },
+                      },
+                      In {
+                        "column": Term {
+                          "term": "samples.fingerprint",
+                        },
+                        "operator": "in",
+                        "value": Select {
+                          "aggregations": Array [],
+                          "conditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "ctx": Object {},
+                          "dist": false,
+                          "fmt": undefined,
+                          "having_conditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "joins": Array [],
+                          "limitbycolumns": undefined,
+                          "limits": undefined,
+                          "order_expressions": Array [],
+                          "params": Object {},
+                          "preconditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "request_totals": undefined,
+                          "sampling": undefined,
+                          "select_list": Array [
+                            "fingerprint",
+                          ],
+                          "tables": Array [
+                            Array [
+                              WithReference {
+                                "ref": With {
+                                  "alias": "str_sel",
+                                  "inline": undefined,
+                                  "query": Select {
+                                    "aggregations": Array [],
+                                    "conditions": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Conjunction {
+                                            "args": Array [
+                                              Condition {
+                                                "column": Raw {
+                                                  "raw": "JSONHas(labels, 'test_id')",
+                                                },
+                                                "operator": "=",
+                                                "value": Value {
+                                                  "value": 1,
+                                                },
+                                              },
+                                              Condition {
+                                                "column": Raw {
+                                                  "raw": "JSONExtractString(labels, 'test_id')",
+                                                },
+                                                "operator": "=",
+                                                "value": Value {
+                                                  "value": "0.7857680014573265_json",
+                                                },
+                                              },
+                                            ],
+                                          },
+                                          "operator": undefined,
+                                          "value": Value {
+                                            "value": undefined,
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "ctx": Object {},
+                                    "dist": true,
+                                    "fmt": undefined,
+                                    "having_conditions": Conjunction {
+                                      "args": Array [],
+                                    },
+                                    "joins": Array [],
+                                    "limitbycolumns": undefined,
+                                    "limits": undefined,
+                                    "order_expressions": Array [],
+                                    "params": Object {},
+                                    "preconditions": Conjunction {
+                                      "args": Array [],
+                                    },
+                                    "request_totals": undefined,
+                                    "sampling": undefined,
+                                    "select_list": Array [
+                                      "fingerprint",
+                                      "labels",
+                                    ],
+                                    "tables": Array [
+                                      Array [
+                                        Parameter {
+                                          "name": "timeSeriesTable",
+                                          "value": null,
+                                        },
+                                      ],
+                                    ],
+                                    "withs": Object {},
+                                  },
+                                },
+                              },
+                            ],
+                          ],
+                          "withs": Object {},
+                        },
+                      },
+                      Condition {
+                        "column": Condition {
+                          "column": Raw {
+                            "raw": "JSONHas(labels, 'int_lbl')",
+                          },
+                          "operator": "=",
+                          "value": Value {
+                            "value": 1,
+                          },
+                        },
+                        "operator": "=",
+                        "value": Condition {
+                          "column": Raw {
+                            "raw": "isNotNull(unwrapped)",
+                          },
+                          "operator": "=",
+                          "value": Value {
+                            "value": 1,
+                          },
+                        },
+                      },
                     ],
-                    "tables": Array [
-                      Array [
+                  },
+                  "ctx": Object {
+                    "duration": 60000,
+                    "matrix": true,
+                    "step": 120000,
+                  },
+                  "dist": false,
+                  "fmt": undefined,
+                  "having_conditions": Conjunction {
+                    "args": Array [],
+                  },
+                  "joins": Array [
+                    Object {
+                      "conditions": Array [
+                        Condition {
+                          "column": Term {
+                            "term": "samples.fingerprint",
+                          },
+                          "operator": "=",
+                          "value": Term {
+                            "term": "time_series.fingerprint",
+                          },
+                        },
+                      ],
+                      "table": Array [
                         WithReference {
                           "ref": With {
                             "alias": "str_sel",
@@ -4213,203 +4324,207 @@ Select {
                             },
                           },
                         },
+                        "time_series",
                       ],
-                    ],
-                    "withs": Object {},
-                  },
-                },
-                Condition {
-                  "column": Raw {
-                    "raw": "isValidJSON(samples.string)",
-                  },
-                  "operator": "=",
-                  "value": Value {
-                    "value": 1,
-                  },
-                },
-                Condition {
-                  "column": Disjunction {
-                    "args": Array [
-                      Condition {
-                        "column": Raw {
-                          "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl2', extra_labels)",
-                        },
-                        "operator": "!=",
-                        "value": Value {
-                          "value": 0,
-                        },
-                      },
-                      Condition {
-                        "column": Raw {
-                          "raw": "JSONHas(labels, 'int_lbl2')",
-                        },
-                        "operator": "=",
-                        "value": Value {
-                          "value": 1,
-                        },
-                      },
-                    ],
-                  },
-                  "operator": "=",
-                  "value": Condition {
-                    "column": Raw {
-                      "raw": "isNotNull(unwrapped)",
+                      "type": "left",
                     },
-                    "operator": "=",
-                    "value": Value {
-                      "value": 1,
+                  ],
+                  "limitbycolumns": undefined,
+                  "limits": undefined,
+                  "order_expressions": Array [
+                    Array [
+                      "timestamp_ms",
+                      "desc",
+                    ],
+                    Array [
+                      "labels",
+                      "desc",
+                    ],
+                  ],
+                  "params": Object {
+                    "from": Parameter {
+                      "name": "from",
+                      "value": null,
+                    },
+                    "limit": Parameter {
+                      "name": "limit",
+                      "value": 2000,
+                    },
+                    "samplesTable": Parameter {
+                      "name": "samplesTable",
+                      "value": null,
+                    },
+                    "timeSeriesTable": Parameter {
+                      "name": "timeSeriesTable",
+                      "value": null,
+                    },
+                    "timestamp_shift": Parameter {
+                      "name": "timestamp_shift",
+                      "value": null,
+                    },
+                    "to": Parameter {
+                      "name": "to",
+                      "value": null,
                     },
                   },
-                },
-                Condition {
-                  "column": Raw {
-                    "raw": "",
-                    "toString": [Function],
+                  "preconditions": Conjunction {
+                    "args": Array [],
                   },
-                  "operator": "<",
-                  "value": Value {
-                    "value": 60000,
-                  },
+                  "request_totals": undefined,
+                  "sampling": undefined,
+                  "select_list": Array [
+                    Array [
+                      "time_series.labels",
+                      "labels",
+                    ],
+                    Array [
+                      "samples.string",
+                      "string",
+                    ],
+                    Array [
+                      "samples.fingerprint",
+                      "fingerprint",
+                    ],
+                    Array [
+                      "samples.timestamp_ms",
+                      "timestamp_ms",
+                    ],
+                    Array [
+                      Raw {
+                        "raw": "toFloat64OrNull(JSONExtractString(labels,'int_lbl'))",
+                      },
+                    ],
+                  ],
+                  "tables": Array [
+                    Array [
+                      Parameter {
+                        "name": "samplesTable",
+                        "value": null,
+                      },
+                      Term {
+                        "term": "samples",
+                      },
+                    ],
+                  ],
+                  "withs": Object {},
                 },
-              ],
+              },
             },
-            "ctx": Object {
-              "duration": 60000,
-              "matrix": true,
-              "step": 120000,
+          ],
+        ],
+        "withs": Object {},
+      },
+    },
+  },
+}
+`;
+
+exports[`shoud transpile unwrap 2`] = `
+Select {
+  "aggregations": Array [
+    "labels",
+    "timestamp_ms",
+  ],
+  "conditions": Conjunction {
+    "args": Array [],
+  },
+  "ctx": Object {
+    "duration": 60000,
+    "matrix": true,
+    "step": 120000,
+  },
+  "dist": false,
+  "fmt": undefined,
+  "having_conditions": Conjunction {
+    "args": Array [],
+  },
+  "joins": Array [],
+  "limitbycolumns": undefined,
+  "limits": undefined,
+  "order_expressions": Array [
+    Array [
+      "labels",
+      "asc",
+    ],
+    Array [
+      "timestamp_ms",
+      "asc",
+    ],
+  ],
+  "params": Object {
+    "from": Parameter {
+      "name": "from",
+      "value": null,
+    },
+    "limit": Parameter {
+      "name": "limit",
+      "value": 2000,
+    },
+    "samplesTable": Parameter {
+      "name": "samplesTable",
+      "value": null,
+    },
+    "timeSeriesTable": Parameter {
+      "name": "timeSeriesTable",
+      "value": null,
+    },
+    "timestamp_shift": Parameter {
+      "name": "timestamp_shift",
+      "value": null,
+    },
+    "to": Parameter {
+      "name": "to",
+      "value": null,
+    },
+  },
+  "preconditions": Conjunction {
+    "args": Array [],
+  },
+  "request_totals": undefined,
+  "sampling": undefined,
+  "select_list": Array [
+    "labels",
+    Array [
+      Raw {
+        "raw": "intDiv(timestamp_ms, 120000) * 120000",
+      },
+      "timestamp_ms",
+    ],
+    Array [
+      Raw {
+        "raw": "argMin(uw_rate_b.value, uw_rate_b.timestamp_ms)",
+      },
+      "value",
+    ],
+  ],
+  "tables": Array [
+    Array [
+      WithReference {
+        "ref": With {
+          "alias": "uw_rate_b",
+          "inline": undefined,
+          "query": Select {
+            "aggregations": Array [
+              "labels",
+              "timestamp_ms",
+            ],
+            "conditions": Conjunction {
+              "args": Array [],
             },
+            "ctx": Object {},
             "dist": false,
             "fmt": undefined,
             "having_conditions": Conjunction {
               "args": Array [],
             },
-            "joins": Array [
-              Object {
-                "conditions": Array [
-                  Condition {
-                    "column": Term {
-                      "term": "samples.fingerprint",
-                    },
-                    "operator": "=",
-                    "value": Term {
-                      "term": "time_series.fingerprint",
-                    },
-                  },
-                ],
-                "table": Array [
-                  WithReference {
-                    "ref": With {
-                      "alias": "str_sel",
-                      "inline": undefined,
-                      "query": Select {
-                        "aggregations": Array [],
-                        "conditions": Conjunction {
-                          "args": Array [
-                            Condition {
-                              "column": Conjunction {
-                                "args": Array [
-                                  Condition {
-                                    "column": Raw {
-                                      "raw": "JSONHas(labels, 'test_id')",
-                                    },
-                                    "operator": "=",
-                                    "value": Value {
-                                      "value": 1,
-                                    },
-                                  },
-                                  Condition {
-                                    "column": Raw {
-                                      "raw": "JSONExtractString(labels, 'test_id')",
-                                    },
-                                    "operator": "=",
-                                    "value": Value {
-                                      "value": "0.7857680014573265_json",
-                                    },
-                                  },
-                                ],
-                              },
-                              "operator": undefined,
-                              "value": Value {
-                                "value": undefined,
-                              },
-                            },
-                          ],
-                        },
-                        "ctx": Object {},
-                        "dist": true,
-                        "fmt": undefined,
-                        "having_conditions": Conjunction {
-                          "args": Array [],
-                        },
-                        "joins": Array [],
-                        "limitbycolumns": undefined,
-                        "limits": undefined,
-                        "order_expressions": Array [],
-                        "params": Object {},
-                        "preconditions": Conjunction {
-                          "args": Array [],
-                        },
-                        "request_totals": undefined,
-                        "sampling": undefined,
-                        "select_list": Array [
-                          "fingerprint",
-                          "labels",
-                        ],
-                        "tables": Array [
-                          Array [
-                            Parameter {
-                              "name": "timeSeriesTable",
-                              "value": null,
-                            },
-                          ],
-                        ],
-                        "withs": Object {},
-                      },
-                    },
-                  },
-                  "time_series",
-                ],
-                "type": "left",
-              },
-            ],
+            "joins": Array [],
             "limitbycolumns": undefined,
             "limits": undefined,
             "order_expressions": Array [
-              Array [
-                "timestamp_ms",
-                "desc",
-              ],
-              Array [
-                "labels",
-                "desc",
-              ],
+              "labels",
+              "timestamp_ms",
             ],
-            "params": Object {
-              "from": Parameter {
-                "name": "from",
-                "value": null,
-              },
-              "limit": Parameter {
-                "name": "limit",
-                "value": 2000,
-              },
-              "samplesTable": Parameter {
-                "name": "samplesTable",
-                "value": null,
-              },
-              "timeSeriesTable": Parameter {
-                "name": "timeSeriesTable",
-                "value": null,
-              },
-              "timestamp_shift": Parameter {
-                "name": "timestamp_shift",
-                "value": null,
-              },
-              "to": Parameter {
-                "name": "to",
-                "value": null,
-              },
-            },
+            "params": Object {},
             "preconditions": Conjunction {
               "args": Array [],
             },
@@ -4417,42 +4532,382 @@ Select {
             "sampling": undefined,
             "select_list": Array [
               Array [
-                "time_series.labels",
+                Raw {
+                  "raw": "arraySort(arrayFilter(x -> arrayExists(y -> x.1 == y, ['fmt']) != 0, arraySort(arrayConcat(arrayFilter(x -> arrayExists(y -> y.1 == x.1, extra_labels) == 0, JSONExtractKeysAndValues(labels, 'String')), extra_labels))))",
+                },
                 "labels",
               ],
               Array [
-                "samples.string",
-                "string",
+                Raw {
+                  "raw": "SUM(unwrapped) / 60",
+                },
+                "value",
               ],
               Array [
-                "samples.fingerprint",
-                "fingerprint",
-              ],
-              Array [
-                "samples.timestamp_ms",
+                Raw {
+                  "raw": "",
+                  "toString": [Function],
+                },
                 "timestamp_ms",
-              ],
-              Array [
-                Raw {
-                  "raw": "arrayFilter((x) -> x.2 != '', [('int_lbl2', if(JSONType(samples.string, 'int_val') == 'String', JSONExtractString(samples.string, 'int_val'), JSONExtractRaw(samples.string, 'int_val')))])",
-                },
-                "extra_labels",
-              ],
-              Array [
-                Raw {
-                  "raw": "toFloat64OrNull(if(arrayExists(x -> x.1 == 'int_lbl2', extra_labels), arrayFirst(x -> x.1 == 'int_lbl2', extra_labels).2, JSONExtractString(labels,'int_lbl2')))",
-                },
-                "unwrapped",
               ],
             ],
             "tables": Array [
               Array [
-                Parameter {
-                  "name": "samplesTable",
-                  "value": null,
-                },
-                Term {
-                  "term": "samples",
+                WithReference {
+                  "ref": With {
+                    "alias": "uw_rate_a",
+                    "inline": undefined,
+                    "query": Select {
+                      "aggregations": Array [],
+                      "conditions": Conjunction {
+                        "args": Array [
+                          Condition {
+                            "column": Raw {
+                              "raw": "",
+                              "toString": [Function],
+                            },
+                            "operator": undefined,
+                            "value": Value {
+                              "value": undefined,
+                            },
+                          },
+                          In {
+                            "column": Term {
+                              "term": "samples.fingerprint",
+                            },
+                            "operator": "in",
+                            "value": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "ctx": Object {},
+                              "dist": false,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  WithReference {
+                                    "ref": With {
+                                      "alias": "str_sel",
+                                      "inline": undefined,
+                                      "query": Select {
+                                        "aggregations": Array [],
+                                        "conditions": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Conjunction {
+                                                "args": Array [
+                                                  Condition {
+                                                    "column": Raw {
+                                                      "raw": "JSONHas(labels, 'test_id')",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": 1,
+                                                    },
+                                                  },
+                                                  Condition {
+                                                    "column": Raw {
+                                                      "raw": "JSONExtractString(labels, 'test_id')",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "0.7857680014573265_json",
+                                                    },
+                                                  },
+                                                ],
+                                              },
+                                              "operator": undefined,
+                                              "value": Value {
+                                                "value": undefined,
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "ctx": Object {},
+                                        "dist": true,
+                                        "fmt": undefined,
+                                        "having_conditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "joins": Array [],
+                                        "limitbycolumns": undefined,
+                                        "limits": undefined,
+                                        "order_expressions": Array [],
+                                        "params": Object {},
+                                        "preconditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "request_totals": undefined,
+                                        "sampling": undefined,
+                                        "select_list": Array [
+                                          "fingerprint",
+                                          "labels",
+                                        ],
+                                        "tables": Array [
+                                          Array [
+                                            Parameter {
+                                              "name": "timeSeriesTable",
+                                              "value": null,
+                                            },
+                                          ],
+                                        ],
+                                        "withs": Object {},
+                                      },
+                                    },
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                          Condition {
+                            "column": Raw {
+                              "raw": "isValidJSON(samples.string)",
+                            },
+                            "operator": "=",
+                            "value": Value {
+                              "value": 1,
+                            },
+                          },
+                          Condition {
+                            "column": Disjunction {
+                              "args": Array [
+                                Condition {
+                                  "column": Raw {
+                                    "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl2', extra_labels)",
+                                  },
+                                  "operator": "!=",
+                                  "value": Value {
+                                    "value": 0,
+                                  },
+                                },
+                                Condition {
+                                  "column": Raw {
+                                    "raw": "JSONHas(labels, 'int_lbl2')",
+                                  },
+                                  "operator": "=",
+                                  "value": Value {
+                                    "value": 1,
+                                  },
+                                },
+                              ],
+                            },
+                            "operator": "=",
+                            "value": Condition {
+                              "column": Raw {
+                                "raw": "isNotNull(unwrapped)",
+                              },
+                              "operator": "=",
+                              "value": Value {
+                                "value": 1,
+                              },
+                            },
+                          },
+                        ],
+                      },
+                      "ctx": Object {
+                        "duration": 60000,
+                        "matrix": true,
+                        "step": 120000,
+                      },
+                      "dist": false,
+                      "fmt": undefined,
+                      "having_conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "joins": Array [
+                        Object {
+                          "conditions": Array [
+                            Condition {
+                              "column": Term {
+                                "term": "samples.fingerprint",
+                              },
+                              "operator": "=",
+                              "value": Term {
+                                "term": "time_series.fingerprint",
+                              },
+                            },
+                          ],
+                          "table": Array [
+                            WithReference {
+                              "ref": With {
+                                "alias": "str_sel",
+                                "inline": undefined,
+                                "query": Select {
+                                  "aggregations": Array [],
+                                  "conditions": Conjunction {
+                                    "args": Array [
+                                      Condition {
+                                        "column": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Raw {
+                                                "raw": "JSONHas(labels, 'test_id')",
+                                              },
+                                              "operator": "=",
+                                              "value": Value {
+                                                "value": 1,
+                                              },
+                                            },
+                                            Condition {
+                                              "column": Raw {
+                                                "raw": "JSONExtractString(labels, 'test_id')",
+                                              },
+                                              "operator": "=",
+                                              "value": Value {
+                                                "value": "0.7857680014573265_json",
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "operator": undefined,
+                                        "value": Value {
+                                          "value": undefined,
+                                        },
+                                      },
+                                    ],
+                                  },
+                                  "ctx": Object {},
+                                  "dist": true,
+                                  "fmt": undefined,
+                                  "having_conditions": Conjunction {
+                                    "args": Array [],
+                                  },
+                                  "joins": Array [],
+                                  "limitbycolumns": undefined,
+                                  "limits": undefined,
+                                  "order_expressions": Array [],
+                                  "params": Object {},
+                                  "preconditions": Conjunction {
+                                    "args": Array [],
+                                  },
+                                  "request_totals": undefined,
+                                  "sampling": undefined,
+                                  "select_list": Array [
+                                    "fingerprint",
+                                    "labels",
+                                  ],
+                                  "tables": Array [
+                                    Array [
+                                      Parameter {
+                                        "name": "timeSeriesTable",
+                                        "value": null,
+                                      },
+                                    ],
+                                  ],
+                                  "withs": Object {},
+                                },
+                              },
+                            },
+                            "time_series",
+                          ],
+                          "type": "left",
+                        },
+                      ],
+                      "limitbycolumns": undefined,
+                      "limits": undefined,
+                      "order_expressions": Array [
+                        Array [
+                          "timestamp_ms",
+                          "desc",
+                        ],
+                        Array [
+                          "labels",
+                          "desc",
+                        ],
+                      ],
+                      "params": Object {
+                        "from": Parameter {
+                          "name": "from",
+                          "value": null,
+                        },
+                        "limit": Parameter {
+                          "name": "limit",
+                          "value": 2000,
+                        },
+                        "samplesTable": Parameter {
+                          "name": "samplesTable",
+                          "value": null,
+                        },
+                        "timeSeriesTable": Parameter {
+                          "name": "timeSeriesTable",
+                          "value": null,
+                        },
+                        "timestamp_shift": Parameter {
+                          "name": "timestamp_shift",
+                          "value": null,
+                        },
+                        "to": Parameter {
+                          "name": "to",
+                          "value": null,
+                        },
+                      },
+                      "preconditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "request_totals": undefined,
+                      "sampling": undefined,
+                      "select_list": Array [
+                        Array [
+                          "time_series.labels",
+                          "labels",
+                        ],
+                        Array [
+                          "samples.string",
+                          "string",
+                        ],
+                        Array [
+                          "samples.fingerprint",
+                          "fingerprint",
+                        ],
+                        Array [
+                          "samples.timestamp_ms",
+                          "timestamp_ms",
+                        ],
+                        Array [
+                          Raw {
+                            "raw": "arrayFilter((x) -> x.2 != '', [('int_lbl2', if(JSONType(samples.string, 'int_val') == 'String', JSONExtractString(samples.string, 'int_val'), JSONExtractRaw(samples.string, 'int_val')))])",
+                          },
+                          "extra_labels",
+                        ],
+                        Array [
+                          Raw {
+                            "raw": "toFloat64OrNull(if(arrayExists(x -> x.1 == 'int_lbl2', extra_labels), arrayFirst(x -> x.1 == 'int_lbl2', extra_labels).2, JSONExtractString(labels,'int_lbl2')))",
+                          },
+                          "unwrapped",
+                        ],
+                      ],
+                      "tables": Array [
+                        Array [
+                          Parameter {
+                            "name": "samplesTable",
+                            "value": null,
+                          },
+                          Term {
+                            "term": "samples",
+                          },
+                        ],
+                      ],
+                      "withs": Object {},
+                    },
+                  },
                 },
               ],
             ],
@@ -4697,16 +5152,6 @@ Select {
                 },
               },
             },
-            Condition {
-              "column": Raw {
-                "raw": "",
-                "toString": [Function],
-              },
-              "operator": "<",
-              "value": Value {
-                "value": 60000,
-              },
-            },
           ],
         },
         "ctx": Object {
@@ -4895,149 +5340,252 @@ Select {
         "withs": Object {},
       },
     },
-  },
-}
-`;
-
-exports[`shoud transpile unwrap 3`] = `
-Select {
-  "aggregations": Array [
-    "labels",
-    "timestamp_ms",
-  ],
-  "conditions": Conjunction {
-    "args": Array [],
-  },
-  "ctx": Object {
-    "duration": 60000,
-    "matrix": true,
-    "step": 120000,
-  },
-  "dist": false,
-  "fmt": undefined,
-  "having_conditions": Conjunction {
-    "args": Array [
-      Condition {
-        "column": Term {
-          "term": "timestamp_ms",
+    "uw_rate_b": With {
+      "alias": "uw_rate_b",
+      "inline": undefined,
+      "query": Select {
+        "aggregations": Array [
+          "labels",
+          "timestamp_ms",
+        ],
+        "conditions": Conjunction {
+          "args": Array [],
         },
-        "operator": "!=",
-        "value": Value {
-          "value": 0,
+        "ctx": Object {},
+        "dist": false,
+        "fmt": undefined,
+        "having_conditions": Conjunction {
+          "args": Array [],
         },
-      },
-    ],
-  },
-  "joins": Array [],
-  "limitbycolumns": undefined,
-  "limits": undefined,
-  "order_expressions": Array [
-    "labels",
-    "timestamp_ms",
-  ],
-  "params": Object {
-    "from": Parameter {
-      "name": "from",
-      "value": null,
-    },
-    "limit": Parameter {
-      "name": "limit",
-      "value": 2000,
-    },
-    "samplesTable": Parameter {
-      "name": "samplesTable",
-      "value": null,
-    },
-    "timeSeriesTable": Parameter {
-      "name": "timeSeriesTable",
-      "value": null,
-    },
-    "timestamp_shift": Parameter {
-      "name": "timestamp_shift",
-      "value": null,
-    },
-    "to": Parameter {
-      "name": "to",
-      "value": null,
-    },
-  },
-  "preconditions": Conjunction {
-    "args": Array [],
-  },
-  "request_totals": undefined,
-  "sampling": undefined,
-  "select_list": Array [
-    Array [
-      Raw {
-        "raw": "arraySort(arrayFilter(x -> arrayExists(y -> x.1 == y, ['int_lbl2']) != 0, arraySort(arrayConcat(arrayFilter(x -> arrayExists(y -> y.1 == x.1, extra_labels) == 0, JSONExtractKeysAndValues(labels, 'String')), extra_labels))))",
-      },
-      "labels",
-    ],
-    Array [
-      Raw {
-        "raw": "SUM(unwrapped) / 60",
-      },
-      "value",
-    ],
-    Array [
-      Raw {
-        "raw": "",
-        "toString": [Function],
-      },
-      "timestamp_ms",
-    ],
-  ],
-  "tables": Array [
-    Array [
-      WithReference {
-        "ref": With {
-          "alias": "uw_rate_a",
-          "inline": undefined,
-          "query": Select {
-            "aggregations": Array [],
-            "conditions": Conjunction {
-              "args": Array [
-                Condition {
-                  "column": Raw {
-                    "raw": "",
-                    "toString": [Function],
-                  },
-                  "operator": undefined,
-                  "value": Value {
-                    "value": undefined,
-                  },
-                },
-                In {
-                  "column": Term {
-                    "term": "samples.fingerprint",
-                  },
-                  "operator": "in",
-                  "value": Select {
-                    "aggregations": Array [],
-                    "conditions": Conjunction {
-                      "args": Array [],
-                    },
-                    "ctx": Object {},
-                    "dist": false,
-                    "fmt": undefined,
-                    "having_conditions": Conjunction {
-                      "args": Array [],
-                    },
-                    "joins": Array [],
-                    "limitbycolumns": undefined,
-                    "limits": undefined,
-                    "order_expressions": Array [],
-                    "params": Object {},
-                    "preconditions": Conjunction {
-                      "args": Array [],
-                    },
-                    "request_totals": undefined,
-                    "sampling": undefined,
-                    "select_list": Array [
-                      "fingerprint",
+        "joins": Array [],
+        "limitbycolumns": undefined,
+        "limits": undefined,
+        "order_expressions": Array [
+          "labels",
+          "timestamp_ms",
+        ],
+        "params": Object {},
+        "preconditions": Conjunction {
+          "args": Array [],
+        },
+        "request_totals": undefined,
+        "sampling": undefined,
+        "select_list": Array [
+          Array [
+            Raw {
+              "raw": "arraySort(arrayFilter(x -> arrayExists(y -> x.1 == y, ['fmt']) != 0, arraySort(arrayConcat(arrayFilter(x -> arrayExists(y -> y.1 == x.1, extra_labels) == 0, JSONExtractKeysAndValues(labels, 'String')), extra_labels))))",
+            },
+            "labels",
+          ],
+          Array [
+            Raw {
+              "raw": "SUM(unwrapped) / 60",
+            },
+            "value",
+          ],
+          Array [
+            Raw {
+              "raw": "",
+              "toString": [Function],
+            },
+            "timestamp_ms",
+          ],
+        ],
+        "tables": Array [
+          Array [
+            WithReference {
+              "ref": With {
+                "alias": "uw_rate_a",
+                "inline": undefined,
+                "query": Select {
+                  "aggregations": Array [],
+                  "conditions": Conjunction {
+                    "args": Array [
+                      Condition {
+                        "column": Raw {
+                          "raw": "",
+                          "toString": [Function],
+                        },
+                        "operator": undefined,
+                        "value": Value {
+                          "value": undefined,
+                        },
+                      },
+                      In {
+                        "column": Term {
+                          "term": "samples.fingerprint",
+                        },
+                        "operator": "in",
+                        "value": Select {
+                          "aggregations": Array [],
+                          "conditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "ctx": Object {},
+                          "dist": false,
+                          "fmt": undefined,
+                          "having_conditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "joins": Array [],
+                          "limitbycolumns": undefined,
+                          "limits": undefined,
+                          "order_expressions": Array [],
+                          "params": Object {},
+                          "preconditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "request_totals": undefined,
+                          "sampling": undefined,
+                          "select_list": Array [
+                            "fingerprint",
+                          ],
+                          "tables": Array [
+                            Array [
+                              WithReference {
+                                "ref": With {
+                                  "alias": "str_sel",
+                                  "inline": undefined,
+                                  "query": Select {
+                                    "aggregations": Array [],
+                                    "conditions": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Conjunction {
+                                            "args": Array [
+                                              Condition {
+                                                "column": Raw {
+                                                  "raw": "JSONHas(labels, 'test_id')",
+                                                },
+                                                "operator": "=",
+                                                "value": Value {
+                                                  "value": 1,
+                                                },
+                                              },
+                                              Condition {
+                                                "column": Raw {
+                                                  "raw": "JSONExtractString(labels, 'test_id')",
+                                                },
+                                                "operator": "=",
+                                                "value": Value {
+                                                  "value": "0.7857680014573265_json",
+                                                },
+                                              },
+                                            ],
+                                          },
+                                          "operator": undefined,
+                                          "value": Value {
+                                            "value": undefined,
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "ctx": Object {},
+                                    "dist": true,
+                                    "fmt": undefined,
+                                    "having_conditions": Conjunction {
+                                      "args": Array [],
+                                    },
+                                    "joins": Array [],
+                                    "limitbycolumns": undefined,
+                                    "limits": undefined,
+                                    "order_expressions": Array [],
+                                    "params": Object {},
+                                    "preconditions": Conjunction {
+                                      "args": Array [],
+                                    },
+                                    "request_totals": undefined,
+                                    "sampling": undefined,
+                                    "select_list": Array [
+                                      "fingerprint",
+                                      "labels",
+                                    ],
+                                    "tables": Array [
+                                      Array [
+                                        Parameter {
+                                          "name": "timeSeriesTable",
+                                          "value": null,
+                                        },
+                                      ],
+                                    ],
+                                    "withs": Object {},
+                                  },
+                                },
+                              },
+                            ],
+                          ],
+                          "withs": Object {},
+                        },
+                      },
+                      Condition {
+                        "column": Raw {
+                          "raw": "isValidJSON(samples.string)",
+                        },
+                        "operator": "=",
+                        "value": Value {
+                          "value": 1,
+                        },
+                      },
+                      Condition {
+                        "column": Disjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Raw {
+                                "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl2', extra_labels)",
+                              },
+                              "operator": "!=",
+                              "value": Value {
+                                "value": 0,
+                              },
+                            },
+                            Condition {
+                              "column": Raw {
+                                "raw": "JSONHas(labels, 'int_lbl2')",
+                              },
+                              "operator": "=",
+                              "value": Value {
+                                "value": 1,
+                              },
+                            },
+                          ],
+                        },
+                        "operator": "=",
+                        "value": Condition {
+                          "column": Raw {
+                            "raw": "isNotNull(unwrapped)",
+                          },
+                          "operator": "=",
+                          "value": Value {
+                            "value": 1,
+                          },
+                        },
+                      },
                     ],
-                    "tables": Array [
-                      Array [
+                  },
+                  "ctx": Object {
+                    "duration": 60000,
+                    "matrix": true,
+                    "step": 120000,
+                  },
+                  "dist": false,
+                  "fmt": undefined,
+                  "having_conditions": Conjunction {
+                    "args": Array [],
+                  },
+                  "joins": Array [
+                    Object {
+                      "conditions": Array [
+                        Condition {
+                          "column": Term {
+                            "term": "samples.fingerprint",
+                          },
+                          "operator": "=",
+                          "value": Term {
+                            "term": "time_series.fingerprint",
+                          },
+                        },
+                      ],
+                      "table": Array [
                         WithReference {
                           "ref": With {
                             "alias": "str_sel",
@@ -5108,203 +5656,214 @@ Select {
                             },
                           },
                         },
+                        "time_series",
                       ],
-                    ],
-                    "withs": Object {},
-                  },
-                },
-                Condition {
-                  "column": Raw {
-                    "raw": "isValidJSON(samples.string)",
-                  },
-                  "operator": "=",
-                  "value": Value {
-                    "value": 1,
-                  },
-                },
-                Condition {
-                  "column": Disjunction {
-                    "args": Array [
-                      Condition {
-                        "column": Raw {
-                          "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl', extra_labels)",
-                        },
-                        "operator": "!=",
-                        "value": Value {
-                          "value": 0,
-                        },
-                      },
-                      Condition {
-                        "column": Raw {
-                          "raw": "JSONHas(labels, 'int_lbl')",
-                        },
-                        "operator": "=",
-                        "value": Value {
-                          "value": 1,
-                        },
-                      },
-                    ],
-                  },
-                  "operator": "=",
-                  "value": Condition {
-                    "column": Raw {
-                      "raw": "isNotNull(unwrapped)",
+                      "type": "left",
                     },
-                    "operator": "=",
-                    "value": Value {
-                      "value": 1,
+                  ],
+                  "limitbycolumns": undefined,
+                  "limits": undefined,
+                  "order_expressions": Array [
+                    Array [
+                      "timestamp_ms",
+                      "desc",
+                    ],
+                    Array [
+                      "labels",
+                      "desc",
+                    ],
+                  ],
+                  "params": Object {
+                    "from": Parameter {
+                      "name": "from",
+                      "value": null,
+                    },
+                    "limit": Parameter {
+                      "name": "limit",
+                      "value": 2000,
+                    },
+                    "samplesTable": Parameter {
+                      "name": "samplesTable",
+                      "value": null,
+                    },
+                    "timeSeriesTable": Parameter {
+                      "name": "timeSeriesTable",
+                      "value": null,
+                    },
+                    "timestamp_shift": Parameter {
+                      "name": "timestamp_shift",
+                      "value": null,
+                    },
+                    "to": Parameter {
+                      "name": "to",
+                      "value": null,
                     },
                   },
-                },
-                Condition {
-                  "column": Raw {
-                    "raw": "",
-                    "toString": [Function],
+                  "preconditions": Conjunction {
+                    "args": Array [],
                   },
-                  "operator": "<",
-                  "value": Value {
-                    "value": 60000,
-                  },
+                  "request_totals": undefined,
+                  "sampling": undefined,
+                  "select_list": Array [
+                    Array [
+                      "time_series.labels",
+                      "labels",
+                    ],
+                    Array [
+                      "samples.string",
+                      "string",
+                    ],
+                    Array [
+                      "samples.fingerprint",
+                      "fingerprint",
+                    ],
+                    Array [
+                      "samples.timestamp_ms",
+                      "timestamp_ms",
+                    ],
+                    Array [
+                      Raw {
+                        "raw": "arrayFilter((x) -> x.2 != '', [('int_lbl2', if(JSONType(samples.string, 'int_val') == 'String', JSONExtractString(samples.string, 'int_val'), JSONExtractRaw(samples.string, 'int_val')))])",
+                      },
+                      "extra_labels",
+                    ],
+                    Array [
+                      Raw {
+                        "raw": "toFloat64OrNull(if(arrayExists(x -> x.1 == 'int_lbl2', extra_labels), arrayFirst(x -> x.1 == 'int_lbl2', extra_labels).2, JSONExtractString(labels,'int_lbl2')))",
+                      },
+                      "unwrapped",
+                    ],
+                  ],
+                  "tables": Array [
+                    Array [
+                      Parameter {
+                        "name": "samplesTable",
+                        "value": null,
+                      },
+                      Term {
+                        "term": "samples",
+                      },
+                    ],
+                  ],
+                  "withs": Object {},
                 },
-              ],
+              },
             },
-            "ctx": Object {
-              "duration": 60000,
-              "matrix": true,
-              "step": 120000,
+          ],
+        ],
+        "withs": Object {},
+      },
+    },
+  },
+}
+`;
+
+exports[`shoud transpile unwrap 3`] = `
+Select {
+  "aggregations": Array [
+    "labels",
+    "timestamp_ms",
+  ],
+  "conditions": Conjunction {
+    "args": Array [],
+  },
+  "ctx": Object {
+    "duration": 60000,
+    "matrix": true,
+    "step": 120000,
+  },
+  "dist": false,
+  "fmt": undefined,
+  "having_conditions": Conjunction {
+    "args": Array [],
+  },
+  "joins": Array [],
+  "limitbycolumns": undefined,
+  "limits": undefined,
+  "order_expressions": Array [
+    Array [
+      "labels",
+      "asc",
+    ],
+    Array [
+      "timestamp_ms",
+      "asc",
+    ],
+  ],
+  "params": Object {
+    "from": Parameter {
+      "name": "from",
+      "value": null,
+    },
+    "limit": Parameter {
+      "name": "limit",
+      "value": 2000,
+    },
+    "samplesTable": Parameter {
+      "name": "samplesTable",
+      "value": null,
+    },
+    "timeSeriesTable": Parameter {
+      "name": "timeSeriesTable",
+      "value": null,
+    },
+    "timestamp_shift": Parameter {
+      "name": "timestamp_shift",
+      "value": null,
+    },
+    "to": Parameter {
+      "name": "to",
+      "value": null,
+    },
+  },
+  "preconditions": Conjunction {
+    "args": Array [],
+  },
+  "request_totals": undefined,
+  "sampling": undefined,
+  "select_list": Array [
+    "labels",
+    Array [
+      Raw {
+        "raw": "intDiv(timestamp_ms, 120000) * 120000",
+      },
+      "timestamp_ms",
+    ],
+    Array [
+      Raw {
+        "raw": "argMin(uw_rate_b.value, uw_rate_b.timestamp_ms)",
+      },
+      "value",
+    ],
+  ],
+  "tables": Array [
+    Array [
+      WithReference {
+        "ref": With {
+          "alias": "uw_rate_b",
+          "inline": undefined,
+          "query": Select {
+            "aggregations": Array [
+              "labels",
+              "timestamp_ms",
+            ],
+            "conditions": Conjunction {
+              "args": Array [],
             },
+            "ctx": Object {},
             "dist": false,
             "fmt": undefined,
             "having_conditions": Conjunction {
               "args": Array [],
             },
-            "joins": Array [
-              Object {
-                "conditions": Array [
-                  Condition {
-                    "column": Term {
-                      "term": "samples.fingerprint",
-                    },
-                    "operator": "=",
-                    "value": Term {
-                      "term": "time_series.fingerprint",
-                    },
-                  },
-                ],
-                "table": Array [
-                  WithReference {
-                    "ref": With {
-                      "alias": "str_sel",
-                      "inline": undefined,
-                      "query": Select {
-                        "aggregations": Array [],
-                        "conditions": Conjunction {
-                          "args": Array [
-                            Condition {
-                              "column": Conjunction {
-                                "args": Array [
-                                  Condition {
-                                    "column": Raw {
-                                      "raw": "JSONHas(labels, 'test_id')",
-                                    },
-                                    "operator": "=",
-                                    "value": Value {
-                                      "value": 1,
-                                    },
-                                  },
-                                  Condition {
-                                    "column": Raw {
-                                      "raw": "JSONExtractString(labels, 'test_id')",
-                                    },
-                                    "operator": "=",
-                                    "value": Value {
-                                      "value": "0.7857680014573265_json",
-                                    },
-                                  },
-                                ],
-                              },
-                              "operator": undefined,
-                              "value": Value {
-                                "value": undefined,
-                              },
-                            },
-                          ],
-                        },
-                        "ctx": Object {},
-                        "dist": true,
-                        "fmt": undefined,
-                        "having_conditions": Conjunction {
-                          "args": Array [],
-                        },
-                        "joins": Array [],
-                        "limitbycolumns": undefined,
-                        "limits": undefined,
-                        "order_expressions": Array [],
-                        "params": Object {},
-                        "preconditions": Conjunction {
-                          "args": Array [],
-                        },
-                        "request_totals": undefined,
-                        "sampling": undefined,
-                        "select_list": Array [
-                          "fingerprint",
-                          "labels",
-                        ],
-                        "tables": Array [
-                          Array [
-                            Parameter {
-                              "name": "timeSeriesTable",
-                              "value": null,
-                            },
-                          ],
-                        ],
-                        "withs": Object {},
-                      },
-                    },
-                  },
-                  "time_series",
-                ],
-                "type": "left",
-              },
-            ],
+            "joins": Array [],
             "limitbycolumns": undefined,
             "limits": undefined,
             "order_expressions": Array [
-              Array [
-                "timestamp_ms",
-                "desc",
-              ],
-              Array [
-                "labels",
-                "desc",
-              ],
+              "labels",
+              "timestamp_ms",
             ],
-            "params": Object {
-              "from": Parameter {
-                "name": "from",
-                "value": null,
-              },
-              "limit": Parameter {
-                "name": "limit",
-                "value": 2000,
-              },
-              "samplesTable": Parameter {
-                "name": "samplesTable",
-                "value": null,
-              },
-              "timeSeriesTable": Parameter {
-                "name": "timeSeriesTable",
-                "value": null,
-              },
-              "timestamp_shift": Parameter {
-                "name": "timestamp_shift",
-                "value": null,
-              },
-              "to": Parameter {
-                "name": "to",
-                "value": null,
-              },
-            },
+            "params": Object {},
             "preconditions": Conjunction {
               "args": Array [],
             },
@@ -5312,42 +5871,382 @@ Select {
             "sampling": undefined,
             "select_list": Array [
               Array [
-                "time_series.labels",
+                Raw {
+                  "raw": "arraySort(arrayFilter(x -> arrayExists(y -> x.1 == y, ['int_lbl2']) != 0, arraySort(arrayConcat(arrayFilter(x -> arrayExists(y -> y.1 == x.1, extra_labels) == 0, JSONExtractKeysAndValues(labels, 'String')), extra_labels))))",
+                },
                 "labels",
               ],
               Array [
-                "samples.string",
-                "string",
+                Raw {
+                  "raw": "SUM(unwrapped) / 60",
+                },
+                "value",
               ],
               Array [
-                "samples.fingerprint",
-                "fingerprint",
-              ],
-              Array [
-                "samples.timestamp_ms",
+                Raw {
+                  "raw": "",
+                  "toString": [Function],
+                },
                 "timestamp_ms",
-              ],
-              Array [
-                Raw {
-                  "raw": "arrayFilter((x) -> x.2 != '', [('int_lbl2', if(JSONType(samples.string, 'int_val') == 'String', JSONExtractString(samples.string, 'int_val'), JSONExtractRaw(samples.string, 'int_val')))])",
-                },
-                "extra_labels",
-              ],
-              Array [
-                Raw {
-                  "raw": "toFloat64OrNull(if(arrayExists(x -> x.1 == 'int_lbl', extra_labels), arrayFirst(x -> x.1 == 'int_lbl', extra_labels).2, JSONExtractString(labels,'int_lbl')))",
-                },
-                "unwrapped",
               ],
             ],
             "tables": Array [
               Array [
-                Parameter {
-                  "name": "samplesTable",
-                  "value": null,
-                },
-                Term {
-                  "term": "samples",
+                WithReference {
+                  "ref": With {
+                    "alias": "uw_rate_a",
+                    "inline": undefined,
+                    "query": Select {
+                      "aggregations": Array [],
+                      "conditions": Conjunction {
+                        "args": Array [
+                          Condition {
+                            "column": Raw {
+                              "raw": "",
+                              "toString": [Function],
+                            },
+                            "operator": undefined,
+                            "value": Value {
+                              "value": undefined,
+                            },
+                          },
+                          In {
+                            "column": Term {
+                              "term": "samples.fingerprint",
+                            },
+                            "operator": "in",
+                            "value": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "ctx": Object {},
+                              "dist": false,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  WithReference {
+                                    "ref": With {
+                                      "alias": "str_sel",
+                                      "inline": undefined,
+                                      "query": Select {
+                                        "aggregations": Array [],
+                                        "conditions": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Conjunction {
+                                                "args": Array [
+                                                  Condition {
+                                                    "column": Raw {
+                                                      "raw": "JSONHas(labels, 'test_id')",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": 1,
+                                                    },
+                                                  },
+                                                  Condition {
+                                                    "column": Raw {
+                                                      "raw": "JSONExtractString(labels, 'test_id')",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "0.7857680014573265_json",
+                                                    },
+                                                  },
+                                                ],
+                                              },
+                                              "operator": undefined,
+                                              "value": Value {
+                                                "value": undefined,
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "ctx": Object {},
+                                        "dist": true,
+                                        "fmt": undefined,
+                                        "having_conditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "joins": Array [],
+                                        "limitbycolumns": undefined,
+                                        "limits": undefined,
+                                        "order_expressions": Array [],
+                                        "params": Object {},
+                                        "preconditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "request_totals": undefined,
+                                        "sampling": undefined,
+                                        "select_list": Array [
+                                          "fingerprint",
+                                          "labels",
+                                        ],
+                                        "tables": Array [
+                                          Array [
+                                            Parameter {
+                                              "name": "timeSeriesTable",
+                                              "value": null,
+                                            },
+                                          ],
+                                        ],
+                                        "withs": Object {},
+                                      },
+                                    },
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                          Condition {
+                            "column": Raw {
+                              "raw": "isValidJSON(samples.string)",
+                            },
+                            "operator": "=",
+                            "value": Value {
+                              "value": 1,
+                            },
+                          },
+                          Condition {
+                            "column": Disjunction {
+                              "args": Array [
+                                Condition {
+                                  "column": Raw {
+                                    "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl', extra_labels)",
+                                  },
+                                  "operator": "!=",
+                                  "value": Value {
+                                    "value": 0,
+                                  },
+                                },
+                                Condition {
+                                  "column": Raw {
+                                    "raw": "JSONHas(labels, 'int_lbl')",
+                                  },
+                                  "operator": "=",
+                                  "value": Value {
+                                    "value": 1,
+                                  },
+                                },
+                              ],
+                            },
+                            "operator": "=",
+                            "value": Condition {
+                              "column": Raw {
+                                "raw": "isNotNull(unwrapped)",
+                              },
+                              "operator": "=",
+                              "value": Value {
+                                "value": 1,
+                              },
+                            },
+                          },
+                        ],
+                      },
+                      "ctx": Object {
+                        "duration": 60000,
+                        "matrix": true,
+                        "step": 120000,
+                      },
+                      "dist": false,
+                      "fmt": undefined,
+                      "having_conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "joins": Array [
+                        Object {
+                          "conditions": Array [
+                            Condition {
+                              "column": Term {
+                                "term": "samples.fingerprint",
+                              },
+                              "operator": "=",
+                              "value": Term {
+                                "term": "time_series.fingerprint",
+                              },
+                            },
+                          ],
+                          "table": Array [
+                            WithReference {
+                              "ref": With {
+                                "alias": "str_sel",
+                                "inline": undefined,
+                                "query": Select {
+                                  "aggregations": Array [],
+                                  "conditions": Conjunction {
+                                    "args": Array [
+                                      Condition {
+                                        "column": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Raw {
+                                                "raw": "JSONHas(labels, 'test_id')",
+                                              },
+                                              "operator": "=",
+                                              "value": Value {
+                                                "value": 1,
+                                              },
+                                            },
+                                            Condition {
+                                              "column": Raw {
+                                                "raw": "JSONExtractString(labels, 'test_id')",
+                                              },
+                                              "operator": "=",
+                                              "value": Value {
+                                                "value": "0.7857680014573265_json",
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "operator": undefined,
+                                        "value": Value {
+                                          "value": undefined,
+                                        },
+                                      },
+                                    ],
+                                  },
+                                  "ctx": Object {},
+                                  "dist": true,
+                                  "fmt": undefined,
+                                  "having_conditions": Conjunction {
+                                    "args": Array [],
+                                  },
+                                  "joins": Array [],
+                                  "limitbycolumns": undefined,
+                                  "limits": undefined,
+                                  "order_expressions": Array [],
+                                  "params": Object {},
+                                  "preconditions": Conjunction {
+                                    "args": Array [],
+                                  },
+                                  "request_totals": undefined,
+                                  "sampling": undefined,
+                                  "select_list": Array [
+                                    "fingerprint",
+                                    "labels",
+                                  ],
+                                  "tables": Array [
+                                    Array [
+                                      Parameter {
+                                        "name": "timeSeriesTable",
+                                        "value": null,
+                                      },
+                                    ],
+                                  ],
+                                  "withs": Object {},
+                                },
+                              },
+                            },
+                            "time_series",
+                          ],
+                          "type": "left",
+                        },
+                      ],
+                      "limitbycolumns": undefined,
+                      "limits": undefined,
+                      "order_expressions": Array [
+                        Array [
+                          "timestamp_ms",
+                          "desc",
+                        ],
+                        Array [
+                          "labels",
+                          "desc",
+                        ],
+                      ],
+                      "params": Object {
+                        "from": Parameter {
+                          "name": "from",
+                          "value": null,
+                        },
+                        "limit": Parameter {
+                          "name": "limit",
+                          "value": 2000,
+                        },
+                        "samplesTable": Parameter {
+                          "name": "samplesTable",
+                          "value": null,
+                        },
+                        "timeSeriesTable": Parameter {
+                          "name": "timeSeriesTable",
+                          "value": null,
+                        },
+                        "timestamp_shift": Parameter {
+                          "name": "timestamp_shift",
+                          "value": null,
+                        },
+                        "to": Parameter {
+                          "name": "to",
+                          "value": null,
+                        },
+                      },
+                      "preconditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "request_totals": undefined,
+                      "sampling": undefined,
+                      "select_list": Array [
+                        Array [
+                          "time_series.labels",
+                          "labels",
+                        ],
+                        Array [
+                          "samples.string",
+                          "string",
+                        ],
+                        Array [
+                          "samples.fingerprint",
+                          "fingerprint",
+                        ],
+                        Array [
+                          "samples.timestamp_ms",
+                          "timestamp_ms",
+                        ],
+                        Array [
+                          Raw {
+                            "raw": "arrayFilter((x) -> x.2 != '', [('int_lbl2', if(JSONType(samples.string, 'int_val') == 'String', JSONExtractString(samples.string, 'int_val'), JSONExtractRaw(samples.string, 'int_val')))])",
+                          },
+                          "extra_labels",
+                        ],
+                        Array [
+                          Raw {
+                            "raw": "toFloat64OrNull(if(arrayExists(x -> x.1 == 'int_lbl', extra_labels), arrayFirst(x -> x.1 == 'int_lbl', extra_labels).2, JSONExtractString(labels,'int_lbl')))",
+                          },
+                          "unwrapped",
+                        ],
+                      ],
+                      "tables": Array [
+                        Array [
+                          Parameter {
+                            "name": "samplesTable",
+                            "value": null,
+                          },
+                          Term {
+                            "term": "samples",
+                          },
+                        ],
+                      ],
+                      "withs": Object {},
+                    },
+                  },
                 },
               ],
             ],
@@ -5592,16 +6491,6 @@ Select {
                 },
               },
             },
-            Condition {
-              "column": Raw {
-                "raw": "",
-                "toString": [Function],
-              },
-              "operator": "<",
-              "value": Value {
-                "value": 60000,
-              },
-            },
           ],
         },
         "ctx": Object {
@@ -5784,6 +6673,420 @@ Select {
             },
             Term {
               "term": "samples",
+            },
+          ],
+        ],
+        "withs": Object {},
+      },
+    },
+    "uw_rate_b": With {
+      "alias": "uw_rate_b",
+      "inline": undefined,
+      "query": Select {
+        "aggregations": Array [
+          "labels",
+          "timestamp_ms",
+        ],
+        "conditions": Conjunction {
+          "args": Array [],
+        },
+        "ctx": Object {},
+        "dist": false,
+        "fmt": undefined,
+        "having_conditions": Conjunction {
+          "args": Array [],
+        },
+        "joins": Array [],
+        "limitbycolumns": undefined,
+        "limits": undefined,
+        "order_expressions": Array [
+          "labels",
+          "timestamp_ms",
+        ],
+        "params": Object {},
+        "preconditions": Conjunction {
+          "args": Array [],
+        },
+        "request_totals": undefined,
+        "sampling": undefined,
+        "select_list": Array [
+          Array [
+            Raw {
+              "raw": "arraySort(arrayFilter(x -> arrayExists(y -> x.1 == y, ['int_lbl2']) != 0, arraySort(arrayConcat(arrayFilter(x -> arrayExists(y -> y.1 == x.1, extra_labels) == 0, JSONExtractKeysAndValues(labels, 'String')), extra_labels))))",
+            },
+            "labels",
+          ],
+          Array [
+            Raw {
+              "raw": "SUM(unwrapped) / 60",
+            },
+            "value",
+          ],
+          Array [
+            Raw {
+              "raw": "",
+              "toString": [Function],
+            },
+            "timestamp_ms",
+          ],
+        ],
+        "tables": Array [
+          Array [
+            WithReference {
+              "ref": With {
+                "alias": "uw_rate_a",
+                "inline": undefined,
+                "query": Select {
+                  "aggregations": Array [],
+                  "conditions": Conjunction {
+                    "args": Array [
+                      Condition {
+                        "column": Raw {
+                          "raw": "",
+                          "toString": [Function],
+                        },
+                        "operator": undefined,
+                        "value": Value {
+                          "value": undefined,
+                        },
+                      },
+                      In {
+                        "column": Term {
+                          "term": "samples.fingerprint",
+                        },
+                        "operator": "in",
+                        "value": Select {
+                          "aggregations": Array [],
+                          "conditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "ctx": Object {},
+                          "dist": false,
+                          "fmt": undefined,
+                          "having_conditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "joins": Array [],
+                          "limitbycolumns": undefined,
+                          "limits": undefined,
+                          "order_expressions": Array [],
+                          "params": Object {},
+                          "preconditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "request_totals": undefined,
+                          "sampling": undefined,
+                          "select_list": Array [
+                            "fingerprint",
+                          ],
+                          "tables": Array [
+                            Array [
+                              WithReference {
+                                "ref": With {
+                                  "alias": "str_sel",
+                                  "inline": undefined,
+                                  "query": Select {
+                                    "aggregations": Array [],
+                                    "conditions": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Conjunction {
+                                            "args": Array [
+                                              Condition {
+                                                "column": Raw {
+                                                  "raw": "JSONHas(labels, 'test_id')",
+                                                },
+                                                "operator": "=",
+                                                "value": Value {
+                                                  "value": 1,
+                                                },
+                                              },
+                                              Condition {
+                                                "column": Raw {
+                                                  "raw": "JSONExtractString(labels, 'test_id')",
+                                                },
+                                                "operator": "=",
+                                                "value": Value {
+                                                  "value": "0.7857680014573265_json",
+                                                },
+                                              },
+                                            ],
+                                          },
+                                          "operator": undefined,
+                                          "value": Value {
+                                            "value": undefined,
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "ctx": Object {},
+                                    "dist": true,
+                                    "fmt": undefined,
+                                    "having_conditions": Conjunction {
+                                      "args": Array [],
+                                    },
+                                    "joins": Array [],
+                                    "limitbycolumns": undefined,
+                                    "limits": undefined,
+                                    "order_expressions": Array [],
+                                    "params": Object {},
+                                    "preconditions": Conjunction {
+                                      "args": Array [],
+                                    },
+                                    "request_totals": undefined,
+                                    "sampling": undefined,
+                                    "select_list": Array [
+                                      "fingerprint",
+                                      "labels",
+                                    ],
+                                    "tables": Array [
+                                      Array [
+                                        Parameter {
+                                          "name": "timeSeriesTable",
+                                          "value": null,
+                                        },
+                                      ],
+                                    ],
+                                    "withs": Object {},
+                                  },
+                                },
+                              },
+                            ],
+                          ],
+                          "withs": Object {},
+                        },
+                      },
+                      Condition {
+                        "column": Raw {
+                          "raw": "isValidJSON(samples.string)",
+                        },
+                        "operator": "=",
+                        "value": Value {
+                          "value": 1,
+                        },
+                      },
+                      Condition {
+                        "column": Disjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Raw {
+                                "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl', extra_labels)",
+                              },
+                              "operator": "!=",
+                              "value": Value {
+                                "value": 0,
+                              },
+                            },
+                            Condition {
+                              "column": Raw {
+                                "raw": "JSONHas(labels, 'int_lbl')",
+                              },
+                              "operator": "=",
+                              "value": Value {
+                                "value": 1,
+                              },
+                            },
+                          ],
+                        },
+                        "operator": "=",
+                        "value": Condition {
+                          "column": Raw {
+                            "raw": "isNotNull(unwrapped)",
+                          },
+                          "operator": "=",
+                          "value": Value {
+                            "value": 1,
+                          },
+                        },
+                      },
+                    ],
+                  },
+                  "ctx": Object {
+                    "duration": 60000,
+                    "matrix": true,
+                    "step": 120000,
+                  },
+                  "dist": false,
+                  "fmt": undefined,
+                  "having_conditions": Conjunction {
+                    "args": Array [],
+                  },
+                  "joins": Array [
+                    Object {
+                      "conditions": Array [
+                        Condition {
+                          "column": Term {
+                            "term": "samples.fingerprint",
+                          },
+                          "operator": "=",
+                          "value": Term {
+                            "term": "time_series.fingerprint",
+                          },
+                        },
+                      ],
+                      "table": Array [
+                        WithReference {
+                          "ref": With {
+                            "alias": "str_sel",
+                            "inline": undefined,
+                            "query": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Raw {
+                                            "raw": "JSONHas(labels, 'test_id')",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": 1,
+                                          },
+                                        },
+                                        Condition {
+                                          "column": Raw {
+                                            "raw": "JSONExtractString(labels, 'test_id')",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "0.7857680014573265_json",
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "operator": undefined,
+                                    "value": Value {
+                                      "value": undefined,
+                                    },
+                                  },
+                                ],
+                              },
+                              "ctx": Object {},
+                              "dist": true,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                                "labels",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  Parameter {
+                                    "name": "timeSeriesTable",
+                                    "value": null,
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                        },
+                        "time_series",
+                      ],
+                      "type": "left",
+                    },
+                  ],
+                  "limitbycolumns": undefined,
+                  "limits": undefined,
+                  "order_expressions": Array [
+                    Array [
+                      "timestamp_ms",
+                      "desc",
+                    ],
+                    Array [
+                      "labels",
+                      "desc",
+                    ],
+                  ],
+                  "params": Object {
+                    "from": Parameter {
+                      "name": "from",
+                      "value": null,
+                    },
+                    "limit": Parameter {
+                      "name": "limit",
+                      "value": 2000,
+                    },
+                    "samplesTable": Parameter {
+                      "name": "samplesTable",
+                      "value": null,
+                    },
+                    "timeSeriesTable": Parameter {
+                      "name": "timeSeriesTable",
+                      "value": null,
+                    },
+                    "timestamp_shift": Parameter {
+                      "name": "timestamp_shift",
+                      "value": null,
+                    },
+                    "to": Parameter {
+                      "name": "to",
+                      "value": null,
+                    },
+                  },
+                  "preconditions": Conjunction {
+                    "args": Array [],
+                  },
+                  "request_totals": undefined,
+                  "sampling": undefined,
+                  "select_list": Array [
+                    Array [
+                      "time_series.labels",
+                      "labels",
+                    ],
+                    Array [
+                      "samples.string",
+                      "string",
+                    ],
+                    Array [
+                      "samples.fingerprint",
+                      "fingerprint",
+                    ],
+                    Array [
+                      "samples.timestamp_ms",
+                      "timestamp_ms",
+                    ],
+                    Array [
+                      Raw {
+                        "raw": "arrayFilter((x) -> x.2 != '', [('int_lbl2', if(JSONType(samples.string, 'int_val') == 'String', JSONExtractString(samples.string, 'int_val'), JSONExtractRaw(samples.string, 'int_val')))])",
+                      },
+                      "extra_labels",
+                    ],
+                    Array [
+                      Raw {
+                        "raw": "toFloat64OrNull(if(arrayExists(x -> x.1 == 'int_lbl', extra_labels), arrayFirst(x -> x.1 == 'int_lbl', extra_labels).2, JSONExtractString(labels,'int_lbl')))",
+                      },
+                      "unwrapped",
+                    ],
+                  ],
+                  "tables": Array [
+                    Array [
+                      Parameter {
+                        "name": "samplesTable",
+                        "value": null,
+                      },
+                      Term {
+                        "term": "samples",
+                      },
+                    ],
+                  ],
+                  "withs": Object {},
+                },
+              },
             },
           ],
         ],

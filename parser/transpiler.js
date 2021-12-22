@@ -103,6 +103,7 @@ module.exports.transpile = (request) => {
       .with(wth)
       .from(new Sql.WithReference(wth))
       .orderBy(['labels', order], ['timestamp_ms', order])
+    setQueryParam(query, sharedParamNames.limit, limit)
   }
   if (token.Child('compared_agg_statement')) {
     const op = token.Child('compared_agg_statement_cmp').Child('number_operator').value
@@ -112,8 +113,8 @@ module.exports.transpile = (request) => {
   setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName}`)
   setQueryParam(query, sharedParamNames.from, start)
   setQueryParam(query, sharedParamNames.to, end)
-  setQueryParam(query, sharedParamNames.limit, limit)
-  // console.log(query.toString())
+
+  console.log(query.toString())
   return {
     query: request.rawQuery ? query : query.toString(),
     matrix: !!query.ctx.matrix,
