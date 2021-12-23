@@ -65,7 +65,7 @@ module.exports.transpile = (request) => {
 
   let start = parseMs(request.start, Date.now() - 3600 * 1000)
   let end = parseMs(request.end, Date.now())
-  const step = request.step ? parseInt(request.step) * 1000 : 0
+  const step = request.step ? Math.floor(parseFloat(request.step) * 1000) : 0
   let query = module.exports.initQuery()
   const limit = request.limit ? request.limit : 2000
   const order = request.direction === 'forward' ? 'asc' : 'desc'
@@ -339,6 +339,10 @@ module.exports.requestToStr = (query) => {
   req += typeof (query.offset) !== 'undefined' ? ` OFFSET ${query.offset}` : ''
   req += query.final ? ' FINAL' : ''
   return req
+}
+
+module.exports.stop = () => {
+  require('./registry/line_format/go_native_fmt').stop()
 }
 
 /**
