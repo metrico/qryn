@@ -114,7 +114,7 @@ module.exports.transpile = (request) => {
   setQueryParam(query, sharedParamNames.from, start)
   setQueryParam(query, sharedParamNames.to, end)
 
-  console.log(query.toString())
+  // console.log(query.toString())
   return {
     query: request.rawQuery ? query : query.toString(),
     matrix: !!query.ctx.matrix,
