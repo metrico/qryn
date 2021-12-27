@@ -134,6 +134,14 @@ fastify.post('/tempo/api/push', handlerTempoPush)
 const handlerTempoTraces = require('./lib/handlers/tempo_traces.js').bind(this)
 fastify.get('/api/traces/:traceId', handlerTempoTraces)
 
+/* Tempo Tag Handlers */
+const handlerTempoLabel = require('./lib/handlers/tags.js').bind(this)
+fastify.get('/api/search/tags', handlerTempoLabel)
+
+/* Tempo Tag Value Handler */
+const handlerTempoLabelValues = require('./lib/handlers/tags_values.js').bind(this)
+fastify.get('/api/search/tag/:name/values', handlerTempoLabelValues)
+
 /* Telegraf HTTP Bulk handler */
 const handlerTelegraf = require('./lib/handlers/telegraf.js').bind(this)
 fastify.post('/telegraf', handlerTelegraf)
