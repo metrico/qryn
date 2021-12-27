@@ -14003,6 +14003,7 @@ Object {
     [Function],
     [Function],
     [Function],
+    [Function],
   ],
 }
 `;
@@ -14013,6 +14014,7 @@ Object {
   "matrix": true,
   "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.4075242197275857'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638802620000 and 1638803220000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc",
   "stream": Array [
+    [Function],
     [Function],
     [Function],
     [Function],
