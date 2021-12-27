@@ -1,4 +1,5 @@
-const { getDuration, concatLabels, applyViaStream } = require('../common')
+const { getDuration, concatLabels, timeShiftViaStream } = require('../common')
+const _applyViaStream = require('../common').applyViaStream
 const Sql = require('@cloki/clickhouse-sql')
 /**
  *
@@ -14,6 +15,19 @@ function builder (viaRequest, viaStream) {
     viaRequest: viaRequest,
     viaStream: viaStream
   }
+}
+
+/**
+ *
+ * @param token {Token}
+ * @param query {Select}
+ * @param counterFn {function(any, any, number): any}
+ * @param summarizeFn {function(any): number}
+ * @param lastValue {boolean} if the applier should take the latest value in step (if step > duration)
+ * @param byWithoutName {string} name of the by_without token
+*/
+const applyViaStream = (token, query, counterFn, summarizeFn, lastValue, byWithoutName) => {
+  return _applyViaStream(token, timeShiftViaStream(token, query), counterFn, summarizeFn, lastValue, byWithoutName)
 }
 
 /**
@@ -88,7 +102,7 @@ function applyViaRequest (token, query, valueExpr, lastValue) {
 }
 
 module.exports = {
-  applyViaStream: applyViaStream,
+  applyViaStream: _applyViaStream,
   rate: builder((token, query) => {
     const duration = getDuration(token, query)
     return applyViaRequest(token, query, `SUM(unwrapped) / ${duration / 1000}`)

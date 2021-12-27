@@ -231,6 +231,27 @@ module.exports.hasExtraLabels = (query) => {
   return query.select().some((x) => x[1] === 'extra_labels')
 }
 
+module.exports.timeShiftViaStream = (token, query) => {
+  let tsMoveParam = null
+  if (!query.params.timestamp_shift) {
+    tsMoveParam = new Sql.Parameter('timestamp_shift')
+    query.addParam(tsMoveParam)
+  } else {
+    tsMoveParam = query.params.timestamp_shift
+  }
+  const duration = module.exports.getDuration(token)
+  /**
+   * @param s {DataStream}
+   */
+  const stream = (s) => s.map((e) => {
+    if (tsMoveParam.get()) {
+      e.timestamp_ms -= (parseInt(tsMoveParam.get()) % duration)
+    }
+    return e
+  })
+  return module.exports.addStream(query, stream)
+}
+
 /**
  *
  * @param token {Token}
