@@ -129,6 +129,7 @@ fastify.post('/loki/api/v1/push', handlerPush)
 /* Tempo Write Handler */
 const handlerTempoPush = require('./lib/handlers/tempo_push.js').bind(this)
 fastify.post('/tempo/api/push', handlerTempoPush)
+fastify.post('/api/v2/spans', handlerTempoPush)
 
 /* Tempo Traces Query Handler */
 const handlerTempoTraces = require('./lib/handlers/tempo_traces.js').bind(this)
