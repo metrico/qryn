@@ -57,3 +57,5 @@ module.exports.durationToMs = (durationStr) => {
 }
 
 module.exports.LineFmtOption = () => process.env.LINE_FMT || 'handlebars'
+
+module.exports.errors = require('./lib/handlers/errors')
