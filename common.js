@@ -55,3 +55,5 @@ module.exports.durationToMs = (durationStr) => {
   }
   throw new Error('Unsupported duration')
 }
+
+module.exports.LineFmtOption = () => process.env.LINE_FMT || 'handlebars'

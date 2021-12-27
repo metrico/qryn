@@ -209,5 +209,6 @@ fastify.listen(
 module.exports.stop = () => {
   fastify.close()
   DATABASE.stop()
+  require('./parser/transpiler').stop()
   stop()
 }
