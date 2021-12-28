@@ -41,8 +41,16 @@ module.exports = (token, query) => {
       if (!e.labels) {
         return e
       }
+      if (!processor) {
+        return null
+      }
       if (processor.then) {
-        await processor
+        try {
+          await processor
+        } catch (e) {
+          processor = null
+          console.log(e)
+        }
       }
       try {
         const res = processor.process({ ...e.labels, _entry: e.string })
