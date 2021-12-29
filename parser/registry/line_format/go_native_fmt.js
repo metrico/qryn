@@ -11,13 +11,16 @@ module.exports.compile = async (format) => {
     go.run(wasmModule.instance)
     inst = true
   }
-  const id = global.GO_TXTTMPL_NewTemplate(format)
+  const res = global.GO_TXTTMPL_NewTemplate(format)
+  if (res.err) {
+    throw new Error(res.err)
+  }
   return {
     process: (labels) => {
-      return global.GO_TXTTMPL_ProcessLine(id, Object.entries(labels).map(e => `${e[0]}\x01${e[1]}`).join('\x01'))
+      return global.GO_TXTTMPL_ProcessLine(res.id, Object.entries(labels).map(e => `${e[0]}\x01${e[1]}`).join('\x01'))
     },
     done: () => {
-      global.GO_TXTTMPL_ReleaseTemplate(id)
+      global.GO_TXTTMPL_ReleaseTemplate(res.id)
     }
   }
 }
