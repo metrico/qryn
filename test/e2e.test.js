@@ -1,6 +1,7 @@
 const { createPoints, sendPoints } = require('./common')
 const axios = require('axios')
 const { WebSocket } = require('ws')
+const yaml = require('yaml')
 // const pb = require("protobufjs");
 const e2e = () => process.env.INTEGRATION_E2E || process.env.INTEGRATION
 const clokiLocal = () => process.env.CLOKI_LOCAL || process.env.CLOKI_EXT_URL || false
@@ -268,7 +269,6 @@ it('e2e', async () => {
   resp = await runRequest(`first_over_time({test_id="${testID}", freq="0.5"} | regexp "^[^0-9]+(?<e>[0-9]+)$" | unwrap e [1s]) by(test_id)`, 1)
   adjustMatrixResult(resp, testID)
   expect(resp.data).toMatchSnapshot()
-
   const ws = new WebSocket(`ws://${clokiExtUrl}/loki/api/v1/tail?query={test_id="${testID}_ws"}`)
   resp = {
     data: {
@@ -411,4 +411,44 @@ it('e2e', async () => {
   resp = await runRequest(`rate({test_id="${testID}_json"} | json int_val="int_val" | unwrap int_val [1m]) by (test_id)`,
     0.05)
   expect(resp.data.data.result.length > 0).toBeTruthy()
+  await checkAlertConfig()
 })
+
+const checkAlertConfig = async () => {
+  try {
+    expect(await axios({
+      method: 'POST',
+      url: 'http://localhost:3100/api/prom/rules/test_ns',
+      data: yaml.stringify({
+        name: 'test_group',
+        interval: '1s',
+        rules: [{
+          alert: 'test_rul',
+          for: '1m',
+          annotations: { summary: 'ssssss' },
+          labels: { lllll: 'vvvvv' },
+          expr: '{test_id="alert_test"}'
+        }]
+      }),
+      headers: {
+        'Content-Type': 'application/yaml'
+      }
+    })).toHaveProperty('data', { msg: 'ok' })
+    expect(yaml.parse((await axios.get('http://localhost:3100/api/prom/rules')).data))
+      .toHaveProperty('test_ns', [{
+        name: 'test_group',
+        interval: '1s',
+        rules: [{
+          alert: 'test_rul',
+          for: '1m',
+          annotations: { summary: 'ssssss' },
+          labels: { lllll: 'vvvvv' },
+          expr: '{test_id="alert_test"}'
+        }]
+      }])
+    await axios.delete('http://localhost:3100/api/prom/rules/test_ns').catch(console.log)
+  } catch (e) {
+    await axios.delete('http://localhost:3100/api/prom/rules/test_ns').catch(console.log)
+    throw e
+  }
+}

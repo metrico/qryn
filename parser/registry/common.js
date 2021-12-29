@@ -89,29 +89,6 @@ module.exports.unquoteToken = (token) => {
 
 /**
  *
- * @param durationStr {string}
- * @returns {number}
- */
-module.exports.durationToMs = (durationStr) => {
-  const durations = {
-    ns: 1 / 1000000,
-    us: 1 / 1000,
-    ms: 1,
-    s: 1000,
-    m: 60000,
-    h: 60000 * 60
-  }
-  for (const k of Object.keys(durations)) {
-    const m = durationStr.match(new RegExp(`^([0-9][.0-9]*)${k}$`))
-    if (m) {
-      return parseInt(m[1]) * durations[k]
-    }
-  }
-  throw new Error('Unsupported duration')
-}
-
-/**
- *
  * @param s {DataStream}
  * @param fn
  * @returns {DataStream}
@@ -254,6 +231,27 @@ module.exports.hasExtraLabels = (query) => {
   return query.select().some((x) => x[1] === 'extra_labels')
 }
 
+module.exports.timeShiftViaStream = (token, query) => {
+  let tsMoveParam = null
+  if (!query.params.timestamp_shift) {
+    tsMoveParam = new Sql.Parameter('timestamp_shift')
+    query.addParam(tsMoveParam)
+  } else {
+    tsMoveParam = query.params.timestamp_shift
+  }
+  const duration = module.exports.getDuration(token)
+  /**
+   * @param s {DataStream}
+   */
+  const stream = (s) => s.map((e) => {
+    if (tsMoveParam.get()) {
+      e.timestamp_ms -= (parseInt(tsMoveParam.get()) % duration)
+    }
+    return e
+  })
+  return module.exports.addStream(query, stream)
+}
+
 /**
  *
  * @param token {Token}
@@ -382,3 +380,10 @@ module.exports.sharedParamNames = {
   to: 'to',
   limit: 'limit'
 }
+
+/**
+ *
+ * @param durationStr {string}
+ * @returns {number}
+ */
+module.exports.durationToMs = require('../../common').durationToMs
