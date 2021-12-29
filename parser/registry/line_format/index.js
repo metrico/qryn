@@ -31,14 +31,26 @@ module.exports = (token, query) => {
      * @param s {DataStream}
      */
     (s) => s.map(async (e) => {
+      if (!e) {
+        return e
+      }
       if (isEOF(e)) {
         processor.done()
+        return e
       }
       if (!e.labels) {
         return e
       }
+      if (!processor) {
+        return null
+      }
       if (processor.then) {
-        await processor
+        try {
+          await processor
+        } catch (e) {
+          processor = null
+          console.log(e)
+        }
       }
       try {
         const res = processor.process({ ...e.labels, _entry: e.string })
