@@ -41,6 +41,7 @@ this.instantQueryScan = DATABASE.instantQueryScan
 this.tempoQueryScan = DATABASE.tempoQueryScan
 this.scanMetricFingerprints = DATABASE.scanMetricFingerprints
 this.scanClickhouse = DATABASE.scanClickhouse
+this.tempoQueryScan = DATABASE.tempoQueryScan
 
 if (!this.readonly) init(process.env.CLICKHOUSE_DB || 'cloki')
 
