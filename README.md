@@ -8,7 +8,7 @@
 ### like Loki, but for Clickhouse.
 
 **cLoki** is a fully functional clear room design [Loki](https://github.com/grafana/loki) & [Tempo](https://github.com/grafana/tempo) compatible **LogQL API** for [Clickhouse](https://clickhouse.yandex/), <br/>
-working out of the box with [Grafana](http://docs.grafana.org/features/explore/) and [LogQL](https://grafana.com/docs/loki/latest/logql/) clients for [querying](https://github.com/lmangani/cLoki/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki) logs and events
+working out of the box with [Grafana](http://docs.grafana.org/features/explore/) and [LogQL](https://grafana.com/docs/loki/latest/logql/) clients for [querying](https://github.com/lmangani/cLoki/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki) and [alerting](https://github.com/lmangani/cLoki/wiki/Ruler---Alerts)
 
 Performance is comparable to native Loki, with cLoki outperforming on large range filtered queries.
 
