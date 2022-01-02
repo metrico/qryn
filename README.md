@@ -7,8 +7,8 @@
 
 ### like Loki, but for Clickhouse.
 
-cLoki is a clear room design [Loki](https://github.com/grafana/loki) API emulator made with NodeJS, [Fastify](https://github.com/fastify/fastify) and [Clickhouse](https://clickhouse.yandex/)<br/>
-APIs are compatible with [Grafana](http://docs.grafana.org/features/explore/) and [LogQL](https://grafana.com/docs/loki/latest/logql/) clients for [querying](https://github.com/lmangani/cLoki/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki) logs and events
+**cLoki** is a fully functional clear room design [Loki](https://github.com/grafana/loki) & [Tempo](https://github.com/grafana/tempo) compatible **LogQL API** for [Clickhouse](https://clickhouse.yandex/), <br/>
+working out of the box with [Grafana](http://docs.grafana.org/features/explore/) and [LogQL](https://grafana.com/docs/loki/latest/logql/) clients for [querying](https://github.com/lmangani/cLoki/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki) logs and events
 
 Performance is comparable to native Loki, with cLoki outperforming on large range filtered queries.
 
@@ -165,22 +165,9 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 
 ------------
 
-### Project Status
+##### Project Status
 
-##### API
-
-Loki API Functions are loosely implemented as documented by the [Loki API](https://github.com/grafana/loki/blob/master/docs/api.md) reference.
-
-* [x] /loki/api/v1/push
-* [x] /loki/api/v1/query
-* [x] /loki/api/v1/query_range
-* [x] /loki/api/v1/label
-* [x] /loki/api/v1/label/_name_/values
-* [x] /loki/api/v1/tail
-
-##### Status
-
-Consult the [Wiki](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries) for a detailed list of supported features
+Consult the [Wiki](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries) for a detailed list of supported features and [API functions](https://github.com/lmangani/cLoki/wiki/HTTP-API)
 
 --------------
 
