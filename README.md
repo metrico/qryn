@@ -5,9 +5,9 @@
 
 # cLoki
 
-### like Loki, but for Clickhouse.
+### like Loki, but for ClickHouse
 
-**cLoki** is a fully functional clear room design [Loki](https://github.com/grafana/loki) & [Tempo](https://github.com/grafana/tempo) compatible **LogQL API** for [Clickhouse](https://clickhouse.yandex/), <br/>
+**cLoki** is a fully functional clear room design [Loki](https://github.com/grafana/loki) & [Tempo](https://github.com/grafana/tempo) compatible **LogQL API** for [ClickHouse](https://clickhouse.yandex/), <br/>
 working out of the box with [Grafana](http://docs.grafana.org/features/explore/) and [LogQL](https://grafana.com/docs/loki/latest/logql/) clients for [querying](https://github.com/lmangani/cLoki/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki) and [alerting](https://github.com/lmangani/cLoki/wiki/Ruler---Alerts)
 
 Performance is comparable to native Loki, with cLoki outperforming on large range filtered queries.
@@ -22,9 +22,9 @@ Performance is comparable to native Loki, with cLoki outperforming on large rang
 
 ### Project Background
 
-The *Loki API* and its Grafana native integration are brilliant, simple and appealing - but we just love **Clickhouse**. 
+The *Loki API* and its Grafana native integration are brilliant, simple and appealing - but we just love **ClickHouse**. 
 
-**cLoki** implements the same API functionality as Loki, buffered by a fast bulking **LRU** sitting on top of **Clickhouse** tables and relying on its *columnar search and insert performance alongside solid distribution and clustering capabilities* for stored data. Just like Loki, cLoki does not parse or index incoming logs, but rather groups log streams using the same label system as Prometheus. 
+**cLoki** implements the same API functionality as Loki, buffered by a fast bulking **LRU** sitting on top of **ClickHouse** tables and relying on its *columnar search and insert performance alongside solid distribution and clustering capabilities* for stored data. Just like Loki, cLoki does not parse or index incoming logs, but rather groups log streams using the same label system as Prometheus. 
 
 <img src="https://user-images.githubusercontent.com/1423657/54091852-5ce91000-4385-11e9-849d-998c1e5d3243.png" width=700 />
 
@@ -60,7 +60,7 @@ Our _preferred_ companion for parsing and shipping log streams to **cLoki** is [
 
 ### :fire: CliQL: Experimental 2.0 Features
 
-cLoki implements custom query functions for clickhouse timeseries extraction, allowing direct access to any existing table
+cLoki implements custom query functions for ClickHouse timeseries extraction, allowing direct access to any existing table
 
 ![ezgif com-gif-maker](https://user-images.githubusercontent.com/1423657/99530591-d0885080-29a1-11eb-87e6-870a046fb4de.gif)
 
@@ -79,7 +79,7 @@ Convert columns to tagged timeseries using the emulated loki 2.0 query format
 <b>sum</b> by (<b>ruri_user, from_user</b>) (rate(<b>duration</b>[<b>300</b>])) from <b>my_database.my_table</b> where <b>duration > 10</b>
 </pre>
 
-#### Clickhouse
+#### ClickHouse
 Convert columns to tagged timeseries using the experimental `clickhouse` function
 #### Example
 <pre>
