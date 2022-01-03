@@ -7,17 +7,15 @@
 
 ### like Loki, but for ClickHouse
 
-**cLoki** is a fully functional clear room design [Loki](https://github.com/grafana/loki) & [Tempo](https://github.com/grafana/tempo) compatible **LogQL API** for [ClickHouse](https://clickhouse.yandex/), <br/>
-working out of the box with [Grafana](http://docs.grafana.org/features/explore/) and [LogQL](https://grafana.com/docs/loki/latest/logql/) clients for [querying](https://github.com/lmangani/cLoki/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki) and [alerting](https://github.com/lmangani/cLoki/wiki/Ruler---Alerts)
-
-Performance is comparable to native Loki, with cLoki outperforming on large range filtered queries.
+**cLoki** is a flexible [Loki](https://github.com/grafana/loki) & [Tempo](https://github.com/grafana/tempo) compatible **LogQL API** built on top of [ClickHouse](https://clickhouse.yandex/)<br/>
+Natively supports [Grafana](http://docs.grafana.org/features/explore/) and any [LogQL](https://grafana.com/docs/loki/latest/logql/) clients for [querying](https://github.com/lmangani/cLoki/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki), [tracing](https://github.com/lmangani/cLoki/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/cLoki/wiki/Ruler---Alerts)
 
 :bulb: Get started using the [cLoki Wiki](https://github.com/lmangani/cLoki/wiki)<br>
+:octocat: *Join us! All Contributions are Welcome!*
 
 
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
 
-:fire: *Beta Stage, Contributors and Testers are Welcome!* :octocat:
 
 
 ### Project Background
@@ -105,7 +103,21 @@ clickhouse({
 |timefield| time/date field name (optional) |
 
 
+--------
+
+### :fire: Tempo: Supported Features
+
+**cLoki Pulse** offers experimental support for the Grafana [Tempo API](https://github.com/lmangani/cLoki/wiki/Tempo-Tracing) providing span ingestion and querying
+
+At database level, Tempo Spans/Traces are stored as tagged Logs and are accessible from both LogQL and Tempo APIs
+
+<img src="https://user-images.githubusercontent.com/1423657/147878090-a7630467-433e-4912-a439-602ce719c21d.png" width=700 />
+
 ------------
+
+
+
+
 ### Setup
 
 ##### :busstop: GIT (Manual)
