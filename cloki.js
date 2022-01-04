@@ -115,6 +115,19 @@ try {
   console.log('Protobuf ingesting is unsupported')
 }
 
+/* Null content-type handler for MV HTTP PUSH */
+fastify.addContentTypeParser('*', {
+  parseAs: 'string'
+}, function (req, body, done) {
+  try {
+    const json = JSON.parse(body)
+    done(null, json)
+  } catch (err) {
+    err.statusCode = 400
+    done(err, undefined)
+  }
+})
+
 /* 404 Handler */
 const handler404 = require('./lib/handlers/404.js').bind(this)
 fastify.setNotFoundHandler(handler404)
