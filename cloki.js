@@ -20,7 +20,9 @@ const UTILS = require('./lib/utils')
 /* ProtoBuf Helper */
 const fs = require('fs')
 const protoBuff = require('protocol-buffers')
+const { startAlerting, stop } = require('./lib/db/alerting')
 const messages = protoBuff(fs.readFileSync('lib/loki.proto'))
+const yaml = require('yaml')
 
 /* Fingerprinting */
 this.fingerPrint = UTILS.fingerPrint
@@ -40,16 +42,23 @@ this.scanFingerprints = DATABASE.scanFingerprints
 this.instantQueryScan = DATABASE.instantQueryScan
 this.tempoQueryScan = DATABASE.tempoQueryScan
 this.scanMetricFingerprints = DATABASE.scanMetricFingerprints
-this.scanClickhouse = DATABASE.scanClickhouse
 this.tempoQueryScan = DATABASE.tempoQueryScan
-
 if (!this.readonly) init(process.env.CLICKHOUSE_DB || 'cloki')
+this.scanClickhouse = DATABASE.scanClickhouse;
+(async () => {
+  if (!this.readonly) await init(process.env.CLICKHOUSE_DB || 'cloki')
+  await startAlerting()
+})().catch((err) => {
+  console.log(err)
+  process.exit(1)
+})
 
 /* Fastify Helper */
 const fastify = require('fastify')({
+
   logger: false,
   bodyLimit: parseInt(process.env.FASTIFY_BODYLIMIT) || 5242880,
-  requestTimeout:  parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
+  requestTimeout: parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
   maxRequestsPerSocket: parseInt(process.env.FASTIFY_MAXREQUESTS) || 0
 })
 
@@ -91,6 +100,18 @@ fastify.addContentTypeParser('text/plain', {
   }
 })
 
+fastify.addContentTypeParser('application/yaml', {
+  parseAs: 'string'
+}, function (req, body, done) {
+  try {
+    const json = yaml.parse(body)
+    done(null, json)
+  } catch (err) {
+    err.statusCode = 400
+    done(err, undefined)
+  }
+})
+
 try {
   const snappy = require('snappyjs')
   /* Protobuf Handler */
@@ -115,7 +136,7 @@ try {
   console.log('Protobuf ingesting is unsupported')
 }
 
-/* Null content-type handler for MV HTTP PUSH */
+/* Null content-type handler for CH-MV HTTP PUSH */
 fastify.addContentTypeParser('*', {
   parseAs: 'string'
 }, function (req, body, done) {
@@ -131,6 +152,7 @@ fastify.addContentTypeParser('*', {
 /* 404 Handler */
 const handler404 = require('./lib/handlers/404.js').bind(this)
 fastify.setNotFoundHandler(handler404)
+fastify.setErrorHandler(require('./lib/handlers/errors').handler.bind(this))
 
 /* Hello cloki test API */
 const handlerHello = require('./lib/handlers/ready').bind(this)
@@ -186,6 +208,15 @@ fastify.get('/loki/api/v1/series', handlerSeries)
 
 fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/tail').bind(this))
 
+// ALERT MANAGER
+
+fastify.get('/api/prom/rules', require('./lib/handlers/alerts/get_rules').bind(this))
+fastify.get('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/get_group').bind(this))
+fastify.post('/api/prom/rules/:ns', require('./lib/handlers/alerts/post_group').bind(this))
+fastify.delete('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/del_group').bind(this))
+fastify.delete('/api/prom/rules/:ns', require('./lib/handlers/alerts/del_ns').bind(this))
+fastify.get('/prometheus/api/v1/rules', require('./lib/handlers/alerts/prom_get_rules').bind(this))
+
 // Run API Service
 fastify.listen(
   process.env.PORT || 3100,
@@ -200,4 +231,6 @@ fastify.listen(
 module.exports.stop = () => {
   fastify.close()
   DATABASE.stop()
+  require('./parser/transpiler').stop()
+  stop()
 }

@@ -8,39 +8,58 @@ const lineFormat = require('./registry/line_format')
 const parserRegistry = require('./registry/parser_registry')
 const unwrap = require('./registry/unwrap')
 const unwrapRegistry = require('./registry/unwrap_registry')
-const { _and, durationToMs } = require('./registry/common')
+const { durationToMs, sharedParamNames, getStream } = require('./registry/common')
 const compiler = require('./bnf')
-const { parseMs, DATABASE_NAME, samplesReadTableName } = require('../lib/utils')
+const { parseMs, DATABASE_NAME, samplesReadTableName, samplesTableName } = require('../lib/utils')
 const { getPlg } = require('../plugins/engine')
+const Sql = require('@cloki/clickhouse-sql')
 
 /**
- * @param options {{samplesTable?: string} | undefined}
- * @returns {registry_types.Request}
+ * @returns {Select}
  */
-module.exports.initQuery = (options) => {
-  options = options || {}
-  const samplesTable = options.samplesTable || samplesReadTableName
-  return {
-    select: ['time_series.labels as labels', 'samples.string as string', 'samples.fingerprint as fingerprint',
-      'samples.timestamp_ms as timestamp_ms'],
-    from: `${DATABASE_NAME()}.${samplesTable} as samples`,
-    left_join: [{
-      name: `${DATABASE_NAME()}.time_series`,
-      on: ['AND', 'samples.fingerprint = time_series.fingerprint']
-    }],
-    limit: 1000,
-    order_by: {
-      name: ['timestamp_ms', 'labels'],
-      order: 'desc'
+module.exports.initQuery = () => {
+  const samplesTable = new Sql.Parameter(sharedParamNames.samplesTable)
+  const timeSeriesTable = new Sql.Parameter(sharedParamNames.timeSeriesTable)
+  const from = new Sql.Parameter(sharedParamNames.from)
+  const to = new Sql.Parameter(sharedParamNames.to)
+  const limit = new Sql.Parameter(sharedParamNames.limit)
+  limit.set(2000)
+  const tsClause = new Sql.Raw('')
+  tsClause.toString = () => {
+    if (to.get()) {
+      return Sql.between('samples.timestamp_ms', from, to).toString()
     }
+    return Sql.Gt('samples.timestamp_ms', from).toString()
   }
+  return (new Sql.Select())
+    .select(['time_series.labels', 'labels'], ['samples.string', 'string'],
+      ['samples.fingerprint', 'fingerprint'], ['samples.timestamp_ms', 'timestamp_ms'])
+    .from([samplesTable, 'samples'])
+    .join([timeSeriesTable, 'time_series'], 'left',
+      Sql.Eq('samples.fingerprint', Sql.quoteTerm('time_series.fingerprint')))
+    .orderBy(['timestamp_ms', 'desc'], ['labels', 'desc'])
+    .where(tsClause)
+    .limit(limit)
+    .addParam(samplesTable)
+    .addParam(timeSeriesTable)
+    .addParam(from)
+    .addParam(to)
+    .addParam(limit)
 }
 
 /**
  *
- * @param request {{query: string, limit: number, direction: string, start: string, end: string, step: string,
- *      stream?: (function(DataStream): DataStream)[]}}
- * @returns {{query: string, matrix: boolean, duration: number | undefined}}
+ * @param request {{
+ * query: string,
+ * limit: number,
+ * direction: string,
+ * start: string,
+ * end: string,
+ * step: string,
+ * stream?: (function(DataStream): DataStream)[],
+ * rawQuery: boolean
+ * }}
+ * @returns {{query: string, stream: (function (DataStream): DataStream)[], matrix: boolean, duration: number | undefined}}
  */
 module.exports.transpile = (request) => {
   const expression = compiler.ParseScript(request.query.trim())
@@ -54,95 +73,78 @@ module.exports.transpile = (request) => {
 
   let start = parseMs(request.start, Date.now() - 3600 * 1000)
   let end = parseMs(request.end, Date.now())
-  const step = request.step ? parseInt(request.step) * 1000 : 0
+  const step = request.step ? Math.floor(parseFloat(request.step) * 1000) : 0
   let query = module.exports.initQuery()
-  if (request.limit) {
-    query.limit = request.limit
+  const limit = request.limit ? request.limit : 2000
+  const order = request.direction === 'forward' ? 'asc' : 'desc'
+  query.orderBy(...query.orderBy().map(o => [o[0], order]))
+  query.ctx = {
+    step: step
   }
-  query.order_by.order = request.direction === 'forward' ? 'asc' : 'desc'
   if (token.Child('aggregation_operator')) {
     const duration = durationToMs(token.Child('duration_value').value)
     start = Math.floor(start / duration) * duration
     end = Math.ceil(end / duration) * duration
-    query.ctx = {
-      start: start,
-      end: end
-    }
-    query = _and(query, [
-      `timestamp_ms >= ${start}`,
-      `timestamp_ms <= ${end}`
-    ])
     query = module.exports.transpileAggregationOperator(token, query)
   } else if (token.Child('unwrap_function')) {
     const duration = durationToMs(token.Child('unwrap_function').Child('duration_value').value)
     start = Math.floor(start / duration) * duration
     end = Math.ceil(end / duration) * duration
-    query.ctx = {
-      start: start,
-      end: end,
-      step: step
-    }
-    query = _and(query, [
-      `timestamp_ms >= ${start}`,
-      `timestamp_ms <= ${end}`
-    ])
     query = module.exports.transpileUnwrapFunction(token, query)
   } else if (token.Child('log_range_aggregation')) {
     const duration = durationToMs(token.Child('log_range_aggregation').Child('duration_value').value)
     start = Math.floor(start / duration) * duration
     end = Math.ceil(end / duration) * duration
-    query.ctx = {
-      start: start,
-      end: end,
-      step: step
-    }
-    query = _and(query, [
-      `timestamp_ms >= ${start}`,
-      `timestamp_ms <= ${end}`
-    ])
     query = module.exports.transpileLogRangeAggregation(token, query)
   } else {
-    query = module.exports.transpileLogStreamSelector(token, query)
-    query = _and(query, [
-      `timestamp_ms >= ${start}`,
-      `timestamp_ms <= ${end}`
-    ])
-    query = {
-      ctx: query.ctx,
-      stream: query.stream,
-      with: {
-        ...query.with || {},
-        sel_a: {
-          ...query,
-          ctx: undefined,
-          with: undefined,
-          stream: undefined
-        }
-      },
-      select: ['*'],
-      from: 'sel_a',
-      order_by: {
-        name: ['labels', 'timestamp_ms'],
-        order: query.order_by.order
-      }
-    }
+    const _query = module.exports.transpileLogStreamSelector(token, query)
+    const wth = new Sql.With('sel_a', _query)
+    query = (new Sql.Select())
+      .with(wth)
+      .from(new Sql.WithReference(wth))
+      .orderBy(['labels', order], ['timestamp_ms', order])
+    setQueryParam(query, sharedParamNames.limit, limit)
   }
   if (token.Child('compared_agg_statement')) {
     const op = token.Child('compared_agg_statement_cmp').Child('number_operator').value
     query = numberOperatorRegistry[op](token.Child('compared_agg_statement'), query)
   }
+  setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
+  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName}`)
+  setQueryParam(query, sharedParamNames.from, start)
+  setQueryParam(query, sharedParamNames.to, end)
+
+  // console.log(query.toString())
   return {
-    query: module.exports.requestToStr(query),
-    matrix: !!query.matrix,
+    query: request.rawQuery ? query : query.toString(),
+    matrix: !!query.ctx.matrix,
     duration: query.ctx && query.ctx.duration ? query.ctx.duration : 1000,
-    stream: query.stream
+    stream: getStream(query)
   }
 }
 
 /**
  *
- * @param request {{query: string, stream?: (function(DataStream): DataStream)[], samplesTable?: string}}
- * @returns {{query: string, stream: (function(DataStream): DataStream)[]}}
+ * @param query {Select}
+ * @param name {string}
+ * @param val {any}
+ */
+const setQueryParam = (query, name, val) => {
+  if (query.getParam(name)) {
+    query.getParam(name).set(val)
+  }
+}
+
+/**
+ *
+ * @param request {{
+ *  query: string,
+ *  suppressTime?: boolean,
+ *  stream?: (function(DataStream): DataStream)[],
+ *  samplesTable?: string,
+ *  rawRequest: boolean}}
+ * @returns {{query: string  | registry_types.Request,
+ * stream: (function(DataStream): DataStream)[]}}
  */
 module.exports.transpileTail = (request) => {
   const expression = compiler.ParseScript(request.query.trim())
@@ -152,19 +154,18 @@ module.exports.transpileTail = (request) => {
       throw new Error(`${d} is not supported. Only raw logs are supported`)
     }
   }
-  let query = module.exports.initQuery({ samplesTable: request.samplesTable })
-  query = _and(query, [
-    'timestamp_ms >= (toUnixTimestamp(now()) - 5) * 1000'
-  ])
+
+  let query = module.exports.initQuery()
   query = module.exports.transpileLogStreamSelector(expression.rootToken, query)
-  query.order_by = {
-    name: ['timestamp_ms'],
-    order: 'ASC'
-  }
-  query.limit = undefined
+  setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
+  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesTableName}`)
+  setQueryParam(query, sharedParamNames.from, new Sql.Raw('(toUnixTimestamp(now()) - 5) * 1000'))
+  query.order_expressions = []
+  query.orderBy(['timestamp_ms', 'asc'])
+  query.limit(undefined, undefined)
   return {
-    query: module.exports.requestToStr(query),
-    stream: query.stream || []
+    query: request.rawRequest ? query : query.toString(),
+    stream: getStream(query)
   }
 }
 
@@ -180,28 +181,24 @@ module.exports.transpileSeries = (request) => {
   /**
    *
    * @param req {string}
-   * @returns {registry_types.Request}
+   * @returns {Select}
    */
   const getQuery = (req) => {
     const expression = compiler.ParseScript(req.trim())
     const query = module.exports.transpileLogStreamSelector(expression.rootToken, module.exports.initQuery())
-    return {
-      ...query.with.str_sel,
-      select: ['labels']
-    }
+    const _query = query.withs.str_sel.query
+    _query.params = query.params
+    _query.columns = []
+    return _query.select('labels')
   }
-  if (request.length === 1) {
-    return module.exports.requestToStr({
-      ...getQuery(request[0]),
-      distinct: true
-    })
+  const query = getQuery(request[0])
+  for (const req of request.slice(1)) {
+    const _query = getQuery(req)
+    query.orWhere(...(Array.isArray(_query.conditions) ? _query.conditions : [_query.conditions]))
   }
-  const queries = request.map(getQuery)
-  return module.exports.requestToStr({
-    ...queries[0],
-    distinct: true,
-    where: ['OR', ...queries.map(q => q.where)]
-  })
+  setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
+  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName}`)
+  return query.toString()
 }
 
 /**
@@ -217,8 +214,8 @@ module.exports.transpileMacro = (token) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.transpileAggregationOperator = (token, query) => {
   const agg = token.Child('aggregation_operator')
@@ -233,8 +230,8 @@ module.exports.transpileAggregationOperator = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.transpileLogRangeAggregation = (token, query) => {
   const agg = token.Child('log_range_aggregation')
@@ -245,8 +242,8 @@ module.exports.transpileLogRangeAggregation = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Sql.Select}
+ * @returns {Sql.Select}
  */
 module.exports.transpileLogStreamSelector = (token, query) => {
   const rules = token.Children('log_stream_selector_rule')
@@ -285,8 +282,8 @@ module.exports.transpileLogStreamSelector = (token, query) => {
 /**
  *
  * @param pipeline {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.transpileLabelFilterPipeline = (pipeline, query) => {
   return complexLabelFilterRegistry(pipeline.Child('complex_label_filter_expression'), query)
@@ -295,8 +292,8 @@ module.exports.transpileLabelFilterPipeline = (pipeline, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.transpileUnwrapFunction = (token, query) => {
   query = module.exports.transpileLogStreamSelector(token, query)
@@ -312,21 +309,21 @@ module.exports.transpileUnwrapFunction = (token, query) => {
 }
 
 /**
- *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 const transpileUnwrapMetrics = (token, query) => {
-  query.select = [...query.select.filter(f => !f.endsWith('as string')), 'value as unwrapped']
+  query.select_list = query.select_list.filter(f => f[1] !== 'string')
+  query.select(['value', 'unwrapped'])
   return query
 }
 
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.transpileUnwrapExpression = (token, query) => {
   return unwrap(token.Child('unwrap_statement'), query)
@@ -334,7 +331,7 @@ module.exports.transpileUnwrapExpression = (token, query) => {
 
 /**
  *
- * @param query {registry_types.Request | registry_types.UnionRequest}
+ * @param query {Select | registry_types.UnionRequest}
  * @returns {string}
  */
 module.exports.requestToStr = (query) => {
@@ -357,6 +354,10 @@ module.exports.requestToStr = (query) => {
   req += typeof (query.offset) !== 'undefined' ? ` OFFSET ${query.offset}` : ''
   req += query.final ? ' FINAL' : ''
   return req
+}
+
+module.exports.stop = () => {
+  require('./registry/line_format/go_native_fmt').stop()
 }
 
 /**

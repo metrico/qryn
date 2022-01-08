@@ -1,5 +1,6 @@
 const { Compiler } = require('bnf/Compiler')
-const { _and, map } = require('../common')
+const { map, addStream } = require('../common')
+const Sql = require('@cloki/clickhouse-sql')
 
 /**
  *
@@ -36,8 +37,8 @@ const getLabels = (() => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.viaClickhouseQuery = (token, query) => {
   const labels = getLabels(token)
@@ -59,18 +60,18 @@ module.exports.viaClickhouseQuery = (token, query) => {
             `JSONExtractRaw(samples.string, ${path.join(',')}))`
     return `('${lbl[0]}', ${expr})`
   })
-  exprs = "arrayFilter((x) -> x.2 != '', [" + exprs.join(',') + '])'
-  return _and({
-    ...query,
-    select: [...query.select.filter(f => !f.endsWith('as extra_labels')), `${exprs} as extra_labels`]
-  }, ['isValidJSON(samples.string)'])
+  exprs = new Sql.Raw("arrayFilter((x) -> x.2 != '', [" + exprs.join(',') + '])')
+  query.select_list = query.select_list.filter(f => f[1] !== 'extra_labels')
+  query.select([exprs, 'extra_labels'])
+  query.where(Sql.Eq(new Sql.Raw('isValidJSON(samples.string)'), 1))
+  return query
 }
 
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.viaStream = (token, query) => {
   const labels = getLabels(token)
@@ -154,8 +155,5 @@ module.exports.viaStream = (token, query) => {
       }
     })
   }
-  return {
-    ...query,
-    stream: [...(query.stream ? query.stream : []), stream]
-  }
+  return addStream(query, stream)
 }

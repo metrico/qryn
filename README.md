@@ -17,7 +17,6 @@ Natively supports [Grafana](http://docs.grafana.org/features/explore/) and any [
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
 
 
-
 ### Project Background
 
 The *Loki API* and its Grafana native integration are brilliant, simple and appealing - but we just love **ClickHouse**. 

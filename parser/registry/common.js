@@ -1,5 +1,6 @@
 const { hashLabels, parseLabels } = require('../../common')
 const { getPlg } = require('../../plugins/engine')
+const Sql = require('@cloki/clickhouse-sql')
 
 /**
  * @param query {registry_types.Request | string[]}
@@ -28,6 +29,46 @@ module.exports._and = (query, clauses) => {
 }
 
 /**
+ *
+ * @param query {Select}
+ * @returns {DataStream[]}
+ */
+module.exports.getStream = (query) => {
+  return query && query.ctx && query.ctx.stream ? query.ctx.stream : []
+}
+
+/**
+ *
+ * @param query {Select}
+ * @returns {boolean}
+ */
+module.exports.hasStream = (query) => {
+  return module.exports.getStream(query).length > 0
+}
+
+/**
+ *
+ * @param query {Select}
+ * @param stream {function(DataStream): DataStream}
+ * @returns {Select}
+ */
+module.exports.addStream = (query, stream) => {
+  if (!query) {
+    throw new Error('query is undefined')
+  }
+  if (query && query.ctx && query.ctx.stream) {
+    query.ctx.stream.push(stream)
+    return query
+  }
+  if (query && query.ctx) {
+    query.ctx.stream = [stream]
+    return query
+  }
+  query.ctx = { stream: [stream] }
+  return query
+}
+
+/**
  * @param query {registry_types.Request}
  * @returns {registry_types.Request}
  */
@@ -48,29 +89,6 @@ module.exports.unquoteToken = (token) => {
 
 /**
  *
- * @param durationStr {string}
- * @returns {number}
- */
-module.exports.durationToMs = (durationStr) => {
-  const durations = {
-    ns: 1 / 1000000,
-    us: 1 / 1000,
-    ms: 1,
-    s: 1000,
-    m: 60000,
-    h: 60000 * 60
-  }
-  for (const k of Object.keys(durations)) {
-    const m = durationStr.match(new RegExp(`^([0-9][.0-9]*)${k}$`))
-    if (m) {
-      return parseInt(m[1]) * durations[k]
-    }
-  }
-  throw new Error('Unsupported duration')
-}
-
-/**
- *
  * @param s {DataStream}
  * @param fn
  * @returns {DataStream}
@@ -86,10 +104,9 @@ module.exports.map = (s, fn) => s.map((e) => {
 /**
  *
  * @param token {Token}
- * //@param query {registry_types.Request}
  * @returns {number}
  */
-module.exports.getDuration = (token/*, query */) => {
+module.exports.getDuration = (token) => {
   return module.exports.durationToMs(token.Child('duration_value').value)
   // Math.max(duration, query.ctx && query.ctx.step ? query.ctx.step : 1000);
 }
@@ -129,55 +146,51 @@ module.exports.getPlugins = (type, cb) => {
 
 /**
  *
- * @param query {registry_types.Request}
+ * @param query {Select}
  * @returns {boolean}
  */
 module.exports.hasExtraLabels = (query) => {
-  return query.select.some(f => f.endsWith('as extra_labels'))
+  return query.select().some(f => f[1] === 'extra_labels')
 }
 
 /**
  *
- * @param query {registry_types.Request}
- * @returns {string}
+ * @param query {Select}
+ * @returns {SQLObject}
  */
 module.exports.concatLabels = (query) => {
   if (module.exports.hasExtraLabels(query)) {
-    return 'arraySort(arrayConcat(arrayFilter(' +
+    return new Sql.Raw('arraySort(arrayConcat(arrayFilter(' +
             'x -> arrayExists(y -> y.1 == x.1, extra_labels) == 0, ' +
-            'JSONExtractKeysAndValues(labels, \'String\')), extra_labels))'
+            'JSONExtractKeysAndValues(labels, \'String\')), extra_labels))')
   }
-  return 'JSONExtractKeysAndValues(labels, \'String\')'
+  return new Sql.Raw('JSONExtractKeysAndValues(labels, \'String\')')
 }
 
 /**
  * sum_over_time(unwrapped-range): the sum of all values in the specified interval.
  * @param token {Token}
- * @param query {registry_types.Request}
+ * @param query {Select}
  * @param byWithoutName {string} name of the by_without token
- * @returns {registry_types.Request}
+ * @returns {Select}
  */
 function applyByWithoutStream (token, query, byWithoutName) {
   const isBy = token.Child(byWithoutName).value === 'by'
   const filterLabels = token.Children('label').map(l => l.value)
-  return {
-    ...query,
-    stream: [...(query.stream ? query.stream : []),
-      /**
-             *
-             * @param stream {DataStream}
-             */
-      (stream) => stream.map(e => {
-        if (!e || !e.labels) {
-          return e
-        }
-        const labels = [...Object.entries(e.labels)].filter(l =>
-          (isBy && filterLabels.includes(l[0])) || (!isBy && !filterLabels.includes(l[0]))
-        )
-        return { ...e, labels: parseLabels(labels) }
-      })
-    ]
-  }
+  return module.exports.addStream(query,
+    /**
+   *
+   * @param stream {DataStream}
+   */
+    (stream) => stream.map(e => {
+      if (!e || !e.labels) {
+        return e
+      }
+      const labels = [...Object.entries(e.labels)].filter(l =>
+        (isBy && filterLabels.includes(l[0])) || (!isBy && !filterLabels.includes(l[0]))
+      )
+      return { ...e, labels: parseLabels(labels) }
+    }))
 }
 
 /**
@@ -211,72 +224,88 @@ function addTimestamp (values, timestamp, value, duration, step, counterFn) {
 
 /**
  *
- * @param query {registry_types.Request}
+ * @param query {Select}
  * @returns {boolean}
  */
 module.exports.hasExtraLabels = (query) => {
-  return query.select.some((x) => x.endsWith('as extra_labels'))
+  return query.select().some((x) => x[1] === 'extra_labels')
+}
+
+module.exports.timeShiftViaStream = (token, query) => {
+  let tsMoveParam = null
+  if (!query.params.timestamp_shift) {
+    tsMoveParam = new Sql.Parameter('timestamp_shift')
+    query.addParam(tsMoveParam)
+  } else {
+    tsMoveParam = query.params.timestamp_shift
+  }
+  const duration = module.exports.getDuration(token)
+  /**
+   * @param s {DataStream}
+   */
+  const stream = (s) => s.map((e) => {
+    if (tsMoveParam.get()) {
+      e.timestamp_ms -= (parseInt(tsMoveParam.get()) % duration)
+    }
+    return e
+  })
+  return module.exports.addStream(query, stream)
 }
 
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
+ * @param query {Select}
  * @param counterFn {function(any, any, number): any}
  * @param summarizeFn {function(any): number}
  * @param lastValue {boolean} if the applier should take the latest value in step (if step > duration)
  * @param byWithoutName {string} name of the by_without token
- * @returns {registry_types.Request}
+ * @returns {Select}
  */
 module.exports.applyViaStream = (token, query,
   counterFn, summarizeFn, lastValue, byWithoutName) => {
+  query.ctx.matrix = true
   byWithoutName = byWithoutName || 'by_without'
   if (token.Child(byWithoutName)) {
     query = applyByWithoutStream(token.Child(`opt_${byWithoutName}`), query, byWithoutName)
   }
   let results = new Map()
   const duration = getDuration(token, query)
+  query.ctx.duration = duration
   const step = query.ctx.step
-  return {
-    ...query,
-    limit: undefined,
-    ctx: { ...query.ctx, duration: duration },
-    matrix: true,
-    stream: [...(query.stream ? query.stream : []),
-      /**
-             * @param s {DataStream}
-             */
-      (s) => s.remap((emit, e) => {
-        if (!e || !e.labels) {
-          for (const v of results.values()) {
-            const ts = [...Object.entries(v.values)]
-            ts.sort()
-            for (const _v of ts) {
-              let value = Object.entries(_v[1])
-              value.sort()
-              value = lastValue ? value[value.length - 1][1] : value[0][1]
-              value = summarizeFn(value)// Object.values(_v[1]).reduce((sum, v) => sum + summarizeFn(v), 0);
-              emit({ labels: v.labels, timestamp_ms: _v[0], value: value })
-            }
-          }
-          results = new Map()
-          emit({ EOF: true })
-          return
+  /**
+  * @param s {DataStream}
+  */
+  const stream = (s) => s.remap((emit, e) => {
+    if (!e || !e.labels) {
+      for (const v of results.values()) {
+        const ts = [...Object.entries(v.values)]
+        ts.sort()
+        for (const _v of ts) {
+          let value = Object.entries(_v[1])
+          value.sort()
+          value = lastValue ? value[value.length - 1][1] : value[0][1]
+          value = summarizeFn(value)// Object.values(_v[1]).reduce((sum, v) => sum + summarizeFn(v), 0);
+          emit({ labels: v.labels, timestamp_ms: _v[0], value: value })
         }
-        const l = hashLabels(e.labels)
-        if (!results.has(l)) {
-          results.set(l, {
-            labels: e.labels,
-            values: addTimestamp(undefined, e.timestamp_ms, e, duration, step, counterFn)
-          })
-        } else {
-          results.get(l).values = addTimestamp(
-            results.get(l).values, e.timestamp_ms, e, duration, step, counterFn
-          )
-        }
+      }
+      results = new Map()
+      emit({ EOF: true })
+      return
+    }
+    const l = hashLabels(e.labels)
+    if (!results.has(l)) {
+      results.set(l, {
+        labels: e.labels,
+        values: addTimestamp(undefined, e.timestamp_ms, e, duration, step, counterFn)
       })
-    ]
-  }
+    } else {
+      results.get(l).values = addTimestamp(
+        results.get(l).values, e.timestamp_ms, e, duration, step, counterFn
+      )
+    }
+  })
+  return module.exports.addStream(query, stream)
 }
 
 /**
@@ -343,3 +372,18 @@ module.exports.unquote = (str, custom, customSlash) => {
   }
   return res
 }
+
+module.exports.sharedParamNames = {
+  samplesTable: 'samplesTable',
+  timeSeriesTable: 'timeSeriesTable',
+  from: 'from',
+  to: 'to',
+  limit: 'limit'
+}
+
+/**
+ *
+ * @param durationStr {string}
+ * @returns {number}
+ */
+module.exports.durationToMs = require('../../common').durationToMs

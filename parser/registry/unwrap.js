@@ -1,13 +1,14 @@
-const { _and, map, hasExtraLabels } = require('./common')
+const { map, hasExtraLabels, hasStream, addStream } = require('./common')
+const Sql = require('@cloki/clickhouse-sql')
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports = (token, query) => {
   const label = token.Child('label').value
-  if (query.stream) {
+  if (hasStream(query)) {
     return viaStream(label, query)
   }
   if (label === '_entry') {
@@ -21,89 +22,72 @@ module.exports = (token, query) => {
 
 /**
  *
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 function unwrapLine (query) {
-  query = {
-    ...query,
-    select: [...query.select, 'toFloat64OrNull(string) as unwrapped']
-  }
-  return _and(query, [
-    'isNotNull(unwrapped)'
-  ])
+  return query.select([new Sql.Raw('toFloat64OrNull(string)'), 'unwrapped'])
+    .where(Sql.Eq(new Sql.Raw('isNotNull(unwrapped)'), 1))
 }
 
 /**
  *
  * @param label {string}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 function viaQuery (label, query) {
-  query = {
-    ...query,
-    select: [...query.select, `toFloat64OrNull(JSONExtractString(labels,'${label}')) as unwrapped`]
-  }
-  return _and(query, [
-        `JSONHas(labels, '${label}')`,
-        'isNotNull(unwrapped)'
-  ])
+  query.limit(undefined, undefined)
+  return query.select(
+    [new Sql.Raw(`toFloat64OrNull(JSONExtractString(labels,'${label}'))`, 'unwrapped')]
+  ).where(
+    Sql.Eq(new Sql.Raw(`JSONHas(labels, '${label}')`), 1),
+    Sql.Eq(new Sql.Raw('isNotNull(unwrapped)'), 1)
+  )
 }
 
 /**
  *
  * @param label {string}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 function viaQueryWithExtraLabels (label, query) {
-  query = {
-    ...query,
-    select: [...query.select, `toFloat64OrNull(if(arrayExists(x -> x.1 == '${label}', extra_labels), ` +
-                `arrayFirst(x -> x.1 == '${label}', extra_labels).2, ` +
-            `JSONExtractString(labels,'${label}'))) as unwrapped`]
-  }
-  return _and(query, [[
-    'OR',
-        `arrayFirstIndex(x -> x.1 == '${label}', extra_labels) != 0`,
-        `JSONHas(labels, '${label}')`
-  ], 'isNotNull(unwrapped)'])
+  query.limit(undefined, undefined)
+  return query.select(
+    [new Sql.Raw(`toFloat64OrNull(if(arrayExists(x -> x.1 == '${label}', extra_labels), ` +
+      `arrayFirst(x -> x.1 == '${label}', extra_labels).2, ` +
+      `JSONExtractString(labels,'${label}')))`), 'unwrapped']
+  ).where(Sql.Or(
+    Sql.Ne(new Sql.Raw(`arrayFirstIndex(x -> x.1 == '${label}', extra_labels)`), 0),
+    Sql.Eq(new Sql.Raw(`JSONHas(labels, '${label}')`), 1)
+  ), Sql.Eq(new Sql.Raw('isNotNull(unwrapped)'), 1))
 }
 
 /**
  *
  * @param label {string}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 function viaStream (label, query) {
+  query.limit(undefined, undefined)
   const isUnwrapString = label === '_entry'
-  return {
-    ...query,
-    stream: [
-      ...(query.stream ? query.stream : []),
-      /**
-             *
-             * @param stream {DataStream}
-             */
-      (stream) => map(stream, e => {
-        if (!e || !e.labels) {
-          return { ...e }
-        }
-        if (!isUnwrapString && !e.labels[label]) {
-          return null
-        }
-        try {
-          e.unwrapped = parseFloat(isUnwrapString ? e.string : e.labels[label])
-          if (isNaN(e.unwrapped)) {
-            return null
-          }
-          return e
-        } catch (e) {
-          return null
-        }
-      }).filter(e => e)
-    ]
-  }
+  return addStream(query, (stream) => map(stream, e => {
+    if (!e || !e.labels) {
+      return { ...e }
+    }
+    if (!isUnwrapString && !e.labels[label]) {
+      return null
+    }
+    try {
+      e.unwrapped = parseFloat(isUnwrapString ? e.string : e.labels[label])
+      if (isNaN(e.unwrapped)) {
+        return null
+      }
+      return e
+    } catch (e) {
+      return null
+    }
+  }).filter(e => e))
 }

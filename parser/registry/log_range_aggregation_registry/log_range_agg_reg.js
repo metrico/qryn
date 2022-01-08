@@ -1,77 +1,65 @@
-const { getDuration, concatLabels, applyViaStream } = require('../common')
+const { getDuration, concatLabels, timeShiftViaStream } = require('../common')
+const _applyViaStream = require('../common').applyViaStream
+const Sql = require('@cloki/clickhouse-sql')
 
 /**
  *
- * @param valueExpr {string}
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @param counterFn {function(any, any, number): any}
+ * @param summarizeFn {function(any): number}
+ * @param lastValue {boolean} if the applier should take the latest value in step (if step > duration)
+ * @param byWithoutName {string} name of the by_without token
+ */
+const applyViaStream = (token, query, counterFn, summarizeFn, lastValue, byWithoutName) => {
+  return _applyViaStream(token, timeShiftViaStream(token, query), counterFn, summarizeFn, lastValue, byWithoutName)
+}
+
+/**
+ *
+ * @param valueExpr {SQLObject}
+ * @param token {Token}
+ * @param query {Select}
+ * @returns {Select}
  */
 const genericRate = (valueExpr, token, query) => {
-  const duration = getDuration(token, query)
+  const duration = getDuration(token)
+  query.ctx.matrix = true
+  query.ctx.duration = duration
+  query.limit(undefined, undefined)
   const step = query.ctx.step
-  /**
-     *
-     * @type {registry_types.Request}
-     */
-  /* const queryGaps = {
-        select: [
-            'a1.labels',
-            `toFloat64(${Math.floor(query.ctx.start / duration) * duration} + number * ${duration}) as timestamp_ms`,
-            'toFloat64(0) as value'
-        ],
-        from: `(SELECT DISTINCT labels FROM rate_a) as a1, numbers(${Math.floor((query.ctx.end - query.ctx.start) / duration)}) as a2`,
-    }; */
-  return {
-    ctx: { ...query.ctx, duration: duration },
-    with: {
-      ...(query.with || {}),
-      rate_a: {
-        ...query,
-        ctx: undefined,
-        with: undefined,
-        limit: undefined,
-        stream: undefined
-      },
-      rate_b: {
-        select: [
-          concatLabels(query) + ' as labels',
-                    `floor(timestamp_ms / ${duration}) * ${duration} as timestamp_ms`,
-                    `${valueExpr} as value`
-        ],
-        from: 'rate_a',
-        group_by: ['labels', 'timestamp_ms'],
-        order_by: {
-          name: ['labels', 'timestamp_ms'],
-          order: 'asc'
-        }
-      },
-      rate_c: step > duration
-        ? {
-            select: [
-              'labels',
-                    `floor(timestamp_ms / ${step}) * ${step} as timestamp_ms`,
-                    'argMin(rate_b.value, rate_b.timestamp_ms) as value'
-            ],
-            from: 'rate_b',
-            group_by: ['labels', 'timestamp_ms'],
-            order_by: {
-              name: ['labels', 'timestamp_ms'],
-              order: 'asc'
-            }
-          }
-        : undefined
-    },
-    select: ['labels', 'timestamp_ms', 'sum(value) as value'],
-    from: step > duration ? 'rate_c' : 'rate_b',
-    group_by: ['labels', 'timestamp_ms'],
-    order_by: {
-      name: ['labels', 'timestamp_ms'],
-      order: 'asc'
-    },
-    matrix: true,
-    stream: query.stream
+  const rateA = new Sql.With('rate_a', query)
+  const tsMoveParam = new Sql.Parameter('timestamp_shift')
+  query.addParam(tsMoveParam)
+  const tsGroupingExpr = new Sql.Raw('')
+  tsGroupingExpr.toString = () => {
+    if (!tsMoveParam.get()) {
+      return `intDiv(timestamp_ms, ${duration}) * ${duration}`
+    }
+    return `intDiv(timestamp_ms - ${tsMoveParam.toString()}, ${duration}) * ${duration} + ${tsMoveParam.toString()}`
   }
+  const rateB = (new Sql.Select())
+    .select(
+      [concatLabels(query), 'labels'],
+      [tsGroupingExpr, 'timestamp_ms'],
+      [valueExpr, 'value']
+    )
+    .from(new Sql.WithReference(rateA))
+    .groupBy('labels', 'timestamp_ms')
+    .orderBy(['labels', 'asc'], ['timestamp_ms', 'asc'])
+  if (step <= duration) {
+    return rateB.with(rateA)
+  }
+  const rateC = (new Sql.Select())
+    .select(
+      'labels',
+      [new Sql.Raw(`intDiv(timestamp_ms, ${step}) * ${step}`), 'timestamp_ms'],
+      [new Sql.Raw('argMin(rate_b.value, rate_b.timestamp_ms)'), 'value']
+    )
+    .from('rate_b')
+    .groupBy('labels', 'timestamp_ms')
+    .orderBy(['labels', 'asc'], ['timestamp_ms', 'asc'])
+  return rateC.with(rateA, new Sql.With('rate_b', rateB))
 }
 
 module.exports.genericRate = genericRate
@@ -79,11 +67,12 @@ module.exports.genericRate = genericRate
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.rateStream = (token, query) => {
   const duration = getDuration(token, query)
+  query.limit(undefined, undefined)
   return applyViaStream(token, query, (sum) => {
     sum = sum || 0
     ++sum
@@ -94,8 +83,8 @@ module.exports.rateStream = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.countOverTimeStream = (token, query) => {
   return applyViaStream(token, query, (sum) => {
@@ -108,11 +97,11 @@ module.exports.countOverTimeStream = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.bytesRateStream = (token, query) => {
-  const duration = getDuration(token, query)
+  const duration = getDuration(token)
   return applyViaStream(token, query, (sum, entry) => {
     sum = sum || 0
     sum += entry.string.length
@@ -123,8 +112,8 @@ module.exports.bytesRateStream = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.bytesOverTimeStream = (token, query) => {
   return applyViaStream(token, query, (sum, entry) => {
@@ -137,8 +126,8 @@ module.exports.bytesOverTimeStream = (token, query) => {
 /**
  *
  * @param token {Token}
- * @param query {registry_types.Request}
- * @returns {registry_types.Request}
+ * @param query {Select}
+ * @returns {Select}
  */
 module.exports.bytesOverTimeStream = (token, query) => {
   throw new Error('Not Implemented')
