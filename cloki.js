@@ -23,7 +23,7 @@ const path = require("path");
 const protoBuff = require('protocol-buffers')
 const messages = protoBuff(fs.readFileSync('lib/loki.proto'))
 const protobufjs = require("protobufjs");
-const WriteRequest = protobufjs.loadSync(path.join(__dirname, "trace.proto")).lookupType("WriteRequest");
+const WriteRequest = protobufjs.loadSync(path.join(__dirname, "lib/prompb.proto")).lookupType("WriteRequest");
 
 /* Alerting */
 const { startAlerting, stop } = require('./lib/db/alerting')
