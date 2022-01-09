@@ -19,6 +19,7 @@ const UTILS = require('./lib/utils')
 
 /* ProtoBuf Helpers */
 const fs = require('fs')
+const path = require("path");
 const protoBuff = require('protocol-buffers')
 const messages = protoBuff(fs.readFileSync('lib/loki.proto'))
 const protobufjs = require("protobufjs");
