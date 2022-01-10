@@ -412,6 +412,7 @@ it('e2e', async () => {
     0.05)
   expect(resp.data.data.result.length > 0).toBeTruthy()
   await checkAlertConfig()
+  await testTempo()
 })
 
 const checkAlertConfig = async () => {
@@ -451,4 +452,49 @@ const checkAlertConfig = async () => {
     await axios.delete('http://localhost:3100/api/prom/rules/test_ns').catch(console.log)
     throw e
   }
+}
+
+const testTempo = async function () {
+  // tempo test
+  const start = Math.floor((Date.now() - 60 * 1000 * 10) / 60 / 1000) * 60 * 1000
+  const end = Math.floor(Date.now() / 60 / 1000) * 60 * 1000
+  // Send Tempo data and expect status code 200
+  const obj = {
+    id: '1234er4',
+    traceId: 'd6e9329d67b6146c',
+    timestamp: '1641849742557382',
+    duration: 1000,
+    name: 'span from http',
+    tags: {
+      'http.method': 'GET',
+      'http.path': '/api'
+    },
+    localEndpoint: {
+      serviceName: 'node script'
+    }
+  }
+
+  const arr = []
+  arr.push(obj)
+
+  const data = JSON.stringify(arr)
+
+  const url = clokiLocal + '/tempo/api/push'
+
+  expect(await axios({
+    method: 'POST',
+    url: url,
+    data: data,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })).toHaveProperty('statusCode', 200)
+
+  console.log('Tempo Insertion Successful')
+  // Query data and confirm it's there
+
+  const req = '{type="tempo"}'
+  expect(
+    await axios.get(`http://${clokiLocal}/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=${encodeURIComponent(req)}&start=${start}000000&end=${end}000000&step=2`)
+  ).toHaveProperty('results', {})
 }
