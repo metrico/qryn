@@ -171,6 +171,8 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | FASTIFY_BODYLIMIT | 5242880   | API Maximum payload size in bytes |
 | FASTIFY_REQUESTTIMEOUT | 0 | API Maximum Request Timeout in ms |
 | FASTIFY_MAXREQUESTS | 0 | API Maximum Requests per socket |
+| TEMPO_SPAN | 24 | Default span for Tempo queries in hours |
+| TEMPO_TAGTRACE | false | Optional tagging of TraceID (expensive) |
 | DEBUG  			| false  	    | Debug Mode  		|
 
 
