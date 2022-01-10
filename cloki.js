@@ -121,7 +121,8 @@ try {
       // Prometheus Protobuf Write Handler
       if (req.url == '/api/v1/prom/remote/write') {
           let _data = await snappy.uncompress(body)
-          return WriteRequest.decode(snappy.uncompress(_data))
+          _data = WriteRequest.decode(_data)
+          return _data;
       // Loki Protobuf Push Handler
       } else {
         let _data = await snappy.uncompress(body)
