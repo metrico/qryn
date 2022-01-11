@@ -43,8 +43,10 @@ this.instantQueryScan = DATABASE.instantQueryScan
 this.scanMetricFingerprints = DATABASE.scanMetricFingerprints
 this.scanClickhouse = DATABASE.scanClickhouse;
 (async () => {
-  if (!this.readonly) await init(process.env.CLICKHOUSE_DB || 'cloki')
-  await startAlerting()
+  if (!this.readonly) {
+    await init(process.env.CLICKHOUSE_DB || 'cloki')
+    await startAlerting()
+  }
 })().catch((err) => {
   console.log(err)
   process.exit(1)
