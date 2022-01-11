@@ -119,6 +119,8 @@ At database level, Tempo Spans/Traces are stored as tagged Logs and are accessib
 
 ### Setup
 
+Check out the [Wiki](https://github.com/lmangani/cLoki/wiki) for detailed instructions or choose a quick method:
+
 ##### :busstop: GIT (Manual)
 Clone this repository, install with `npm`and run using `nodejs` 14.x *(or higher)*
 ```bash
@@ -180,7 +182,7 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 
 ##### Project Status
 
-Consult the [Wiki](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries) for a detailed list of supported features and [API functions](https://github.com/lmangani/cLoki/wiki/HTTP-API)
+Consult the [Wiki](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries) for a detailed list of supported features, [changelog](https://github.com/lmangani/cLoki/wiki/Changelog) and [API functionality](https://github.com/lmangani/cLoki/wiki/HTTP-API)
 
 --------------
 
