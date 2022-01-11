@@ -40,7 +40,10 @@ const init = DATABASE.init
 this.reloadFingerprints = DATABASE.reloadFingerprints
 this.scanFingerprints = DATABASE.scanFingerprints
 this.instantQueryScan = DATABASE.instantQueryScan
+this.tempoQueryScan = DATABASE.tempoQueryScan
 this.scanMetricFingerprints = DATABASE.scanMetricFingerprints
+this.tempoQueryScan = DATABASE.tempoQueryScan
+if (!this.readonly) init(process.env.CLICKHOUSE_DB || 'cloki')
 this.scanClickhouse = DATABASE.scanClickhouse;
 (async () => {
   if (!this.readonly) {
@@ -135,17 +138,19 @@ try {
   console.log('Protobuf ingesting is unsupported')
 }
 
-fastify.addContentTypeParser('*', function (request, payload, done) {
-  if (request.headers['content-type']) {
-    done(payload)
-    return
+/* Null content-type handler for CH-MV HTTP PUSH */
+fastify.addContentTypeParser('*', {
+  parseAs: 'string'
+}, function (req, body, done) {
+  try {
+    const json = JSON.parse(body)
+    done(null, json)
+  } catch (err) {
+    err.statusCode = 400
+    done(err, undefined)
   }
-  let data = ''
-  payload.on('data', chunk => { data += chunk })
-  payload.on('end', () => {
-    done(null, data)
-  })
 })
+
 /* 404 Handler */
 const handler404 = require('./lib/handlers/404.js').bind(this)
 fastify.setNotFoundHandler(handler404)
@@ -159,6 +164,26 @@ fastify.get('/ready', handlerHello)
 /* Write Handler */
 const handlerPush = require('./lib/handlers/push.js').bind(this)
 fastify.post('/loki/api/v1/push', handlerPush)
+
+/* Tempo Write Handler */
+this.tempo_tagtrace = process.env.TEMPO_TAGTRACE || false
+const handlerTempoPush = require('./lib/handlers/tempo_push.js').bind(this)
+fastify.post('/tempo/api/push', handlerTempoPush)
+fastify.post('/api/v2/spans', handlerTempoPush)
+
+/* Tempo Traces Query Handler */
+this.tempo_span = process.env.TEMPO_SPAN || 24
+const handlerTempoTraces = require('./lib/handlers/tempo_traces.js').bind(this)
+fastify.get('/api/traces/:traceId', handlerTempoTraces)
+fastify.get('/api/traces/:traceId/:json', handlerTempoTraces)
+
+/* Tempo Tag Handlers */
+const handlerTempoLabel = require('./lib/handlers/tags.js').bind(this)
+fastify.get('/api/search/tags', handlerTempoLabel)
+
+/* Tempo Tag Value Handler */
+const handlerTempoLabelValues = require('./lib/handlers/tags_values.js').bind(this)
+fastify.get('/api/search/tag/:name/values', handlerTempoLabelValues)
 
 /* Telegraf HTTP Bulk handler */
 const handlerTelegraf = require('./lib/handlers/telegraf.js').bind(this)
