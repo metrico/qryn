@@ -173,6 +173,7 @@ fastify.post('/api/v2/spans', handlerTempoPush)
 this.tempo_span = process.env.TEMPO_SPAN || 24
 const handlerTempoTraces = require('./lib/handlers/tempo_traces.js').bind(this)
 fastify.get('/api/traces/:traceId', handlerTempoTraces)
+fastify.get('/api/traces/:traceId/:json', handlerTempoTraces)
 
 /* Tempo Tag Handlers */
 const handlerTempoLabel = require('./lib/handlers/tags.js').bind(this)
