@@ -46,8 +46,10 @@ this.tempoQueryScan = DATABASE.tempoQueryScan
 if (!this.readonly) init(process.env.CLICKHOUSE_DB || 'cloki')
 this.scanClickhouse = DATABASE.scanClickhouse;
 (async () => {
-  if (!this.readonly) await init(process.env.CLICKHOUSE_DB || 'cloki')
-  await startAlerting()
+  if (!this.readonly) {
+    await init(process.env.CLICKHOUSE_DB || 'cloki')
+    await startAlerting()
+  }
 })().catch((err) => {
   console.log(err)
   process.exit(1)
