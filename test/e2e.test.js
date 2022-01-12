@@ -1,6 +1,7 @@
 const { createPoints, sendPoints } = require('./common')
 const axios = require('axios')
 const { WebSocket } = require('ws')
+const yaml = require('yaml')
 // const pb = require("protobufjs");
 const e2e = () => process.env.INTEGRATION_E2E || process.env.INTEGRATION
 const clokiLocal = () => process.env.CLOKI_LOCAL || process.env.CLOKI_EXT_URL || false
@@ -268,7 +269,6 @@ it('e2e', async () => {
   resp = await runRequest(`first_over_time({test_id="${testID}", freq="0.5"} | regexp "^[^0-9]+(?<e>[0-9]+)$" | unwrap e [1s]) by(test_id)`, 1)
   adjustMatrixResult(resp, testID)
   expect(resp.data).toMatchSnapshot()
-
   const ws = new WebSocket(`ws://${clokiExtUrl}/loki/api/v1/tail?query={test_id="${testID}_ws"}`)
   resp = {
     data: {
@@ -408,4 +408,89 @@ it('e2e', async () => {
   adjustResult(resp, testID)
   expect(resp.data).toMatchSnapshot()
   process.env.LINE_FMT = 'handlebars'
+  resp = await runRequest(`rate({test_id="${testID}_json"} | json int_val="int_val" | unwrap int_val [1m]) by (test_id)`,
+    0.05)
+  expect(resp.data.data.result.length > 0).toBeTruthy()
+  await checkAlertConfig()
+  await checkTempo ()
 })
+
+const checkAlertConfig = async () => {
+  try {
+    expect(await axios({
+      method: 'POST',
+      url: 'http://localhost:3100/api/prom/rules/test_ns',
+      data: yaml.stringify({
+        name: 'test_group',
+        interval: '1s',
+        rules: [{
+          alert: 'test_rul',
+          for: '1m',
+          annotations: { summary: 'ssssss' },
+          labels: { lllll: 'vvvvv' },
+          expr: '{test_id="alert_test"}'
+        }]
+      }),
+      headers: {
+        'Content-Type': 'application/yaml'
+      }
+    })).toHaveProperty('data', { msg: 'ok' })
+    expect(yaml.parse((await axios.get('http://localhost:3100/api/prom/rules')).data))
+      .toHaveProperty('test_ns', [{
+        name: 'test_group',
+        interval: '1s',
+        rules: [{
+          alert: 'test_rul',
+          for: '1m',
+          annotations: { summary: 'ssssss' },
+          labels: { lllll: 'vvvvv' },
+          expr: '{test_id="alert_test"}'
+        }]
+      }])
+    await axios.delete('http://localhost:3100/api/prom/rules/test_ns').catch(console.log)
+  } catch (e) {
+    await axios.delete('http://localhost:3100/api/prom/rules/test_ns').catch(console.log)
+    throw e
+  }
+}
+
+const checkTempo = async () => {
+  // Send Tempo data and expect status code 200
+  const obj = {
+    id: '1234er4',
+    traceId: 'd6e9329d67b6146c',
+    timestamp: 1641849742557382,
+    duration: 1000,
+    name: 'span from http',
+    tags: {
+      'http.method': 'GET',
+      'http.path': '/api'
+    },
+    localEndpoint: {
+      serviceName: 'node script'
+    }
+  }
+
+  const arr = []
+  arr.push(obj)
+
+  const data = JSON.stringify(arr)
+
+  const clokiExtUrl = process.env.CLOKI_EXT_URL || 'localhost:3100'
+  const url = `http://${clokiExtUrl}/tempo/api/push`
+  console.log(url)
+
+  const test = await axios.post(url, data)
+
+  expect(test).toHaveProperty('status', 204)
+  console.log('Tempo Insertion Successful')
+  // Query data and confirm it's there
+  await new Promise(resolve => setTimeout(resolve, 5000))
+
+  const res = await axios.get(`http://${clokiExtUrl}/api/traces/d6e9329d67b6146c/json`)
+  const validation = res.data
+  // console.log('test', validation, validation['resourceSpans'][0]['instrumentationLibrarySpans'][0]['spans'][0]['spanID'])
+  const id = validation['resourceSpans'][0]['instrumentationLibrarySpans'][0]['spans'][0]['spanID']
+  console.log('Checking Tempo API Reading inserted data')
+  expect(id).toMatch('1234er4')
+}

@@ -1,4 +1,5 @@
-const { getDuration, concatLabels, applyViaStream } = require('../common')
+const { getDuration, concatLabels, timeShiftViaStream } = require('../common')
+const _applyViaStream = require('../common').applyViaStream
 const Sql = require('@cloki/clickhouse-sql')
 /**
  *
@@ -14,6 +15,19 @@ function builder (viaRequest, viaStream) {
     viaRequest: viaRequest,
     viaStream: viaStream
   }
+}
+
+/**
+ *
+ * @param token {Token}
+ * @param query {Select}
+ * @param counterFn {function(any, any, number): any}
+ * @param summarizeFn {function(any): number}
+ * @param lastValue {boolean} if the applier should take the latest value in step (if step > duration)
+ * @param byWithoutName {string} name of the by_without token
+*/
+const applyViaStream = (token, query, counterFn, summarizeFn, lastValue, byWithoutName) => {
+  return _applyViaStream(token, timeShiftViaStream(token, query), counterFn, summarizeFn, lastValue, byWithoutName)
 }
 
 /**
@@ -52,43 +66,43 @@ function applyViaRequest (token, query, valueExpr, lastValue) {
   const duration = getDuration(token, query)
   query.ctx.matrix = true
   query.ctx.duration = duration
+  query.limit(undefined, undefined)
   const step = query.ctx.step
-  if (step > duration) {
-    query.where(Sql.Lt(new Sql.Raw(`intDiv(timestamp_ms, ${duration}) * ${duration} % ${step}`), duration))
+  const tsMoveParam = new Sql.Parameter('timestamp_shift')
+  query.addParam(tsMoveParam)
+  const tsGroupingExpr = new Sql.Raw('')
+  tsGroupingExpr.toString = () => {
+    if (!tsMoveParam.get()) {
+      return `intDiv(timestamp_ms, ${duration}) * ${duration}`
+    }
+    return `intDiv(timestamp_ms - ${tsMoveParam.toString()}, ${duration}) * ${duration} + ${tsMoveParam.toString()}`
   }
   const uwRateA = new Sql.With('uw_rate_a', query)
-  /**
-     *
-     * @type {Select}
-     */
   const groupingQuery = (new Sql.Select())
     .select(
       [labels, 'labels'],
-      [valueExpr, 'value']
+      [valueExpr, 'value'],
+      [tsGroupingExpr, 'timestamp_ms']
     ).from(new Sql.WithReference(uwRateA))
     .groupBy('labels', 'timestamp_ms')
     .orderBy('labels', 'timestamp_ms')
-  groupingQuery.with(uwRateA)
   if (step <= duration) {
-    return groupingQuery.select(
-      [new Sql.Raw(`intDiv(timestamp_ms, ${duration}) * ${duration}`), 'timestamp_ms']
-    )
+    return groupingQuery.with(uwRateA)
   }
-
-  groupingQuery
-    .select(
-      [
-        new Sql.Raw(`intDiv(intDiv(timestamp_ms, ${duration}) * ${duration}, ${step}) * ${step}`),
-        'timestamp_ms'
-      ]
+  const groupingQueryWith = new Sql.With('uw_rate_b', groupingQuery)
+  return (new Sql.Select())
+    .with(uwRateA, groupingQueryWith)
+    .select('labels',
+      [new Sql.Raw(`intDiv(timestamp_ms, ${step}) * ${step}`), 'timestamp_ms'],
+      [new Sql.Raw('argMin(uw_rate_b.value, uw_rate_b.timestamp_ms)'), 'value']
     )
-    .having(Sql.Ne('timestamp_ms', 0))
-
-  return groupingQuery
+    .from(new Sql.WithReference(groupingQueryWith))
+    .groupBy('labels', 'timestamp_ms')
+    .orderBy(['labels', 'asc'], ['timestamp_ms', 'asc'])
 }
 
 module.exports = {
-  applyViaStream: applyViaStream,
+  applyViaStream: _applyViaStream,
   rate: builder((token, query) => {
     const duration = getDuration(token, query)
     return applyViaRequest(token, query, `SUM(unwrapped) / ${duration / 1000}`)
