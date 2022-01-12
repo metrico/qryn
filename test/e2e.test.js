@@ -485,7 +485,7 @@ const checkTempo = async () => {
   expect(test).toHaveProperty('status', 204)
   console.log('Tempo Insertion Successful')
   // Query data and confirm it's there
-  await new Promise(resolve => setTimeout(resolve, 5000))
+  await new Promise(resolve => setTimeout(resolve, 6000)) // CI is slow
 
   const res = await axios.get(`http://${clokiExtUrl}/api/traces/d6e9329d67b6146c/json`)
   const validation = res.data
