@@ -454,12 +454,13 @@ const checkAlertConfig = async () => {
   }
 }
 
+const tsNow = parseInt(Date.now() * 1000);
 const checkTempo = async () => {
   // Send Tempo data and expect status code 200
   const obj = {
     id: '1234er4',
     traceId: 'd6e9329d67b6146c',
-    timestamp: 1641849742557382,
+    timestamp: tsNow,
     duration: 1000,
     name: 'span from http',
     tags: {
@@ -485,11 +486,10 @@ const checkTempo = async () => {
   expect(test).toHaveProperty('status', 204)
   console.log('Tempo Insertion Successful')
   // Query data and confirm it's there
-  await new Promise(resolve => setTimeout(resolve, 5000))
+  await new Promise(resolve => setTimeout(resolve, 5000)) // CI is slow
 
   const res = await axios.get(`http://${clokiExtUrl}/api/traces/d6e9329d67b6146c/json`)
   const validation = res.data
-  // console.log('test', validation, validation['resourceSpans'][0]['instrumentationLibrarySpans'][0]['spans'][0]['spanID'])
   const id = validation['resourceSpans'][0]['instrumentationLibrarySpans'][0]['spans'][0]['spanID']
   console.log('Checking Tempo API Reading inserted data')
   expect(id).toMatch('1234er4')
