@@ -19,11 +19,11 @@ const UTILS = require('./lib/utils')
 
 /* ProtoBuf Helpers */
 const fs = require('fs')
-const path = require("path");
+const path = require('path')
 const protoBuff = require('protocol-buffers')
 const messages = protoBuff(fs.readFileSync('lib/loki.proto'))
-const protobufjs = require("protobufjs");
-const WriteRequest = protobufjs.loadSync(path.join(__dirname, "lib/prompb.proto")).lookupType("WriteRequest");
+const protobufjs = require('protobufjs')
+const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib/prompb.proto')).lookupType('WriteRequest')
 
 /* Alerting */
 const { startAlerting, stop } = require('./lib/db/alerting')
@@ -124,10 +124,20 @@ try {
   fastify.addContentTypeParser('application/x-protobuf', { parseAs: 'buffer' },
     async function (req, body, done) {
       // Prometheus Protobuf Write Handler
-      if (req.url == '/api/v1/prom/remote/write') {
-          let _data = await snappy.uncompress(body)
-          _data = WriteRequest.decode(_data)
-          return _data;
+      if (req.url === '/api/v1/prom/remote/write') {
+        let _data = await snappy.uncompress(body)
+        _data = WriteRequest.decode(_data)
+        _data.timeseries = _data.timeseries.map(s => ({
+          ...s,
+          samples: s.samples.map(e => {
+            const millis = parseInt(e.timestamp.toNumber())
+            return {
+              ...e,
+              timestamp: millis
+            }
+          })
+        }))
+        return _data
       // Loki Protobuf Push Handler
       } else {
         let _data = await snappy.uncompress(body)
