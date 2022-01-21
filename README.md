@@ -19,9 +19,9 @@ Natively supports [Grafana](http://docs.grafana.org/features/explore/) and any [
 
 ### Project Background
 
-The *Loki API* and its Grafana native integration are brilliant, simple and appealing - but we just love **Clickhouse**. 
+The *Loki API* and its Grafana native integration are brilliant, simple and appealing - but we just love **ClickHouse**. 
 
-**cLoki** implements the same API functionality as Loki, buffered by a fast bulking **LRU** sitting on top of **Clickhouse** tables and relying on its *columnar search and insert performance alongside solid distribution and clustering capabilities* for stored data. Just like Loki, cLoki does not parse or index incoming logs, but rather groups log streams using the same label system as Prometheus. 
+**cLoki** implements the same API functionality as Loki, buffered by a fast bulking **LRU** sitting on top of **ClickHouse** tables and relying on its *columnar search and insert performance alongside solid distribution and clustering capabilities* for stored data. Just like Loki, cLoki does not parse or index incoming logs, but rather groups log streams using the same label system as Prometheus. 
 
 <img src="https://user-images.githubusercontent.com/1423657/54091852-5ce91000-4385-11e9-849d-998c1e5d3243.png" width=700 />
 
@@ -57,7 +57,7 @@ Our _preferred_ companion for parsing and shipping log streams to **cLoki** is [
 
 ### :fire: CliQL: Experimental 2.0 Features
 
-cLoki implements custom query functions for clickhouse timeseries extraction, allowing direct access to any existing table
+cLoki implements custom query functions for ClickHouse timeseries extraction, allowing direct access to any existing table
 
 ![ezgif com-gif-maker](https://user-images.githubusercontent.com/1423657/99530591-d0885080-29a1-11eb-87e6-870a046fb4de.gif)
 
@@ -76,7 +76,7 @@ Convert columns to tagged timeseries using the emulated loki 2.0 query format
 <b>sum</b> by (<b>ruri_user, from_user</b>) (rate(<b>duration</b>[<b>300</b>])) from <b>my_database.my_table</b> where <b>duration > 10</b>
 </pre>
 
-#### Clickhouse
+#### ClickHouse
 Convert columns to tagged timeseries using the experimental `clickhouse` function
 #### Example
 <pre>
@@ -102,8 +102,24 @@ clickhouse({
 |timefield| time/date field name (optional) |
 
 
+--------
+
+### :fire: Tempo: Supported Features
+
+**cLoki Pulse** offers experimental support for the Grafana [Tempo API](https://github.com/lmangani/cLoki/wiki/Tempo-Tracing) providing span ingestion and querying
+
+At database level, Tempo Spans/Traces are stored as tagged Logs and are accessible from both LogQL and Tempo APIs
+
+<img src="https://user-images.githubusercontent.com/1423657/147878090-a7630467-433e-4912-a439-602ce719c21d.png" width=700 />
+
 ------------
+
+
+
+
 ### Setup
+
+Check out the [Wiki](https://github.com/lmangani/cLoki/wiki) for detailed instructions or choose a quick method:
 
 ##### :busstop: GIT (Manual)
 Clone this repository, install with `npm`and run using `nodejs` 14.x *(or higher)*
@@ -157,27 +173,16 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | FASTIFY_BODYLIMIT | 5242880   | API Maximum payload size in bytes |
 | FASTIFY_REQUESTTIMEOUT | 0 | API Maximum Request Timeout in ms |
 | FASTIFY_MAXREQUESTS | 0 | API Maximum Requests per socket |
+| TEMPO_SPAN | 24 | Default span for Tempo queries in hours |
+| TEMPO_TAGTRACE | false | Optional tagging of TraceID (expensive) |
 | DEBUG  			| false  	    | Debug Mode  		|
 
 
 ------------
 
-### Project Status
+##### Project Status
 
-##### API
-
-Loki API Functions are loosely implemented as documented by the [Loki API](https://github.com/grafana/loki/blob/master/docs/api.md) reference.
-
-* [x] /loki/api/v1/push
-* [x] /loki/api/v1/query
-* [x] /loki/api/v1/query_range
-* [x] /loki/api/v1/label
-* [x] /loki/api/v1/label/_name_/values
-* [x] /loki/api/v1/tail
-
-##### Status
-
-Consult the [Wiki](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries) for a detailed list of supported features
+Consult the [Wiki](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries) for a detailed list of supported features, [changelog](https://github.com/lmangani/cLoki/wiki/Changelog) and [API functionality](https://github.com/lmangani/cLoki/wiki/HTTP-API)
 
 --------------
 

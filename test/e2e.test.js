@@ -412,6 +412,7 @@ it('e2e', async () => {
     0.05)
   expect(resp.data.data.result.length > 0).toBeTruthy()
   await checkAlertConfig()
+  await checkTempo ()
 })
 
 const checkAlertConfig = async () => {
@@ -451,4 +452,45 @@ const checkAlertConfig = async () => {
     await axios.delete('http://localhost:3100/api/prom/rules/test_ns').catch(console.log)
     throw e
   }
+}
+
+const tsNow = parseInt(Date.now() * 1000);
+const checkTempo = async () => {
+  // Send Tempo data and expect status code 200
+  const obj = {
+    id: '1234er4',
+    traceId: 'd6e9329d67b6146c',
+    timestamp: tsNow,
+    duration: 1000,
+    name: 'span from http',
+    tags: {
+      'http.method': 'GET',
+      'http.path': '/api'
+    },
+    localEndpoint: {
+      serviceName: 'node script'
+    }
+  }
+
+  const arr = []
+  arr.push(obj)
+
+  const data = JSON.stringify(arr)
+
+  const clokiExtUrl = process.env.CLOKI_EXT_URL || 'localhost:3100'
+  const url = `http://${clokiExtUrl}/tempo/api/push`
+  console.log(url)
+
+  const test = await axios.post(url, data)
+
+  expect(test).toHaveProperty('status', 204)
+  console.log('Tempo Insertion Successful')
+  // Query data and confirm it's there
+  await new Promise(resolve => setTimeout(resolve, 5000)) // CI is slow
+
+  const res = await axios.get(`http://${clokiExtUrl}/api/traces/d6e9329d67b6146c/json`)
+  const validation = res.data
+  const id = validation['resourceSpans'][0]['instrumentationLibrarySpans'][0]['spans'][0]['spanID']
+  console.log('Checking Tempo API Reading inserted data')
+  expect(id).toMatch('1234er4')
 }
