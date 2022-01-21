@@ -1,0 +1,68 @@
+syntax = "proto3";
+package prometheus;
+
+option go_package = "prompb";
+
+message WriteRequest {
+  repeated prometheus.TimeSeries timeseries = 1;
+}
+
+message ReadRequest {
+  repeated Query queries = 1;
+}
+
+message ReadResponse {
+  // In same order as the request's queries.
+  repeated QueryResult results = 1;
+}
+
+message Query {
+  int64 start_timestamp_ms = 1;
+  int64 end_timestamp_ms = 2;
+  repeated prometheus.LabelMatcher matchers = 3;
+  prometheus.ReadHints hints = 4;
+}
+
+message QueryResult {
+  // Samples within a time series must be ordered by time.
+  repeated prometheus.TimeSeries timeseries = 1;
+}
+
+message Sample {
+  double value    = 1;
+  int64 timestamp = 2;
+}
+
+message TimeSeries {
+  repeated Label labels   = 1;
+  repeated Sample samples = 2;
+}
+
+message Label {
+  string name  = 1;
+  string value = 2;
+}
+
+message Labels {
+  repeated Label labels = 1;
+}
+
+// Matcher specifies a rule, which can match or set of labels or not.
+message LabelMatcher {
+  enum Type {
+    EQ  = 0;
+    NEQ = 1;
+    RE  = 2;
+    NRE = 3;
+  }
+  Type type    = 1;
+  string name  = 2;
+  string value = 3;
+}
+
+message ReadHints {
+  int64 step_ms = 1;  // Query step size in milliseconds.
+  string func = 2;    // String representation of surrounding function or aggregation.
+  int64 start_ms = 3; // Start time in milliseconds.
+  int64 end_ms = 4;   // End time in milliseconds.
+}
