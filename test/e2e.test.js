@@ -1,4 +1,4 @@
-const { createPoints, sendPoints } = require('./common')
+const { createPoints, sendPoints, orgidHdr } = require('./common')
 const axios = require('axios')
 const { WebSocket } = require('ws')
 const yaml = require('yaml')
@@ -45,6 +45,13 @@ afterAll(() => {
 
 jest.setTimeout(300000)
 
+const runLokiRequest = (req, _step, _start, _end, url, orgid) => {
+  return axios.get(
+    `http://${url}/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=${encodeURIComponent(req)}&start=${_start}000000&end=${_end}000000&step=${_step}`,
+    { headers: orgidHdr({}, orgid) }
+  )
+}
+
 it('e2e', async () => {
   if (!e2e()) {
     return
@@ -87,12 +94,7 @@ it('e2e', async () => {
     })
   }
   const runRequest = (req, _step, _start, _end) => {
-    _start = _start || start
-    _end = _end || end
-    _step = _step || 2
-    return axios.get(
-            `http://${clokiExtUrl}/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=${encodeURIComponent(req)}&start=${_start}000000&end=${_end}000000&step=${_step}`
-    )
+    return runLokiRequest(req, _step || 2, _start || start, _end || end, clokiExtUrl)
   }
   const adjustMatrixResult = (resp, id) => {
     id = id || testID
@@ -412,7 +414,8 @@ it('e2e', async () => {
     0.05)
   expect(resp.data.data.result.length > 0).toBeTruthy()
   await checkAlertConfig()
-  await checkTempo ()
+  await checkTempo()
+  await testMultitenancy(testID)
 })
 
 const checkAlertConfig = async () => {
@@ -454,7 +457,7 @@ const checkAlertConfig = async () => {
   }
 }
 
-const tsNow = parseInt(Date.now() * 1000);
+const tsNow = parseInt(Date.now() * 1000)
 const checkTempo = async () => {
   // Send Tempo data and expect status code 200
   const obj = {
@@ -490,7 +493,34 @@ const checkTempo = async () => {
 
   const res = await axios.get(`http://${clokiExtUrl}/api/traces/d6e9329d67b6146c/json`)
   const validation = res.data
-  const id = validation['resourceSpans'][0]['instrumentationLibrarySpans'][0]['spans'][0]['spanID']
+  const id = validation.resourceSpans[0].instrumentationLibrarySpans[0].spans[0].spanID
   console.log('Checking Tempo API Reading inserted data')
   expect(id).toMatch('1234er4')
+}
+
+/**
+ *
+ * @param testid {string}
+ * @returns {Promise<void>}
+ */
+const testMultitenancy = async (testid) => {
+  if (process.env.CLOKI_EXT_URL) {
+    return
+  }
+  const dbClient = require('../lib/db/clickhouse')
+  const url = new URL(dbClient.getClickhouseUrl().toString())
+  url.searchParams.delete('database')
+  await l.addTenant('org1', url.toString(), 'db1', 7, 7)
+  const points = createPoints(testid + '_mt', 1, Date.now(), Date.now() + 1000, {}, {})
+  await sendPoints('http://localhost:3100', points, 'org1')
+  await new Promise(resolve => setTimeout(resolve, 3000))
+  let res = await runLokiRequest(`{test_id="${testid}"}`, 2, Date.now() - 10 * 60000, Date.now(),
+    'localhost:3100', 'org1')
+  expect(res.data.data.result).toEqual([])
+  res = await runLokiRequest(`{test_id="${testid}_mt"}`, 2, Date.now() - 10 * 60000, Date.now(),
+    'localhost:3100', 'org1')
+  expect(res.data.data.result.length).toEqual(1)
+  expect(res.data.data.result[0].stream).toEqual({ test_id: testid + '_mt', freq: '1' })
+  expect(res.data.data.result[0].values.length).toEqual(1)
+  expect(res.data.data.result[0].values[0][1]).toEqual('FREQ_TEST_0')
 }

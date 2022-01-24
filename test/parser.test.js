@@ -1,6 +1,12 @@
 const bnf = require('../parser/bnf')
 const regexp = require('../parser/registry/parser_registry/regexp')
 
+it('URL should remove query params', () => {
+  const url = new URL('http://localhost:2345/?dbname=db1&p2=p2')
+  url.searchParams.delete('dbname')
+  console.log(url.toString())
+})
+
 it('should compile', () => {
   let res = bnf.ParseScript('bytes_rate({run="kokoko",u_ru_ru!="lolol",zozo=~"sssss"}  |~"atltlt" !~   "rmrmrm" [5m])')
   expect(res.rootToken.Children('log_stream_selector_rule').map(c => c.value)).toEqual(

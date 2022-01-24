@@ -10,7 +10,7 @@ const unwrap = require('./registry/unwrap')
 const unwrapRegistry = require('./registry/unwrap_registry')
 const { durationToMs, sharedParamNames, getStream } = require('./registry/common')
 const compiler = require('./bnf')
-const { parseMs, DATABASE_NAME, samplesReadTableName, samplesTableName } = require('../lib/utils')
+const { parseMs, samplesReadTableName, samplesTableName } = require('../lib/utils')
 const { getPlg } = require('../plugins/engine')
 const Sql = require('@cloki/clickhouse-sql')
 
@@ -109,8 +109,8 @@ module.exports.transpile = (request) => {
     const op = token.Child('compared_agg_statement_cmp').Child('number_operator').value
     query = numberOperatorRegistry[op](token.Child('compared_agg_statement'), query)
   }
-  setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
-  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName}`)
+  setQueryParam(query, sharedParamNames.timeSeriesTable, 'time_series')
+  setQueryParam(query, sharedParamNames.samplesTable, samplesReadTableName)
   setQueryParam(query, sharedParamNames.from, start)
   setQueryParam(query, sharedParamNames.to, end)
 
@@ -157,8 +157,8 @@ module.exports.transpileTail = (request) => {
 
   let query = module.exports.initQuery()
   query = module.exports.transpileLogStreamSelector(expression.rootToken, query)
-  setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
-  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesTableName}`)
+  setQueryParam(query, sharedParamNames.timeSeriesTable, 'time_series')
+  setQueryParam(query, sharedParamNames.samplesTable, `${samplesTableName}`)
   setQueryParam(query, sharedParamNames.from, new Sql.Raw('(toUnixTimestamp(now()) - 5) * 1000'))
   query.order_expressions = []
   query.orderBy(['timestamp_ms', 'asc'])
@@ -196,8 +196,8 @@ module.exports.transpileSeries = (request) => {
     const _query = getQuery(req)
     query.orWhere(...(Array.isArray(_query.conditions) ? _query.conditions : [_query.conditions]))
   }
-  setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
-  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName}`)
+  setQueryParam(query, sharedParamNames.timeSeriesTable, 'time_series')
+  setQueryParam(query, sharedParamNames.samplesTable, `${samplesReadTableName}`)
   return query.toString()
 }
 

@@ -31,19 +31,29 @@ module.exports.createPoints = (id, frequencySec,
   return points
 }
 
+const orgidHdr = (hdrs, orgid) => {
+  if (!orgid) {
+    return hdrs
+  }
+  return { ...hdrs, 'x-scope-orgid': orgid }
+}
+
+module.exports.orgidHdr = orgidHdr
+
 /**
  *
  * @param points {Object<string, {stream: Object<string, string>, values: [string, string]}>}
  * @param endpoint {string}
+ * @param orgid {string | undefined}
  * @returns {Promise<void>}
  */
-module.exports.sendPoints = async (endpoint, points) => {
+module.exports.sendPoints = async (endpoint, points, orgid) => {
   try {
     console.log(`${endpoint}/loki/api/v1/push`)
     await axios.post(`${endpoint}/loki/api/v1/push`, {
       streams: Object.values(points)
     }, {
-      headers: { 'Content-Type': 'application/json' }
+      headers: orgidHdr({ 'Content-Type': 'application/json' }, orgid)
     })
   } catch (e) {
     console.log(e.response)

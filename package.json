@@ -33,7 +33,7 @@
     "axios": "^0.21.4",
     "bnf": "^1.0.1",
     "date-fns": "^2.27.0",
-    "fastify": "^3.25.1",
+    "fastify": "^3.27.0",
     "fastify-basic-auth": "^0.4.0",
     "fastify-static": "^4.5.0",
     "fastify-url-data": "^2.4.0",
@@ -52,7 +52,8 @@
     "short-hash": "^1.0.0",
     "snappyjs": "^0.6.1",
     "ws": "^8.4.0",
-    "yaml": "^1.10.2"
+    "yaml": "^1.10.2",
+    "yargs": "^17.3.1"
   },
   "devDependencies": {
     "casual": "^1.6.2",
