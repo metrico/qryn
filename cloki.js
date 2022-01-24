@@ -272,6 +272,7 @@ module.exports.stop = () => {
   DATABASE.stop()
   require('./parser/transpiler').stop()
   stop()
+  require('./lib/multitenancy').stop()
 }
 
 const { upgrade, rotate } = require('./lib/db/maintain')
