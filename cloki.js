@@ -17,11 +17,16 @@ require('./plugins/engine')
 const DATABASE = require('./lib/db/clickhouse')
 const UTILS = require('./lib/utils')
 
-/* ProtoBuf Helper */
+/* ProtoBuf Helpers */
 const fs = require('fs')
+const path = require('path')
 const protoBuff = require('protocol-buffers')
-const { startAlerting, stop } = require('./lib/db/alerting')
 const messages = protoBuff(fs.readFileSync('lib/loki.proto'))
+const protobufjs = require('protobufjs')
+const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib/prompb.proto')).lookupType('WriteRequest')
+
+/* Alerting */
+const { startAlerting, stop } = require('./lib/db/alerting')
 const yaml = require('yaml')
 const yargs = require('yargs/yargs')
 const CLokiClient = require('./lib/db/clickhouse').client
@@ -58,7 +63,6 @@ async function start () {
 
   /* Fastify Helper */
   fastify = require('fastify')({
-
     logger: false,
     bodyLimit: parseInt(process.env.FASTIFY_BODYLIMIT) || 5242880,
     requestTimeout: parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
@@ -124,19 +128,37 @@ async function start () {
     /* Protobuf Handler */
     fastify.addContentTypeParser('application/x-protobuf', { parseAs: 'buffer' },
       async function (req, body, done) {
-        let _data = await snappy.uncompress(body)
-        _data = messages.PushRequest.decode(_data)
-        _data.streams = _data.streams.map(s => ({
-          ...s,
-          entries: s.entries.map(e => {
-            const millis = Math.floor(e.timestamp.nanos / 1000000)
-            return {
-              ...e,
-              timestamp: e.timestamp.seconds * 1000 + millis
-            }
-          })
-        }))
-        return _data.streams
+        // Prometheus Protobuf Write Handler
+        if (req.url === '/api/v1/prom/remote/write') {
+          let _data = await snappy.uncompress(body)
+          _data = WriteRequest.decode(_data)
+          _data.timeseries = _data.timeseries.map(s => ({
+            ...s,
+            samples: s.samples.map(e => {
+              const millis = parseInt(e.timestamp.toNumber())
+              return {
+                ...e,
+                timestamp: millis
+              }
+            })
+          }))
+          return _data
+        // Loki Protobuf Push Handler
+        } else {
+          let _data = await snappy.uncompress(body)
+          _data = messages.PushRequest.decode(_data)
+          _data.streams = _data.streams.map(s => ({
+            ...s,
+            entries: s.entries.map(e => {
+              const millis = Math.floor(e.timestamp.nanos / 1000000)
+              return {
+                ...e,
+                timestamp: e.timestamp.seconds * 1000 + millis
+              }
+            })
+          }))
+          return _data.streams
+        }
       })
   } catch (e) {
     console.log(e)
@@ -226,6 +248,10 @@ async function start () {
   fastify.delete('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/del_group').bind(this))
   fastify.delete('/api/prom/rules/:ns', require('./lib/handlers/alerts/del_ns').bind(this))
   fastify.get('/prometheus/api/v1/rules', require('./lib/handlers/alerts/prom_get_rules').bind(this))
+
+  // PROMETHEUS REMOTE WRITE
+  fastify.post('/api/v1/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
+  fastify.post('/api/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
 
   // Run API Service
   fastify.listen(
