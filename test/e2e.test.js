@@ -1,6 +1,5 @@
 const { createPoints, sendPoints, orgidHdr } = require('./common')
 const axios = require('axios')
-const { WebSocket } = require('ws')
 const yaml = require('yaml')
 // const pb = require("protobufjs");
 const e2e = () => process.env.INTEGRATION_E2E || process.env.INTEGRATION
@@ -56,6 +55,8 @@ it('e2e', async () => {
   if (!e2e()) {
     return
   }
+  const orgName = `testorg_${Math.random()}`
+  await l.addTenant(orgName, orgName.replace('.', '_'), 7, 7)
   console.log('Waiting 2s before all inits')
   const clokiExtUrl = process.env.CLOKI_EXT_URL || 'localhost:3100'
   await new Promise(resolve => setTimeout(resolve, 2000))
@@ -81,7 +82,7 @@ it('e2e', async () => {
     { fmt: 'logfmt', lbl_repl: 'val_repl', int_lbl: '1' }, points,
     (i) => 'lbl_repl="REPL" int_val=1 new_lbl="new_val" str_id="' + i + '" '
   )
-  await sendPoints(`http://${clokiExtUrl}`, points)
+  await sendPoints(`http://${clokiExtUrl}`, points, orgName)
   await new Promise(resolve => setTimeout(resolve, 4000))
   const adjustResult = (resp, id, _start) => {
     _start = _start || start
@@ -94,7 +95,7 @@ it('e2e', async () => {
     })
   }
   const runRequest = (req, _step, _start, _end) => {
-    return runLokiRequest(req, _step || 2, _start || start, _end || end, clokiExtUrl)
+    return runLokiRequest(req, _step || 2, _start || start, _end || end, clokiExtUrl, orgName)
   }
   const adjustMatrixResult = (resp, id) => {
     id = id || testID
@@ -271,7 +272,10 @@ it('e2e', async () => {
   resp = await runRequest(`first_over_time({test_id="${testID}", freq="0.5"} | regexp "^[^0-9]+(?<e>[0-9]+)$" | unwrap e [1s]) by(test_id)`, 1)
   adjustMatrixResult(resp, testID)
   expect(resp.data).toMatchSnapshot()
-  const ws = new WebSocket(`ws://${clokiExtUrl}/loki/api/v1/tail?query={test_id="${testID}_ws"}`)
+
+  const ws = new (require('faye-websocket').Client)(`ws://${clokiExtUrl}/loki/api/v1/tail?query={test_id="${testID}_ws"}`, [], {
+    headers: { 'x-scope-orgid': orgName }
+  })
   resp = {
     data: {
       data: {
@@ -280,6 +284,8 @@ it('e2e', async () => {
     }
   }
   ws.on('message', (msg) => {
+    msg = msg.data
+    console.log(msg)
     const _msg = JSON.parse(msg)
     for (const stream of _msg.streams) {
       let _stream = resp.data.data.result.find(res =>
@@ -299,7 +305,7 @@ it('e2e', async () => {
   for (let i = 0; i < 5; i++) {
     const points = createPoints(testID + '_ws', 1, wsStart + i * 1000, wsStart + i * 1000 + 1000, {}, {},
       () => `MSG_${i}`)
-    sendPoints(`http://${clokiExtUrl}`, points)
+    sendPoints(`http://${clokiExtUrl}`, points, orgName)
     await new Promise(resolve => setTimeout(resolve, 1000))
   }
   await new Promise(resolve => setTimeout(resolve, 6000))
@@ -309,14 +315,16 @@ it('e2e', async () => {
   }
   adjustResult(resp, testID + '_ws', wsStart)
   expect(resp.data).toMatchSnapshot()
-  resp = await axios.get(`http://${clokiExtUrl}/loki/api/v1/series?match={test_id="${testID}"}&start=1636008723293000000&end=1636012323293000000`)
+  resp = await axios.get(`http://${clokiExtUrl}/loki/api/v1/series?match={test_id="${testID}"}&start=1636008723293000000&end=1636012323293000000`,
+    { headers: { 'x-scope-orgid': orgName } })
   resp.data.data = resp.data.data.map(l => {
     expect(l.test_id).toEqual(testID)
     return { ...l, test_id: 'TEST' }
   })
   resp.data.data.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
   expect(resp.data).toMatchSnapshot()
-  resp = await axios.get(`http://${clokiExtUrl}/loki/api/v1/series?match={test_id="${testID}"}&match={test_id="${testID}_json"}&start=1636008723293000000&end=1636012323293000000`)
+  resp = await axios.get(`http://${clokiExtUrl}/loki/api/v1/series?match={test_id="${testID}"}&match={test_id="${testID}_json"}&start=1636008723293000000&end=1636012323293000000`,
+    { headers: { 'x-scope-orgid': orgName } })
   resp.data.data = resp.data.data.map(l => {
     expect(l.test_id.startsWith(testID))
     return { ...l, test_id: l.test_id.replace(testID, 'TEST') }
@@ -413,12 +421,12 @@ it('e2e', async () => {
   resp = await runRequest(`rate({test_id="${testID}_json"} | json int_val="int_val" | unwrap int_val [1m]) by (test_id)`,
     0.05)
   expect(resp.data.data.result.length > 0).toBeTruthy()
-  await checkAlertConfig()
-  await checkTempo()
+  await checkAlertConfig(orgName)
+  await checkTempo(orgName)
   await testMultitenancy(testID)
 })
 
-const checkAlertConfig = async () => {
+const checkAlertConfig = async (orgid) => {
   try {
     expect(await axios({
       method: 'POST',
@@ -435,10 +443,13 @@ const checkAlertConfig = async () => {
         }]
       }),
       headers: {
-        'Content-Type': 'application/yaml'
+        'Content-Type': 'application/yaml',
+        'x-scope-orgid': orgid
       }
     })).toHaveProperty('data', { msg: 'ok' })
-    expect(yaml.parse((await axios.get('http://localhost:3100/api/prom/rules')).data))
+    expect(yaml.parse((await axios.get('http://localhost:3100/api/prom/rules', {
+      headers: { 'x-scope-orgid': orgid }
+    })).data))
       .toHaveProperty('test_ns', [{
         name: 'test_group',
         interval: '1s',
@@ -450,15 +461,19 @@ const checkAlertConfig = async () => {
           expr: '{test_id="alert_test"}'
         }]
       }])
-    await axios.delete('http://localhost:3100/api/prom/rules/test_ns').catch(console.log)
+    await axios.delete('http://localhost:3100/api/prom/rules/test_ns', {
+      headers: { 'x-scope-orgid': orgid }
+    }).catch(console.log)
   } catch (e) {
-    await axios.delete('http://localhost:3100/api/prom/rules/test_ns').catch(console.log)
+    await axios.delete('http://localhost:3100/api/prom/rules/test_ns', {
+      headers: { 'x-scope-orgid': orgid }
+    }).catch(console.log)
     throw e
   }
 }
 
 const tsNow = parseInt(Date.now() * 1000)
-const checkTempo = async () => {
+const checkTempo = async (orgid) => {
   // Send Tempo data and expect status code 200
   const obj = {
     id: '1234er4',
@@ -484,14 +499,16 @@ const checkTempo = async () => {
   const url = `http://${clokiExtUrl}/tempo/api/push`
   console.log(url)
 
-  const test = await axios.post(url, data)
+  const test = await axios.post(url, data, { headers: { 'x-scope-orgid': orgid } })
 
   expect(test).toHaveProperty('status', 204)
   console.log('Tempo Insertion Successful')
   // Query data and confirm it's there
   await new Promise(resolve => setTimeout(resolve, 5000)) // CI is slow
 
-  const res = await axios.get(`http://${clokiExtUrl}/api/traces/d6e9329d67b6146c/json`)
+  const res = await axios.get(`http://${clokiExtUrl}/api/traces/d6e9329d67b6146c/json`, {
+    headers: { 'x-scope-orgid': orgid }
+  })
   const validation = res.data
   const id = validation.resourceSpans[0].instrumentationLibrarySpans[0].spans[0].spanID
   console.log('Checking Tempo API Reading inserted data')
@@ -510,7 +527,7 @@ const testMultitenancy = async (testid) => {
   const dbClient = require('../lib/db/clickhouse')
   const url = new URL(dbClient.getClickhouseUrl().toString())
   url.searchParams.delete('database')
-  await l.addTenant('org1', url.toString(), 'db1', 7, 7)
+  await l.addTenant('org1', 'db1', 7, 7)
   const points = createPoints(testid + '_mt', 1, Date.now(), Date.now() + 1000, {}, {})
   await sendPoints('http://localhost:3100', points, 'org1')
   await new Promise(resolve => setTimeout(resolve, 3000))

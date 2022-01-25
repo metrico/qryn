@@ -2,9 +2,15 @@ const bnf = require('../parser/bnf')
 const regexp = require('../parser/registry/parser_registry/regexp')
 
 it('URL should remove query params', () => {
-  const url = new URL('http://localhost:2345/?dbname=db1&p2=p2')
+  const url = new URL('http://a:b@localhost:2345/ptptp?dbname=db1&p2=p2')
   url.searchParams.delete('dbname')
-  console.log(url.toString())
+  expect(url.toString()).toEqual('http://a:b@localhost:2345/ptptp?p2=p2')
+  expect(url.hostname).toEqual('localhost')
+  expect(url.port).toEqual('2345')
+  expect(url.protocol).toEqual('http:')
+  expect(url.username).toEqual('a')
+  expect(url.password).toEqual('b')
+  expect(url.pathname).toEqual('/ptptp')
 })
 
 it('should compile', () => {

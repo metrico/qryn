@@ -30,7 +30,7 @@ const { startAlerting, stop } = require('./lib/db/alerting')
 const yaml = require('yaml')
 const yargs = require('yargs/yargs')
 const CLokiClient = require('./lib/db/clickhouse').client
-const { getClient } = require('./lib/multitenancy')
+const { getClient, registerFastify } = require('./lib/multitenancy')
 const initMultitenancy = require('./lib/multitenancy').init
 let fastify = null
 
@@ -68,9 +68,7 @@ async function start () {
     requestTimeout: parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
     maxRequestsPerSocket: parseInt(process.env.FASTIFY_MAXREQUESTS) || 0
   })
-  fastify = fastify.decorateRequest('client', function () {
-    return getClient(this.headers ? this.headers['x-scope-orgid'] : undefined)
-  })
+  fastify = registerFastify(fastify)
 
   fastify.register(require('fastify-url-data'))
   fastify.register(require('fastify-websocket'))
@@ -299,16 +297,15 @@ async function upgradeAndRotate () {
 /**
  *
  * @param org {string}
- * @param url {string}
  * @param db {string}
  * @param rotateSamples {number}
  * @param rotateTS {number}
  * @param storagePolicy {string}
  * @returns {Promise<void>}
  */
-const addTenant = async (org, url, db, rotateSamples, rotateTS, storagePolicy) => {
+const addTenant = async (org, db, rotateSamples, rotateTS, storagePolicy) => {
   const mainClient = await getClient()
-  await mainClient.addTenant(org, url, db, rotateSamples, rotateTS)
+  await mainClient.addTenant(org, db, rotateSamples, rotateTS, storagePolicy)
   const tenantClient = await getClient(org)
   await upgrade([tenantClient])
   await rotate([{
@@ -352,7 +349,7 @@ yargs(process.argv.slice(2)).help().command('update-only', 'update and rotate sc
   }
 ).command('add-tenant', 'Add an orgid', {}, async (args) => {
   try {
-    for (const arg of ['url', 'db', 'org']) {
+    for (const arg of ['db', 'org']) {
       if (!args[arg]) {
         throw new Error(`--${arg} argument is required`)
       }
@@ -364,7 +361,7 @@ yargs(process.argv.slice(2)).help().command('update-only', 'update and rotate sc
     }
     const rotateSamples = parseInt(args.rotateSamplesDays || 7)
     const rotateTS = parseInt(args.rotateTimeSeriesDays || 7)
-    await addTenant(args.org, args.url, args.db, rotateSamples, rotateTS, args.storagePolicy || '')
+    await addTenant(args.org, args.db, rotateSamples, rotateTS, args.storagePolicy || '')
     process.exit(0)
   } catch (e) {
     console.log(e)
