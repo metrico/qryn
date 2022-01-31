@@ -28,6 +28,7 @@ const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib/prompb.proto'
 /* Alerting */
 const { startAlerting, stop } = require('./lib/db/alerting')
 const yaml = require('yaml')
+const { CLokiError } = require('./lib/handlers/errors')
 
 /* Fingerprinting */
 this.fingerPrint = UTILS.fingerPrint
@@ -48,22 +49,31 @@ this.instantQueryScan = DATABASE.instantQueryScan
 this.tempoQueryScan = DATABASE.tempoQueryScan
 this.scanMetricFingerprints = DATABASE.scanMetricFingerprints
 this.tempoQueryScan = DATABASE.tempoQueryScan
-if (!this.readonly) init(process.env.CLICKHOUSE_DB || 'cloki')
 this.scanClickhouse = DATABASE.scanClickhouse;
+let profiler = null;
 (async () => {
   if (!this.readonly) {
     await init(process.env.CLICKHOUSE_DB || 'cloki')
     await startAlerting()
+  }
+  if (!this.readonly && process.env.PROFILE) {
+    const tag = JSON.stringify({ profiler_id: process.env.PROFILE, label: 'RAM usage' })
+    const fp = this.fingerPrint(tag)
+    profiler = setInterval(() => {
+      this.bulk_labels.add([[new Date().toISOString().split('T')[0], fp, tag, '']])
+      this.bulk.add([[fp, Date.now(), process.memoryUsage().rss / 1024 / 1024, '']])
+    }, 1000)
   }
 })().catch((err) => {
   console.log(err)
   process.exit(1)
 })
 
+
+
 /* Fastify Helper */
 const fastify = require('fastify')({
   logger: false,
-  bodyLimit: parseInt(process.env.FASTIFY_BODYLIMIT) || 5242880,
   requestTimeout: parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
   maxRequestsPerSocket: parseInt(process.env.FASTIFY_MAXREQUESTS) || 0
 })
@@ -93,6 +103,48 @@ if (this.http_user && this.http_password) {
     fastify.addHook('preHandler', fastify.basicAuth)
   })
 }
+
+let onParse = 0
+const { EventEmitter } = require('events')
+const { database } = require('./lib/db/clickhouse')
+const { fingerPrint } = require('./lib/utils')
+const onParsed = new EventEmitter()
+setInterval(() => {
+  onParse = 0
+  onParsed.emit('parsed')
+}, 1000)
+
+fastify.addContentTypeParser('application/json',
+  async function (req, body, done) {
+    try {
+      if (!req.headers['content-length'] || isNaN(parseInt(req.headers['content-length']))) {
+        throw new CLokiError(400, 'Content-Length is required')
+      }
+      const length = parseInt(req.headers['content-length'])
+      if (length > 1e9) {
+        throw new CLokiError(400, 'Request is too big')
+      }
+      if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
+        return
+      }
+      while (onParse >= 50000000) {
+        await new Promise(f => onParsed.once('parsed', f))
+      }
+      onParse += length
+      let body = ''
+      req.raw.on('data', data => {
+        body += data.toString()
+      })
+      await new Promise(f => req.raw.once('end', f))
+      const json = JSON.parse(body)
+      return json
+      // done(null, json)
+    } catch (err) {
+      err.statusCode = 400
+      // done(err, undefined)
+      throw err
+    }
+})
 
 fastify.addContentTypeParser('text/plain', {
   parseAs: 'string'
@@ -161,15 +213,29 @@ try {
 }
 
 /* Null content-type handler for CH-MV HTTP PUSH */
-fastify.addContentTypeParser('*', {
-  parseAs: 'string'
-}, function (req, body, done) {
+fastify.addContentTypeParser('*', async function (req, body, done) {
   try {
-    const json = JSON.parse(body)
-    done(null, json)
+    if (!req.headers['content-length'] || isNaN(parseInt(req.headers['content-length']))) {
+      throw new CLokiError(400, 'Content-Length is required')
+    }
+    const length = parseInt(req.headers['content-length'])
+    if (length > 1e9) {
+      throw new CLokiError(400, 'Request is too big')
+    }
+    if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
+      return
+    }
+    let _body = ''
+    req.raw.on('data', data => { _body += data.toString() })
+    await new Promise((resolve, reject) => {
+      req.raw.once('end', resolve)
+      req.raw.once('error', reject)
+    })
+    const json = JSON.parse(_body)
+    return json
   } catch (err) {
     err.statusCode = 400
-    done(err, undefined)
+    throw err
   }
 })
 
