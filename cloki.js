@@ -74,6 +74,8 @@ const shaper = {
   stop: () => {
     shaper.shapeInterval && clearInterval(shaper.shapeInterval)
     shaper.shapeInterval = null
+    shaper.onParsed.removeAllListeners('parsed')
+    shaper.onParsed = null
   }
 }
 
@@ -235,6 +237,11 @@ try {
   console.log(e)
   console.log('Protobuf ingesting is unsupported')
 }
+
+fastify.addContentTypeParser('application/json', {},
+  async function (req, body, done) {
+    return await genericJSONParser(req)
+  })
 
 /* Null content-type handler for CH-MV HTTP PUSH */
 fastify.addContentTypeParser('*', {},
