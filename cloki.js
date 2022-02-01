@@ -16,6 +16,7 @@ require('./plugins/engine')
 
 const DATABASE = require('./lib/db/clickhouse')
 const UTILS = require('./lib/utils')
+const { EventEmitter } = require('events')
 
 /* ProtoBuf Helpers */
 const fs = require('fs')
@@ -49,8 +50,83 @@ this.instantQueryScan = DATABASE.instantQueryScan
 this.tempoQueryScan = DATABASE.tempoQueryScan
 this.scanMetricFingerprints = DATABASE.scanMetricFingerprints
 this.tempoQueryScan = DATABASE.tempoQueryScan
-this.scanClickhouse = DATABASE.scanClickhouse;
-let profiler = null;
+this.scanClickhouse = DATABASE.scanClickhouse
+let profiler = null
+
+const shaper = {
+  onParse: 0,
+  onParsed: new EventEmitter(),
+  shapeInterval: setInterval(() => {
+    shaper.onParse = 0
+    shaper.onParsed.emit('parsed')
+  }, 1000),
+  /**
+   *
+   * @param size {number}
+   * @returns {Promise<void>}
+   */
+  register: async (size) => {
+    while (shaper.onParse + size > 5e10) {
+      await new Promise(resolve => { shaper.onParsed.once('parsed') })
+    }
+    shaper.onParse += size
+  },
+  stop: () => {
+    shaper.shapeInterval && clearInterval(shaper.shapeInterval)
+    shaper.shapeInterval = null
+  }
+}
+
+/**
+ *
+ * @param req {FastifyRequest}
+ * @param limit {number}
+ * @returns {number}
+ */
+function getContentLength (req, limit) {
+  if (!req.headers['content-length'] || isNaN(parseInt(req.headers['content-length']))) {
+    throw new CLokiError(400, 'Content-Length is required')
+  }
+  const res = parseInt(req.headers['content-length'])
+  if (limit && res > limit) {
+    throw new CLokiError(400, 'Request is too big')
+  }
+  return res
+}
+
+/**
+ *
+ * @param req {FastifyRequest}
+ * @returns {Promise<string>}
+ */
+async function getContentBody (req) {
+  let body = ''
+  req.raw.on('data', data => {
+    body += data.toString()
+  })
+  await new Promise(resolve => req.raw.once('end', resolve))
+  return body
+}
+
+/**
+ *
+ * @param req {FastifyRequest}
+ * @returns {Promise<void>}
+ */
+async function genericJSONParser (req) {
+  try {
+    const length = getContentLength(req, 1e9)
+    if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
+      return
+    }
+    await shaper.register(length)
+    return JSON.parse(await getContentBody(req))
+  } catch (err) {
+    err.statusCode = 400
+    throw err
+  }
+}
+
 (async () => {
   if (!this.readonly) {
     await init(process.env.CLICKHOUSE_DB || 'cloki')
@@ -68,8 +144,6 @@ let profiler = null;
   console.log(err)
   process.exit(1)
 })
-
-
 
 /* Fastify Helper */
 const fastify = require('fastify')({
@@ -104,77 +178,27 @@ if (this.http_user && this.http_password) {
   })
 }
 
-let onParse = 0
-const { EventEmitter } = require('events')
-const { database } = require('./lib/db/clickhouse')
-const { fingerPrint } = require('./lib/utils')
-const onParsed = new EventEmitter()
-setInterval(() => {
-  onParse = 0
-  onParsed.emit('parsed')
-}, 1000)
-
-fastify.addContentTypeParser('application/json',
+fastify.addContentTypeParser('application/yaml', {},
   async function (req, body, done) {
     try {
-      if (!req.headers['content-length'] || isNaN(parseInt(req.headers['content-length']))) {
-        throw new CLokiError(400, 'Content-Length is required')
-      }
-      const length = parseInt(req.headers['content-length'])
-      if (length > 1e9) {
-        throw new CLokiError(400, 'Request is too big')
-      }
-      if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
-        return
-      }
-      while (onParse >= 50000000) {
-        await new Promise(f => onParsed.once('parsed', f))
-      }
-      onParse += length
-      let body = ''
-      req.raw.on('data', data => {
-        body += data.toString()
-      })
-      await new Promise(f => req.raw.once('end', f))
-      const json = JSON.parse(body)
+      const length = getContentLength(req, 5e6)
+      await shaper.register(length)
+      const json = yaml.parse(await getContentBody(req))
       return json
-      // done(null, json)
     } catch (err) {
       err.statusCode = 400
-      // done(err, undefined)
       throw err
     }
-})
-
-fastify.addContentTypeParser('text/plain', {
-  parseAs: 'string'
-}, function (req, body, done) {
-  try {
-    const json = JSON.parse(body)
-    done(null, json)
-  } catch (err) {
-    err.statusCode = 400
-    done(err, undefined)
-  }
-})
-
-fastify.addContentTypeParser('application/yaml', {
-  parseAs: 'string'
-}, function (req, body, done) {
-  try {
-    const json = yaml.parse(body)
-    done(null, json)
-  } catch (err) {
-    err.statusCode = 400
-    done(err, undefined)
-  }
-})
+  })
 
 try {
   const snappy = require('snappyjs')
   /* Protobuf Handler */
-  fastify.addContentTypeParser('application/x-protobuf', { parseAs: 'buffer' },
-    async function (req, body, done) {
+  fastify.addContentTypeParser('application/x-protobuf', {},
+    async function (req) {
+      const length = getContentLength(req, 5e6)
+      await shaper.register(length)
+      const body = await getContentBody(req)
       // Prometheus Protobuf Write Handler
       if (req.url === '/api/v1/prom/remote/write') {
         let _data = await snappy.uncompress(body)
@@ -213,31 +237,10 @@ try {
 }
 
 /* Null content-type handler for CH-MV HTTP PUSH */
-fastify.addContentTypeParser('*', async function (req, body, done) {
-  try {
-    if (!req.headers['content-length'] || isNaN(parseInt(req.headers['content-length']))) {
-      throw new CLokiError(400, 'Content-Length is required')
-    }
-    const length = parseInt(req.headers['content-length'])
-    if (length > 1e9) {
-      throw new CLokiError(400, 'Request is too big')
-    }
-    if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
-      return
-    }
-    let _body = ''
-    req.raw.on('data', data => { _body += data.toString() })
-    await new Promise((resolve, reject) => {
-      req.raw.once('end', resolve)
-      req.raw.once('error', reject)
-    })
-    const json = JSON.parse(_body)
-    return json
-  } catch (err) {
-    err.statusCode = 400
-    throw err
-  }
-})
+fastify.addContentTypeParser('*', {},
+  async function (req, body, done) {
+    return await genericJSONParser(req)
+  })
 
 /* 404 Handler */
 const handler404 = require('./lib/handlers/404.js').bind(this)
@@ -326,6 +329,8 @@ fastify.listen(
 )
 
 module.exports.stop = () => {
+  shaper.stop()
+  profiler && clearInterval(profiler)
   fastify.close()
   DATABASE.stop()
   require('./parser/transpiler').stop()
