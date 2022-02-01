@@ -294,6 +294,7 @@ it('e2e', async () => {
     }
   })
   const wsStart = Math.floor(Date.now() / 1000) * 1000
+  await new Promise(resolve => setTimeout(resolve, 500))
   for (let i = 0; i < 5; i++) {
     const points = createPoints(testID + '_ws', 1, wsStart + i * 1000, wsStart + i * 1000 + 1000, {}, {},
       () => `MSG_${i}`)
@@ -412,7 +413,7 @@ it('e2e', async () => {
     0.05)
   expect(resp.data.data.result.length > 0).toBeTruthy()
   await checkAlertConfig()
-  await checkTempo ()
+  await checkTempo()
 })
 
 const checkAlertConfig = async () => {
@@ -454,7 +455,7 @@ const checkAlertConfig = async () => {
   }
 }
 
-const tsNow = parseInt(Date.now() * 1000);
+const tsNow = parseInt(Date.now() * 1000)
 const checkTempo = async () => {
   // Send Tempo data and expect status code 200
   const obj = {
