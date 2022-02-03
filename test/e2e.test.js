@@ -294,7 +294,7 @@ it('e2e', async () => {
     }
   })
   const wsStart = Math.floor(Date.now() / 1000) * 1000
-  await new Promise(resolve => setTimeout(resolve, 500))
+  await new Promise(resolve => setTimeout(resolve, 1000))
   for (let i = 0; i < 5; i++) {
     const points = createPoints(testID + '_ws', 1, wsStart + i * 1000, wsStart + i * 1000 + 1000, {}, {},
       () => `MSG_${i}`)
