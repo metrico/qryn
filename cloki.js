@@ -157,6 +157,12 @@ const fastify = require('fastify')({
 fastify.register(require('fastify-url-data'))
 fastify.register(require('fastify-websocket'))
 
+/* CORS Helper */
+const CORS = process.env.CORS_ALLOW_ORIGIN || '*'
+fastify.register(require('fastify-cors'), {
+  origin: CORS
+})
+
 fastify.after((err) => {
   if (err) throw err
 })
