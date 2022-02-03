@@ -2,6 +2,7 @@ const { createPoints, sendPoints } = require('./common')
 const axios = require('axios')
 const { WebSocket } = require('ws')
 const yaml = require('yaml')
+const { message } = require('protocol-buffers/compile')
 // const pb = require("protobufjs");
 const e2e = () => process.env.INTEGRATION_E2E || process.env.INTEGRATION
 const clokiLocal = () => process.env.CLOKI_LOCAL || process.env.CLOKI_EXT_URL || false
@@ -278,19 +279,25 @@ it('e2e', async () => {
     }
   }
   ws.on('message', (msg) => {
-    const _msg = JSON.parse(msg)
-    for (const stream of _msg.streams) {
-      let _stream = resp.data.data.result.find(res =>
-        JSON.stringify(res.stream) === JSON.stringify(stream.stream)
-      )
-      if (!_stream) {
-        _stream = {
-          stream: stream.stream,
-          values: []
+    try {
+      const _msg = JSON.parse(msg)
+      for (const stream of _msg.streams) {
+        let _stream = resp.data.data.result.find(res =>
+          JSON.stringify(res.stream) === JSON.stringify(stream.stream)
+        )
+        if (!_stream) {
+          _stream = {
+            stream: stream.stream,
+            values: []
+          }
+          resp.data.data.result.push(_stream)
         }
-        resp.data.data.result.push(_stream)
+        _stream.values.push(...stream.values)
       }
-      _stream.values.push(...stream.values)
+    } catch (e) {
+      console.log(message)
+      console.log(e)
+      throw e
     }
   })
   await new Promise(resolve => setTimeout(resolve, 2000))
