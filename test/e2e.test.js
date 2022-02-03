@@ -2,6 +2,7 @@ const { createPoints, sendPoints } = require('./common')
 const axios = require('axios')
 const { WebSocket } = require('ws')
 const yaml = require('yaml')
+const { message } = require('protocol-buffers/compile')
 // const pb = require("protobufjs");
 const e2e = () => process.env.INTEGRATION_E2E || process.env.INTEGRATION
 const clokiLocal = () => process.env.CLOKI_LOCAL || process.env.CLOKI_EXT_URL || false
@@ -278,26 +279,33 @@ it('e2e', async () => {
     }
   }
   ws.on('message', (msg) => {
-    const _msg = JSON.parse(msg)
-    for (const stream of _msg.streams) {
-      let _stream = resp.data.data.result.find(res =>
-        JSON.stringify(res.stream) === JSON.stringify(stream.stream)
-      )
-      if (!_stream) {
-        _stream = {
-          stream: stream.stream,
-          values: []
+    try {
+      const _msg = JSON.parse(msg)
+      for (const stream of _msg.streams) {
+        let _stream = resp.data.data.result.find(res =>
+          JSON.stringify(res.stream) === JSON.stringify(stream.stream)
+        )
+        if (!_stream) {
+          _stream = {
+            stream: stream.stream,
+            values: []
+          }
+          resp.data.data.result.push(_stream)
         }
-        resp.data.data.result.push(_stream)
+        _stream.values.push(...stream.values)
       }
-      _stream.values.push(...stream.values)
+    } catch (e) {
+      console.log(message)
+      console.log(e)
+      throw e
     }
   })
+  await new Promise(resolve => setTimeout(resolve, 2000))
   const wsStart = Math.floor(Date.now() / 1000) * 1000
   for (let i = 0; i < 5; i++) {
     const points = createPoints(testID + '_ws', 1, wsStart + i * 1000, wsStart + i * 1000 + 1000, {}, {},
       () => `MSG_${i}`)
-    sendPoints(`http://${clokiExtUrl}`, points)
+    await sendPoints(`http://${clokiExtUrl}`, points)
     await new Promise(resolve => setTimeout(resolve, 1000))
   }
   await new Promise(resolve => setTimeout(resolve, 6000))
@@ -412,7 +420,7 @@ it('e2e', async () => {
     0.05)
   expect(resp.data.data.result.length > 0).toBeTruthy()
   await checkAlertConfig()
-  await checkTempo ()
+  await checkTempo()
 })
 
 const checkAlertConfig = async () => {
@@ -454,7 +462,7 @@ const checkAlertConfig = async () => {
   }
 }
 
-const tsNow = parseInt(Date.now() * 1000);
+const tsNow = parseInt(Date.now() * 1000)
 const checkTempo = async () => {
   // Send Tempo data and expect status code 200
   const obj = {

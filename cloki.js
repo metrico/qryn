@@ -16,6 +16,7 @@ require('./plugins/engine')
 
 const DATABASE = require('./lib/db/clickhouse')
 const UTILS = require('./lib/utils')
+const { EventEmitter } = require('events')
 
 /* ProtoBuf Helpers */
 const fs = require('fs')
@@ -28,6 +29,7 @@ const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib/prompb.proto'
 /* Alerting */
 const { startAlerting, stop } = require('./lib/db/alerting')
 const yaml = require('yaml')
+const { CLokiError } = require('./lib/handlers/errors')
 
 /* Fingerprinting */
 this.fingerPrint = UTILS.fingerPrint
@@ -48,12 +50,97 @@ this.instantQueryScan = DATABASE.instantQueryScan
 this.tempoQueryScan = DATABASE.tempoQueryScan
 this.scanMetricFingerprints = DATABASE.scanMetricFingerprints
 this.tempoQueryScan = DATABASE.tempoQueryScan
-if (!this.readonly) init(process.env.CLICKHOUSE_DB || 'cloki')
-this.scanClickhouse = DATABASE.scanClickhouse;
+this.scanClickhouse = DATABASE.scanClickhouse
+let profiler = null
+
+const shaper = {
+  onParse: 0,
+  onParsed: new EventEmitter(),
+  shapeInterval: setInterval(() => {
+    shaper.onParse = 0
+    shaper.onParsed.emit('parsed')
+  }, 1000),
+  /**
+   *
+   * @param size {number}
+   * @returns {Promise<void>}
+   */
+  register: async (size) => {
+    while (shaper.onParse + size > 5e10) {
+      await new Promise(resolve => { shaper.onParsed.once('parsed') })
+    }
+    shaper.onParse += size
+  },
+  stop: () => {
+    shaper.shapeInterval && clearInterval(shaper.shapeInterval)
+    shaper.shapeInterval = null
+    shaper.onParsed.removeAllListeners('parsed')
+    shaper.onParsed = null
+  }
+}
+
+/**
+ *
+ * @param req {FastifyRequest}
+ * @param limit {number}
+ * @returns {number}
+ */
+function getContentLength (req, limit) {
+  if (!req.headers['content-length'] || isNaN(parseInt(req.headers['content-length']))) {
+    throw new CLokiError(400, 'Content-Length is required')
+  }
+  const res = parseInt(req.headers['content-length'])
+  if (limit && res > limit) {
+    throw new CLokiError(400, 'Request is too big')
+  }
+  return res
+}
+
+/**
+ *
+ * @param req {FastifyRequest}
+ * @returns {Promise<string>}
+ */
+async function getContentBody (req) {
+  let body = ''
+  req.raw.on('data', data => {
+    body += data.toString()
+  })
+  await new Promise(resolve => req.raw.once('end', resolve))
+  return body
+}
+
+/**
+ *
+ * @param req {FastifyRequest}
+ * @returns {Promise<void>}
+ */
+async function genericJSONParser (req) {
+  try {
+    const length = getContentLength(req, 1e9)
+    if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
+      return
+    }
+    await shaper.register(length)
+    return JSON.parse(await getContentBody(req))
+  } catch (err) {
+    err.statusCode = 400
+    throw err
+  }
+}
+
 (async () => {
   if (!this.readonly) {
     await init(process.env.CLICKHOUSE_DB || 'cloki')
     await startAlerting()
+  }
+  if (!this.readonly && process.env.PROFILE) {
+    const tag = JSON.stringify({ profiler_id: process.env.PROFILE, label: 'RAM usage' })
+    const fp = this.fingerPrint(tag)
+    profiler = setInterval(() => {
+      this.bulk_labels.add([[new Date().toISOString().split('T')[0], fp, tag, '']])
+      this.bulk.add([[fp, Date.now(), process.memoryUsage().rss / 1024 / 1024, '']])
+    }, 1000)
   }
 })().catch((err) => {
   console.log(err)
@@ -63,7 +150,6 @@ this.scanClickhouse = DATABASE.scanClickhouse;
 /* Fastify Helper */
 const fastify = require('fastify')({
   logger: false,
-  bodyLimit: parseInt(process.env.FASTIFY_BODYLIMIT) || 5242880,
   requestTimeout: parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
   maxRequestsPerSocket: parseInt(process.env.FASTIFY_MAXREQUESTS) || 0
 })
@@ -94,35 +180,27 @@ if (this.http_user && this.http_password) {
   })
 }
 
-fastify.addContentTypeParser('text/plain', {
-  parseAs: 'string'
-}, function (req, body, done) {
-  try {
-    const json = JSON.parse(body)
-    done(null, json)
-  } catch (err) {
-    err.statusCode = 400
-    done(err, undefined)
-  }
-})
-
-fastify.addContentTypeParser('application/yaml', {
-  parseAs: 'string'
-}, function (req, body, done) {
-  try {
-    const json = yaml.parse(body)
-    done(null, json)
-  } catch (err) {
-    err.statusCode = 400
-    done(err, undefined)
-  }
-})
+fastify.addContentTypeParser('application/yaml', {},
+  async function (req, body, done) {
+    try {
+      const length = getContentLength(req, 5e6)
+      await shaper.register(length)
+      const json = yaml.parse(await getContentBody(req))
+      return json
+    } catch (err) {
+      err.statusCode = 400
+      throw err
+    }
+  })
 
 try {
   const snappy = require('snappyjs')
   /* Protobuf Handler */
-  fastify.addContentTypeParser('application/x-protobuf', { parseAs: 'buffer' },
-    async function (req, body, done) {
+  fastify.addContentTypeParser('application/x-protobuf', {},
+    async function (req) {
+      const length = getContentLength(req, 5e6)
+      await shaper.register(length)
+      const body = await getContentBody(req)
       // Prometheus Protobuf Write Handler
       if (req.url === '/api/v1/prom/remote/write') {
         let _data = await snappy.uncompress(body)
@@ -160,18 +238,16 @@ try {
   console.log('Protobuf ingesting is unsupported')
 }
 
+fastify.addContentTypeParser('application/json', {},
+  async function (req, body, done) {
+    return await genericJSONParser(req)
+  })
+
 /* Null content-type handler for CH-MV HTTP PUSH */
-fastify.addContentTypeParser('*', {
-  parseAs: 'string'
-}, function (req, body, done) {
-  try {
-    const json = JSON.parse(body)
-    done(null, json)
-  } catch (err) {
-    err.statusCode = 400
-    done(err, undefined)
-  }
-})
+fastify.addContentTypeParser('*', {},
+  async function (req, body, done) {
+    return await genericJSONParser(req)
+  })
 
 /* 404 Handler */
 const handler404 = require('./lib/handlers/404.js').bind(this)
@@ -260,6 +336,8 @@ fastify.listen(
 )
 
 module.exports.stop = () => {
+  shaper.stop()
+  profiler && clearInterval(profiler)
   fastify.close()
   DATABASE.stop()
   require('./parser/transpiler').stop()
