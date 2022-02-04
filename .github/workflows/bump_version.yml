@@ -65,6 +65,25 @@ jobs:
           fi
         env:
           SECRET: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Docker meta
+        if: ${{ steps.checkdocker.outputs.secretspresent }}
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            qxip/cloki
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=raw,value=latest,enable=${{ contains(GitHub.ref, 'master') }}
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+
       - name: Set up Docker QEMU
         if: ${{ steps.checkdocker.outputs.secretspresent }}
         uses: docker/setup-qemu-action@v1
@@ -82,5 +101,6 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v2
         with:
-          push: true
-          tags: qxip/cloki:latest
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
