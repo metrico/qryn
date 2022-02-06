@@ -203,40 +203,49 @@ try {
   const snappy = require('snappyjs')
   /* Protobuf Handler */
   fastify.addContentTypeParser('application/x-protobuf', {},
-    async function (req) {
-      const length = getContentLength(req, 5e6)
-      await shaper.register(length)
-      const body = await getContentBody(req)
-      // Prometheus Protobuf Write Handler
-      if (req.url === '/api/v1/prom/remote/write') {
-        let _data = await snappy.uncompress(body)
-        _data = WriteRequest.decode(_data)
-        _data.timeseries = _data.timeseries.map(s => ({
-          ...s,
-          samples: s.samples.map(e => {
-            const millis = parseInt(e.timestamp.toNumber())
-            return {
-              ...e,
-              timestamp: millis
-            }
-          })
-        }))
-        return _data
-      // Loki Protobuf Push Handler
-      } else {
-        let _data = await snappy.uncompress(body)
-        _data = messages.PushRequest.decode(_data)
-        _data.streams = _data.streams.map(s => ({
-          ...s,
-          entries: s.entries.map(e => {
-            const millis = Math.floor(e.timestamp.nanos / 1000000)
-            return {
-              ...e,
-              timestamp: e.timestamp.seconds * 1000 + millis
-            }
-          })
-        }))
-        return _data.streams
+    async function (req, body, done) {
+      try {
+        const length = getContentLength(req, 5e6)
+        await shaper.register(length)
+        let body = new Uint8Array()
+        req.raw.on('data', (data) => {
+          body = new Uint8Array([...body, ...Uint8Array.from(data)])
+        })
+        await new Promise(resolve => req.raw.once('end', resolve))
+        // Prometheus Protobuf Write Handler
+        if (req.url === '/api/v1/prom/remote/write') {
+          let _data = await snappy.uncompress(body)
+          _data = WriteRequest.decode(_data)
+          _data.timeseries = _data.timeseries.map(s => ({
+            ...s,
+            samples: s.samples.map(e => {
+              const millis = parseInt(e.timestamp.toNumber())
+              return {
+                ...e,
+                timestamp: millis
+              }
+            })
+          }))
+          return _data
+          // Loki Protobuf Push Handler
+        } else {
+          let _data = await snappy.uncompress(body)
+          _data = messages.PushRequest.decode(Buffer.from(_data))
+          _data.streams = _data.streams.map(s => ({
+            ...s,
+            entries: s.entries.map(e => {
+              const millis = Math.floor(e.timestamp.nanos / 1000000)
+              return {
+                ...e,
+                timestamp: e.timestamp.seconds * 1000 + millis
+              }
+            })
+          }))
+          return _data.streams
+        }
+      } catch (e) {
+        console.log(e)
+        throw e
       }
     })
 } catch (e) {
