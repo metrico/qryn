@@ -3,6 +3,8 @@ const axios = require('axios')
 const { WebSocket } = require('ws')
 const yaml = require('yaml')
 const { message } = require('protocol-buffers/compile')
+const protobufjs = require('protobufjs')
+const path = require('path')
 // const pb = require("protobufjs");
 const e2e = () => process.env.INTEGRATION_E2E || process.env.INTEGRATION
 const clokiLocal = () => process.env.CLOKI_LOCAL || process.env.CLOKI_EXT_URL || false
@@ -44,6 +46,27 @@ afterAll(() => {
     req = pushMessage.fromObject(req);
 } */
 
+const clokiExtUrl = process.env.CLOKI_EXT_URL || 'localhost:3100'
+const runRequestFunc = (start, end) => (req, _step, _start, _end) => {
+  _start = _start || start
+  _end = _end || end
+  _step = _step || 2
+  return axios.get(
+    `http://${clokiExtUrl}/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=${encodeURIComponent(req)}&start=${_start}000000&end=${_end}000000&step=${_step}`
+  )
+}
+
+const adjustResultFunc = (start, testID) => (resp, id, _start) => {
+  _start = _start || start
+  id = id || testID
+  resp.data.data.result = resp.data.data.result.map(stream => {
+    expect(stream.stream.test_id).toEqual(id)
+    stream.stream.test_id = 'TEST_ID'
+    stream.values = stream.values.map(v => [v[0] - _start * 1000000, v[1]])
+    return stream
+  })
+}
+
 jest.setTimeout(300000)
 
 it('e2e', async () => {
@@ -51,7 +74,6 @@ it('e2e', async () => {
     return
   }
   console.log('Waiting 2s before all inits')
-  const clokiExtUrl = process.env.CLOKI_EXT_URL || 'localhost:3100'
   await new Promise(resolve => setTimeout(resolve, 2000))
   const testID = Math.random() + ''
   console.log(testID)
@@ -77,24 +99,8 @@ it('e2e', async () => {
   )
   await sendPoints(`http://${clokiExtUrl}`, points)
   await new Promise(resolve => setTimeout(resolve, 4000))
-  const adjustResult = (resp, id, _start) => {
-    _start = _start || start
-    id = id || testID
-    resp.data.data.result = resp.data.data.result.map(stream => {
-      expect(stream.stream.test_id).toEqual(id)
-      stream.stream.test_id = 'TEST_ID'
-      stream.values = stream.values.map(v => [v[0] - _start * 1000000, v[1]])
-      return stream
-    })
-  }
-  const runRequest = (req, _step, _start, _end) => {
-    _start = _start || start
-    _end = _end || end
-    _step = _step || 2
-    return axios.get(
-            `http://${clokiExtUrl}/loki/api/v1/query_range?direction=BACKWARD&limit=2000&query=${encodeURIComponent(req)}&start=${_start}000000&end=${_end}000000&step=${_step}`
-    )
-  }
+  const runRequest = runRequestFunc(start, end)
+  const adjustResult = adjustResultFunc(start, testID)
   const adjustMatrixResult = (resp, id) => {
     id = id || testID
     resp.data.data.result = resp.data.data.result.map(stream => {
@@ -421,6 +427,7 @@ it('e2e', async () => {
   expect(resp.data.data.result.length > 0).toBeTruthy()
   await checkAlertConfig()
   await checkTempo()
+  await pbCheck(testID)
 })
 
 const checkAlertConfig = async () => {
@@ -501,4 +508,39 @@ const checkTempo = async () => {
   const id = validation['resourceSpans'][0]['instrumentationLibrarySpans'][0]['spans'][0]['spanID']
   console.log('Checking Tempo API Reading inserted data')
   expect(id).toMatch('1234er4')
+}
+
+/**
+ *
+ * @param testID {string}
+ * @returns {Promise<void>}
+ */
+async function pbCheck (testID) {
+  const PushRequest = protobufjs
+    .loadSync(path.join(__dirname, '../lib/loki.proto'))
+    .lookupType('PushRequest')
+  const end = Math.floor(Date.now() / 1000) * 1000
+  const start = end - 1000
+  const runRequest = runRequestFunc(start, end)
+  const adjustResult = adjustResultFunc(start, testID)
+  let points = createPoints(testID+'_PB', 0.5, start, end, {}, {})
+  points = {
+    streams: Object.values(points).map(stream => {
+      return {
+        labels: Object.entries(stream.stream).map(s => `${s[0]}=${JSON.stringify(s[1])}`).join(','),
+        entries: stream.values.map(v => ({
+          timestamp: { seconds: Math.floor(v[0] / 1e9).toString(), nanos: parseInt(v[0]) % 1e9 },
+          line: v[1]
+        }))
+      }
+    })
+  }
+  let body = PushRequest.encode(points).finish()
+  body = require('snappyjs').compress(body)
+  await axios.post(`http://${clokiExtUrl}/loki/api/v1/push`, body, {
+    headers: { 'Content-Type': 'application/x-protobuf' }
+  })
+  const resp = await runRequest(`{test_id="${testID}_PB"}`, 1, start, end)
+  adjustResult(resp, testID + '_PB')
+  expect(resp.data).toMatchSnapshot()
 }
