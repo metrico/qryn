@@ -10,6 +10,7 @@
     "test": "jest",
     "start": "node cloki.js",
     "postinstall": "patch-package",
+    "install-view": "mkdir view && curl -L github.com/metrico/cloki-view/releases/latest/download/dist.zip | busybox unzip - -d ./view",
     "lint": "npx eslint --fix *.js lib parser plugins test"
   },
   "standard": {
