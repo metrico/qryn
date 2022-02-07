@@ -2,7 +2,7 @@
 
 /*
  * Loki API to Clickhouse Gateway
- * (C) 2018-2021 QXIP BV
+ * (C) 2018-2022 QXIP BV
  */
 
 this.debug = process.env.DEBUG || false
@@ -326,8 +326,7 @@ fastify.get('/loki/api/v1/series', handlerSeries)
 
 fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/tail').bind(this))
 
-// ALERT MANAGER
-
+/* ALERT MANAGER Handlers */
 fastify.get('/api/prom/rules', require('./lib/handlers/alerts/get_rules').bind(this))
 fastify.get('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/get_group').bind(this))
 fastify.post('/api/prom/rules/:ns', require('./lib/handlers/alerts/post_group').bind(this))
@@ -335,9 +334,17 @@ fastify.delete('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/del_
 fastify.delete('/api/prom/rules/:ns', require('./lib/handlers/alerts/del_ns').bind(this))
 fastify.get('/prometheus/api/v1/rules', require('./lib/handlers/alerts/prom_get_rules').bind(this))
 
-// PROMETHEUS REMOTE WRITE
+/* PROMETHEUS REMOTE WRITE Handlers */
 fastify.post('/api/v1/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
 fastify.post('/api/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
+
+/* CLOKI-VIEW Optional Handler */
+if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
+  fastify.register(require('fastify-static'), {
+    root: path.join(__dirname, 'view'),
+    prefix: '/'
+  })
+}
 
 // Run API Service
 fastify.listen(
