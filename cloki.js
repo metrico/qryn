@@ -5,12 +5,9 @@
  * (C) 2018-2021 QXIP BV
  */
 
-this.debug = process.env.DEBUG || false
-// const debug = this.debug
-
 this.readonly = process.env.READONLY || false
-this.http_user = process.env.CLOKI_LOGIN || false
-this.http_password = process.env.CLOKI_PASSWORD || false
+this.http_user = process.env.CLOKI_LOGIN || undefined
+this.http_password = process.env.CLOKI_PASSWORD || undefined
 
 require('./plugins/engine')
 
@@ -25,6 +22,8 @@ const protoBuff = require('protocol-buffers')
 const messages = protoBuff(fs.readFileSync('lib/loki.proto'))
 const protobufjs = require('protobufjs')
 const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib/prompb.proto')).lookupType('WriteRequest')
+
+const logger = require('./lib/logger')
 
 /* Alerting */
 const { startAlerting, stop } = require('./lib/db/alerting')
@@ -143,13 +142,13 @@ async function genericJSONParser (req) {
     }, 1000)
   }
 })().catch((err) => {
-  console.log(err)
+  logger.error({ err }, 'Error starting cloki')
   process.exit(1)
 })
 
 /* Fastify Helper */
 const fastify = require('fastify')({
-  logger: false,
+  logger,
   requestTimeout: parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
   maxRequestsPerSocket: parseInt(process.env.FASTIFY_MAXREQUESTS) || 0
 })
@@ -164,7 +163,10 @@ fastify.register(require('fastify-cors'), {
 })
 
 fastify.after((err) => {
-  if (err) throw err
+  if (err) {
+    logger.error({ err }, 'Error creating http response')
+    throw err
+  }
 })
 
 /* Enable Simple Authentication */
@@ -243,14 +245,13 @@ try {
           }))
           return _data.streams
         }
-      } catch (e) {
-        console.log(e)
-        throw e
+      } catch (err) {
+        logger.error({ err }, 'Error handling protobuf conversion')
+        throw err
       }
     })
-} catch (e) {
-  console.log(e)
-  console.log('Protobuf ingesting is unsupported')
+} catch (err) {
+  logger.error({ err }, 'Protobuf ingesting is unsupported')
 }
 
 fastify.addContentTypeParser('application/json', {},
@@ -345,7 +346,7 @@ fastify.listen(
   process.env.HOST || '0.0.0.0',
   (err, address) => {
     if (err) throw err
-    console.log('cLoki API up')
+    logger.info('cLoki API up')
     fastify.log.info(`cloki API listening on ${address}`)
   }
 )
