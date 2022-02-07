@@ -339,7 +339,7 @@ fastify.post('/api/v1/prom/remote/write', require('./lib/handlers/prom_push.js')
 fastify.post('/api/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
 
 /* CLOKI-VIEW Optional Handler */
-if (fs.existsSync(path.join(__dirname, 'view'))) {
+if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
   fastify.register(require('fastify-static'), {
     root: path.join(__dirname, 'view'),
     prefix: '/'
