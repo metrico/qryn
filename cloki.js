@@ -2,15 +2,12 @@
 
 /*
  * Loki API to Clickhouse Gateway
- * (C) 2018-2021 QXIP BV
+ * (C) 2018-2022 QXIP BV
  */
 
-this.debug = process.env.DEBUG || false
-// const debug = this.debug
-
 this.readonly = process.env.READONLY || false
-this.http_user = process.env.CLOKI_LOGIN || false
-this.http_password = process.env.CLOKI_PASSWORD || false
+this.http_user = process.env.CLOKI_LOGIN || undefined
+this.http_password = process.env.CLOKI_PASSWORD || undefined
 
 require('./plugins/engine')
 
@@ -25,6 +22,8 @@ const protoBuff = require('protocol-buffers')
 const messages = protoBuff(fs.readFileSync('lib/loki.proto'))
 const protobufjs = require('protobufjs')
 const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib/prompb.proto')).lookupType('WriteRequest')
+
+const logger = require('./lib/logger')
 
 /* Alerting */
 const { startAlerting, stop } = require('./lib/db/alerting')
@@ -143,13 +142,13 @@ async function genericJSONParser (req) {
     }, 1000)
   }
 })().catch((err) => {
-  console.log(err)
+  logger.error({ err }, 'Error starting cloki')
   process.exit(1)
 })
 
 /* Fastify Helper */
 const fastify = require('fastify')({
-  logger: false,
+  logger,
   requestTimeout: parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
   maxRequestsPerSocket: parseInt(process.env.FASTIFY_MAXREQUESTS) || 0
 })
@@ -164,7 +163,10 @@ fastify.register(require('fastify-cors'), {
 })
 
 fastify.after((err) => {
-  if (err) throw err
+  if (err) {
+    logger.error({ err }, 'Error creating http response')
+    throw err
+  }
 })
 
 /* Enable Simple Authentication */
@@ -243,14 +245,13 @@ try {
           }))
           return _data.streams
         }
-      } catch (e) {
-        console.log(e)
-        throw e
+      } catch (err) {
+        logger.error({ err }, 'Error handling protobuf conversion')
+        throw err
       }
     })
-} catch (e) {
-  console.log(e)
-  console.log('Protobuf ingesting is unsupported')
+} catch (err) {
+  logger.error({ err }, 'Protobuf ingesting is unsupported')
 }
 
 fastify.addContentTypeParser('application/json', {},
@@ -326,8 +327,7 @@ fastify.get('/loki/api/v1/series', handlerSeries)
 
 fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/tail').bind(this))
 
-// ALERT MANAGER
-
+/* ALERT MANAGER Handlers */
 fastify.get('/api/prom/rules', require('./lib/handlers/alerts/get_rules').bind(this))
 fastify.get('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/get_group').bind(this))
 fastify.post('/api/prom/rules/:ns', require('./lib/handlers/alerts/post_group').bind(this))
@@ -335,9 +335,17 @@ fastify.delete('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/del_
 fastify.delete('/api/prom/rules/:ns', require('./lib/handlers/alerts/del_ns').bind(this))
 fastify.get('/prometheus/api/v1/rules', require('./lib/handlers/alerts/prom_get_rules').bind(this))
 
-// PROMETHEUS REMOTE WRITE
+/* PROMETHEUS REMOTE WRITE Handlers */
 fastify.post('/api/v1/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
 fastify.post('/api/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
+
+/* CLOKI-VIEW Optional Handler */
+if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
+  fastify.register(require('fastify-static'), {
+    root: path.join(__dirname, 'view'),
+    prefix: '/'
+  })
+}
 
 // Run API Service
 fastify.listen(
@@ -345,7 +353,7 @@ fastify.listen(
   process.env.HOST || '0.0.0.0',
   (err, address) => {
     if (err) throw err
-    console.log('cLoki API up')
+    logger.info('cLoki API up')
     fastify.log.info(`cloki API listening on ${address}`)
   }
 )

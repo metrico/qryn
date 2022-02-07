@@ -2,6 +2,7 @@ const hb = require('handlebars')
 const { addStream, isEOF } = require('../common')
 const { LineFmtOption } = require('../../../common')
 const { compile } = require('./go_native_fmt')
+const logger = require('../../../lib/logger')
 require('handlebars-helpers')(['math', 'string'], {
   handlebars: hb
 })
@@ -47,9 +48,9 @@ module.exports = (token, query) => {
       if (processor.then) {
         try {
           await processor
-        } catch (e) {
+        } catch (err) {
           processor = null
-          console.log(e)
+          logger.error({ err })
         }
       }
       try {

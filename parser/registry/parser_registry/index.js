@@ -2,6 +2,7 @@ const json = require('./json')
 const re = require('./regexp')
 const { hasExtraLabels, getPlugins, isEOF, hasStream, addStream } = require('../common')
 const logfmt = require('./logfmt')
+const logger = require('../../../lib/logger')
 
 module.exports = {
   /**
@@ -40,8 +41,8 @@ module.exports = {
     }
     try {
       return re.viaRequest(token, query)
-    } catch (e) {
-      console.log(e)
+    } catch (err) {
+      logger.error({ err })
       return re.viaStream(token, query)
     }
   },

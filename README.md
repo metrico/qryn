@@ -125,7 +125,7 @@ Check out the [Wiki](https://github.com/lmangani/cLoki/wiki) for detailed instru
 Clone this repository, install with `npm`and run using `nodejs` 14.x *(or higher)*
 ```bash
 npm install
-CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLICKHOUSE_DB="cloki" node ./cloki.js
+CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLICKHOUSE_DB="cloki" node cloki.js
 ```
 ##### :busstop: NPM
 Install `cloki` as global package on your system using `npm`
@@ -149,6 +149,9 @@ For a fully working demo, check the [docker-compose](https://github.com/lmangani
 
 --------------
 
+#### Logging
+The project uses [pino](https://github.com/pinojs/pino) for logging and by default outputs JSON'ified log lines. If you want to see "pretty" log lines you can start cloki with `npm run pretty`
+
 #### Configuration
 The following ENV Variables can be used to control cLoki parameters and backend settings.
 
@@ -167,15 +170,16 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | SAMPLES_DAYS  	| 7  	    	    | Max Days before Timeseries rotation  		|
 | HOST 			| 0.0.0.0 	    | cLOKi API IP  		|
 | PORT  		| 3100 	            | cLOKi API PORT  		|
-| CLOKI_LOGIN           | false             | Basic HTTP Username           |
-| CLOKI_PASSWORD        | false             | Basic HTTP Password           |
+| CLOKI_LOGIN           | undefined             | Basic HTTP Username           |
+| CLOKI_PASSWORD        | undefined             | Basic HTTP Password           |
 | READONLY  			| false  	    | Readonly Mode, no DB Init  		|
 | FASTIFY_BODYLIMIT | 5242880   | API Maximum payload size in bytes |
 | FASTIFY_REQUESTTIMEOUT | 0 | API Maximum Request Timeout in ms |
 | FASTIFY_MAXREQUESTS | 0 | API Maximum Requests per socket |
 | TEMPO_SPAN | 24 | Default span for Tempo queries in hours |
 | TEMPO_TAGTRACE | false | Optional tagging of TraceID (expensive) |
-| DEBUG  			| false  	    | Debug Mode  		|
+| DEBUG  			| false  	    | Debug Mode (for backwards compatibility) 		|
+| LOG_LEVEL  			| info  	    | Log Level  		|
 
 
 ------------
