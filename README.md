@@ -180,7 +180,7 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 | TEMPO_TAGTRACE | false | Optional tagging of TraceID (expensive) |
 | DEBUG  			| false  	    | Debug Mode (for backwards compatibility) 		|
 | LOG_LEVEL  			| info  	    | Log Level  		|
-| HASH | short-hash | Hash function using for fingerprints. Currently supported `short-hash` and `XXH` (xxH64 function)
+| HASH | short-hash | Hash function using for fingerprints. Currently supported `short-hash` and `xxhash64` (xxhash64 function)
 
 
 ------------
