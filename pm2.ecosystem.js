@@ -3,7 +3,7 @@ module.exports = {
     name: 'cloki',
     script: './cloki.js',
     instances : "max",
-    exec_mode : "cluster"
+    exec_mode : "cluster",
     env: {
       CLICKHOUSE_SERVER: 'localhost',
       CLICKHOUSE_PORT: 8123,
