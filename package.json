@@ -47,7 +47,7 @@
     "jsonic": "^0.3.1",
     "patch-package": "^6.4.7",
     "pino": "^7.6.5",
-    "plugnplay": "^3.15.0",
+    "@qxip/plugnplay": "^3.3.1",
     "protobufjs": "^6.11.2",
     "protocol-buffers": "^4.2.0",
     "protocol-buffers-encodings": "^1.1.1",
