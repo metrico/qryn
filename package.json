@@ -32,6 +32,7 @@
   "dependencies": {
     "@apla/clickhouse": "^1.6.4",
     "@cloki/clickhouse-sql": "1.2.2",
+    "@qxip/plugnplay": "^3.3.1",
     "axios": "^0.21.4",
     "bnf": "^1.0.1",
     "date-fns": "^2.27.0",
@@ -43,11 +44,10 @@
     "fastify-websocket": "^4.0.0",
     "glob": "^7.1.2",
     "handlebars": "^4.7.7",
-    "handlebars-helpers": "^0.10.0",
+    "handlebars-helpers": "^0.9.8",
     "jsonic": "^0.3.1",
     "patch-package": "^6.4.7",
     "pino": "^7.6.5",
-    "@qxip/plugnplay": "^3.3.1",
     "plugnplay": "npm:@qxip/plugnplay@^3.3.1",
     "protobufjs": "^6.11.2",
     "protocol-buffers": "^4.2.0",
@@ -55,11 +55,11 @@
     "record-cache": "^1.1.1",
     "scramjet": "^4.36.1",
     "short-hash": "^1.0.0",
-    "xxhash-wasm": "^0.4.2",
     "snappyjs": "^0.6.1",
     "stream-chain": "^2.2.4",
     "stream-json": "^1.7.3",
     "ws": "^8.4.0",
+    "xxhash-wasm": "^0.4.2",
     "yaml": "^1.10.2"
   },
   "devDependencies": {
