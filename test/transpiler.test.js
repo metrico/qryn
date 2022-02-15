@@ -16,7 +16,7 @@ const setQueryParam = (query, name, val) => {
 
 const setParams = (query) => {
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
-  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName}`)
+  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName()}`)
   setQueryParam(query, sharedParamNames.from, 1)
   setQueryParam(query, sharedParamNames.to, 2)
   setQueryParam(query, sharedParamNames.limit, 3)

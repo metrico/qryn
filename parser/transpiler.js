@@ -110,7 +110,7 @@ module.exports.transpile = (request) => {
     query = numberOperatorRegistry[op](token.Child('compared_agg_statement'), query)
   }
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
-  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName}`)
+  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName(start)}`)
   setQueryParam(query, sharedParamNames.from, start)
   setQueryParam(query, sharedParamNames.to, end)
   return {
@@ -195,7 +195,7 @@ module.exports.transpileSeries = (request) => {
     query.orWhere(...(Array.isArray(_query.conditions) ? _query.conditions : [_query.conditions]))
   }
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
-  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName}`)
+  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName()}`)
   return query.toString()
 }
 
