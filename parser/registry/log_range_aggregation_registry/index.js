@@ -70,7 +70,7 @@ module.exports = {
     const duration = getDuration(token)
     query.select_list = []
     query.select('labels',
-      [new Sql.Raw(`toUInt64(intDiv(timestamp_ms, ${duration}) * ${duration})`), 'timestamp_ms'],
+      [new Sql.Raw(`toUInt64(intDiv(timestamp_ms, ${duration}000000) * ${duration})`), 'timestamp_ms'],
       [new Sql.Raw('toFloat64(0)'), 'value'])
     query.limit(undefined, undefined)
     query.groupBy('labels', 'timestamp_ms')
@@ -79,10 +79,9 @@ module.exports = {
     const data = new Sql.With('rate_a', query)
     const numbers = new Sql.Raw('')
     numbers.toString = () =>
-        `numbers(${Math.floor((query.getParam('to').get() -
-          query.getParam('from').get()) / duration)})`
+        `numbers(intDiv(${query.getParam('to').get()} - ${query.getParam('from').get()}, ${duration}000000))`
     const selectNumbers = new Sql.Raw('')
-    selectNumbers.toString = () => `number * ${duration} + ${query.getParam('from').get()}`
+    selectNumbers.toString = () => `number * ${duration} + intDiv(${query.getParam('from').get()}, 1000000)`
     const gaps = (new Sql.Select())
       .select('a1.labels',
         [selectNumbers, 'timestamp_ms'],

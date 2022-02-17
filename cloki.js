@@ -56,7 +56,6 @@ const shaper = {
   onParse: 0,
   onParsed: new EventEmitter(),
   shapeInterval: setInterval(() => {
-    console.log('!~!~!SIZE: ' + shaper.onParse)
     shaper.onParse = 0
     shaper.onParsed.emit('parsed')
   }, 1000),
@@ -70,7 +69,6 @@ const shaper = {
       await new Promise(resolve => { shaper.onParsed.once('parsed', resolve) })
     }
     shaper.onParse += size
-    console.log(`REGISTERED!!!!!! ${size}`)
   },
   stop: () => {
     shaper.shapeInterval && clearInterval(shaper.shapeInterval)
@@ -144,7 +142,7 @@ async function genericJSONParser (req) {
     }, 1000)
   }
 })().catch((err) => {
-  logger.error({ err }, 'Error starting cloki')
+  logger.error(err, 'Error starting cloki')
   process.exit(1)
 })
 
@@ -223,10 +221,10 @@ try {
           _data.timeseries = _data.timeseries.map(s => ({
             ...s,
             samples: s.samples.map(e => {
-              const millis = parseInt(e.timestamp.toNumber())
+              const nanos = e.timestamp + '000000'
               return {
                 ...e,
-                timestamp: millis
+                timestamp: nanos
               }
             })
           }))
@@ -238,10 +236,9 @@ try {
           _data.streams = _data.streams.map(s => ({
             ...s,
             entries: s.entries.map(e => {
-              const millis = Math.floor(e.timestamp.nanos / 1000000)
               return {
                 ...e,
-                timestamp: e.timestamp.seconds * 1000 + millis
+                timestamp: BigInt(e.timestamp.seconds) * BigInt(1e9) + BigInt(e.timestamp.nanos)
               }
             })
           }))
