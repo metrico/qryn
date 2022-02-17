@@ -56,6 +56,7 @@ const shaper = {
   onParse: 0,
   onParsed: new EventEmitter(),
   shapeInterval: setInterval(() => {
+    console.log('!~!~!SIZE: ' + shaper.onParse)
     shaper.onParse = 0
     shaper.onParsed.emit('parsed')
   }, 1000),
@@ -65,10 +66,11 @@ const shaper = {
    * @returns {Promise<void>}
    */
   register: async (size) => {
-    while (shaper.onParse + size > 5e10) {
-      await new Promise(resolve => { shaper.onParsed.once('parsed') })
+    while (shaper.onParse + size > 50e6) {
+      await new Promise(resolve => { shaper.onParsed.once('parsed', resolve) })
     }
     shaper.onParse += size
+    console.log(`REGISTERED!!!!!! ${size}`)
   },
   stop: () => {
     shaper.shapeInterval && clearInterval(shaper.shapeInterval)
@@ -138,7 +140,7 @@ async function genericJSONParser (req) {
     const fp = this.fingerPrint(tag)
     profiler = setInterval(() => {
       this.bulk_labels.add([[new Date().toISOString().split('T')[0], fp, tag, '']])
-      this.bulk.add([[fp, Date.now(), process.memoryUsage().rss / 1024 / 1024, '']])
+      this.bulk.add([[fp, BigInt(Date.now()) * BigInt(1000000), process.memoryUsage().rss / 1024 / 1024, '']])
     }, 1000)
   }
 })().catch((err) => {
