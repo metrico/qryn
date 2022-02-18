@@ -194,15 +194,15 @@ it('shoud transpile unwrap', async () => {
   expect(req).toMatchSnapshot()
 
   const testData = [{
-    timestamp_ms: 0,
+    timestamp_ns: 0,
     labels: { test_id: '0.7857680014573265_json', freq: '1', fmt: 'json', lbl_repl: 'val_repl', int_lbl: '1' },
     string: JSON.stringify({ lbl_repl: 'REPL', int_val: '1', new_lbl: 'new_val', str_id: 0, arr: [1, 2, 3], obj: { o_1: 'v_1' } })
   }, {
-    timestamp_ms: 1000,
+    timestamp_ns: 1000,
     labels: { test_id: '0.7857680014573265_json', freq: '1', fmt: 'json', lbl_repl: 'val_repl', int_lbl: '1' },
     string: JSON.stringify({ lbl_repl: 'REPL', int_val: '1', new_lbl: 'new_val', str_id: 0, arr: [1, 2, 3], obj: { o_1: 'v_1' } })
   }, {
-    timestamp_ms: 2000,
+    timestamp_ns: 2000,
     labels: { test_id: '0.7857680014573265_json', freq: '1', fmt: 'json', lbl_repl: 'val_repl', int_lbl: '1' },
     string: JSON.stringify({ lbl_repl: 'REPL', int_val: 'ewew', new_lbl: 'new_val', str_id: 0, arr: [1, 2, 3], obj: { o_1: 'v_1' } })
   }, { EOF: true }]
@@ -215,7 +215,7 @@ it('shoud transpile unwrap', async () => {
     ds = s(ds)
   })
   const res = await ds.toArray()
-  expect(res).toEqual([{ labels: { freq: '1' }, timestamp_ms: '0', value: 2 }, { EOF: true }])
+  expect(res).toEqual([{ labels: { freq: '1' }, timestamp_ns: '0', value: 2 }, { EOF: true }])
 
   expect(() => transpiler.transpile({ query: 'rate({test_id="1"} |~ "123" | unwrap_value [1s])' }))
     .toThrowError('log pipeline not supported')
@@ -260,7 +260,7 @@ it('should transpile line format', async () => {
   q.ctx.step = 1000
   script = bnf.ParseScript('rate({a="b"} | line_format "{ \\"entry\\": \\"{{_entry}}\\", \\"intval\\": {{divide int 2}} }" | json | unwrap intval [1s])')
   q = transpiler.transpileUnwrapFunction(script.rootToken, q)
-  ds = DataStream.fromArray([{ labels: { lbl1: 'a', int: 10 }, timestamp_ms: 0, string: 'str' }, { EOF: true }])
+  ds = DataStream.fromArray([{ labels: { lbl1: 'a', int: 10 }, timestamp_ns: 0, string: 'str' }, { EOF: true }])
   q.ctx.stream.forEach(s => { ds = s(ds) })
   expect(await ds.toArray()).toMatchSnapshot()
   // console.log(await ds.toArray());
@@ -272,9 +272,9 @@ it('should transpile plugins', async () => {
   _q.ctx.step = 1000
   const q = transpiler.transpileUnwrapFunction(script.rootToken, _q)
   let ds = DataStream.fromArray([
-    { labels: { lbl1: 'a' }, unwrapped: 10, timestamp_ms: 0, string: 'str' },
-    { labels: { lbl1: 'a' }, unwrapped: 20, timestamp_ms: 1000, string: 'str' },
-    { labels: { lbl1: 'a' }, unwrapped: 30, timestamp_ms: 2000, string: 'str' },
+    { labels: { lbl1: 'a' }, unwrapped: 10, timestamp_ns: 0, string: 'str' },
+    { labels: { lbl1: 'a' }, unwrapped: 20, timestamp_ns: 1000, string: 'str' },
+    { labels: { lbl1: 'a' }, unwrapped: 30, timestamp_ns: 2000, string: 'str' },
     { EOF: true }
   ])
   q.ctx.stream.forEach(s => { ds = s(ds) })

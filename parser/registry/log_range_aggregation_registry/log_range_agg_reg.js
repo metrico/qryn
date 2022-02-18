@@ -34,31 +34,31 @@ const genericRate = (valueExpr, token, query) => {
   const tsGroupingExpr = new Sql.Raw('')
   tsGroupingExpr.toString = () => {
     if (!tsMoveParam.get()) {
-      return `intDiv(timestamp_ms, ${duration}) * ${duration}`
+      return `intDiv(timestamp_ns, ${duration}) * ${duration}`
     }
-    return `intDiv(timestamp_ms - ${tsMoveParam.toString()}, ${duration}) * ${duration} + ${tsMoveParam.toString()}`
+    return `intDiv(timestamp_ns - ${tsMoveParam.toString()}, ${duration}) * ${duration} + ${tsMoveParam.toString()}`
   }
   const rateB = (new Sql.Select())
     .select(
       [concatLabels(query), 'labels'],
-      [tsGroupingExpr, 'timestamp_ms'],
+      [tsGroupingExpr, 'timestamp_ns'],
       [valueExpr, 'value']
     )
     .from(new Sql.WithReference(rateA))
-    .groupBy('labels', 'timestamp_ms')
-    .orderBy(['labels', 'asc'], ['timestamp_ms', 'asc'])
+    .groupBy('labels', 'timestamp_ns')
+    .orderBy(['labels', 'asc'], ['timestamp_ns', 'asc'])
   if (step <= duration) {
     return rateB.with(rateA)
   }
   const rateC = (new Sql.Select())
     .select(
       'labels',
-      [new Sql.Raw(`intDiv(timestamp_ms, ${step}) * ${step}`), 'timestamp_ms'],
-      [new Sql.Raw('argMin(rate_b.value, rate_b.timestamp_ms)'), 'value']
+      [new Sql.Raw(`intDiv(timestamp_ns, ${step}) * ${step}`), 'timestamp_ns'],
+      [new Sql.Raw('argMin(rate_b.value, rate_b.timestamp_ns)'), 'value']
     )
     .from('rate_b')
-    .groupBy('labels', 'timestamp_ms')
-    .orderBy(['labels', 'asc'], ['timestamp_ms', 'asc'])
+    .groupBy('labels', 'timestamp_ns')
+    .orderBy(['labels', 'asc'], ['timestamp_ns', 'asc'])
   return rateC.with(rateA, new Sql.With('rate_b', rateB))
 }
 
