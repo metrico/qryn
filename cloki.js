@@ -128,6 +128,28 @@ async function genericJSONParser (req) {
   }
 }
 
+/**
+ *
+ * @param req {FastifyRequest}
+ * @returns {Promise<void>}
+ */
+async function genericJSONOrYAMLParser (req) {
+  try {
+    const length = getContentLength(req, 1e9)
+    if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
+      return
+    }
+    await shaper.register(length)
+    const body = await getContentBody(req)
+    try { return JSON.parse(body) } catch (e) {}
+    try { return yaml.parse(body) } catch (e) {}
+    throw new Error('Unexpected request content-type')
+  } catch (err) {
+    err.statusCode = 400
+    throw err
+  }
+}
+
 (async () => {
   if (!this.readonly) {
     await init(process.env.CLICKHOUSE_DB || 'cloki')
@@ -261,7 +283,7 @@ fastify.addContentTypeParser('application/json', {},
 /* Null content-type handler for CH-MV HTTP PUSH */
 fastify.addContentTypeParser('*', {},
   async function (req, body, done) {
-    return await genericJSONParser(req)
+    return await genericJSONOrYAMLParser(req)
   })
 
 /* 404 Handler */
