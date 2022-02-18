@@ -24,7 +24,7 @@
     "url": "git+ssh://git@github.com/lmangani/cloki.git"
   },
   "author": "lorenzo.mangani@gmail.com",
-  "license": "MIT",
+  "license": "AGPL-3.0",
   "bugs": {
     "url": "https://github.com/lmangani/cloki/issues"
   },
