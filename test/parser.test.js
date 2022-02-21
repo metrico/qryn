@@ -100,3 +100,11 @@ it('should erase names', () => {
   nGroups('(a(?<label1>[^\\[\\(\\)]bc))')
   nGroups('(a[\\(\\)]+(?<l2>b)(?<label1>[^\\[\\(\\)]bc))')
 })
+
+it('should match 3339', () => {
+  const { parseStringifiedNanosOrRFC3339 } = require('../lib/utils')
+  console.log(parseStringifiedNanosOrRFC3339('1985-04-12T23:20:50.52Z'))
+  console.log(parseStringifiedNanosOrRFC3339('1990-12-31T23:59:60Z'))
+  console.log(parseStringifiedNanosOrRFC3339('1990-12-31T15:59:60-08:00'))
+  console.log(parseStringifiedNanosOrRFC3339('1937-01-01T12:00:27.87+00:20'))
+})

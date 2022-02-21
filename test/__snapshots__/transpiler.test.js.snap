@@ -4,7 +4,7 @@ exports[`log_range_aggregation 1 1`] = `
 Select {
   "aggregations": Array [
     "labels",
-    "timestamp_ms",
+    "timestamp_ns",
   ],
   "conditions": Conjunction {
     "args": Array [],
@@ -28,7 +28,7 @@ Select {
       "asc",
     ],
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "asc",
     ],
   ],
@@ -36,6 +36,10 @@ Select {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -75,7 +79,7 @@ Select {
         "raw": "",
         "toString": [Function],
       },
-      "timestamp_ms",
+      "timestamp_ns",
     ],
     Array [
       Raw {
@@ -315,7 +319,7 @@ Select {
             "limits": undefined,
             "order_expressions": Array [
               Array [
-                "timestamp_ms",
+                "timestamp_ns",
                 "desc",
               ],
               Array [
@@ -327,6 +331,10 @@ Select {
               "from": Parameter {
                 "name": "from",
                 "value": 1,
+              },
+              "isMatrix": Parameter {
+                "name": "isMatrix",
+                "value": null,
               },
               "limit": Parameter {
                 "name": "limit",
@@ -368,8 +376,11 @@ Select {
                 "fingerprint",
               ],
               Array [
-                "samples.timestamp_ms",
-                "timestamp_ms",
+                Raw {
+                  "raw": "",
+                  "toString": [Function],
+                },
+                "timestamp_ns",
               ],
             ],
             "tables": Array [
@@ -618,7 +629,7 @@ Select {
         "limits": undefined,
         "order_expressions": Array [
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "desc",
           ],
           Array [
@@ -630,6 +641,10 @@ Select {
           "from": Parameter {
             "name": "from",
             "value": 1,
+          },
+          "isMatrix": Parameter {
+            "name": "isMatrix",
+            "value": null,
           },
           "limit": Parameter {
             "name": "limit",
@@ -671,8 +686,11 @@ Select {
             "fingerprint",
           ],
           Array [
-            "samples.timestamp_ms",
-            "timestamp_ms",
+            Raw {
+              "raw": "",
+              "toString": [Function],
+            },
+            "timestamp_ns",
           ],
         ],
         "tables": Array [
@@ -761,13 +779,13 @@ Select {
 }
 `;
 
-exports[`log_range_aggregation 1 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'minus_nam') = 1) and (JSONExtractString(labels, 'minus_nam') = 'aut illo'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc) select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc"`;
+exports[`log_range_aggregation 1 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'minus_nam') = 1) and (JSONExtractString(labels, 'minus_nam') = 'aut illo'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` desc,\`labels\` desc) select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc"`;
 
 exports[`log_range_aggregation 2 1`] = `
 Select {
   "aggregations": Array [
     "labels",
-    "timestamp_ms",
+    "timestamp_ns",
   ],
   "conditions": Conjunction {
     "args": Array [],
@@ -791,7 +809,7 @@ Select {
       "asc",
     ],
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "asc",
     ],
   ],
@@ -799,6 +817,10 @@ Select {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -838,7 +860,7 @@ Select {
         "raw": "",
         "toString": [Function],
       },
-      "timestamp_ms",
+      "timestamp_ns",
     ],
     Array [
       Raw {
@@ -1087,7 +1109,7 @@ Select {
             "limits": undefined,
             "order_expressions": Array [
               Array [
-                "timestamp_ms",
+                "timestamp_ns",
                 "desc",
               ],
               Array [
@@ -1099,6 +1121,10 @@ Select {
               "from": Parameter {
                 "name": "from",
                 "value": 1,
+              },
+              "isMatrix": Parameter {
+                "name": "isMatrix",
+                "value": null,
               },
               "limit": Parameter {
                 "name": "limit",
@@ -1140,8 +1166,11 @@ Select {
                 "fingerprint",
               ],
               Array [
-                "samples.timestamp_ms",
-                "timestamp_ms",
+                Raw {
+                  "raw": "",
+                  "toString": [Function],
+                },
+                "timestamp_ns",
               ],
             ],
             "tables": Array [
@@ -1399,7 +1428,7 @@ Select {
         "limits": undefined,
         "order_expressions": Array [
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "desc",
           ],
           Array [
@@ -1411,6 +1440,10 @@ Select {
           "from": Parameter {
             "name": "from",
             "value": 1,
+          },
+          "isMatrix": Parameter {
+            "name": "isMatrix",
+            "value": null,
           },
           "limit": Parameter {
             "name": "limit",
@@ -1452,8 +1485,11 @@ Select {
             "fingerprint",
           ],
           Array [
-            "samples.timestamp_ms",
-            "timestamp_ms",
+            Raw {
+              "raw": "",
+              "toString": [Function],
+            },
+            "timestamp_ns",
           ],
         ],
         "tables": Array [
@@ -1542,13 +1578,13 @@ Select {
 }
 `;
 
-exports[`log_range_aggregation 2 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ms\` desc,\`labels\` desc) select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc"`;
+exports[`log_range_aggregation 2 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ns\` desc,\`labels\` desc) select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc"`;
 
 exports[`log_range_aggregation 3 1`] = `
 Select {
   "aggregations": Array [
     "labels",
-    "timestamp_ms",
+    "timestamp_ns",
   ],
   "conditions": Conjunction {
     "args": Array [],
@@ -1572,7 +1608,7 @@ Select {
       "asc",
     ],
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "asc",
     ],
   ],
@@ -1580,6 +1616,10 @@ Select {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -1619,7 +1659,7 @@ Select {
         "raw": "",
         "toString": [Function],
       },
-      "timestamp_ms",
+      "timestamp_ns",
     ],
     Array [
       Raw {
@@ -1868,7 +1908,7 @@ Select {
             "limits": undefined,
             "order_expressions": Array [
               Array [
-                "timestamp_ms",
+                "timestamp_ns",
                 "desc",
               ],
               Array [
@@ -1880,6 +1920,10 @@ Select {
               "from": Parameter {
                 "name": "from",
                 "value": 1,
+              },
+              "isMatrix": Parameter {
+                "name": "isMatrix",
+                "value": null,
               },
               "limit": Parameter {
                 "name": "limit",
@@ -1921,8 +1965,11 @@ Select {
                 "fingerprint",
               ],
               Array [
-                "samples.timestamp_ms",
-                "timestamp_ms",
+                Raw {
+                  "raw": "",
+                  "toString": [Function],
+                },
+                "timestamp_ns",
               ],
             ],
             "tables": Array [
@@ -2180,7 +2227,7 @@ Select {
         "limits": undefined,
         "order_expressions": Array [
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "desc",
           ],
           Array [
@@ -2192,6 +2239,10 @@ Select {
           "from": Parameter {
             "name": "from",
             "value": 1,
+          },
+          "isMatrix": Parameter {
+            "name": "isMatrix",
+            "value": null,
           },
           "limit": Parameter {
             "name": "limit",
@@ -2233,8 +2284,11 @@ Select {
             "fingerprint",
           ],
           Array [
-            "samples.timestamp_ms",
-            "timestamp_ms",
+            Raw {
+              "raw": "",
+              "toString": [Function],
+            },
+            "timestamp_ns",
           ],
         ],
         "tables": Array [
@@ -2323,13 +2377,13 @@ Select {
 }
 `;
 
-exports[`log_range_aggregation 3 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'et_dolorem') = 1) and (JSONExtractString(labels, 'et_dolorem') != 'nemo doloremque'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)') != []) order by \`timestamp_ms\` desc,\`labels\` desc) select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc"`;
+exports[`log_range_aggregation 3 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'et_dolorem') = 1) and (JSONExtractString(labels, 'et_dolorem') != 'nemo doloremque'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)') != []) order by \`timestamp_ns\` desc,\`labels\` desc) select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc"`;
 
 exports[`log_range_aggregation 4 1`] = `
 Select {
   "aggregations": Array [
     "labels",
-    "timestamp_ms",
+    "timestamp_ns",
   ],
   "conditions": Conjunction {
     "args": Array [],
@@ -2353,7 +2407,7 @@ Select {
       "asc",
     ],
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "asc",
     ],
   ],
@@ -2361,6 +2415,10 @@ Select {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -2392,13 +2450,13 @@ Select {
     "labels",
     Array [
       Raw {
-        "raw": "intDiv(timestamp_ms, 5000) * 5000",
+        "raw": "intDiv(timestamp_ns, 5000) * 5000",
       },
-      "timestamp_ms",
+      "timestamp_ns",
     ],
     Array [
       Raw {
-        "raw": "argMin(rate_b.value, rate_b.timestamp_ms)",
+        "raw": "argMin(rate_b.value, rate_b.timestamp_ns)",
       },
       "value",
     ],
@@ -2648,7 +2706,7 @@ Select {
         "limits": undefined,
         "order_expressions": Array [
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "desc",
           ],
           Array [
@@ -2660,6 +2718,10 @@ Select {
           "from": Parameter {
             "name": "from",
             "value": 1,
+          },
+          "isMatrix": Parameter {
+            "name": "isMatrix",
+            "value": null,
           },
           "limit": Parameter {
             "name": "limit",
@@ -2701,8 +2763,11 @@ Select {
             "fingerprint",
           ],
           Array [
-            "samples.timestamp_ms",
-            "timestamp_ms",
+            Raw {
+              "raw": "",
+              "toString": [Function],
+            },
+            "timestamp_ns",
           ],
         ],
         "tables": Array [
@@ -2725,7 +2790,7 @@ Select {
       "query": Select {
         "aggregations": Array [
           "labels",
-          "timestamp_ms",
+          "timestamp_ns",
         ],
         "conditions": Conjunction {
           "args": Array [],
@@ -2745,7 +2810,7 @@ Select {
             "asc",
           ],
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "asc",
           ],
         ],
@@ -2767,7 +2832,7 @@ Select {
               "raw": "",
               "toString": [Function],
             },
-            "timestamp_ms",
+            "timestamp_ns",
           ],
           Array [
             Raw {
@@ -3016,7 +3081,7 @@ Select {
                   "limits": undefined,
                   "order_expressions": Array [
                     Array [
-                      "timestamp_ms",
+                      "timestamp_ns",
                       "desc",
                     ],
                     Array [
@@ -3028,6 +3093,10 @@ Select {
                     "from": Parameter {
                       "name": "from",
                       "value": 1,
+                    },
+                    "isMatrix": Parameter {
+                      "name": "isMatrix",
+                      "value": null,
                     },
                     "limit": Parameter {
                       "name": "limit",
@@ -3069,8 +3138,11 @@ Select {
                       "fingerprint",
                     ],
                     Array [
-                      "samples.timestamp_ms",
-                      "timestamp_ms",
+                      Raw {
+                        "raw": "",
+                        "toString": [Function],
+                      },
+                      "timestamp_ns",
                     ],
                   ],
                   "tables": Array [
@@ -3165,13 +3237,13 @@ Select {
 }
 `;
 
-exports[`log_range_aggregation 4 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') = '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') = []) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 1000) * 1000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 1000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select \`labels\`,intDiv(timestamp_ms, 5000) * 5000 as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc"`;
+exports[`log_range_aggregation 4 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') = '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') = []) order by \`timestamp_ns\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ns, 1000) * 1000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 1000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select \`labels\`,intDiv(timestamp_ns, 5000) * 5000 as \`timestamp_ns\`,argMin(rate_b.value, rate_b.timestamp_ns) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc"`;
 
 exports[`shoud transpile unwrap 1`] = `
 Select {
   "aggregations": Array [
     "labels",
-    "timestamp_ms",
+    "timestamp_ns",
   ],
   "conditions": Conjunction {
     "args": Array [],
@@ -3195,13 +3267,17 @@ Select {
       "asc",
     ],
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "asc",
     ],
   ],
   "params": Object {
     "from": Parameter {
       "name": "from",
+      "value": null,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
       "value": null,
     },
     "limit": Parameter {
@@ -3234,13 +3310,13 @@ Select {
     "labels",
     Array [
       Raw {
-        "raw": "intDiv(timestamp_ms, 120000) * 120000",
+        "raw": "intDiv(timestamp_ns, 120000) * 120000",
       },
-      "timestamp_ms",
+      "timestamp_ns",
     ],
     Array [
       Raw {
-        "raw": "argMin(uw_rate_b.value, uw_rate_b.timestamp_ms)",
+        "raw": "argMin(uw_rate_b.value, uw_rate_b.timestamp_ns)",
       },
       "value",
     ],
@@ -3254,7 +3330,7 @@ Select {
           "query": Select {
             "aggregations": Array [
               "labels",
-              "timestamp_ms",
+              "timestamp_ns",
             ],
             "conditions": Conjunction {
               "args": Array [],
@@ -3270,7 +3346,7 @@ Select {
             "limits": undefined,
             "order_expressions": Array [
               "labels",
-              "timestamp_ms",
+              "timestamp_ns",
             ],
             "params": Object {},
             "preconditions": Conjunction {
@@ -3296,7 +3372,7 @@ Select {
                   "raw": "",
                   "toString": [Function],
                 },
-                "timestamp_ms",
+                "timestamp_ns",
               ],
             ],
             "tables": Array [
@@ -3551,7 +3627,7 @@ Select {
                       "limits": undefined,
                       "order_expressions": Array [
                         Array [
-                          "timestamp_ms",
+                          "timestamp_ns",
                           "desc",
                         ],
                         Array [
@@ -3562,6 +3638,10 @@ Select {
                       "params": Object {
                         "from": Parameter {
                           "name": "from",
+                          "value": null,
+                        },
+                        "isMatrix": Parameter {
+                          "name": "isMatrix",
                           "value": null,
                         },
                         "limit": Parameter {
@@ -3604,8 +3684,11 @@ Select {
                           "fingerprint",
                         ],
                         Array [
-                          "samples.timestamp_ms",
-                          "timestamp_ms",
+                          Raw {
+                            "raw": "",
+                            "toString": [Function],
+                          },
+                          "timestamp_ns",
                         ],
                         Array [
                           Raw {
@@ -3954,7 +4037,7 @@ Select {
         "limits": undefined,
         "order_expressions": Array [
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "desc",
           ],
           Array [
@@ -3965,6 +4048,10 @@ Select {
         "params": Object {
           "from": Parameter {
             "name": "from",
+            "value": null,
+          },
+          "isMatrix": Parameter {
+            "name": "isMatrix",
             "value": null,
           },
           "limit": Parameter {
@@ -4007,8 +4094,11 @@ Select {
             "fingerprint",
           ],
           Array [
-            "samples.timestamp_ms",
-            "timestamp_ms",
+            Raw {
+              "raw": "",
+              "toString": [Function],
+            },
+            "timestamp_ns",
           ],
           Array [
             Raw {
@@ -4036,7 +4126,7 @@ Select {
       "query": Select {
         "aggregations": Array [
           "labels",
-          "timestamp_ms",
+          "timestamp_ns",
         ],
         "conditions": Conjunction {
           "args": Array [],
@@ -4052,7 +4142,7 @@ Select {
         "limits": undefined,
         "order_expressions": Array [
           "labels",
-          "timestamp_ms",
+          "timestamp_ns",
         ],
         "params": Object {},
         "preconditions": Conjunction {
@@ -4078,7 +4168,7 @@ Select {
               "raw": "",
               "toString": [Function],
             },
-            "timestamp_ms",
+            "timestamp_ns",
           ],
         ],
         "tables": Array [
@@ -4333,7 +4423,7 @@ Select {
                   "limits": undefined,
                   "order_expressions": Array [
                     Array [
-                      "timestamp_ms",
+                      "timestamp_ns",
                       "desc",
                     ],
                     Array [
@@ -4344,6 +4434,10 @@ Select {
                   "params": Object {
                     "from": Parameter {
                       "name": "from",
+                      "value": null,
+                    },
+                    "isMatrix": Parameter {
+                      "name": "isMatrix",
                       "value": null,
                     },
                     "limit": Parameter {
@@ -4386,8 +4480,11 @@ Select {
                       "fingerprint",
                     ],
                     Array [
-                      "samples.timestamp_ms",
-                      "timestamp_ms",
+                      Raw {
+                        "raw": "",
+                        "toString": [Function],
+                      },
+                      "timestamp_ns",
                     ],
                     Array [
                       Raw {
@@ -4423,7 +4520,7 @@ exports[`shoud transpile unwrap 2`] = `
 Select {
   "aggregations": Array [
     "labels",
-    "timestamp_ms",
+    "timestamp_ns",
   ],
   "conditions": Conjunction {
     "args": Array [],
@@ -4447,13 +4544,17 @@ Select {
       "asc",
     ],
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "asc",
     ],
   ],
   "params": Object {
     "from": Parameter {
       "name": "from",
+      "value": null,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
       "value": null,
     },
     "limit": Parameter {
@@ -4486,13 +4587,13 @@ Select {
     "labels",
     Array [
       Raw {
-        "raw": "intDiv(timestamp_ms, 120000) * 120000",
+        "raw": "intDiv(timestamp_ns, 120000) * 120000",
       },
-      "timestamp_ms",
+      "timestamp_ns",
     ],
     Array [
       Raw {
-        "raw": "argMin(uw_rate_b.value, uw_rate_b.timestamp_ms)",
+        "raw": "argMin(uw_rate_b.value, uw_rate_b.timestamp_ns)",
       },
       "value",
     ],
@@ -4506,7 +4607,7 @@ Select {
           "query": Select {
             "aggregations": Array [
               "labels",
-              "timestamp_ms",
+              "timestamp_ns",
             ],
             "conditions": Conjunction {
               "args": Array [],
@@ -4522,7 +4623,7 @@ Select {
             "limits": undefined,
             "order_expressions": Array [
               "labels",
-              "timestamp_ms",
+              "timestamp_ns",
             ],
             "params": Object {},
             "preconditions": Conjunction {
@@ -4548,7 +4649,7 @@ Select {
                   "raw": "",
                   "toString": [Function],
                 },
-                "timestamp_ms",
+                "timestamp_ns",
               ],
             ],
             "tables": Array [
@@ -4825,7 +4926,7 @@ Select {
                       "limits": undefined,
                       "order_expressions": Array [
                         Array [
-                          "timestamp_ms",
+                          "timestamp_ns",
                           "desc",
                         ],
                         Array [
@@ -4836,6 +4937,10 @@ Select {
                       "params": Object {
                         "from": Parameter {
                           "name": "from",
+                          "value": null,
+                        },
+                        "isMatrix": Parameter {
+                          "name": "isMatrix",
                           "value": null,
                         },
                         "limit": Parameter {
@@ -4878,8 +4983,11 @@ Select {
                           "fingerprint",
                         ],
                         Array [
-                          "samples.timestamp_ms",
-                          "timestamp_ms",
+                          Raw {
+                            "raw": "",
+                            "toString": [Function],
+                          },
+                          "timestamp_ns",
                         ],
                         Array [
                           Raw {
@@ -5257,7 +5365,7 @@ Select {
         "limits": undefined,
         "order_expressions": Array [
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "desc",
           ],
           Array [
@@ -5268,6 +5376,10 @@ Select {
         "params": Object {
           "from": Parameter {
             "name": "from",
+            "value": null,
+          },
+          "isMatrix": Parameter {
+            "name": "isMatrix",
             "value": null,
           },
           "limit": Parameter {
@@ -5310,8 +5422,11 @@ Select {
             "fingerprint",
           ],
           Array [
-            "samples.timestamp_ms",
-            "timestamp_ms",
+            Raw {
+              "raw": "",
+              "toString": [Function],
+            },
+            "timestamp_ns",
           ],
           Array [
             Raw {
@@ -5346,7 +5461,7 @@ Select {
       "query": Select {
         "aggregations": Array [
           "labels",
-          "timestamp_ms",
+          "timestamp_ns",
         ],
         "conditions": Conjunction {
           "args": Array [],
@@ -5362,7 +5477,7 @@ Select {
         "limits": undefined,
         "order_expressions": Array [
           "labels",
-          "timestamp_ms",
+          "timestamp_ns",
         ],
         "params": Object {},
         "preconditions": Conjunction {
@@ -5388,7 +5503,7 @@ Select {
               "raw": "",
               "toString": [Function],
             },
-            "timestamp_ms",
+            "timestamp_ns",
           ],
         ],
         "tables": Array [
@@ -5665,7 +5780,7 @@ Select {
                   "limits": undefined,
                   "order_expressions": Array [
                     Array [
-                      "timestamp_ms",
+                      "timestamp_ns",
                       "desc",
                     ],
                     Array [
@@ -5676,6 +5791,10 @@ Select {
                   "params": Object {
                     "from": Parameter {
                       "name": "from",
+                      "value": null,
+                    },
+                    "isMatrix": Parameter {
+                      "name": "isMatrix",
                       "value": null,
                     },
                     "limit": Parameter {
@@ -5718,8 +5837,11 @@ Select {
                       "fingerprint",
                     ],
                     Array [
-                      "samples.timestamp_ms",
-                      "timestamp_ms",
+                      Raw {
+                        "raw": "",
+                        "toString": [Function],
+                      },
+                      "timestamp_ns",
                     ],
                     Array [
                       Raw {
@@ -5762,7 +5884,7 @@ exports[`shoud transpile unwrap 3`] = `
 Select {
   "aggregations": Array [
     "labels",
-    "timestamp_ms",
+    "timestamp_ns",
   ],
   "conditions": Conjunction {
     "args": Array [],
@@ -5786,13 +5908,17 @@ Select {
       "asc",
     ],
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "asc",
     ],
   ],
   "params": Object {
     "from": Parameter {
       "name": "from",
+      "value": null,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
       "value": null,
     },
     "limit": Parameter {
@@ -5825,13 +5951,13 @@ Select {
     "labels",
     Array [
       Raw {
-        "raw": "intDiv(timestamp_ms, 120000) * 120000",
+        "raw": "intDiv(timestamp_ns, 120000) * 120000",
       },
-      "timestamp_ms",
+      "timestamp_ns",
     ],
     Array [
       Raw {
-        "raw": "argMin(uw_rate_b.value, uw_rate_b.timestamp_ms)",
+        "raw": "argMin(uw_rate_b.value, uw_rate_b.timestamp_ns)",
       },
       "value",
     ],
@@ -5845,7 +5971,7 @@ Select {
           "query": Select {
             "aggregations": Array [
               "labels",
-              "timestamp_ms",
+              "timestamp_ns",
             ],
             "conditions": Conjunction {
               "args": Array [],
@@ -5861,7 +5987,7 @@ Select {
             "limits": undefined,
             "order_expressions": Array [
               "labels",
-              "timestamp_ms",
+              "timestamp_ns",
             ],
             "params": Object {},
             "preconditions": Conjunction {
@@ -5887,7 +6013,7 @@ Select {
                   "raw": "",
                   "toString": [Function],
                 },
-                "timestamp_ms",
+                "timestamp_ns",
               ],
             ],
             "tables": Array [
@@ -6164,7 +6290,7 @@ Select {
                       "limits": undefined,
                       "order_expressions": Array [
                         Array [
-                          "timestamp_ms",
+                          "timestamp_ns",
                           "desc",
                         ],
                         Array [
@@ -6175,6 +6301,10 @@ Select {
                       "params": Object {
                         "from": Parameter {
                           "name": "from",
+                          "value": null,
+                        },
+                        "isMatrix": Parameter {
+                          "name": "isMatrix",
                           "value": null,
                         },
                         "limit": Parameter {
@@ -6217,8 +6347,11 @@ Select {
                           "fingerprint",
                         ],
                         Array [
-                          "samples.timestamp_ms",
-                          "timestamp_ms",
+                          Raw {
+                            "raw": "",
+                            "toString": [Function],
+                          },
+                          "timestamp_ns",
                         ],
                         Array [
                           Raw {
@@ -6596,7 +6729,7 @@ Select {
         "limits": undefined,
         "order_expressions": Array [
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "desc",
           ],
           Array [
@@ -6607,6 +6740,10 @@ Select {
         "params": Object {
           "from": Parameter {
             "name": "from",
+            "value": null,
+          },
+          "isMatrix": Parameter {
+            "name": "isMatrix",
             "value": null,
           },
           "limit": Parameter {
@@ -6649,8 +6786,11 @@ Select {
             "fingerprint",
           ],
           Array [
-            "samples.timestamp_ms",
-            "timestamp_ms",
+            Raw {
+              "raw": "",
+              "toString": [Function],
+            },
+            "timestamp_ns",
           ],
           Array [
             Raw {
@@ -6685,7 +6825,7 @@ Select {
       "query": Select {
         "aggregations": Array [
           "labels",
-          "timestamp_ms",
+          "timestamp_ns",
         ],
         "conditions": Conjunction {
           "args": Array [],
@@ -6701,7 +6841,7 @@ Select {
         "limits": undefined,
         "order_expressions": Array [
           "labels",
-          "timestamp_ms",
+          "timestamp_ns",
         ],
         "params": Object {},
         "preconditions": Conjunction {
@@ -6727,7 +6867,7 @@ Select {
               "raw": "",
               "toString": [Function],
             },
-            "timestamp_ms",
+            "timestamp_ns",
           ],
         ],
         "tables": Array [
@@ -7004,7 +7144,7 @@ Select {
                   "limits": undefined,
                   "order_expressions": Array [
                     Array [
-                      "timestamp_ms",
+                      "timestamp_ns",
                       "desc",
                     ],
                     Array [
@@ -7015,6 +7155,10 @@ Select {
                   "params": Object {
                     "from": Parameter {
                       "name": "from",
+                      "value": null,
+                    },
+                    "isMatrix": Parameter {
+                      "name": "isMatrix",
                       "value": null,
                     },
                     "limit": Parameter {
@@ -7057,8 +7201,11 @@ Select {
                       "fingerprint",
                     ],
                     Array [
-                      "samples.timestamp_ms",
-                      "timestamp_ms",
+                      Raw {
+                        "raw": "",
+                        "toString": [Function],
+                      },
+                      "timestamp_ns",
                     ],
                     Array [
                       Raw {
@@ -7101,7 +7248,7 @@ exports[`should transpile aggregation_operator 1`] = `
 Select {
   "aggregations": Array [
     "labels",
-    "timestamp_ms",
+    "timestamp_ns",
   ],
   "conditions": Conjunction {
     "args": Array [],
@@ -7122,12 +7269,16 @@ Select {
   "limits": undefined,
   "order_expressions": Array [
     "labels",
-    "timestamp_ms",
+    "timestamp_ns",
   ],
   "params": Object {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -7162,7 +7313,7 @@ Select {
       },
       "labels",
     ],
-    "timestamp_ms",
+    "timestamp_ns",
     Array [
       Raw {
         "raw": "sum(value)",
@@ -7179,7 +7330,7 @@ Select {
           "query": Select {
             "aggregations": Array [
               "labels",
-              "timestamp_ms",
+              "timestamp_ns",
             ],
             "conditions": Conjunction {
               "args": Array [],
@@ -7204,7 +7355,7 @@ Select {
                 "asc",
               ],
               Array [
-                "timestamp_ms",
+                "timestamp_ns",
                 "asc",
               ],
             ],
@@ -7212,6 +7363,10 @@ Select {
               "from": Parameter {
                 "name": "from",
                 "value": 1,
+              },
+              "isMatrix": Parameter {
+                "name": "isMatrix",
+                "value": null,
               },
               "limit": Parameter {
                 "name": "limit",
@@ -7243,13 +7398,13 @@ Select {
               "labels",
               Array [
                 Raw {
-                  "raw": "intDiv(timestamp_ms, undefined) * undefined",
+                  "raw": "intDiv(timestamp_ns, undefined) * undefined",
                 },
-                "timestamp_ms",
+                "timestamp_ns",
               ],
               Array [
                 Raw {
-                  "raw": "argMin(rate_b.value, rate_b.timestamp_ms)",
+                  "raw": "argMin(rate_b.value, rate_b.timestamp_ns)",
                 },
                 "value",
               ],
@@ -7274,7 +7429,7 @@ Select {
       "query": Select {
         "aggregations": Array [
           "labels",
-          "timestamp_ms",
+          "timestamp_ns",
         ],
         "conditions": Conjunction {
           "args": Array [],
@@ -7299,7 +7454,7 @@ Select {
             "asc",
           ],
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "asc",
           ],
         ],
@@ -7307,6 +7462,10 @@ Select {
           "from": Parameter {
             "name": "from",
             "value": 1,
+          },
+          "isMatrix": Parameter {
+            "name": "isMatrix",
+            "value": null,
           },
           "limit": Parameter {
             "name": "limit",
@@ -7338,13 +7497,13 @@ Select {
           "labels",
           Array [
             Raw {
-              "raw": "intDiv(timestamp_ms, undefined) * undefined",
+              "raw": "intDiv(timestamp_ns, undefined) * undefined",
             },
-            "timestamp_ms",
+            "timestamp_ns",
           ],
           Array [
             Raw {
-              "raw": "argMin(rate_b.value, rate_b.timestamp_ms)",
+              "raw": "argMin(rate_b.value, rate_b.timestamp_ns)",
             },
             "value",
           ],
@@ -7588,7 +7747,7 @@ Select {
         "limits": undefined,
         "order_expressions": Array [
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "desc",
           ],
           Array [
@@ -7600,6 +7759,10 @@ Select {
           "from": Parameter {
             "name": "from",
             "value": 1,
+          },
+          "isMatrix": Parameter {
+            "name": "isMatrix",
+            "value": null,
           },
           "limit": Parameter {
             "name": "limit",
@@ -7641,8 +7804,11 @@ Select {
             "fingerprint",
           ],
           Array [
-            "samples.timestamp_ms",
-            "timestamp_ms",
+            Raw {
+              "raw": "",
+              "toString": [Function],
+            },
+            "timestamp_ns",
           ],
         ],
         "tables": Array [
@@ -7665,7 +7831,7 @@ Select {
       "query": Select {
         "aggregations": Array [
           "labels",
-          "timestamp_ms",
+          "timestamp_ns",
         ],
         "conditions": Conjunction {
           "args": Array [],
@@ -7685,7 +7851,7 @@ Select {
             "asc",
           ],
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "asc",
           ],
         ],
@@ -7707,7 +7873,7 @@ Select {
               "raw": "",
               "toString": [Function],
             },
-            "timestamp_ms",
+            "timestamp_ns",
           ],
           Array [
             Raw {
@@ -7948,7 +8114,7 @@ Select {
                   "limits": undefined,
                   "order_expressions": Array [
                     Array [
-                      "timestamp_ms",
+                      "timestamp_ns",
                       "desc",
                     ],
                     Array [
@@ -7960,6 +8126,10 @@ Select {
                     "from": Parameter {
                       "name": "from",
                       "value": 1,
+                    },
+                    "isMatrix": Parameter {
+                      "name": "isMatrix",
+                      "value": null,
                     },
                     "limit": Parameter {
                       "name": "limit",
@@ -8001,8 +8171,11 @@ Select {
                       "fingerprint",
                     ],
                     Array [
-                      "samples.timestamp_ms",
-                      "timestamp_ms",
+                      Raw {
+                        "raw": "",
+                        "toString": [Function],
+                      },
+                      "timestamp_ns",
                     ],
                   ],
                   "tables": Array [
@@ -8097,13 +8270,13 @@ Select {
 }
 `;
 
-exports[`should transpile aggregation_operator 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'minus_nam') = 1) and (JSONExtractString(labels, 'minus_nam') = 'aut illo'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc), agg_a AS (select \`labels\`,intDiv(timestamp_ms, undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ms\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ms\` order by \`labels\`,\`timestamp_ms\`"`;
+exports[`should transpile aggregation_operator 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'minus_nam') = 1) and (JSONExtractString(labels, 'minus_nam') = 'aut illo'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc), agg_a AS (select \`labels\`,intDiv(timestamp_ns, undefined) * undefined as \`timestamp_ns\`,argMin(rate_b.value, rate_b.timestamp_ns) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ns\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ns\` order by \`labels\`,\`timestamp_ns\`"`;
 
 exports[`should transpile aggregation_operator 3`] = `
 Select {
   "aggregations": Array [
     "labels",
-    "timestamp_ms",
+    "timestamp_ns",
   ],
   "conditions": Conjunction {
     "args": Array [],
@@ -8124,12 +8297,16 @@ Select {
   "limits": undefined,
   "order_expressions": Array [
     "labels",
-    "timestamp_ms",
+    "timestamp_ns",
   ],
   "params": Object {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -8164,7 +8341,7 @@ Select {
       },
       "labels",
     ],
-    "timestamp_ms",
+    "timestamp_ns",
     Array [
       Raw {
         "raw": "sum(value)",
@@ -8181,7 +8358,7 @@ Select {
           "query": Select {
             "aggregations": Array [
               "labels",
-              "timestamp_ms",
+              "timestamp_ns",
             ],
             "conditions": Conjunction {
               "args": Array [],
@@ -8206,7 +8383,7 @@ Select {
                 "asc",
               ],
               Array [
-                "timestamp_ms",
+                "timestamp_ns",
                 "asc",
               ],
             ],
@@ -8214,6 +8391,10 @@ Select {
               "from": Parameter {
                 "name": "from",
                 "value": 1,
+              },
+              "isMatrix": Parameter {
+                "name": "isMatrix",
+                "value": null,
               },
               "limit": Parameter {
                 "name": "limit",
@@ -8245,13 +8426,13 @@ Select {
               "labels",
               Array [
                 Raw {
-                  "raw": "intDiv(timestamp_ms, undefined) * undefined",
+                  "raw": "intDiv(timestamp_ns, undefined) * undefined",
                 },
-                "timestamp_ms",
+                "timestamp_ns",
               ],
               Array [
                 Raw {
-                  "raw": "argMin(rate_b.value, rate_b.timestamp_ms)",
+                  "raw": "argMin(rate_b.value, rate_b.timestamp_ns)",
                 },
                 "value",
               ],
@@ -8276,7 +8457,7 @@ Select {
       "query": Select {
         "aggregations": Array [
           "labels",
-          "timestamp_ms",
+          "timestamp_ns",
         ],
         "conditions": Conjunction {
           "args": Array [],
@@ -8301,7 +8482,7 @@ Select {
             "asc",
           ],
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "asc",
           ],
         ],
@@ -8309,6 +8490,10 @@ Select {
           "from": Parameter {
             "name": "from",
             "value": 1,
+          },
+          "isMatrix": Parameter {
+            "name": "isMatrix",
+            "value": null,
           },
           "limit": Parameter {
             "name": "limit",
@@ -8340,13 +8525,13 @@ Select {
           "labels",
           Array [
             Raw {
-              "raw": "intDiv(timestamp_ms, undefined) * undefined",
+              "raw": "intDiv(timestamp_ns, undefined) * undefined",
             },
-            "timestamp_ms",
+            "timestamp_ns",
           ],
           Array [
             Raw {
-              "raw": "argMin(rate_b.value, rate_b.timestamp_ms)",
+              "raw": "argMin(rate_b.value, rate_b.timestamp_ns)",
             },
             "value",
           ],
@@ -8706,7 +8891,7 @@ Select {
         "limits": undefined,
         "order_expressions": Array [
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "desc",
           ],
           Array [
@@ -8718,6 +8903,10 @@ Select {
           "from": Parameter {
             "name": "from",
             "value": 1,
+          },
+          "isMatrix": Parameter {
+            "name": "isMatrix",
+            "value": null,
           },
           "limit": Parameter {
             "name": "limit",
@@ -8759,8 +8948,11 @@ Select {
             "fingerprint",
           ],
           Array [
-            "samples.timestamp_ms",
-            "timestamp_ms",
+            Raw {
+              "raw": "",
+              "toString": [Function],
+            },
+            "timestamp_ns",
           ],
         ],
         "tables": Array [
@@ -8783,7 +8975,7 @@ Select {
       "query": Select {
         "aggregations": Array [
           "labels",
-          "timestamp_ms",
+          "timestamp_ns",
         ],
         "conditions": Conjunction {
           "args": Array [],
@@ -8803,7 +8995,7 @@ Select {
             "asc",
           ],
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "asc",
           ],
         ],
@@ -8825,7 +9017,7 @@ Select {
               "raw": "",
               "toString": [Function],
             },
-            "timestamp_ms",
+            "timestamp_ns",
           ],
           Array [
             Raw {
@@ -9182,7 +9374,7 @@ Select {
                   "limits": undefined,
                   "order_expressions": Array [
                     Array [
-                      "timestamp_ms",
+                      "timestamp_ns",
                       "desc",
                     ],
                     Array [
@@ -9194,6 +9386,10 @@ Select {
                     "from": Parameter {
                       "name": "from",
                       "value": 1,
+                    },
+                    "isMatrix": Parameter {
+                      "name": "isMatrix",
+                      "value": null,
                     },
                     "limit": Parameter {
                       "name": "limit",
@@ -9235,8 +9431,11 @@ Select {
                       "fingerprint",
                     ],
                     Array [
-                      "samples.timestamp_ms",
-                      "timestamp_ms",
+                      Raw {
+                        "raw": "",
+                        "toString": [Function],
+                      },
+                      "timestamp_ns",
                     ],
                   ],
                   "tables": Array [
@@ -9331,13 +9530,13 @@ Select {
 }
 `;
 
-exports[`should transpile aggregation_operator 4`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc), agg_a AS (select \`labels\`,intDiv(timestamp_ms, undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ms\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ms\` order by \`labels\`,\`timestamp_ms\`"`;
+exports[`should transpile aggregation_operator 4`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != '[]'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ns\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc), agg_a AS (select \`labels\`,intDiv(timestamp_ns, undefined) * undefined as \`timestamp_ns\`,argMin(rate_b.value, rate_b.timestamp_ns) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ns\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ns\` order by \`labels\`,\`timestamp_ns\`"`;
 
 exports[`should transpile aggregation_operator 5`] = `
 Select {
   "aggregations": Array [
     "labels",
-    "timestamp_ms",
+    "timestamp_ns",
   ],
   "conditions": Conjunction {
     "args": Array [],
@@ -9358,12 +9557,16 @@ Select {
   "limits": undefined,
   "order_expressions": Array [
     "labels",
-    "timestamp_ms",
+    "timestamp_ns",
   ],
   "params": Object {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -9398,7 +9601,7 @@ Select {
       },
       "labels",
     ],
-    "timestamp_ms",
+    "timestamp_ns",
     Array [
       Raw {
         "raw": "sum(value)",
@@ -9415,7 +9618,7 @@ Select {
           "query": Select {
             "aggregations": Array [
               "labels",
-              "timestamp_ms",
+              "timestamp_ns",
             ],
             "conditions": Conjunction {
               "args": Array [],
@@ -9440,7 +9643,7 @@ Select {
                 "asc",
               ],
               Array [
-                "timestamp_ms",
+                "timestamp_ns",
                 "asc",
               ],
             ],
@@ -9448,6 +9651,10 @@ Select {
               "from": Parameter {
                 "name": "from",
                 "value": 1,
+              },
+              "isMatrix": Parameter {
+                "name": "isMatrix",
+                "value": null,
               },
               "limit": Parameter {
                 "name": "limit",
@@ -9479,13 +9686,13 @@ Select {
               "labels",
               Array [
                 Raw {
-                  "raw": "intDiv(timestamp_ms, undefined) * undefined",
+                  "raw": "intDiv(timestamp_ns, undefined) * undefined",
                 },
-                "timestamp_ms",
+                "timestamp_ns",
               ],
               Array [
                 Raw {
-                  "raw": "argMin(rate_b.value, rate_b.timestamp_ms)",
+                  "raw": "argMin(rate_b.value, rate_b.timestamp_ns)",
                 },
                 "value",
               ],
@@ -9510,7 +9717,7 @@ Select {
       "query": Select {
         "aggregations": Array [
           "labels",
-          "timestamp_ms",
+          "timestamp_ns",
         ],
         "conditions": Conjunction {
           "args": Array [],
@@ -9535,7 +9742,7 @@ Select {
             "asc",
           ],
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "asc",
           ],
         ],
@@ -9543,6 +9750,10 @@ Select {
           "from": Parameter {
             "name": "from",
             "value": 1,
+          },
+          "isMatrix": Parameter {
+            "name": "isMatrix",
+            "value": null,
           },
           "limit": Parameter {
             "name": "limit",
@@ -9574,13 +9785,13 @@ Select {
           "labels",
           Array [
             Raw {
-              "raw": "intDiv(timestamp_ms, undefined) * undefined",
+              "raw": "intDiv(timestamp_ns, undefined) * undefined",
             },
-            "timestamp_ms",
+            "timestamp_ns",
           ],
           Array [
             Raw {
-              "raw": "argMin(rate_b.value, rate_b.timestamp_ms)",
+              "raw": "argMin(rate_b.value, rate_b.timestamp_ns)",
             },
             "value",
           ],
@@ -9824,7 +10035,7 @@ Select {
         "limits": undefined,
         "order_expressions": Array [
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "desc",
           ],
           Array [
@@ -9836,6 +10047,10 @@ Select {
           "from": Parameter {
             "name": "from",
             "value": 1,
+          },
+          "isMatrix": Parameter {
+            "name": "isMatrix",
+            "value": null,
           },
           "limit": Parameter {
             "name": "limit",
@@ -9877,8 +10092,11 @@ Select {
             "fingerprint",
           ],
           Array [
-            "samples.timestamp_ms",
-            "timestamp_ms",
+            Raw {
+              "raw": "",
+              "toString": [Function],
+            },
+            "timestamp_ns",
           ],
         ],
         "tables": Array [
@@ -9901,7 +10119,7 @@ Select {
       "query": Select {
         "aggregations": Array [
           "labels",
-          "timestamp_ms",
+          "timestamp_ns",
         ],
         "conditions": Conjunction {
           "args": Array [],
@@ -9921,7 +10139,7 @@ Select {
             "asc",
           ],
           Array [
-            "timestamp_ms",
+            "timestamp_ns",
             "asc",
           ],
         ],
@@ -9943,7 +10161,7 @@ Select {
               "raw": "",
               "toString": [Function],
             },
-            "timestamp_ms",
+            "timestamp_ns",
           ],
           Array [
             Raw {
@@ -10184,7 +10402,7 @@ Select {
                   "limits": undefined,
                   "order_expressions": Array [
                     Array [
-                      "timestamp_ms",
+                      "timestamp_ns",
                       "desc",
                     ],
                     Array [
@@ -10196,6 +10414,10 @@ Select {
                     "from": Parameter {
                       "name": "from",
                       "value": 1,
+                    },
+                    "isMatrix": Parameter {
+                      "name": "isMatrix",
+                      "value": null,
                     },
                     "limit": Parameter {
                       "name": "limit",
@@ -10237,8 +10459,11 @@ Select {
                       "fingerprint",
                     ],
                     Array [
-                      "samples.timestamp_ms",
-                      "timestamp_ms",
+                      Raw {
+                        "raw": "",
+                        "toString": [Function],
+                      },
+                      "timestamp_ns",
                     ],
                   ],
                   "tables": Array [
@@ -10333,13 +10558,13 @@ Select {
 }
 `;
 
-exports[`should transpile aggregation_operator 6`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'minus_nam') = 1) and (JSONExtractString(labels, 'minus_nam') = 'aut illo'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 300000) * 300000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc), agg_a AS (select \`labels\`,intDiv(timestamp_ms, undefined) * undefined as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ms\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ms\` order by \`labels\`,\`timestamp_ms\`"`;
+exports[`should transpile aggregation_operator 6`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'minus_nam') = 1) and (JSONExtractString(labels, 'minus_nam') = 'aut illo'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc), agg_a AS (select \`labels\`,intDiv(timestamp_ns, undefined) * undefined as \`timestamp_ns\`,argMin(rate_b.value, rate_b.timestamp_ns) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ns\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ns\` order by \`labels\`,\`timestamp_ns\`"`;
 
 exports[`should transpile complex pipelines 1`] = `
 Object {
   "duration": 1000,
   "matrix": false,
-  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '\${testID}')) and ((JSONHas(labels, 'freq') = 1) and (toFloat64OrNull(JSONExtractString(labels, 'freq')) >= '4'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 0 and 100000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` asc,\`labels\` asc limit 1000) select * from sel_a order by \`labels\` asc,\`timestamp_ms\` asc",
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '\${testID}')) and ((JSONHas(labels, 'freq') = 1) and (toFloat64OrNull(JSONExtractString(labels, 'freq')) >= '4'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 0000000 and 100000000000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` asc,\`labels\` asc limit 1000) select * from sel_a order by \`labels\` asc,\`timestamp_ns\` asc",
   "stream": Array [],
 }
 `;
@@ -10581,7 +10806,7 @@ Select {
   },
   "order_expressions": Array [
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "desc",
     ],
     Array [
@@ -10593,6 +10818,10 @@ Select {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -10630,8 +10859,11 @@ Select {
       "fingerprint",
     ],
     Array [
-      "samples.timestamp_ms",
-      "timestamp_ms",
+      Raw {
+        "raw": "",
+        "toString": [Function],
+      },
+      "timestamp_ns",
     ],
     Array [
       Raw {
@@ -10773,7 +11005,7 @@ Array [
       "intval": "5",
       "lbl1": "a",
     },
-    "timestamp_ms": "0",
+    "timestamp_ns": "0",
     "value": 5,
   },
   Object {
@@ -11066,7 +11298,7 @@ Select {
   },
   "order_expressions": Array [
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "desc",
     ],
     Array [
@@ -11078,6 +11310,10 @@ Select {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -11115,8 +11351,11 @@ Select {
       "fingerprint",
     ],
     Array [
-      "samples.timestamp_ms",
-      "timestamp_ms",
+      Raw {
+        "raw": "",
+        "toString": [Function],
+      },
+      "timestamp_ns",
     ],
   ],
   "tables": Array [
@@ -11231,7 +11470,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'et_dolorem') = 1) and (JSONExtractString(labels, 'et_dolorem') = 'nemo doloremque')) and ((JSONHas(labels, 'quia') = 1) and (JSONExtractString(labels, 'quia') = 'eum voluptatem non eligendi'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'et_dolorem') = 1) and (JSONExtractString(labels, 'et_dolorem') = 'nemo doloremque')) and ((JSONHas(labels, 'quia') = 1) and (JSONExtractString(labels, 'quia') = 'eum voluptatem non eligendi'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector 3`] = `
 Select {
@@ -11461,7 +11700,7 @@ Select {
   },
   "order_expressions": Array [
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "desc",
     ],
     Array [
@@ -11473,6 +11712,10 @@ Select {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -11510,8 +11753,11 @@ Select {
       "fingerprint",
     ],
     Array [
-      "samples.timestamp_ms",
-      "timestamp_ms",
+      Raw {
+        "raw": "",
+        "toString": [Function],
+      },
+      "timestamp_ns",
     ],
   ],
   "tables": Array [
@@ -11598,7 +11844,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector 4`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != '[]'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector 4`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != '[]'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector 5`] = `
 Select {
@@ -11828,7 +12074,7 @@ Select {
   },
   "order_expressions": Array [
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "desc",
     ],
     Array [
@@ -11840,6 +12086,10 @@ Select {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -11877,8 +12127,11 @@ Select {
       "fingerprint",
     ],
     Array [
-      "samples.timestamp_ms",
-      "timestamp_ms",
+      Raw {
+        "raw": "",
+        "toString": [Function],
+      },
+      "timestamp_ns",
     ],
   ],
   "tables": Array [
@@ -11965,7 +12218,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector 6`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'et_dolorem') = 1) and (JSONExtractString(labels, 'et_dolorem') != 'nemo doloremque'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector 6`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'et_dolorem') = 1) and (JSONExtractString(labels, 'et_dolorem') != 'nemo doloremque'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector 7`] = `
 Select {
@@ -12195,7 +12448,7 @@ Select {
   },
   "order_expressions": Array [
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "desc",
     ],
     Array [
@@ -12207,6 +12460,10 @@ Select {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -12244,8 +12501,11 @@ Select {
       "fingerprint",
     ],
     Array [
-      "samples.timestamp_ms",
-      "timestamp_ms",
+      Raw {
+        "raw": "",
+        "toString": [Function],
+      },
+      "timestamp_ns",
     ],
   ],
   "tables": Array [
@@ -12332,7 +12592,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector 8`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') = '[]'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector 8`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') = '[]'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector with stream filter 1`] = `
 Select {
@@ -12627,7 +12887,7 @@ Select {
   },
   "order_expressions": Array [
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "desc",
     ],
     Array [
@@ -12639,6 +12899,10 @@ Select {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -12676,8 +12940,11 @@ Select {
       "fingerprint",
     ],
     Array [
-      "samples.timestamp_ms",
-      "timestamp_ms",
+      Raw {
+        "raw": "",
+        "toString": [Function],
+      },
+      "timestamp_ns",
     ],
   ],
   "tables": Array [
@@ -12792,7 +13059,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector with stream filter 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'et_dolorem') = 1) and (JSONExtractString(labels, 'et_dolorem') = 'nemo doloremque')) and ((JSONHas(labels, 'quia') = 1) and (JSONExtractString(labels, 'quia') = 'eum voluptatem non eligendi'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'at et') != 0) order by \`timestamp_ms\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector with stream filter 2`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'et_dolorem') = 1) and (JSONExtractString(labels, 'et_dolorem') = 'nemo doloremque')) and ((JSONHas(labels, 'quia') = 1) and (JSONExtractString(labels, 'quia') = 'eum voluptatem non eligendi'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'at et') != 0) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector with stream filter 3`] = `
 Select {
@@ -13031,7 +13298,7 @@ Select {
   },
   "order_expressions": Array [
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "desc",
     ],
     Array [
@@ -13043,6 +13310,10 @@ Select {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -13080,8 +13351,11 @@ Select {
       "fingerprint",
     ],
     Array [
-      "samples.timestamp_ms",
-      "timestamp_ms",
+      Raw {
+        "raw": "",
+        "toString": [Function],
+      },
+      "timestamp_ns",
     ],
   ],
   "tables": Array [
@@ -13168,7 +13442,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector with stream filter 4`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != '[]'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ms\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector with stream filter 4`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') != '[]'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector with stream filter 5`] = `
 Select {
@@ -13407,7 +13681,7 @@ Select {
   },
   "order_expressions": Array [
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "desc",
     ],
     Array [
@@ -13419,6 +13693,10 @@ Select {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -13456,8 +13734,11 @@ Select {
       "fingerprint",
     ],
     Array [
-      "samples.timestamp_ms",
-      "timestamp_ms",
+      Raw {
+        "raw": "",
+        "toString": [Function],
+      },
+      "timestamp_ns",
     ],
   ],
   "tables": Array [
@@ -13544,7 +13825,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector with stream filter 6`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'et_dolorem') = 1) and (JSONExtractString(labels, 'et_dolorem') != 'nemo doloremque'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)') != []) order by \`timestamp_ms\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector with stream filter 6`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'et_dolorem') = 1) and (JSONExtractString(labels, 'et_dolorem') != 'nemo doloremque'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)') != []) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector with stream filter 7`] = `
 Select {
@@ -13783,7 +14064,7 @@ Select {
   },
   "order_expressions": Array [
     Array [
-      "timestamp_ms",
+      "timestamp_ns",
       "desc",
     ],
     Array [
@@ -13795,6 +14076,10 @@ Select {
     "from": Parameter {
       "name": "from",
       "value": 1,
+    },
+    "isMatrix": Parameter {
+      "name": "isMatrix",
+      "value": null,
     },
     "limit": Parameter {
       "name": "limit",
@@ -13832,8 +14117,11 @@ Select {
       "fingerprint",
     ],
     Array [
-      "samples.timestamp_ms",
-      "timestamp_ms",
+      Raw {
+        "raw": "",
+        "toString": [Function],
+      },
+      "timestamp_ns",
     ],
   ],
   "tables": Array [
@@ -13920,7 +14208,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector with stream filter 8`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') = '[]'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') = []) order by \`timestamp_ms\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector with stream filter 8`] = `"WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'rerum_laborum') = 1) and (extractAllGroups(JSONExtractString(labels, 'rerum_laborum'), '(^con.+q.at[a-z]r)') = '[]'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') = []) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile logfmt requests 1`] = `
 Array [
@@ -13940,7 +14228,7 @@ exports[`should transpile new style 1 1`] = `
 Object {
   "duration": 1000,
   "matrix": false,
-  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.7387779420506657'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638802620000 and 1638803220000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ms\` desc",
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.7387779420506657'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
   "stream": Array [],
 }
 `;
@@ -13949,7 +14237,7 @@ exports[`should transpile new style 2 1`] = `
 Object {
   "duration": 1000,
   "matrix": false,
-  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.2119268970232')) and ((JSONHas(labels, 'freq') = 1) and (JSONExtractString(labels, 'freq') = '2'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638802620000 and 1638803220000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(2[0-9]$)') != []) order by \`timestamp_ms\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ms\` desc",
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.2119268970232')) and ((JSONHas(labels, 'freq') = 1) and (JSONExtractString(labels, 'freq') = '2'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(2[0-9]$)') != []) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
   "stream": Array [],
 }
 `;
@@ -13958,7 +14246,7 @@ exports[`should transpile new style 3 1`] = `
 Object {
   "duration": 1000,
   "matrix": true,
-  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.7026038163617259')) and ((JSONHas(labels, 'freq') = 1) and (JSONExtractString(labels, 'freq') = '2'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638802620000 and 1638803220000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(2[0-9]$)') != []) order by \`timestamp_ms\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ms, 1000) * 1000 as \`timestamp_ms\`,toFloat64(count(1)) * 1000 / 1000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select \`labels\`,intDiv(timestamp_ms, 2000) * 2000 as \`timestamp_ms\`,argMin(rate_b.value, rate_b.timestamp_ms) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc",
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.7026038163617259')) and ((JSONHas(labels, 'freq') = 1) and (JSONExtractString(labels, 'freq') = '2'))), rate_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,intDiv(samples.timestamp_ns, 1000000) as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(2[0-9]$)') != []) order by \`timestamp_ns\` desc,\`labels\` desc), rate_b AS (select JSONExtractKeysAndValues(labels, 'String') as \`labels\`,intDiv(timestamp_ns, 1000) * 1000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 1000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select \`labels\`,intDiv(timestamp_ns, 2000) * 2000 as \`timestamp_ns\`,argMin(rate_b.value, rate_b.timestamp_ns) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc",
   "stream": Array [],
 }
 `;
@@ -13967,7 +14255,7 @@ exports[`should transpile new style 4 1`] = `
 Object {
   "duration": 1000,
   "matrix": true,
-  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.7026038163617259')) and ((JSONHas(labels, 'freq') = 1) and (JSONExtractString(labels, 'freq') = '2'))), rate_a AS (select \`labels\`,toUInt64(intDiv(timestamp_ms, 1000) * 1000) as \`timestamp_ms\`,toFloat64(0) as \`value\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638802620000 and 1638803220000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(2[0-9]$)') != []) group by \`labels\`,\`timestamp_ms\` order by \`labels\` asc,\`timestamp_ms\` asc) select \`labels\`,\`timestamp_ms\`,min(value) as \`value\` from (select * from rate_a as \`rate_a\` UNION ALL select \`a1\`.\`labels\`,number * 1000 + 1638802620000 as \`timestamp_ms\`,toFloat64(1) as \`value\` from (select \`labels\` from str_sel) as \`a1\`,numbers(600) as \`a2\`) group by \`labels\`,\`timestamp_ms\` order by \`labels\`,\`timestamp_ms\`",
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.7026038163617259')) and ((JSONHas(labels, 'freq') = 1) and (JSONExtractString(labels, 'freq') = '2'))), rate_a AS (select \`labels\`,toUInt64(intDiv(timestamp_ns, 1000000000) * 1000) as \`timestamp_ns\`,toFloat64(0) as \`value\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (extractAllGroups(string, '(2[0-9]$)') != []) group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select \`labels\`,\`timestamp_ns\`,min(value) as \`value\` from (select * from rate_a as \`rate_a\` UNION ALL select \`a1\`.\`labels\`,number * 1000 + intDiv(1638802620000000000, 1000000) as \`timestamp_ns\`,toFloat64(1) as \`value\` from (select \`labels\` from str_sel) as \`a1\`,numbers(intDiv(1638803220000000000 - 1638802620000000000, 1000000000)) as \`a2\`) group by \`labels\`,\`timestamp_ns\` order by \`labels\`,\`timestamp_ns\`",
   "stream": Array [],
 }
 `;
@@ -13976,7 +14264,7 @@ exports[`should transpile new style 5 1`] = `
 Object {
   "duration": 1000,
   "matrix": false,
-  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.000341166036469831_json'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638802620000 and 1638803220000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ms\` desc",
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.000341166036469831_json'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
   "stream": Array [
     [Function],
   ],
@@ -13987,7 +14275,7 @@ exports[`should transpile new style 6 1`] = `
 Object {
   "duration": 1000,
   "matrix": false,
-  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.2053747382122484_json'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\`,arrayFilter((x) -> x.2 != '', [('lbl_repl', if(JSONType(samples.string, 'new_lbl') == 'String', JSONExtractString(samples.string, 'new_lbl'), JSONExtractRaw(samples.string, 'new_lbl')))]) as \`extra_labels\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638802620000 and 1638803220000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (isValidJSON(samples.string) = 1) and ((indexOf(extra_labels, ('lbl_repl', 'new_val')) > 0) or ((arrayExists(x -> x.1 == 'lbl_repl', extra_labels) = 0) and ((JSONHas(labels, 'lbl_repl') = 1) and (JSONExtractString(labels, 'lbl_repl') = 'new_val')))) order by \`timestamp_ms\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ms\` desc",
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.2053747382122484_json'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\`,arrayFilter((x) -> x.2 != '', [('lbl_repl', if(JSONType(samples.string, 'new_lbl') == 'String', JSONExtractString(samples.string, 'new_lbl'), JSONExtractRaw(samples.string, 'new_lbl')))]) as \`extra_labels\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (isValidJSON(samples.string) = 1) and ((indexOf(extra_labels, ('lbl_repl', 'new_val')) > 0) or ((arrayExists(x -> x.1 == 'lbl_repl', extra_labels) = 0) and ((JSONHas(labels, 'lbl_repl') = 1) and (JSONExtractString(labels, 'lbl_repl') = 'new_val')))) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
   "stream": Array [],
 }
 `;
@@ -13996,7 +14284,7 @@ exports[`should transpile new style 7 1`] = `
 Object {
   "duration": 3000,
   "matrix": true,
-  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.1547558751138609_json'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638802620000 and 1638803220000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc",
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.1547558751138609_json'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,intDiv(samples.timestamp_ns, 1000000) as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` desc,\`labels\` desc",
   "stream": Array [
     [Function],
     [Function],
@@ -14012,7 +14300,7 @@ exports[`should transpile new style 8 1`] = `
 Object {
   "duration": 1000,
   "matrix": true,
-  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.4075242197275857'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638802620000 and 1638803220000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc",
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.4075242197275857'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,intDiv(samples.timestamp_ns, 1000000) as \`timestamp_ns\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` desc,\`labels\` desc",
   "stream": Array [
     [Function],
     [Function],
@@ -14028,7 +14316,7 @@ exports[`should transpile new style 9 1`] = `
 Object {
   "duration": 1000,
   "matrix": false,
-  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.7186063017626447_json'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\`,arrayFilter((x) -> x.2 != '', [('sid', if(JSONType(samples.string, 'str_id') == 'String', JSONExtractString(samples.string, 'str_id'), JSONExtractRaw(samples.string, 'str_id')))]) as \`extra_labels\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638802620000 and 1638803220000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (isValidJSON(samples.string) = 1) and ((arrayExists(x -> x.1 == 'sid' AND (coalesce(toFloat64OrNull(x.2) >= '598', 0)), extra_labels) != 0) or ((arrayExists(x -> x.1 == 'sid', extra_labels) = 0) and ((JSONHas(labels, 'sid') = 1) and (toFloat64OrNull(JSONExtractString(labels, 'sid')) >= '598')))) order by \`timestamp_ms\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ms\` desc",
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.7186063017626447_json'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\`,arrayFilter((x) -> x.2 != '', [('sid', if(JSONType(samples.string, 'str_id') == 'String', JSONExtractString(samples.string, 'str_id'), JSONExtractRaw(samples.string, 'str_id')))]) as \`extra_labels\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and (isValidJSON(samples.string) = 1) and ((arrayExists(x -> x.1 == 'sid' AND (coalesce(toFloat64OrNull(x.2) >= '598', 0)), extra_labels) != 0) or ((arrayExists(x -> x.1 == 'sid', extra_labels) = 0) and ((JSONHas(labels, 'sid') = 1) and (toFloat64OrNull(JSONExtractString(labels, 'sid')) >= '598')))) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
   "stream": Array [],
 }
 `;
@@ -14037,7 +14325,7 @@ exports[`should transpile new style 10 1`] = `
 Object {
   "duration": 1000,
   "matrix": false,
-  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.5505504081219323'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\`,arrayFilter(x -> x.1 != '' AND x.2 != '', arrayZip(['e'], arrayMap(x -> x[length(x)], extractAllGroupsHorizontal(string, '^([^0-9]+)[0-9]+$')))) as \`extra_labels\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\`   between 1638802620000 and 1638803220000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ms\` desc",
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.5505504081219323'))), sel_a AS (select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\`,arrayFilter(x -> x.1 != '' AND x.2 != '', arrayZip(['e'], arrayMap(x -> x[length(x)], extractAllGroupsHorizontal(string, '^([^0-9]+)[0-9]+$')))) as \`extra_labels\` from loki.samples_read as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
   "stream": Array [],
 }
 `;
@@ -14048,7 +14336,7 @@ Array [
     "labels": Object {
       "lbl1": "a",
     },
-    "timestamp_ms": "0",
+    "timestamp_ns": "0",
     "value": 10,
   },
   Object {
@@ -14061,7 +14349,7 @@ exports[`should transpile series 1`] = `"select DISTINCT \`fingerprint\`,\`label
 
 exports[`should transpile tail 1`] = `
 Object {
-  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (extractAllGroups(JSONExtractString(labels, 'test_id'), '(_ws)') != '[]'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,\`samples\`.\`timestamp_ms\` as \`timestamp_ms\` from loki.samples_v2 as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ms\` > (toUnixTimestamp(now()) - 5) * 1000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ms\` asc",
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (extractAllGroups(JSONExtractString(labels, 'test_id'), '(_ws)') != '[]'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_v3 as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\` > (toUnixTimestamp(now()) - 5) * 1000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` asc",
   "stream": Array [],
 }
 `;

@@ -65,8 +65,8 @@ const shaper = {
    * @returns {Promise<void>}
    */
   register: async (size) => {
-    while (shaper.onParse + size > 5e10) {
-      await new Promise(resolve => { shaper.onParsed.once('parsed') })
+    while (shaper.onParse + size > 50e6) {
+      await new Promise(resolve => { shaper.onParsed.once('parsed', resolve) })
     }
     shaper.onParse += size
   },
@@ -128,6 +128,28 @@ async function genericJSONParser (req) {
   }
 }
 
+/**
+ *
+ * @param req {FastifyRequest}
+ * @returns {Promise<void>}
+ */
+async function genericJSONOrYAMLParser (req) {
+  try {
+    const length = getContentLength(req, 1e9)
+    if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
+      return
+    }
+    await shaper.register(length)
+    const body = await getContentBody(req)
+    try { return JSON.parse(body) } catch (e) {}
+    try { return yaml.parse(body) } catch (e) {}
+    throw new Error('Unexpected request content-type')
+  } catch (err) {
+    err.statusCode = 400
+    throw err
+  }
+}
+
 (async () => {
   if (!this.readonly) {
     await init(process.env.CLICKHOUSE_DB || 'cloki')
@@ -138,11 +160,11 @@ async function genericJSONParser (req) {
     const fp = this.fingerPrint(tag)
     profiler = setInterval(() => {
       this.bulk_labels.add([[new Date().toISOString().split('T')[0], fp, tag, '']])
-      this.bulk.add([[fp, Date.now(), process.memoryUsage().rss / 1024 / 1024, '']])
+      this.bulk.add([[fp, BigInt(Date.now()) * BigInt(1000000), process.memoryUsage().rss / 1024 / 1024, '']])
     }, 1000)
   }
 })().catch((err) => {
-  logger.error({ err }, 'Error starting cloki')
+  logger.error(err, 'Error starting cloki')
   process.exit(1)
 })
 
@@ -221,10 +243,10 @@ try {
           _data.timeseries = _data.timeseries.map(s => ({
             ...s,
             samples: s.samples.map(e => {
-              const millis = parseInt(e.timestamp.toNumber())
+              const nanos = e.timestamp + '000000'
               return {
                 ...e,
-                timestamp: millis
+                timestamp: nanos
               }
             })
           }))
@@ -236,10 +258,9 @@ try {
           _data.streams = _data.streams.map(s => ({
             ...s,
             entries: s.entries.map(e => {
-              const millis = Math.floor(e.timestamp.nanos / 1000000)
               return {
                 ...e,
-                timestamp: e.timestamp.seconds * 1000 + millis
+                timestamp: BigInt(e.timestamp.seconds) * BigInt(1e9) + BigInt(e.timestamp.nanos)
               }
             })
           }))
@@ -262,7 +283,7 @@ fastify.addContentTypeParser('application/json', {},
 /* Null content-type handler for CH-MV HTTP PUSH */
 fastify.addContentTypeParser('*', {},
   async function (req, body, done) {
-    return await genericJSONParser(req)
+    return await genericJSONOrYAMLParser(req)
   })
 
 /* 404 Handler */

@@ -245,7 +245,7 @@ module.exports.timeShiftViaStream = (token, query) => {
    */
   const stream = (s) => s.map((e) => {
     if (tsMoveParam.get()) {
-      e.timestamp_ms -= (parseInt(tsMoveParam.get()) % duration)
+      e.timestamp_ns -= (parseInt(tsMoveParam.get()) % duration)
     }
     return e
   })
@@ -286,7 +286,7 @@ module.exports.applyViaStream = (token, query,
           value.sort()
           value = lastValue ? value[value.length - 1][1] : value[0][1]
           value = summarizeFn(value)// Object.values(_v[1]).reduce((sum, v) => sum + summarizeFn(v), 0);
-          emit({ labels: v.labels, timestamp_ms: _v[0], value: value })
+          emit({ labels: v.labels, timestamp_ns: _v[0], value: value })
         }
       }
       results = new Map()
@@ -297,11 +297,11 @@ module.exports.applyViaStream = (token, query,
     if (!results.has(l)) {
       results.set(l, {
         labels: e.labels,
-        values: addTimestamp(undefined, e.timestamp_ms, e, duration, step, counterFn)
+        values: addTimestamp(undefined, e.timestamp_ns, e, duration, step, counterFn)
       })
     } else {
       results.get(l).values = addTimestamp(
-        results.get(l).values, e.timestamp_ms, e, duration, step, counterFn
+        results.get(l).values, e.timestamp_ns, e, duration, step, counterFn
       )
     }
   })
