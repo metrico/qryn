@@ -73,19 +73,19 @@ function applyViaRequest (token, query, valueExpr, lastValue) {
   const tsGroupingExpr = new Sql.Raw('')
   tsGroupingExpr.toString = () => {
     if (!tsMoveParam.get()) {
-      return `intDiv(timestamp_ms, ${duration}) * ${duration}`
+      return `intDiv(timestamp_ns, ${duration}) * ${duration}`
     }
-    return `intDiv(timestamp_ms - ${tsMoveParam.toString()}, ${duration}) * ${duration} + ${tsMoveParam.toString()}`
+    return `intDiv(timestamp_ns - ${tsMoveParam.toString()}, ${duration}) * ${duration} + ${tsMoveParam.toString()}`
   }
   const uwRateA = new Sql.With('uw_rate_a', query)
   const groupingQuery = (new Sql.Select())
     .select(
       [labels, 'labels'],
       [valueExpr, 'value'],
-      [tsGroupingExpr, 'timestamp_ms']
+      [tsGroupingExpr, 'timestamp_ns']
     ).from(new Sql.WithReference(uwRateA))
-    .groupBy('labels', 'timestamp_ms')
-    .orderBy('labels', 'timestamp_ms')
+    .groupBy('labels', 'timestamp_ns')
+    .orderBy('labels', 'timestamp_ns')
   if (step <= duration) {
     return groupingQuery.with(uwRateA)
   }
@@ -93,12 +93,12 @@ function applyViaRequest (token, query, valueExpr, lastValue) {
   return (new Sql.Select())
     .with(uwRateA, groupingQueryWith)
     .select('labels',
-      [new Sql.Raw(`intDiv(timestamp_ms, ${step}) * ${step}`), 'timestamp_ms'],
-      [new Sql.Raw('argMin(uw_rate_b.value, uw_rate_b.timestamp_ms)'), 'value']
+      [new Sql.Raw(`intDiv(timestamp_ns, ${step}) * ${step}`), 'timestamp_ns'],
+      [new Sql.Raw('argMin(uw_rate_b.value, uw_rate_b.timestamp_ns)'), 'value']
     )
     .from(new Sql.WithReference(groupingQueryWith))
-    .groupBy('labels', 'timestamp_ms')
-    .orderBy(['labels', 'asc'], ['timestamp_ms', 'asc'])
+    .groupBy('labels', 'timestamp_ns')
+    .orderBy(['labels', 'asc'], ['timestamp_ns', 'asc'])
 }
 
 module.exports = {
@@ -173,7 +173,7 @@ module.exports = {
      * @returns {Select}
      */
   firstOverTime: builder((token, query) => {
-    return applyViaRequest(token, query, 'argMin(unwrapped, uw_rate_a.timestamp_ms)')
+    return applyViaRequest(token, query, 'argMin(unwrapped, uw_rate_a.timestamp_ns)')
   }, (token, query) => {
     return applyViaStream(token, query, (sum, val, time) => {
       return sum && sum.time < time ? sum : { time: time, first: val.unwrapped }
@@ -186,7 +186,7 @@ module.exports = {
      * @returns {Select}
      */
   lastOverTime: builder((token, query) => {
-    return applyViaRequest(token, query, 'argMax(unwrapped, uw_rate_a.timestamp_ms)', true)
+    return applyViaRequest(token, query, 'argMax(unwrapped, uw_rate_a.timestamp_ns)', true)
   }, (token, query) => {
     return applyViaStream(token, query, (sum, val, time) => {
       return sum && sum.time > time ? sum : { time: time, first: val.unwrapped }

@@ -1,6 +1,6 @@
 {
   "name": "cloki",
-  "version": "1.3.31",
+  "version": "2.0.1",
   "description": "LogQL API with Clickhouse Backend",
   "main": "cloki.js",
   "bin": {
@@ -24,7 +24,7 @@
     "url": "git+ssh://git@github.com/lmangani/cloki.git"
   },
   "author": "lorenzo.mangani@gmail.com",
-  "license": "MIT",
+  "license": "AGPL-3.0",
   "bugs": {
     "url": "https://github.com/lmangani/cloki/issues"
   },

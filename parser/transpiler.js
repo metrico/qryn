@@ -23,21 +23,30 @@ module.exports.initQuery = () => {
   const from = new Sql.Parameter(sharedParamNames.from)
   const to = new Sql.Parameter(sharedParamNames.to)
   const limit = new Sql.Parameter(sharedParamNames.limit)
+  const matrix = new Sql.Parameter('isMatrix')
   limit.set(2000)
   const tsClause = new Sql.Raw('')
   tsClause.toString = () => {
     if (to.get()) {
-      return Sql.between('samples.timestamp_ms', from, to).toString()
+      return Sql.between('samples.timestamp_ns', from, to).toString()
     }
-    return Sql.Gt('samples.timestamp_ms', from).toString()
+    return Sql.Gt('samples.timestamp_ns', from).toString()
   }
+  const tsGetter = new Sql.Raw('')
+  tsGetter.toString = () => {
+    if (matrix.get()) {
+      return 'intDiv(samples.timestamp_ns, 1000000)'
+    }
+    return 'samples.timestamp_ns'
+  }
+
   return (new Sql.Select())
     .select(['time_series.labels', 'labels'], ['samples.string', 'string'],
-      ['samples.fingerprint', 'fingerprint'], ['samples.timestamp_ms', 'timestamp_ms'])
+      ['samples.fingerprint', 'fingerprint'], [tsGetter, 'timestamp_ns'])
     .from([samplesTable, 'samples'])
     .join([timeSeriesTable, 'time_series'], 'left',
       Sql.Eq('samples.fingerprint', Sql.quoteTerm('time_series.fingerprint')))
-    .orderBy(['timestamp_ms', 'desc'], ['labels', 'desc'])
+    .orderBy(['timestamp_ns', 'desc'], ['labels', 'desc'])
     .where(tsClause)
     .limit(limit)
     .addParam(samplesTable)
@@ -45,6 +54,7 @@ module.exports.initQuery = () => {
     .addParam(from)
     .addParam(to)
     .addParam(limit)
+    .addParam(matrix)
 }
 
 /**
@@ -74,6 +84,9 @@ module.exports.transpile = (request) => {
   let start = parseMs(request.start, Date.now() - 3600 * 1000)
   let end = parseMs(request.end, Date.now())
   const step = request.step ? Math.floor(parseFloat(request.step) * 1000) : 0
+  /*let start = BigInt(request.start || (BigInt(Date.now() - 3600 * 1000) * BigInt(1e6)))
+  let end = BigInt(request.end || (BigInt(Date.now()) * BigInt(1e6)))
+  const step = BigInt(request.step ? Math.floor(parseFloat(request.step) * 1000) : 0) * BigInt(1e6)*/
   let query = module.exports.initQuery()
   const limit = request.limit ? request.limit : 2000
   const order = request.direction === 'forward' ? 'asc' : 'desc'
@@ -102,7 +115,7 @@ module.exports.transpile = (request) => {
     query = (new Sql.Select())
       .with(wth)
       .from(new Sql.WithReference(wth))
-      .orderBy(['labels', order], ['timestamp_ms', order])
+      .orderBy(['labels', order], ['timestamp_ns', order])
     setQueryParam(query, sharedParamNames.limit, limit)
   }
   if (token.Child('compared_agg_statement')) {
@@ -111,8 +124,9 @@ module.exports.transpile = (request) => {
   }
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
   setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName(start)}`)
-  setQueryParam(query, sharedParamNames.from, start)
-  setQueryParam(query, sharedParamNames.to, end)
+  setQueryParam(query, sharedParamNames.from, start + '000000')
+  setQueryParam(query, sharedParamNames.to, end + '000000')
+  setQueryParam(query, 'isMatrix', query.ctx.matrix)
   return {
     query: request.rawQuery ? query : query.toString(),
     matrix: !!query.ctx.matrix,
@@ -159,7 +173,7 @@ module.exports.transpileTail = (request) => {
   setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesTableName}`)
   setQueryParam(query, sharedParamNames.from, new Sql.Raw('(toUnixTimestamp(now()) - 5) * 1000'))
   query.order_expressions = []
-  query.orderBy(['timestamp_ms', 'asc'])
+  query.orderBy(['timestamp_ns', 'asc'])
   query.limit(undefined, undefined)
   return {
     query: request.rawRequest ? query : query.toString(),

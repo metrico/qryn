@@ -43,11 +43,11 @@ module.exports.genericRequest = (expression, stream) => {
       .with(aggA)
       .select(
         [labelsFilterClause, 'labels'],
-        'timestamp_ms',
+        'timestamp_ns',
         [new Sql.Raw(expression), 'value'])
       .from(new Sql.WithReference(aggA))
-      .groupBy('labels', 'timestamp_ms')
-      .orderBy('labels', 'timestamp_ms')
+      .groupBy('labels', 'timestamp_ns')
+      .orderBy('labels', 'timestamp_ns')
   }
 }
 
