@@ -1,6 +1,6 @@
 {
   "name": "cloki",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "LogQL API with Clickhouse Backend",
   "main": "cloki.js",
   "bin": {
