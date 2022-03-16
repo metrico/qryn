@@ -30,6 +30,12 @@ Token.prototype.Children = function (tokenType) {
   return tokens
 }
 
+Token.prototype.dropAll = function (tokenType) {
+  this.tokens = this.tokens.filter(t => t.name !== tokenType)
+  this.tokens.forEach(t => t.dropAll(tokenType))
+  return this
+}
+
 let bnf = fs.readFileSync(path.join(__dirname, 'logql.bnf')).toString()
 for (const reg of Object.keys(registries)) {
   const keys = Object.keys(registries[reg]).map(n => `"${n}"`)
