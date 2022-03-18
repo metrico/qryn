@@ -14349,7 +14349,7 @@ exports[`should transpile series 1`] = `"select DISTINCT \`fingerprint\`,\`label
 
 exports[`should transpile tail 1`] = `
 Object {
-  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (extractAllGroups(JSONExtractString(labels, 'test_id'), '(_ws)') != '[]'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_v3 as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\` > (toUnixTimestamp(now()) - 5) * 1000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` asc",
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (extractAllGroups(JSONExtractString(labels, 'test_id'), '(_ws)') != '[]'))) select \`time_series\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_v3 as \`samples\` left join str_sel as time_series on \`samples\`.\`fingerprint\` = \`time_series\`.\`fingerprint\` where (\`samples\`.\`timestamp_ns\` > (toUnixTimestamp(now()) - 5) * 1000000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` asc",
   "stream": Array [],
 }
 `;
