@@ -83,4 +83,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: qxip/cloki:latest
+          tags: |
+            qxip/cloki:latest
+            qxip/cloki:${{ steps.version-bump.outputs.newTag }}
