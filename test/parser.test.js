@@ -108,3 +108,8 @@ it('should match 3339', () => {
   console.log(parseStringifiedNanosOrRFC3339('1990-12-31T15:59:60-08:00'))
   console.log(parseStringifiedNanosOrRFC3339('1937-01-01T12:00:27.87+00:20'))
 })
+
+it('should stable stringify', () => {
+  const stringify = require('json-stable-stringify')
+  expect(stringify({ a: 'a', b: 'b' })).toEqual(stringify({ b: 'b', a: 'a' }))
+})
