@@ -133,7 +133,8 @@ it('e2e', async () => {
   adjustMatrixResult(resp)
   expect(resp.data).toMatchSnapshot()
   // hammering aggregation
-  for (const fn of ['count_over_time', 'bytes_rate', 'bytes_over_time', 'absent_over_time']) {
+  for (const fn of ['count_over_time', 'bytes_rate', 'bytes_over_time']) {
+    console.log(`${fn}({test_id="${testID}", freq="2"} |~ "2[0-9]$" [1s])`)
     resp = await runRequest(`${fn}({test_id="${testID}", freq="2"} |~ "2[0-9]$" [1s])`)
     expect(resp.data.data.result.length).toBeTruthy()
   }
