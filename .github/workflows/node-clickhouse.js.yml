@@ -28,6 +28,8 @@ jobs:
         cache: 'npm'
     - run: npm install
     - run: npm run postinstall
+    - run: git submodule init
+    - run: git submodule update
     - env:
         CLICKHOUSE_DB: loki
         CLICKHOUSE_TSDB: loki
