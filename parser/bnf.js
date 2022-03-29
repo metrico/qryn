@@ -42,6 +42,7 @@ for (const reg of Object.keys(registries)) {
   keys.sort((a, b) => b.length - a.length)
   bnf = bnf.replace(`<${reg}>`, keys.join('|'))
 }
+console.log(bnf)
 const plugins = getPlg({ type: 'macros' })
 bnf += Object.values(plugins).map(p => p.bnf).join('\n') + '\n'
 bnf += 'user_macro ::=' + Object.values(plugins).map(p => p._main_rule_name).map(n => `<${n}>`).join('|') + '\n'
