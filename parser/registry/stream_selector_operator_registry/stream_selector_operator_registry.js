@@ -43,7 +43,7 @@ const streamSelectQuery = (query) => {
   return new Sql.With(
     'str_sel',
     (new Sql.Select())
-      .select('fingerprint', 'labels')
+      .select('fingerprint')
       .distinct(true)
       .from(param)
   )
@@ -66,9 +66,9 @@ module.exports.simpleAnd = (query, clauses) => {
     strSel.query.where(clauses)
   }
   query.with(strSel)
-  query.joins = query.joins.filter(j => j.table[1] !== 'time_series')
+  /* query.joins = query.joins.filter(j => j.table[1] !== 'time_series')
   query.join([new Sql.WithReference(strSel), 'time_series'], 'left',
-    Sql.Eq('samples.fingerprint', Sql.quoteTerm('time_series.fingerprint')))
+    Sql.Eq('samples.fingerprint', Sql.quoteTerm('time_series.fingerprint'))) */
   if (!isStrSel) {
     query.where(new Sql.In('samples.fingerprint', 'in',
       (new Sql.Select()).select('fingerprint').from(new Sql.WithReference(strSel))
