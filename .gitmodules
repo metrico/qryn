@@ -1,0 +1,3 @@
+[submodule "test/e2e"]
+	path = test/e2e
+	url = https://github.com/metrico/cloki-test.git

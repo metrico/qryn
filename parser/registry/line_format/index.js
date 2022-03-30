@@ -15,7 +15,7 @@ require('handlebars-helpers')(['math', 'string'], {
 module.exports = (token, query) => {
   let processor = null
   const fmt = JSON.parse('"' + token.Child('quoted_str').value.replace(/(^"|^'|"$|'$)/g, '') + '"')
-  if (LineFmtOption() === 'go_native') {
+  if (LineFmtOption() === 'go_native' || token.Child('line_format_fn').value === 'line_format_native') {
     processor = compile(fmt)
     processor.then((p) => {
       processor = p
