@@ -2,6 +2,8 @@ const { getDuration, hasStream } = require('../common')
 const reg = require('./log_range_agg_reg')
 const { genericRate } = reg
 const Sql = require('@cloki/clickhouse-sql')
+const { addStream } = require('../common')
+const JSONstringify = require('json-stable-stringify')
 
 module.exports = {
   /**
@@ -76,32 +78,37 @@ module.exports = {
     query.groupBy('labels', 'timestamp_ns')
     query.orderBy(['labels', 'asc'], ['timestamp_ns', 'asc'])
     query.ctx.matrix = true
-    const data = new Sql.With('rate_a', query)
-    const numbers = new Sql.Raw('')
-    numbers.toString = () =>
-        `numbers(intDiv(${query.getParam('to').get()} - ${query.getParam('from').get()}, ${duration}000000))`
-    const selectNumbers = new Sql.Raw('')
-    selectNumbers.toString = () => `number * ${duration} + intDiv(${query.getParam('from').get()}, 1000000)`
-    const gaps = (new Sql.Select())
-      .select('a1.labels',
-        [selectNumbers, 'timestamp_ns'],
-        [new Sql.Raw('toFloat64(1)'), 'value']
-      )
-      .from(
-        [(new Sql.Select()).select('labels').from(new Sql.WithReference(query.withs.str_sel)), 'a1'],
-        [numbers, 'a2']
-      )
-    const res = (new Sql.Select())
-      .with(data)
-      .select('labels', 'timestamp_ns', [new Sql.Raw('min(value)'), 'value'])
-      .from(new Sql.UnionAll(
-        (new Sql.Select())
-          .from([new Sql.WithReference(data), 'rate_a']),
-        gaps
-      ))
-      .groupBy('labels', 'timestamp_ns')
-      .orderBy('labels', 'timestamp_ns')
-    return res
+    let nextTS = query.ctx.start
+    let lastLabels = null
+    return addStream(query, (s) => s.remap((emit, val) => {
+      if (val.EOF && lastLabels) {
+        const lbls = JSON.parse(lastLabels)
+        for (let i = parseInt(nextTS); i < parseInt(query.ctx.end); i += duration) {
+          emit({ labels: lbls, value: 1, timestamp_ns: i })
+        }
+        emit(val)
+        return
+      }
+      if (!val.labels) {
+        emit(val)
+        return
+      }
+      if (JSONstringify(val.labels) !== lastLabels) {
+        if (lastLabels) {
+          const lbls = JSON.parse(lastLabels)
+          for (let i = parseInt(nextTS); i < parseInt(query.ctx.end); i += duration) {
+            emit({ labels: lbls, value: 1, timestamp_ns: i })
+          }
+        }
+        nextTS = query.ctx.start
+        lastLabels = JSONstringify(val.labels)
+      }
+      for (let i = parseInt(nextTS); i < val.timestamp_ns; i += duration) {
+        emit({ ...val, value: 1, timestamp_ns: i })
+      }
+      emit(val)
+      nextTS = parseInt(val.timestamp_ns) + duration
+    }))
 
     /* {
       ctx: query.ctx,

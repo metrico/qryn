@@ -94,29 +94,38 @@ module.exports.transpile = (request) => {
   query.ctx = {
     step: step
   }
-  if (token.Child('aggregation_operator')) {
-    const duration = durationToMs(token.Child('duration_value').value)
+  let duration = null
+  const matrixOp = ['aggregation_operator', 'unwrap_function', 'log_range_aggregation'].find(t => token.Child(t))
+  if (matrixOp) {
+    duration = durationToMs(token.Child(matrixOp).Child('duration_value').value)
     start = Math.floor(start / duration) * duration
     end = Math.ceil(end / duration) * duration
-    query = module.exports.transpileAggregationOperator(token, query)
-  } else if (token.Child('unwrap_function')) {
-    const duration = durationToMs(token.Child('unwrap_function').Child('duration_value').value)
-    start = Math.floor(start / duration) * duration
-    end = Math.ceil(end / duration) * duration
-    query = module.exports.transpileUnwrapFunction(token, query)
-  } else if (token.Child('log_range_aggregation')) {
-    const duration = durationToMs(token.Child('log_range_aggregation').Child('duration_value').value)
-    start = Math.floor(start / duration) * duration
-    end = Math.ceil(end / duration) * duration
-    query = module.exports.transpileLogRangeAggregation(token, query)
-  } else {
-    const _query = module.exports.transpileLogStreamSelector(token, query)
-    const wth = new Sql.With('sel_a', _query)
-    query = (new Sql.Select())
-      .with(wth)
-      .from(new Sql.WithReference(wth))
-      .orderBy(['labels', order], ['timestamp_ns', order])
-    setQueryParam(query, sharedParamNames.limit, limit)
+    query.ctx = {
+      ...query.ctx,
+      start,
+      end
+    }
+  }
+  switch (matrixOp) {
+    case 'aggregation_operator':
+      query = module.exports.transpileAggregationOperator(token, query)
+      break
+    case 'unwrap_function':
+      query = module.exports.transpileUnwrapFunction(token, query)
+      break
+    case 'log_range_aggregation':
+      query = module.exports.transpileLogRangeAggregation(token, query)
+      break
+    default:
+      // eslint-disable-next-line no-case-declarations
+      const _query = module.exports.transpileLogStreamSelector(token, query)
+      // eslint-disable-next-line no-case-declarations
+      const wth = new Sql.With('sel_a', _query)
+      query = (new Sql.Select())
+        .with(wth)
+        .from(new Sql.WithReference(wth))
+        .orderBy(['labels', order], ['timestamp_ns', order])
+      setQueryParam(query, sharedParamNames.limit, limit)
   }
   if (token.Child('compared_agg_statement')) {
     const op = token.Child('compared_agg_statement_cmp').Child('number_operator').value
