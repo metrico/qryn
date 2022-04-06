@@ -110,8 +110,112 @@ Select {
                   },
                 },
                 Condition {
-                  "column": Raw {
-                    "raw": "samples.fingerprint IN idx_sel",
+                  "column": InSubreq {
+                    "col": "samples.fingerprint",
+                    "raw": undefined,
+                    "sub": WithReference {
+                      "ref": With {
+                        "alias": "idx_sel",
+                        "inline": undefined,
+                        "query": Select {
+                          "aggregations": Array [],
+                          "conditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "ctx": Object {},
+                          "dist": false,
+                          "fmt": undefined,
+                          "having_conditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "joins": Array [],
+                          "limitbycolumns": undefined,
+                          "limits": undefined,
+                          "order_expressions": Array [],
+                          "params": Object {},
+                          "preconditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "request_totals": undefined,
+                          "sampling": undefined,
+                          "select_list": Array [
+                            "sel_1.fingerprint",
+                          ],
+                          "tables": Array [
+                            Array [
+                              Subquery {
+                                "query": Select {
+                                  "aggregations": Array [],
+                                  "conditions": Conjunction {
+                                    "args": Array [
+                                      Condition {
+                                        "column": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Term {
+                                                "term": "key",
+                                              },
+                                              "operator": "=",
+                                              "value": Value {
+                                                "value": "minus_nam",
+                                              },
+                                            },
+                                            Condition {
+                                              "column": Term {
+                                                "term": "val",
+                                              },
+                                              "operator": "=",
+                                              "value": Value {
+                                                "value": "aut illo",
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "operator": undefined,
+                                        "value": Value {
+                                          "value": undefined,
+                                        },
+                                      },
+                                    ],
+                                  },
+                                  "ctx": Object {},
+                                  "dist": false,
+                                  "fmt": undefined,
+                                  "having_conditions": Conjunction {
+                                    "args": Array [],
+                                  },
+                                  "joins": Array [],
+                                  "limitbycolumns": undefined,
+                                  "limits": undefined,
+                                  "order_expressions": Array [],
+                                  "params": Object {},
+                                  "preconditions": Conjunction {
+                                    "args": Array [],
+                                  },
+                                  "request_totals": undefined,
+                                  "sampling": undefined,
+                                  "select_list": Array [
+                                    "fingerprint",
+                                  ],
+                                  "tables": Array [
+                                    Array [
+                                      Term {
+                                        "term": "loki.time_series_gin",
+                                      },
+                                    ],
+                                  ],
+                                  "withs": Object {},
+                                },
+                              },
+                              Term {
+                                "term": "sel_1",
+                              },
+                            ],
+                          ],
+                          "withs": Object {},
+                        },
+                      },
+                    },
                   },
                   "operator": undefined,
                   "value": Value {
@@ -337,8 +441,112 @@ Select {
               },
             },
             Condition {
-              "column": Raw {
-                "raw": "samples.fingerprint IN idx_sel",
+              "column": InSubreq {
+                "col": "samples.fingerprint",
+                "raw": undefined,
+                "sub": WithReference {
+                  "ref": With {
+                    "alias": "idx_sel",
+                    "inline": undefined,
+                    "query": Select {
+                      "aggregations": Array [],
+                      "conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "ctx": Object {},
+                      "dist": false,
+                      "fmt": undefined,
+                      "having_conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "joins": Array [],
+                      "limitbycolumns": undefined,
+                      "limits": undefined,
+                      "order_expressions": Array [],
+                      "params": Object {},
+                      "preconditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "request_totals": undefined,
+                      "sampling": undefined,
+                      "select_list": Array [
+                        "sel_1.fingerprint",
+                      ],
+                      "tables": Array [
+                        Array [
+                          Subquery {
+                            "query": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Term {
+                                            "term": "key",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "minus_nam",
+                                          },
+                                        },
+                                        Condition {
+                                          "column": Term {
+                                            "term": "val",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "aut illo",
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "operator": undefined,
+                                    "value": Value {
+                                      "value": undefined,
+                                    },
+                                  },
+                                ],
+                              },
+                              "ctx": Object {},
+                              "dist": false,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  Term {
+                                    "term": "loki.time_series_gin",
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                          Term {
+                            "term": "sel_1",
+                          },
+                        ],
+                      ],
+                      "withs": Object {},
+                    },
+                  },
+                },
               },
               "operator": undefined,
               "value": Value {
@@ -557,8 +765,116 @@ Select {
                   },
                 },
                 Condition {
-                  "column": Raw {
-                    "raw": "samples.fingerprint IN idx_sel",
+                  "column": InSubreq {
+                    "col": "samples.fingerprint",
+                    "raw": undefined,
+                    "sub": WithReference {
+                      "ref": With {
+                        "alias": "idx_sel",
+                        "inline": undefined,
+                        "query": Select {
+                          "aggregations": Array [],
+                          "conditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "ctx": Object {},
+                          "dist": false,
+                          "fmt": undefined,
+                          "having_conditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "joins": Array [],
+                          "limitbycolumns": undefined,
+                          "limits": undefined,
+                          "order_expressions": Array [],
+                          "params": Object {},
+                          "preconditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "request_totals": undefined,
+                          "sampling": undefined,
+                          "select_list": Array [
+                            "sel_1.fingerprint",
+                          ],
+                          "tables": Array [
+                            Array [
+                              Subquery {
+                                "query": Select {
+                                  "aggregations": Array [],
+                                  "conditions": Conjunction {
+                                    "args": Array [
+                                      Condition {
+                                        "column": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Term {
+                                                "term": "key",
+                                              },
+                                              "operator": "=",
+                                              "value": Value {
+                                                "value": "rerum_laborum",
+                                              },
+                                            },
+                                            Condition {
+                                              "column": Match {
+                                                "col": "val",
+                                                "raw": "",
+                                                "re": Value {
+                                                  "value": "^con.+q.at[a-z]r",
+                                                },
+                                              },
+                                              "operator": "=",
+                                              "value": Value {
+                                                "value": 1,
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "operator": undefined,
+                                        "value": Value {
+                                          "value": undefined,
+                                        },
+                                      },
+                                    ],
+                                  },
+                                  "ctx": Object {},
+                                  "dist": false,
+                                  "fmt": undefined,
+                                  "having_conditions": Conjunction {
+                                    "args": Array [],
+                                  },
+                                  "joins": Array [],
+                                  "limitbycolumns": undefined,
+                                  "limits": undefined,
+                                  "order_expressions": Array [],
+                                  "params": Object {},
+                                  "preconditions": Conjunction {
+                                    "args": Array [],
+                                  },
+                                  "request_totals": undefined,
+                                  "sampling": undefined,
+                                  "select_list": Array [
+                                    "fingerprint",
+                                  ],
+                                  "tables": Array [
+                                    Array [
+                                      Term {
+                                        "term": "loki.time_series_gin",
+                                      },
+                                    ],
+                                  ],
+                                  "withs": Object {},
+                                },
+                              },
+                              Term {
+                                "term": "sel_1",
+                              },
+                            ],
+                          ],
+                          "withs": Object {},
+                        },
+                      },
+                    },
                   },
                   "operator": undefined,
                   "value": Value {
@@ -797,8 +1113,116 @@ Select {
               },
             },
             Condition {
-              "column": Raw {
-                "raw": "samples.fingerprint IN idx_sel",
+              "column": InSubreq {
+                "col": "samples.fingerprint",
+                "raw": undefined,
+                "sub": WithReference {
+                  "ref": With {
+                    "alias": "idx_sel",
+                    "inline": undefined,
+                    "query": Select {
+                      "aggregations": Array [],
+                      "conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "ctx": Object {},
+                      "dist": false,
+                      "fmt": undefined,
+                      "having_conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "joins": Array [],
+                      "limitbycolumns": undefined,
+                      "limits": undefined,
+                      "order_expressions": Array [],
+                      "params": Object {},
+                      "preconditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "request_totals": undefined,
+                      "sampling": undefined,
+                      "select_list": Array [
+                        "sel_1.fingerprint",
+                      ],
+                      "tables": Array [
+                        Array [
+                          Subquery {
+                            "query": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Term {
+                                            "term": "key",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "rerum_laborum",
+                                          },
+                                        },
+                                        Condition {
+                                          "column": Match {
+                                            "col": "val",
+                                            "raw": "",
+                                            "re": Value {
+                                              "value": "^con.+q.at[a-z]r",
+                                            },
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": 1,
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "operator": undefined,
+                                    "value": Value {
+                                      "value": undefined,
+                                    },
+                                  },
+                                ],
+                              },
+                              "ctx": Object {},
+                              "dist": false,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  Term {
+                                    "term": "loki.time_series_gin",
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                          Term {
+                            "term": "sel_1",
+                          },
+                        ],
+                      ],
+                      "withs": Object {},
+                    },
+                  },
+                },
               },
               "operator": undefined,
               "value": Value {
@@ -1026,8 +1450,112 @@ Select {
                   },
                 },
                 Condition {
-                  "column": Raw {
-                    "raw": "samples.fingerprint IN idx_sel",
+                  "column": InSubreq {
+                    "col": "samples.fingerprint",
+                    "raw": undefined,
+                    "sub": WithReference {
+                      "ref": With {
+                        "alias": "idx_sel",
+                        "inline": undefined,
+                        "query": Select {
+                          "aggregations": Array [],
+                          "conditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "ctx": Object {},
+                          "dist": false,
+                          "fmt": undefined,
+                          "having_conditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "joins": Array [],
+                          "limitbycolumns": undefined,
+                          "limits": undefined,
+                          "order_expressions": Array [],
+                          "params": Object {},
+                          "preconditions": Conjunction {
+                            "args": Array [],
+                          },
+                          "request_totals": undefined,
+                          "sampling": undefined,
+                          "select_list": Array [
+                            "sel_1.fingerprint",
+                          ],
+                          "tables": Array [
+                            Array [
+                              Subquery {
+                                "query": Select {
+                                  "aggregations": Array [],
+                                  "conditions": Conjunction {
+                                    "args": Array [
+                                      Condition {
+                                        "column": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Term {
+                                                "term": "key",
+                                              },
+                                              "operator": "=",
+                                              "value": Value {
+                                                "value": "et_dolorem",
+                                              },
+                                            },
+                                            Condition {
+                                              "column": Term {
+                                                "term": "val",
+                                              },
+                                              "operator": "!=",
+                                              "value": Value {
+                                                "value": "nemo doloremque",
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "operator": undefined,
+                                        "value": Value {
+                                          "value": undefined,
+                                        },
+                                      },
+                                    ],
+                                  },
+                                  "ctx": Object {},
+                                  "dist": false,
+                                  "fmt": undefined,
+                                  "having_conditions": Conjunction {
+                                    "args": Array [],
+                                  },
+                                  "joins": Array [],
+                                  "limitbycolumns": undefined,
+                                  "limits": undefined,
+                                  "order_expressions": Array [],
+                                  "params": Object {},
+                                  "preconditions": Conjunction {
+                                    "args": Array [],
+                                  },
+                                  "request_totals": undefined,
+                                  "sampling": undefined,
+                                  "select_list": Array [
+                                    "fingerprint",
+                                  ],
+                                  "tables": Array [
+                                    Array [
+                                      Term {
+                                        "term": "loki.time_series_gin",
+                                      },
+                                    ],
+                                  ],
+                                  "withs": Object {},
+                                },
+                              },
+                              Term {
+                                "term": "sel_1",
+                              },
+                            ],
+                          ],
+                          "withs": Object {},
+                        },
+                      },
+                    },
                   },
                   "operator": undefined,
                   "value": Value {
@@ -1262,8 +1790,112 @@ Select {
               },
             },
             Condition {
-              "column": Raw {
-                "raw": "samples.fingerprint IN idx_sel",
+              "column": InSubreq {
+                "col": "samples.fingerprint",
+                "raw": undefined,
+                "sub": WithReference {
+                  "ref": With {
+                    "alias": "idx_sel",
+                    "inline": undefined,
+                    "query": Select {
+                      "aggregations": Array [],
+                      "conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "ctx": Object {},
+                      "dist": false,
+                      "fmt": undefined,
+                      "having_conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "joins": Array [],
+                      "limitbycolumns": undefined,
+                      "limits": undefined,
+                      "order_expressions": Array [],
+                      "params": Object {},
+                      "preconditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "request_totals": undefined,
+                      "sampling": undefined,
+                      "select_list": Array [
+                        "sel_1.fingerprint",
+                      ],
+                      "tables": Array [
+                        Array [
+                          Subquery {
+                            "query": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Term {
+                                            "term": "key",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "et_dolorem",
+                                          },
+                                        },
+                                        Condition {
+                                          "column": Term {
+                                            "term": "val",
+                                          },
+                                          "operator": "!=",
+                                          "value": Value {
+                                            "value": "nemo doloremque",
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "operator": undefined,
+                                    "value": Value {
+                                      "value": undefined,
+                                    },
+                                  },
+                                ],
+                              },
+                              "ctx": Object {},
+                              "dist": false,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  Term {
+                                    "term": "loki.time_series_gin",
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                          Term {
+                            "term": "sel_1",
+                          },
+                        ],
+                      ],
+                      "withs": Object {},
+                    },
+                  },
+                },
               },
               "operator": undefined,
               "value": Value {
@@ -1595,8 +2227,116 @@ Select {
               },
             },
             Condition {
-              "column": Raw {
-                "raw": "samples.fingerprint IN idx_sel",
+              "column": InSubreq {
+                "col": "samples.fingerprint",
+                "raw": undefined,
+                "sub": WithReference {
+                  "ref": With {
+                    "alias": "idx_sel",
+                    "inline": undefined,
+                    "query": Select {
+                      "aggregations": Array [],
+                      "conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "ctx": Object {},
+                      "dist": false,
+                      "fmt": undefined,
+                      "having_conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "joins": Array [],
+                      "limitbycolumns": undefined,
+                      "limits": undefined,
+                      "order_expressions": Array [],
+                      "params": Object {},
+                      "preconditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "request_totals": undefined,
+                      "sampling": undefined,
+                      "select_list": Array [
+                        "sel_1.fingerprint",
+                      ],
+                      "tables": Array [
+                        Array [
+                          Subquery {
+                            "query": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Term {
+                                            "term": "key",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "rerum_laborum",
+                                          },
+                                        },
+                                        Condition {
+                                          "column": Match {
+                                            "col": "val",
+                                            "raw": "",
+                                            "re": Value {
+                                              "value": "^con.+q.at[a-z]r",
+                                            },
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": 0,
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "operator": undefined,
+                                    "value": Value {
+                                      "value": undefined,
+                                    },
+                                  },
+                                ],
+                              },
+                              "ctx": Object {},
+                              "dist": false,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  Term {
+                                    "term": "loki.time_series_gin",
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                          Term {
+                            "term": "sel_1",
+                          },
+                        ],
+                      ],
+                      "withs": Object {},
+                    },
+                  },
+                },
               },
               "operator": undefined,
               "value": Value {
@@ -1786,8 +2526,116 @@ Select {
                         },
                       },
                       Condition {
-                        "column": Raw {
-                          "raw": "samples.fingerprint IN idx_sel",
+                        "column": InSubreq {
+                          "col": "samples.fingerprint",
+                          "raw": undefined,
+                          "sub": WithReference {
+                            "ref": With {
+                              "alias": "idx_sel",
+                              "inline": undefined,
+                              "query": Select {
+                                "aggregations": Array [],
+                                "conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "ctx": Object {},
+                                "dist": false,
+                                "fmt": undefined,
+                                "having_conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "joins": Array [],
+                                "limitbycolumns": undefined,
+                                "limits": undefined,
+                                "order_expressions": Array [],
+                                "params": Object {},
+                                "preconditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "request_totals": undefined,
+                                "sampling": undefined,
+                                "select_list": Array [
+                                  "sel_1.fingerprint",
+                                ],
+                                "tables": Array [
+                                  Array [
+                                    Subquery {
+                                      "query": Select {
+                                        "aggregations": Array [],
+                                        "conditions": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Conjunction {
+                                                "args": Array [
+                                                  Condition {
+                                                    "column": Term {
+                                                      "term": "key",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "rerum_laborum",
+                                                    },
+                                                  },
+                                                  Condition {
+                                                    "column": Match {
+                                                      "col": "val",
+                                                      "raw": "",
+                                                      "re": Value {
+                                                        "value": "^con.+q.at[a-z]r",
+                                                      },
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": 0,
+                                                    },
+                                                  },
+                                                ],
+                                              },
+                                              "operator": undefined,
+                                              "value": Value {
+                                                "value": undefined,
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "ctx": Object {},
+                                        "dist": false,
+                                        "fmt": undefined,
+                                        "having_conditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "joins": Array [],
+                                        "limitbycolumns": undefined,
+                                        "limits": undefined,
+                                        "order_expressions": Array [],
+                                        "params": Object {},
+                                        "preconditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "request_totals": undefined,
+                                        "sampling": undefined,
+                                        "select_list": Array [
+                                          "fingerprint",
+                                        ],
+                                        "tables": Array [
+                                          Array [
+                                            Term {
+                                              "term": "loki.time_series_gin",
+                                            },
+                                          ],
+                                        ],
+                                        "withs": Object {},
+                                      },
+                                    },
+                                    Term {
+                                      "term": "sel_1",
+                                    },
+                                  ],
+                                ],
+                                "withs": Object {},
+                              },
+                            },
+                          },
                         },
                         "operator": undefined,
                         "value": Value {
@@ -2069,8 +2917,112 @@ Select {
                             },
                           },
                           Condition {
-                            "column": Raw {
-                              "raw": "samples.fingerprint IN idx_sel",
+                            "column": InSubreq {
+                              "col": "samples.fingerprint",
+                              "raw": undefined,
+                              "sub": WithReference {
+                                "ref": With {
+                                  "alias": "idx_sel",
+                                  "inline": undefined,
+                                  "query": Select {
+                                    "aggregations": Array [],
+                                    "conditions": Conjunction {
+                                      "args": Array [],
+                                    },
+                                    "ctx": Object {},
+                                    "dist": false,
+                                    "fmt": undefined,
+                                    "having_conditions": Conjunction {
+                                      "args": Array [],
+                                    },
+                                    "joins": Array [],
+                                    "limitbycolumns": undefined,
+                                    "limits": undefined,
+                                    "order_expressions": Array [],
+                                    "params": Object {},
+                                    "preconditions": Conjunction {
+                                      "args": Array [],
+                                    },
+                                    "request_totals": undefined,
+                                    "sampling": undefined,
+                                    "select_list": Array [
+                                      "sel_1.fingerprint",
+                                    ],
+                                    "tables": Array [
+                                      Array [
+                                        Subquery {
+                                          "query": Select {
+                                            "aggregations": Array [],
+                                            "conditions": Conjunction {
+                                              "args": Array [
+                                                Condition {
+                                                  "column": Conjunction {
+                                                    "args": Array [
+                                                      Condition {
+                                                        "column": Term {
+                                                          "term": "key",
+                                                        },
+                                                        "operator": "=",
+                                                        "value": Value {
+                                                          "value": "test_id",
+                                                        },
+                                                      },
+                                                      Condition {
+                                                        "column": Term {
+                                                          "term": "val",
+                                                        },
+                                                        "operator": "=",
+                                                        "value": Value {
+                                                          "value": "0.7857680014573265_json",
+                                                        },
+                                                      },
+                                                    ],
+                                                  },
+                                                  "operator": undefined,
+                                                  "value": Value {
+                                                    "value": undefined,
+                                                  },
+                                                },
+                                              ],
+                                            },
+                                            "ctx": Object {},
+                                            "dist": false,
+                                            "fmt": undefined,
+                                            "having_conditions": Conjunction {
+                                              "args": Array [],
+                                            },
+                                            "joins": Array [],
+                                            "limitbycolumns": undefined,
+                                            "limits": undefined,
+                                            "order_expressions": Array [],
+                                            "params": Object {},
+                                            "preconditions": Conjunction {
+                                              "args": Array [],
+                                            },
+                                            "request_totals": undefined,
+                                            "sampling": undefined,
+                                            "select_list": Array [
+                                              "fingerprint",
+                                            ],
+                                            "tables": Array [
+                                              Array [
+                                                Term {
+                                                  "term": "loki.time_series_gin",
+                                                },
+                                              ],
+                                            ],
+                                            "withs": Object {},
+                                          },
+                                        },
+                                        Term {
+                                          "term": "sel_1",
+                                        },
+                                      ],
+                                    ],
+                                    "withs": Object {},
+                                  },
+                                },
+                              },
                             },
                             "operator": undefined,
                             "value": Value {
@@ -2328,8 +3280,112 @@ Select {
               },
             },
             Condition {
-              "column": Raw {
-                "raw": "samples.fingerprint IN idx_sel",
+              "column": InSubreq {
+                "col": "samples.fingerprint",
+                "raw": undefined,
+                "sub": WithReference {
+                  "ref": With {
+                    "alias": "idx_sel",
+                    "inline": undefined,
+                    "query": Select {
+                      "aggregations": Array [],
+                      "conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "ctx": Object {},
+                      "dist": false,
+                      "fmt": undefined,
+                      "having_conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "joins": Array [],
+                      "limitbycolumns": undefined,
+                      "limits": undefined,
+                      "order_expressions": Array [],
+                      "params": Object {},
+                      "preconditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "request_totals": undefined,
+                      "sampling": undefined,
+                      "select_list": Array [
+                        "sel_1.fingerprint",
+                      ],
+                      "tables": Array [
+                        Array [
+                          Subquery {
+                            "query": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Term {
+                                            "term": "key",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "test_id",
+                                          },
+                                        },
+                                        Condition {
+                                          "column": Term {
+                                            "term": "val",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "0.7857680014573265_json",
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "operator": undefined,
+                                    "value": Value {
+                                      "value": undefined,
+                                    },
+                                  },
+                                ],
+                              },
+                              "ctx": Object {},
+                              "dist": false,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  Term {
+                                    "term": "loki.time_series_gin",
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                          Term {
+                            "term": "sel_1",
+                          },
+                        ],
+                      ],
+                      "withs": Object {},
+                    },
+                  },
+                },
               },
               "operator": undefined,
               "value": Value {
@@ -2530,8 +3586,112 @@ Select {
                         },
                       },
                       Condition {
-                        "column": Raw {
-                          "raw": "samples.fingerprint IN idx_sel",
+                        "column": InSubreq {
+                          "col": "samples.fingerprint",
+                          "raw": undefined,
+                          "sub": WithReference {
+                            "ref": With {
+                              "alias": "idx_sel",
+                              "inline": undefined,
+                              "query": Select {
+                                "aggregations": Array [],
+                                "conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "ctx": Object {},
+                                "dist": false,
+                                "fmt": undefined,
+                                "having_conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "joins": Array [],
+                                "limitbycolumns": undefined,
+                                "limits": undefined,
+                                "order_expressions": Array [],
+                                "params": Object {},
+                                "preconditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "request_totals": undefined,
+                                "sampling": undefined,
+                                "select_list": Array [
+                                  "sel_1.fingerprint",
+                                ],
+                                "tables": Array [
+                                  Array [
+                                    Subquery {
+                                      "query": Select {
+                                        "aggregations": Array [],
+                                        "conditions": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Conjunction {
+                                                "args": Array [
+                                                  Condition {
+                                                    "column": Term {
+                                                      "term": "key",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "test_id",
+                                                    },
+                                                  },
+                                                  Condition {
+                                                    "column": Term {
+                                                      "term": "val",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "0.7857680014573265_json",
+                                                    },
+                                                  },
+                                                ],
+                                              },
+                                              "operator": undefined,
+                                              "value": Value {
+                                                "value": undefined,
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "ctx": Object {},
+                                        "dist": false,
+                                        "fmt": undefined,
+                                        "having_conditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "joins": Array [],
+                                        "limitbycolumns": undefined,
+                                        "limits": undefined,
+                                        "order_expressions": Array [],
+                                        "params": Object {},
+                                        "preconditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "request_totals": undefined,
+                                        "sampling": undefined,
+                                        "select_list": Array [
+                                          "fingerprint",
+                                        ],
+                                        "tables": Array [
+                                          Array [
+                                            Term {
+                                              "term": "loki.time_series_gin",
+                                            },
+                                          ],
+                                        ],
+                                        "withs": Object {},
+                                      },
+                                    },
+                                    Term {
+                                      "term": "sel_1",
+                                    },
+                                  ],
+                                ],
+                                "withs": Object {},
+                              },
+                            },
+                          },
                         },
                         "operator": undefined,
                         "value": Value {
@@ -2828,8 +3988,112 @@ Select {
                             },
                           },
                           Condition {
-                            "column": Raw {
-                              "raw": "samples.fingerprint IN idx_sel",
+                            "column": InSubreq {
+                              "col": "samples.fingerprint",
+                              "raw": undefined,
+                              "sub": WithReference {
+                                "ref": With {
+                                  "alias": "idx_sel",
+                                  "inline": undefined,
+                                  "query": Select {
+                                    "aggregations": Array [],
+                                    "conditions": Conjunction {
+                                      "args": Array [],
+                                    },
+                                    "ctx": Object {},
+                                    "dist": false,
+                                    "fmt": undefined,
+                                    "having_conditions": Conjunction {
+                                      "args": Array [],
+                                    },
+                                    "joins": Array [],
+                                    "limitbycolumns": undefined,
+                                    "limits": undefined,
+                                    "order_expressions": Array [],
+                                    "params": Object {},
+                                    "preconditions": Conjunction {
+                                      "args": Array [],
+                                    },
+                                    "request_totals": undefined,
+                                    "sampling": undefined,
+                                    "select_list": Array [
+                                      "sel_1.fingerprint",
+                                    ],
+                                    "tables": Array [
+                                      Array [
+                                        Subquery {
+                                          "query": Select {
+                                            "aggregations": Array [],
+                                            "conditions": Conjunction {
+                                              "args": Array [
+                                                Condition {
+                                                  "column": Conjunction {
+                                                    "args": Array [
+                                                      Condition {
+                                                        "column": Term {
+                                                          "term": "key",
+                                                        },
+                                                        "operator": "=",
+                                                        "value": Value {
+                                                          "value": "test_id",
+                                                        },
+                                                      },
+                                                      Condition {
+                                                        "column": Term {
+                                                          "term": "val",
+                                                        },
+                                                        "operator": "=",
+                                                        "value": Value {
+                                                          "value": "0.7857680014573265_json",
+                                                        },
+                                                      },
+                                                    ],
+                                                  },
+                                                  "operator": undefined,
+                                                  "value": Value {
+                                                    "value": undefined,
+                                                  },
+                                                },
+                                              ],
+                                            },
+                                            "ctx": Object {},
+                                            "dist": false,
+                                            "fmt": undefined,
+                                            "having_conditions": Conjunction {
+                                              "args": Array [],
+                                            },
+                                            "joins": Array [],
+                                            "limitbycolumns": undefined,
+                                            "limits": undefined,
+                                            "order_expressions": Array [],
+                                            "params": Object {},
+                                            "preconditions": Conjunction {
+                                              "args": Array [],
+                                            },
+                                            "request_totals": undefined,
+                                            "sampling": undefined,
+                                            "select_list": Array [
+                                              "fingerprint",
+                                            ],
+                                            "tables": Array [
+                                              Array [
+                                                Term {
+                                                  "term": "loki.time_series_gin",
+                                                },
+                                              ],
+                                            ],
+                                            "withs": Object {},
+                                          },
+                                        },
+                                        Term {
+                                          "term": "sel_1",
+                                        },
+                                      ],
+                                    ],
+                                    "withs": Object {},
+                                  },
+                                },
+                              },
                             },
                             "operator": undefined,
                             "value": Value {
@@ -3116,8 +4380,112 @@ Select {
               },
             },
             Condition {
-              "column": Raw {
-                "raw": "samples.fingerprint IN idx_sel",
+              "column": InSubreq {
+                "col": "samples.fingerprint",
+                "raw": undefined,
+                "sub": WithReference {
+                  "ref": With {
+                    "alias": "idx_sel",
+                    "inline": undefined,
+                    "query": Select {
+                      "aggregations": Array [],
+                      "conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "ctx": Object {},
+                      "dist": false,
+                      "fmt": undefined,
+                      "having_conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "joins": Array [],
+                      "limitbycolumns": undefined,
+                      "limits": undefined,
+                      "order_expressions": Array [],
+                      "params": Object {},
+                      "preconditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "request_totals": undefined,
+                      "sampling": undefined,
+                      "select_list": Array [
+                        "sel_1.fingerprint",
+                      ],
+                      "tables": Array [
+                        Array [
+                          Subquery {
+                            "query": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Term {
+                                            "term": "key",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "test_id",
+                                          },
+                                        },
+                                        Condition {
+                                          "column": Term {
+                                            "term": "val",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "0.7857680014573265_json",
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "operator": undefined,
+                                    "value": Value {
+                                      "value": undefined,
+                                    },
+                                  },
+                                ],
+                              },
+                              "ctx": Object {},
+                              "dist": false,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  Term {
+                                    "term": "loki.time_series_gin",
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                          Term {
+                            "term": "sel_1",
+                          },
+                        ],
+                      ],
+                      "withs": Object {},
+                    },
+                  },
+                },
               },
               "operator": undefined,
               "value": Value {
@@ -3347,8 +4715,112 @@ Select {
                         },
                       },
                       Condition {
-                        "column": Raw {
-                          "raw": "samples.fingerprint IN idx_sel",
+                        "column": InSubreq {
+                          "col": "samples.fingerprint",
+                          "raw": undefined,
+                          "sub": WithReference {
+                            "ref": With {
+                              "alias": "idx_sel",
+                              "inline": undefined,
+                              "query": Select {
+                                "aggregations": Array [],
+                                "conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "ctx": Object {},
+                                "dist": false,
+                                "fmt": undefined,
+                                "having_conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "joins": Array [],
+                                "limitbycolumns": undefined,
+                                "limits": undefined,
+                                "order_expressions": Array [],
+                                "params": Object {},
+                                "preconditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "request_totals": undefined,
+                                "sampling": undefined,
+                                "select_list": Array [
+                                  "sel_1.fingerprint",
+                                ],
+                                "tables": Array [
+                                  Array [
+                                    Subquery {
+                                      "query": Select {
+                                        "aggregations": Array [],
+                                        "conditions": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Conjunction {
+                                                "args": Array [
+                                                  Condition {
+                                                    "column": Term {
+                                                      "term": "key",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "test_id",
+                                                    },
+                                                  },
+                                                  Condition {
+                                                    "column": Term {
+                                                      "term": "val",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "0.7857680014573265_json",
+                                                    },
+                                                  },
+                                                ],
+                                              },
+                                              "operator": undefined,
+                                              "value": Value {
+                                                "value": undefined,
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "ctx": Object {},
+                                        "dist": false,
+                                        "fmt": undefined,
+                                        "having_conditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "joins": Array [],
+                                        "limitbycolumns": undefined,
+                                        "limits": undefined,
+                                        "order_expressions": Array [],
+                                        "params": Object {},
+                                        "preconditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "request_totals": undefined,
+                                        "sampling": undefined,
+                                        "select_list": Array [
+                                          "fingerprint",
+                                        ],
+                                        "tables": Array [
+                                          Array [
+                                            Term {
+                                              "term": "loki.time_series_gin",
+                                            },
+                                          ],
+                                        ],
+                                        "withs": Object {},
+                                      },
+                                    },
+                                    Term {
+                                      "term": "sel_1",
+                                    },
+                                  ],
+                                ],
+                                "withs": Object {},
+                              },
+                            },
+                          },
                         },
                         "operator": undefined,
                         "value": Value {
@@ -3674,8 +5146,112 @@ Select {
                             },
                           },
                           Condition {
-                            "column": Raw {
-                              "raw": "samples.fingerprint IN idx_sel",
+                            "column": InSubreq {
+                              "col": "samples.fingerprint",
+                              "raw": undefined,
+                              "sub": WithReference {
+                                "ref": With {
+                                  "alias": "idx_sel",
+                                  "inline": undefined,
+                                  "query": Select {
+                                    "aggregations": Array [],
+                                    "conditions": Conjunction {
+                                      "args": Array [],
+                                    },
+                                    "ctx": Object {},
+                                    "dist": false,
+                                    "fmt": undefined,
+                                    "having_conditions": Conjunction {
+                                      "args": Array [],
+                                    },
+                                    "joins": Array [],
+                                    "limitbycolumns": undefined,
+                                    "limits": undefined,
+                                    "order_expressions": Array [],
+                                    "params": Object {},
+                                    "preconditions": Conjunction {
+                                      "args": Array [],
+                                    },
+                                    "request_totals": undefined,
+                                    "sampling": undefined,
+                                    "select_list": Array [
+                                      "sel_1.fingerprint",
+                                    ],
+                                    "tables": Array [
+                                      Array [
+                                        Subquery {
+                                          "query": Select {
+                                            "aggregations": Array [],
+                                            "conditions": Conjunction {
+                                              "args": Array [
+                                                Condition {
+                                                  "column": Conjunction {
+                                                    "args": Array [
+                                                      Condition {
+                                                        "column": Term {
+                                                          "term": "key",
+                                                        },
+                                                        "operator": "=",
+                                                        "value": Value {
+                                                          "value": "test_id",
+                                                        },
+                                                      },
+                                                      Condition {
+                                                        "column": Term {
+                                                          "term": "val",
+                                                        },
+                                                        "operator": "=",
+                                                        "value": Value {
+                                                          "value": "0.7857680014573265_json",
+                                                        },
+                                                      },
+                                                    ],
+                                                  },
+                                                  "operator": undefined,
+                                                  "value": Value {
+                                                    "value": undefined,
+                                                  },
+                                                },
+                                              ],
+                                            },
+                                            "ctx": Object {},
+                                            "dist": false,
+                                            "fmt": undefined,
+                                            "having_conditions": Conjunction {
+                                              "args": Array [],
+                                            },
+                                            "joins": Array [],
+                                            "limitbycolumns": undefined,
+                                            "limits": undefined,
+                                            "order_expressions": Array [],
+                                            "params": Object {},
+                                            "preconditions": Conjunction {
+                                              "args": Array [],
+                                            },
+                                            "request_totals": undefined,
+                                            "sampling": undefined,
+                                            "select_list": Array [
+                                              "fingerprint",
+                                            ],
+                                            "tables": Array [
+                                              Array [
+                                                Term {
+                                                  "term": "loki.time_series_gin",
+                                                },
+                                              ],
+                                            ],
+                                            "withs": Object {},
+                                          },
+                                        },
+                                        Term {
+                                          "term": "sel_1",
+                                        },
+                                      ],
+                                    ],
+                                    "withs": Object {},
+                                  },
+                                },
+                              },
                             },
                             "operator": undefined,
                             "value": Value {
@@ -3962,8 +5538,112 @@ Select {
               },
             },
             Condition {
-              "column": Raw {
-                "raw": "samples.fingerprint IN idx_sel",
+              "column": InSubreq {
+                "col": "samples.fingerprint",
+                "raw": undefined,
+                "sub": WithReference {
+                  "ref": With {
+                    "alias": "idx_sel",
+                    "inline": undefined,
+                    "query": Select {
+                      "aggregations": Array [],
+                      "conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "ctx": Object {},
+                      "dist": false,
+                      "fmt": undefined,
+                      "having_conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "joins": Array [],
+                      "limitbycolumns": undefined,
+                      "limits": undefined,
+                      "order_expressions": Array [],
+                      "params": Object {},
+                      "preconditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "request_totals": undefined,
+                      "sampling": undefined,
+                      "select_list": Array [
+                        "sel_1.fingerprint",
+                      ],
+                      "tables": Array [
+                        Array [
+                          Subquery {
+                            "query": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Term {
+                                            "term": "key",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "test_id",
+                                          },
+                                        },
+                                        Condition {
+                                          "column": Term {
+                                            "term": "val",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "0.7857680014573265_json",
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "operator": undefined,
+                                    "value": Value {
+                                      "value": undefined,
+                                    },
+                                  },
+                                ],
+                              },
+                              "ctx": Object {},
+                              "dist": false,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  Term {
+                                    "term": "loki.time_series_gin",
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                          Term {
+                            "term": "sel_1",
+                          },
+                        ],
+                      ],
+                      "withs": Object {},
+                    },
+                  },
+                },
               },
               "operator": undefined,
               "value": Value {
@@ -4193,8 +5873,112 @@ Select {
                         },
                       },
                       Condition {
-                        "column": Raw {
-                          "raw": "samples.fingerprint IN idx_sel",
+                        "column": InSubreq {
+                          "col": "samples.fingerprint",
+                          "raw": undefined,
+                          "sub": WithReference {
+                            "ref": With {
+                              "alias": "idx_sel",
+                              "inline": undefined,
+                              "query": Select {
+                                "aggregations": Array [],
+                                "conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "ctx": Object {},
+                                "dist": false,
+                                "fmt": undefined,
+                                "having_conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "joins": Array [],
+                                "limitbycolumns": undefined,
+                                "limits": undefined,
+                                "order_expressions": Array [],
+                                "params": Object {},
+                                "preconditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "request_totals": undefined,
+                                "sampling": undefined,
+                                "select_list": Array [
+                                  "sel_1.fingerprint",
+                                ],
+                                "tables": Array [
+                                  Array [
+                                    Subquery {
+                                      "query": Select {
+                                        "aggregations": Array [],
+                                        "conditions": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Conjunction {
+                                                "args": Array [
+                                                  Condition {
+                                                    "column": Term {
+                                                      "term": "key",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "test_id",
+                                                    },
+                                                  },
+                                                  Condition {
+                                                    "column": Term {
+                                                      "term": "val",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "0.7857680014573265_json",
+                                                    },
+                                                  },
+                                                ],
+                                              },
+                                              "operator": undefined,
+                                              "value": Value {
+                                                "value": undefined,
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "ctx": Object {},
+                                        "dist": false,
+                                        "fmt": undefined,
+                                        "having_conditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "joins": Array [],
+                                        "limitbycolumns": undefined,
+                                        "limits": undefined,
+                                        "order_expressions": Array [],
+                                        "params": Object {},
+                                        "preconditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "request_totals": undefined,
+                                        "sampling": undefined,
+                                        "select_list": Array [
+                                          "fingerprint",
+                                        ],
+                                        "tables": Array [
+                                          Array [
+                                            Term {
+                                              "term": "loki.time_series_gin",
+                                            },
+                                          ],
+                                        ],
+                                        "withs": Object {},
+                                      },
+                                    },
+                                    Term {
+                                      "term": "sel_1",
+                                    },
+                                  ],
+                                ],
+                                "withs": Object {},
+                              },
+                            },
+                          },
                         },
                         "operator": undefined,
                         "value": Value {
@@ -4758,8 +6542,112 @@ Select {
               },
             },
             Condition {
-              "column": Raw {
-                "raw": "samples.fingerprint IN idx_sel",
+              "column": InSubreq {
+                "col": "samples.fingerprint",
+                "raw": undefined,
+                "sub": WithReference {
+                  "ref": With {
+                    "alias": "idx_sel",
+                    "inline": undefined,
+                    "query": Select {
+                      "aggregations": Array [],
+                      "conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "ctx": Object {},
+                      "dist": false,
+                      "fmt": undefined,
+                      "having_conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "joins": Array [],
+                      "limitbycolumns": undefined,
+                      "limits": undefined,
+                      "order_expressions": Array [],
+                      "params": Object {},
+                      "preconditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "request_totals": undefined,
+                      "sampling": undefined,
+                      "select_list": Array [
+                        "sel_1.fingerprint",
+                      ],
+                      "tables": Array [
+                        Array [
+                          Subquery {
+                            "query": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Term {
+                                            "term": "key",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "minus_nam",
+                                          },
+                                        },
+                                        Condition {
+                                          "column": Term {
+                                            "term": "val",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "aut illo",
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "operator": undefined,
+                                    "value": Value {
+                                      "value": undefined,
+                                    },
+                                  },
+                                ],
+                              },
+                              "ctx": Object {},
+                              "dist": false,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  Term {
+                                    "term": "loki.time_series_gin",
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                          Term {
+                            "term": "sel_1",
+                          },
+                        ],
+                      ],
+                      "withs": Object {},
+                    },
+                  },
+                },
               },
               "operator": undefined,
               "value": Value {
@@ -4941,8 +6829,112 @@ Select {
                         },
                       },
                       Condition {
-                        "column": Raw {
-                          "raw": "samples.fingerprint IN idx_sel",
+                        "column": InSubreq {
+                          "col": "samples.fingerprint",
+                          "raw": undefined,
+                          "sub": WithReference {
+                            "ref": With {
+                              "alias": "idx_sel",
+                              "inline": undefined,
+                              "query": Select {
+                                "aggregations": Array [],
+                                "conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "ctx": Object {},
+                                "dist": false,
+                                "fmt": undefined,
+                                "having_conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "joins": Array [],
+                                "limitbycolumns": undefined,
+                                "limits": undefined,
+                                "order_expressions": Array [],
+                                "params": Object {},
+                                "preconditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "request_totals": undefined,
+                                "sampling": undefined,
+                                "select_list": Array [
+                                  "sel_1.fingerprint",
+                                ],
+                                "tables": Array [
+                                  Array [
+                                    Subquery {
+                                      "query": Select {
+                                        "aggregations": Array [],
+                                        "conditions": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Conjunction {
+                                                "args": Array [
+                                                  Condition {
+                                                    "column": Term {
+                                                      "term": "key",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "minus_nam",
+                                                    },
+                                                  },
+                                                  Condition {
+                                                    "column": Term {
+                                                      "term": "val",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "aut illo",
+                                                    },
+                                                  },
+                                                ],
+                                              },
+                                              "operator": undefined,
+                                              "value": Value {
+                                                "value": undefined,
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "ctx": Object {},
+                                        "dist": false,
+                                        "fmt": undefined,
+                                        "having_conditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "joins": Array [],
+                                        "limitbycolumns": undefined,
+                                        "limits": undefined,
+                                        "order_expressions": Array [],
+                                        "params": Object {},
+                                        "preconditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "request_totals": undefined,
+                                        "sampling": undefined,
+                                        "select_list": Array [
+                                          "fingerprint",
+                                        ],
+                                        "tables": Array [
+                                          Array [
+                                            Term {
+                                              "term": "loki.time_series_gin",
+                                            },
+                                          ],
+                                        ],
+                                        "withs": Object {},
+                                      },
+                                    },
+                                    Term {
+                                      "term": "sel_1",
+                                    },
+                                  ],
+                                ],
+                                "withs": Object {},
+                              },
+                            },
+                          },
                         },
                         "operator": undefined,
                         "value": Value {
@@ -5458,8 +7450,113 @@ Select {
               },
             },
             Condition {
-              "column": Raw {
-                "raw": "samples.fingerprint IN idx_sel",
+              "column": InSubreq {
+                "col": "samples.fingerprint",
+                "raw": undefined,
+                "sub": WithReference {
+                  "ref": With {
+                    "alias": "idx_sel",
+                    "fmt": undefined,
+                    "inline": undefined,
+                    "query": Select {
+                      "aggregations": Array [],
+                      "conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "ctx": Object {},
+                      "dist": false,
+                      "fmt": undefined,
+                      "having_conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "joins": Array [],
+                      "limitbycolumns": undefined,
+                      "limits": undefined,
+                      "order_expressions": Array [],
+                      "params": Object {},
+                      "preconditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "request_totals": undefined,
+                      "sampling": undefined,
+                      "select_list": Array [
+                        "sel_1.fingerprint",
+                      ],
+                      "tables": Array [
+                        Array [
+                          Subquery {
+                            "query": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Term {
+                                            "term": "key",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "minus_nam",
+                                          },
+                                        },
+                                        Condition {
+                                          "column": Term {
+                                            "term": "val",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "aut illo",
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "operator": undefined,
+                                    "value": Value {
+                                      "value": undefined,
+                                    },
+                                  },
+                                ],
+                              },
+                              "ctx": Object {},
+                              "dist": false,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  Term {
+                                    "term": "loki.time_series_gin",
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                          Term {
+                            "term": "sel_1",
+                          },
+                        ],
+                      ],
+                      "withs": Object {},
+                    },
+                  },
+                },
               },
               "operator": undefined,
               "value": Value {
@@ -5467,8 +7564,116 @@ Select {
               },
             },
             Condition {
-              "column": Raw {
-                "raw": "samples.fingerprint IN idx_sel",
+              "column": InSubreq {
+                "col": "samples.fingerprint",
+                "raw": undefined,
+                "sub": WithReference {
+                  "ref": With {
+                    "alias": "idx_sel",
+                    "inline": undefined,
+                    "query": Select {
+                      "aggregations": Array [],
+                      "conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "ctx": Object {},
+                      "dist": false,
+                      "fmt": undefined,
+                      "having_conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "joins": Array [],
+                      "limitbycolumns": undefined,
+                      "limits": undefined,
+                      "order_expressions": Array [],
+                      "params": Object {},
+                      "preconditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "request_totals": undefined,
+                      "sampling": undefined,
+                      "select_list": Array [
+                        "sel_2.fingerprint",
+                      ],
+                      "tables": Array [
+                        Array [
+                          Subquery {
+                            "query": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Term {
+                                            "term": "key",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "rerum_laborum",
+                                          },
+                                        },
+                                        Condition {
+                                          "column": Match {
+                                            "col": "val",
+                                            "raw": "",
+                                            "re": Value {
+                                              "value": "^con.+q.at[a-z]r",
+                                            },
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": 1,
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "operator": undefined,
+                                    "value": Value {
+                                      "value": undefined,
+                                    },
+                                  },
+                                ],
+                              },
+                              "ctx": Object {},
+                              "dist": false,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  Term {
+                                    "term": "loki.time_series_gin",
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                          Term {
+                            "term": "sel_2",
+                          },
+                        ],
+                      ],
+                      "withs": Object {},
+                    },
+                  },
+                },
               },
               "operator": undefined,
               "value": Value {
@@ -5659,8 +7864,113 @@ Select {
                         },
                       },
                       Condition {
-                        "column": Raw {
-                          "raw": "samples.fingerprint IN idx_sel",
+                        "column": InSubreq {
+                          "col": "samples.fingerprint",
+                          "raw": undefined,
+                          "sub": WithReference {
+                            "ref": With {
+                              "alias": "idx_sel",
+                              "fmt": undefined,
+                              "inline": undefined,
+                              "query": Select {
+                                "aggregations": Array [],
+                                "conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "ctx": Object {},
+                                "dist": false,
+                                "fmt": undefined,
+                                "having_conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "joins": Array [],
+                                "limitbycolumns": undefined,
+                                "limits": undefined,
+                                "order_expressions": Array [],
+                                "params": Object {},
+                                "preconditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "request_totals": undefined,
+                                "sampling": undefined,
+                                "select_list": Array [
+                                  "sel_1.fingerprint",
+                                ],
+                                "tables": Array [
+                                  Array [
+                                    Subquery {
+                                      "query": Select {
+                                        "aggregations": Array [],
+                                        "conditions": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Conjunction {
+                                                "args": Array [
+                                                  Condition {
+                                                    "column": Term {
+                                                      "term": "key",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "minus_nam",
+                                                    },
+                                                  },
+                                                  Condition {
+                                                    "column": Term {
+                                                      "term": "val",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "aut illo",
+                                                    },
+                                                  },
+                                                ],
+                                              },
+                                              "operator": undefined,
+                                              "value": Value {
+                                                "value": undefined,
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "ctx": Object {},
+                                        "dist": false,
+                                        "fmt": undefined,
+                                        "having_conditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "joins": Array [],
+                                        "limitbycolumns": undefined,
+                                        "limits": undefined,
+                                        "order_expressions": Array [],
+                                        "params": Object {},
+                                        "preconditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "request_totals": undefined,
+                                        "sampling": undefined,
+                                        "select_list": Array [
+                                          "fingerprint",
+                                        ],
+                                        "tables": Array [
+                                          Array [
+                                            Term {
+                                              "term": "loki.time_series_gin",
+                                            },
+                                          ],
+                                        ],
+                                        "withs": Object {},
+                                      },
+                                    },
+                                    Term {
+                                      "term": "sel_1",
+                                    },
+                                  ],
+                                ],
+                                "withs": Object {},
+                              },
+                            },
+                          },
                         },
                         "operator": undefined,
                         "value": Value {
@@ -5668,8 +7978,116 @@ Select {
                         },
                       },
                       Condition {
-                        "column": Raw {
-                          "raw": "samples.fingerprint IN idx_sel",
+                        "column": InSubreq {
+                          "col": "samples.fingerprint",
+                          "raw": undefined,
+                          "sub": WithReference {
+                            "ref": With {
+                              "alias": "idx_sel",
+                              "inline": undefined,
+                              "query": Select {
+                                "aggregations": Array [],
+                                "conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "ctx": Object {},
+                                "dist": false,
+                                "fmt": undefined,
+                                "having_conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "joins": Array [],
+                                "limitbycolumns": undefined,
+                                "limits": undefined,
+                                "order_expressions": Array [],
+                                "params": Object {},
+                                "preconditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "request_totals": undefined,
+                                "sampling": undefined,
+                                "select_list": Array [
+                                  "sel_2.fingerprint",
+                                ],
+                                "tables": Array [
+                                  Array [
+                                    Subquery {
+                                      "query": Select {
+                                        "aggregations": Array [],
+                                        "conditions": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Conjunction {
+                                                "args": Array [
+                                                  Condition {
+                                                    "column": Term {
+                                                      "term": "key",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "rerum_laborum",
+                                                    },
+                                                  },
+                                                  Condition {
+                                                    "column": Match {
+                                                      "col": "val",
+                                                      "raw": "",
+                                                      "re": Value {
+                                                        "value": "^con.+q.at[a-z]r",
+                                                      },
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": 1,
+                                                    },
+                                                  },
+                                                ],
+                                              },
+                                              "operator": undefined,
+                                              "value": Value {
+                                                "value": undefined,
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "ctx": Object {},
+                                        "dist": false,
+                                        "fmt": undefined,
+                                        "having_conditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "joins": Array [],
+                                        "limitbycolumns": undefined,
+                                        "limits": undefined,
+                                        "order_expressions": Array [],
+                                        "params": Object {},
+                                        "preconditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "request_totals": undefined,
+                                        "sampling": undefined,
+                                        "select_list": Array [
+                                          "fingerprint",
+                                        ],
+                                        "tables": Array [
+                                          Array [
+                                            Term {
+                                              "term": "loki.time_series_gin",
+                                            },
+                                          ],
+                                        ],
+                                        "withs": Object {},
+                                      },
+                                    },
+                                    Term {
+                                      "term": "sel_2",
+                                    },
+                                  ],
+                                ],
+                                "withs": Object {},
+                              },
+                            },
+                          },
                         },
                         "operator": undefined,
                         "value": Value {
@@ -6190,8 +8608,112 @@ Select {
               },
             },
             Condition {
-              "column": Raw {
-                "raw": "samples.fingerprint IN idx_sel",
+              "column": InSubreq {
+                "col": "samples.fingerprint",
+                "raw": undefined,
+                "sub": WithReference {
+                  "ref": With {
+                    "alias": "idx_sel",
+                    "inline": undefined,
+                    "query": Select {
+                      "aggregations": Array [],
+                      "conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "ctx": Object {},
+                      "dist": false,
+                      "fmt": undefined,
+                      "having_conditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "joins": Array [],
+                      "limitbycolumns": undefined,
+                      "limits": undefined,
+                      "order_expressions": Array [],
+                      "params": Object {},
+                      "preconditions": Conjunction {
+                        "args": Array [],
+                      },
+                      "request_totals": undefined,
+                      "sampling": undefined,
+                      "select_list": Array [
+                        "sel_1.fingerprint",
+                      ],
+                      "tables": Array [
+                        Array [
+                          Subquery {
+                            "query": Select {
+                              "aggregations": Array [],
+                              "conditions": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Conjunction {
+                                      "args": Array [
+                                        Condition {
+                                          "column": Term {
+                                            "term": "key",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "minus_nam",
+                                          },
+                                        },
+                                        Condition {
+                                          "column": Term {
+                                            "term": "val",
+                                          },
+                                          "operator": "=",
+                                          "value": Value {
+                                            "value": "aut illo",
+                                          },
+                                        },
+                                      ],
+                                    },
+                                    "operator": undefined,
+                                    "value": Value {
+                                      "value": undefined,
+                                    },
+                                  },
+                                ],
+                              },
+                              "ctx": Object {},
+                              "dist": false,
+                              "fmt": undefined,
+                              "having_conditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "joins": Array [],
+                              "limitbycolumns": undefined,
+                              "limits": undefined,
+                              "order_expressions": Array [],
+                              "params": Object {},
+                              "preconditions": Conjunction {
+                                "args": Array [],
+                              },
+                              "request_totals": undefined,
+                              "sampling": undefined,
+                              "select_list": Array [
+                                "fingerprint",
+                              ],
+                              "tables": Array [
+                                Array [
+                                  Term {
+                                    "term": "loki.time_series_gin",
+                                  },
+                                ],
+                              ],
+                              "withs": Object {},
+                            },
+                          },
+                          Term {
+                            "term": "sel_1",
+                          },
+                        ],
+                      ],
+                      "withs": Object {},
+                    },
+                  },
+                },
               },
               "operator": undefined,
               "value": Value {
@@ -6373,8 +8895,112 @@ Select {
                         },
                       },
                       Condition {
-                        "column": Raw {
-                          "raw": "samples.fingerprint IN idx_sel",
+                        "column": InSubreq {
+                          "col": "samples.fingerprint",
+                          "raw": undefined,
+                          "sub": WithReference {
+                            "ref": With {
+                              "alias": "idx_sel",
+                              "inline": undefined,
+                              "query": Select {
+                                "aggregations": Array [],
+                                "conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "ctx": Object {},
+                                "dist": false,
+                                "fmt": undefined,
+                                "having_conditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "joins": Array [],
+                                "limitbycolumns": undefined,
+                                "limits": undefined,
+                                "order_expressions": Array [],
+                                "params": Object {},
+                                "preconditions": Conjunction {
+                                  "args": Array [],
+                                },
+                                "request_totals": undefined,
+                                "sampling": undefined,
+                                "select_list": Array [
+                                  "sel_1.fingerprint",
+                                ],
+                                "tables": Array [
+                                  Array [
+                                    Subquery {
+                                      "query": Select {
+                                        "aggregations": Array [],
+                                        "conditions": Conjunction {
+                                          "args": Array [
+                                            Condition {
+                                              "column": Conjunction {
+                                                "args": Array [
+                                                  Condition {
+                                                    "column": Term {
+                                                      "term": "key",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "minus_nam",
+                                                    },
+                                                  },
+                                                  Condition {
+                                                    "column": Term {
+                                                      "term": "val",
+                                                    },
+                                                    "operator": "=",
+                                                    "value": Value {
+                                                      "value": "aut illo",
+                                                    },
+                                                  },
+                                                ],
+                                              },
+                                              "operator": undefined,
+                                              "value": Value {
+                                                "value": undefined,
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        "ctx": Object {},
+                                        "dist": false,
+                                        "fmt": undefined,
+                                        "having_conditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "joins": Array [],
+                                        "limitbycolumns": undefined,
+                                        "limits": undefined,
+                                        "order_expressions": Array [],
+                                        "params": Object {},
+                                        "preconditions": Conjunction {
+                                          "args": Array [],
+                                        },
+                                        "request_totals": undefined,
+                                        "sampling": undefined,
+                                        "select_list": Array [
+                                          "fingerprint",
+                                        ],
+                                        "tables": Array [
+                                          Array [
+                                            Term {
+                                              "term": "loki.time_series_gin",
+                                            },
+                                          ],
+                                        ],
+                                        "withs": Object {},
+                                      },
+                                    },
+                                    Term {
+                                      "term": "sel_1",
+                                    },
+                                  ],
+                                ],
+                                "withs": Object {},
+                              },
+                            },
+                          },
                         },
                         "operator": undefined,
                         "value": Value {
@@ -6515,8 +9141,112 @@ Select {
         },
       },
       Condition {
-        "column": Raw {
-          "raw": "samples.fingerprint IN idx_sel",
+        "column": InSubreq {
+          "col": "samples.fingerprint",
+          "raw": undefined,
+          "sub": WithReference {
+            "ref": With {
+              "alias": "idx_sel",
+              "inline": undefined,
+              "query": Select {
+                "aggregations": Array [],
+                "conditions": Conjunction {
+                  "args": Array [],
+                },
+                "ctx": Object {},
+                "dist": false,
+                "fmt": undefined,
+                "having_conditions": Conjunction {
+                  "args": Array [],
+                },
+                "joins": Array [],
+                "limitbycolumns": undefined,
+                "limits": undefined,
+                "order_expressions": Array [],
+                "params": Object {},
+                "preconditions": Conjunction {
+                  "args": Array [],
+                },
+                "request_totals": undefined,
+                "sampling": undefined,
+                "select_list": Array [
+                  "sel_1.fingerprint",
+                ],
+                "tables": Array [
+                  Array [
+                    Subquery {
+                      "query": Select {
+                        "aggregations": Array [],
+                        "conditions": Conjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Term {
+                                      "term": "key",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "autem_quis",
+                                    },
+                                  },
+                                  Condition {
+                                    "column": Term {
+                                      "term": "val",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "quidem sit",
+                                    },
+                                  },
+                                ],
+                              },
+                              "operator": undefined,
+                              "value": Value {
+                                "value": undefined,
+                              },
+                            },
+                          ],
+                        },
+                        "ctx": Object {},
+                        "dist": false,
+                        "fmt": undefined,
+                        "having_conditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "joins": Array [],
+                        "limitbycolumns": undefined,
+                        "limits": undefined,
+                        "order_expressions": Array [],
+                        "params": Object {},
+                        "preconditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "request_totals": undefined,
+                        "sampling": undefined,
+                        "select_list": Array [
+                          "fingerprint",
+                        ],
+                        "tables": Array [
+                          Array [
+                            Term {
+                              "term": "loki.time_series_gin",
+                            },
+                          ],
+                        ],
+                        "withs": Object {},
+                      },
+                    },
+                    Term {
+                      "term": "sel_1",
+                    },
+                  ],
+                ],
+                "withs": Object {},
+              },
+            },
+          },
         },
         "operator": undefined,
         "value": Value {
@@ -6810,8 +9540,194 @@ Select {
         },
       },
       Condition {
-        "column": Raw {
-          "raw": "samples.fingerprint IN idx_sel",
+        "column": InSubreq {
+          "col": "samples.fingerprint",
+          "raw": undefined,
+          "sub": WithReference {
+            "ref": With {
+              "alias": "idx_sel",
+              "inline": undefined,
+              "query": Select {
+                "aggregations": Array [],
+                "conditions": Conjunction {
+                  "args": Array [],
+                },
+                "ctx": Object {},
+                "dist": false,
+                "fmt": undefined,
+                "having_conditions": Conjunction {
+                  "args": Array [],
+                },
+                "joins": Array [
+                  Object {
+                    "conditions": Array [
+                      Condition {
+                        "column": Term {
+                          "term": "sel_1.fingerprint",
+                        },
+                        "operator": "=",
+                        "value": Term {
+                          "term": "sel_2.fingerprint",
+                        },
+                      },
+                    ],
+                    "table": AliasedSelect {
+                      "alias": Term {
+                        "term": "sel_2",
+                      },
+                      "sel": Select {
+                        "aggregations": Array [],
+                        "conditions": Conjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Term {
+                                      "term": "key",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "quia",
+                                    },
+                                  },
+                                  Condition {
+                                    "column": Term {
+                                      "term": "val",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "eum voluptatem non eligendi",
+                                    },
+                                  },
+                                ],
+                              },
+                              "operator": undefined,
+                              "value": Value {
+                                "value": undefined,
+                              },
+                            },
+                          ],
+                        },
+                        "ctx": Object {},
+                        "dist": false,
+                        "fmt": undefined,
+                        "having_conditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "joins": Array [],
+                        "limitbycolumns": undefined,
+                        "limits": undefined,
+                        "order_expressions": Array [],
+                        "params": Object {},
+                        "preconditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "request_totals": undefined,
+                        "sampling": undefined,
+                        "select_list": Array [
+                          "fingerprint",
+                        ],
+                        "tables": Array [
+                          Array [
+                            Term {
+                              "term": "loki.time_series_gin",
+                            },
+                          ],
+                        ],
+                        "withs": Object {},
+                      },
+                    },
+                    "type": " inner any ",
+                  },
+                ],
+                "limitbycolumns": undefined,
+                "limits": undefined,
+                "order_expressions": Array [],
+                "params": Object {},
+                "preconditions": Conjunction {
+                  "args": Array [],
+                },
+                "request_totals": undefined,
+                "sampling": undefined,
+                "select_list": Array [
+                  "sel_1.fingerprint",
+                ],
+                "tables": Array [
+                  Array [
+                    Subquery {
+                      "query": Select {
+                        "aggregations": Array [],
+                        "conditions": Conjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Term {
+                                      "term": "key",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "et_dolorem",
+                                    },
+                                  },
+                                  Condition {
+                                    "column": Term {
+                                      "term": "val",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "nemo doloremque",
+                                    },
+                                  },
+                                ],
+                              },
+                              "operator": undefined,
+                              "value": Value {
+                                "value": undefined,
+                              },
+                            },
+                          ],
+                        },
+                        "ctx": Object {},
+                        "dist": false,
+                        "fmt": undefined,
+                        "having_conditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "joins": Array [],
+                        "limitbycolumns": undefined,
+                        "limits": undefined,
+                        "order_expressions": Array [],
+                        "params": Object {},
+                        "preconditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "request_totals": undefined,
+                        "sampling": undefined,
+                        "select_list": Array [
+                          "fingerprint",
+                        ],
+                        "tables": Array [
+                          Array [
+                            Term {
+                              "term": "loki.time_series_gin",
+                            },
+                          ],
+                        ],
+                        "withs": Object {},
+                      },
+                    },
+                    Term {
+                      "term": "sel_1",
+                    },
+                  ],
+                ],
+                "withs": Object {},
+              },
+            },
+          },
         },
         "operator": undefined,
         "value": Value {
@@ -7116,8 +10032,116 @@ Select {
         },
       },
       Condition {
-        "column": Raw {
-          "raw": "samples.fingerprint IN idx_sel",
+        "column": InSubreq {
+          "col": "samples.fingerprint",
+          "raw": undefined,
+          "sub": WithReference {
+            "ref": With {
+              "alias": "idx_sel",
+              "inline": undefined,
+              "query": Select {
+                "aggregations": Array [],
+                "conditions": Conjunction {
+                  "args": Array [],
+                },
+                "ctx": Object {},
+                "dist": false,
+                "fmt": undefined,
+                "having_conditions": Conjunction {
+                  "args": Array [],
+                },
+                "joins": Array [],
+                "limitbycolumns": undefined,
+                "limits": undefined,
+                "order_expressions": Array [],
+                "params": Object {},
+                "preconditions": Conjunction {
+                  "args": Array [],
+                },
+                "request_totals": undefined,
+                "sampling": undefined,
+                "select_list": Array [
+                  "sel_1.fingerprint",
+                ],
+                "tables": Array [
+                  Array [
+                    Subquery {
+                      "query": Select {
+                        "aggregations": Array [],
+                        "conditions": Conjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Term {
+                                      "term": "key",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "rerum_laborum",
+                                    },
+                                  },
+                                  Condition {
+                                    "column": Match {
+                                      "col": "val",
+                                      "raw": "",
+                                      "re": Value {
+                                        "value": "^con.+q.at[a-z]r",
+                                      },
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": 1,
+                                    },
+                                  },
+                                ],
+                              },
+                              "operator": undefined,
+                              "value": Value {
+                                "value": undefined,
+                              },
+                            },
+                          ],
+                        },
+                        "ctx": Object {},
+                        "dist": false,
+                        "fmt": undefined,
+                        "having_conditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "joins": Array [],
+                        "limitbycolumns": undefined,
+                        "limits": undefined,
+                        "order_expressions": Array [],
+                        "params": Object {},
+                        "preconditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "request_totals": undefined,
+                        "sampling": undefined,
+                        "select_list": Array [
+                          "fingerprint",
+                        ],
+                        "tables": Array [
+                          Array [
+                            Term {
+                              "term": "loki.time_series_gin",
+                            },
+                          ],
+                        ],
+                        "withs": Object {},
+                      },
+                    },
+                    Term {
+                      "term": "sel_1",
+                    },
+                  ],
+                ],
+                "withs": Object {},
+              },
+            },
+          },
         },
         "operator": undefined,
         "value": Value {
@@ -7344,8 +10368,112 @@ Select {
         },
       },
       Condition {
-        "column": Raw {
-          "raw": "samples.fingerprint IN idx_sel",
+        "column": InSubreq {
+          "col": "samples.fingerprint",
+          "raw": undefined,
+          "sub": WithReference {
+            "ref": With {
+              "alias": "idx_sel",
+              "inline": undefined,
+              "query": Select {
+                "aggregations": Array [],
+                "conditions": Conjunction {
+                  "args": Array [],
+                },
+                "ctx": Object {},
+                "dist": false,
+                "fmt": undefined,
+                "having_conditions": Conjunction {
+                  "args": Array [],
+                },
+                "joins": Array [],
+                "limitbycolumns": undefined,
+                "limits": undefined,
+                "order_expressions": Array [],
+                "params": Object {},
+                "preconditions": Conjunction {
+                  "args": Array [],
+                },
+                "request_totals": undefined,
+                "sampling": undefined,
+                "select_list": Array [
+                  "sel_1.fingerprint",
+                ],
+                "tables": Array [
+                  Array [
+                    Subquery {
+                      "query": Select {
+                        "aggregations": Array [],
+                        "conditions": Conjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Term {
+                                      "term": "key",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "et_dolorem",
+                                    },
+                                  },
+                                  Condition {
+                                    "column": Term {
+                                      "term": "val",
+                                    },
+                                    "operator": "!=",
+                                    "value": Value {
+                                      "value": "nemo doloremque",
+                                    },
+                                  },
+                                ],
+                              },
+                              "operator": undefined,
+                              "value": Value {
+                                "value": undefined,
+                              },
+                            },
+                          ],
+                        },
+                        "ctx": Object {},
+                        "dist": false,
+                        "fmt": undefined,
+                        "having_conditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "joins": Array [],
+                        "limitbycolumns": undefined,
+                        "limits": undefined,
+                        "order_expressions": Array [],
+                        "params": Object {},
+                        "preconditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "request_totals": undefined,
+                        "sampling": undefined,
+                        "select_list": Array [
+                          "fingerprint",
+                        ],
+                        "tables": Array [
+                          Array [
+                            Term {
+                              "term": "loki.time_series_gin",
+                            },
+                          ],
+                        ],
+                        "withs": Object {},
+                      },
+                    },
+                    Term {
+                      "term": "sel_1",
+                    },
+                  ],
+                ],
+                "withs": Object {},
+              },
+            },
+          },
         },
         "operator": undefined,
         "value": Value {
@@ -7568,8 +10696,116 @@ Select {
         },
       },
       Condition {
-        "column": Raw {
-          "raw": "samples.fingerprint IN idx_sel",
+        "column": InSubreq {
+          "col": "samples.fingerprint",
+          "raw": undefined,
+          "sub": WithReference {
+            "ref": With {
+              "alias": "idx_sel",
+              "inline": undefined,
+              "query": Select {
+                "aggregations": Array [],
+                "conditions": Conjunction {
+                  "args": Array [],
+                },
+                "ctx": Object {},
+                "dist": false,
+                "fmt": undefined,
+                "having_conditions": Conjunction {
+                  "args": Array [],
+                },
+                "joins": Array [],
+                "limitbycolumns": undefined,
+                "limits": undefined,
+                "order_expressions": Array [],
+                "params": Object {},
+                "preconditions": Conjunction {
+                  "args": Array [],
+                },
+                "request_totals": undefined,
+                "sampling": undefined,
+                "select_list": Array [
+                  "sel_1.fingerprint",
+                ],
+                "tables": Array [
+                  Array [
+                    Subquery {
+                      "query": Select {
+                        "aggregations": Array [],
+                        "conditions": Conjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Term {
+                                      "term": "key",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "rerum_laborum",
+                                    },
+                                  },
+                                  Condition {
+                                    "column": Match {
+                                      "col": "val",
+                                      "raw": "",
+                                      "re": Value {
+                                        "value": "^con.+q.at[a-z]r",
+                                      },
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": 0,
+                                    },
+                                  },
+                                ],
+                              },
+                              "operator": undefined,
+                              "value": Value {
+                                "value": undefined,
+                              },
+                            },
+                          ],
+                        },
+                        "ctx": Object {},
+                        "dist": false,
+                        "fmt": undefined,
+                        "having_conditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "joins": Array [],
+                        "limitbycolumns": undefined,
+                        "limits": undefined,
+                        "order_expressions": Array [],
+                        "params": Object {},
+                        "preconditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "request_totals": undefined,
+                        "sampling": undefined,
+                        "select_list": Array [
+                          "fingerprint",
+                        ],
+                        "tables": Array [
+                          Array [
+                            Term {
+                              "term": "loki.time_series_gin",
+                            },
+                          ],
+                        ],
+                        "withs": Object {},
+                      },
+                    },
+                    Term {
+                      "term": "sel_1",
+                    },
+                  ],
+                ],
+                "withs": Object {},
+              },
+            },
+          },
         },
         "operator": undefined,
         "value": Value {
@@ -7796,8 +11032,194 @@ Select {
         },
       },
       Condition {
-        "column": Raw {
-          "raw": "samples.fingerprint IN idx_sel",
+        "column": InSubreq {
+          "col": "samples.fingerprint",
+          "raw": undefined,
+          "sub": WithReference {
+            "ref": With {
+              "alias": "idx_sel",
+              "inline": undefined,
+              "query": Select {
+                "aggregations": Array [],
+                "conditions": Conjunction {
+                  "args": Array [],
+                },
+                "ctx": Object {},
+                "dist": false,
+                "fmt": undefined,
+                "having_conditions": Conjunction {
+                  "args": Array [],
+                },
+                "joins": Array [
+                  Object {
+                    "conditions": Array [
+                      Condition {
+                        "column": Term {
+                          "term": "sel_1.fingerprint",
+                        },
+                        "operator": "=",
+                        "value": Term {
+                          "term": "sel_2.fingerprint",
+                        },
+                      },
+                    ],
+                    "table": AliasedSelect {
+                      "alias": Term {
+                        "term": "sel_2",
+                      },
+                      "sel": Select {
+                        "aggregations": Array [],
+                        "conditions": Conjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Term {
+                                      "term": "key",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "quia",
+                                    },
+                                  },
+                                  Condition {
+                                    "column": Term {
+                                      "term": "val",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "eum voluptatem non eligendi",
+                                    },
+                                  },
+                                ],
+                              },
+                              "operator": undefined,
+                              "value": Value {
+                                "value": undefined,
+                              },
+                            },
+                          ],
+                        },
+                        "ctx": Object {},
+                        "dist": false,
+                        "fmt": undefined,
+                        "having_conditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "joins": Array [],
+                        "limitbycolumns": undefined,
+                        "limits": undefined,
+                        "order_expressions": Array [],
+                        "params": Object {},
+                        "preconditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "request_totals": undefined,
+                        "sampling": undefined,
+                        "select_list": Array [
+                          "fingerprint",
+                        ],
+                        "tables": Array [
+                          Array [
+                            Term {
+                              "term": "loki.time_series_gin",
+                            },
+                          ],
+                        ],
+                        "withs": Object {},
+                      },
+                    },
+                    "type": " inner any ",
+                  },
+                ],
+                "limitbycolumns": undefined,
+                "limits": undefined,
+                "order_expressions": Array [],
+                "params": Object {},
+                "preconditions": Conjunction {
+                  "args": Array [],
+                },
+                "request_totals": undefined,
+                "sampling": undefined,
+                "select_list": Array [
+                  "sel_1.fingerprint",
+                ],
+                "tables": Array [
+                  Array [
+                    Subquery {
+                      "query": Select {
+                        "aggregations": Array [],
+                        "conditions": Conjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Term {
+                                      "term": "key",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "et_dolorem",
+                                    },
+                                  },
+                                  Condition {
+                                    "column": Term {
+                                      "term": "val",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "nemo doloremque",
+                                    },
+                                  },
+                                ],
+                              },
+                              "operator": undefined,
+                              "value": Value {
+                                "value": undefined,
+                              },
+                            },
+                          ],
+                        },
+                        "ctx": Object {},
+                        "dist": false,
+                        "fmt": undefined,
+                        "having_conditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "joins": Array [],
+                        "limitbycolumns": undefined,
+                        "limits": undefined,
+                        "order_expressions": Array [],
+                        "params": Object {},
+                        "preconditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "request_totals": undefined,
+                        "sampling": undefined,
+                        "select_list": Array [
+                          "fingerprint",
+                        ],
+                        "tables": Array [
+                          Array [
+                            Term {
+                              "term": "loki.time_series_gin",
+                            },
+                          ],
+                        ],
+                        "withs": Object {},
+                      },
+                    },
+                    Term {
+                      "term": "sel_1",
+                    },
+                  ],
+                ],
+                "withs": Object {},
+              },
+            },
+          },
         },
         "operator": undefined,
         "value": Value {
@@ -8111,8 +11533,116 @@ Select {
         },
       },
       Condition {
-        "column": Raw {
-          "raw": "samples.fingerprint IN idx_sel",
+        "column": InSubreq {
+          "col": "samples.fingerprint",
+          "raw": undefined,
+          "sub": WithReference {
+            "ref": With {
+              "alias": "idx_sel",
+              "inline": undefined,
+              "query": Select {
+                "aggregations": Array [],
+                "conditions": Conjunction {
+                  "args": Array [],
+                },
+                "ctx": Object {},
+                "dist": false,
+                "fmt": undefined,
+                "having_conditions": Conjunction {
+                  "args": Array [],
+                },
+                "joins": Array [],
+                "limitbycolumns": undefined,
+                "limits": undefined,
+                "order_expressions": Array [],
+                "params": Object {},
+                "preconditions": Conjunction {
+                  "args": Array [],
+                },
+                "request_totals": undefined,
+                "sampling": undefined,
+                "select_list": Array [
+                  "sel_1.fingerprint",
+                ],
+                "tables": Array [
+                  Array [
+                    Subquery {
+                      "query": Select {
+                        "aggregations": Array [],
+                        "conditions": Conjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Term {
+                                      "term": "key",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "rerum_laborum",
+                                    },
+                                  },
+                                  Condition {
+                                    "column": Match {
+                                      "col": "val",
+                                      "raw": "",
+                                      "re": Value {
+                                        "value": "^con.+q.at[a-z]r",
+                                      },
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": 1,
+                                    },
+                                  },
+                                ],
+                              },
+                              "operator": undefined,
+                              "value": Value {
+                                "value": undefined,
+                              },
+                            },
+                          ],
+                        },
+                        "ctx": Object {},
+                        "dist": false,
+                        "fmt": undefined,
+                        "having_conditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "joins": Array [],
+                        "limitbycolumns": undefined,
+                        "limits": undefined,
+                        "order_expressions": Array [],
+                        "params": Object {},
+                        "preconditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "request_totals": undefined,
+                        "sampling": undefined,
+                        "select_list": Array [
+                          "fingerprint",
+                        ],
+                        "tables": Array [
+                          Array [
+                            Term {
+                              "term": "loki.time_series_gin",
+                            },
+                          ],
+                        ],
+                        "withs": Object {},
+                      },
+                    },
+                    Term {
+                      "term": "sel_1",
+                    },
+                  ],
+                ],
+                "withs": Object {},
+              },
+            },
+          },
         },
         "operator": undefined,
         "value": Value {
@@ -8348,8 +11878,112 @@ Select {
         },
       },
       Condition {
-        "column": Raw {
-          "raw": "samples.fingerprint IN idx_sel",
+        "column": InSubreq {
+          "col": "samples.fingerprint",
+          "raw": undefined,
+          "sub": WithReference {
+            "ref": With {
+              "alias": "idx_sel",
+              "inline": undefined,
+              "query": Select {
+                "aggregations": Array [],
+                "conditions": Conjunction {
+                  "args": Array [],
+                },
+                "ctx": Object {},
+                "dist": false,
+                "fmt": undefined,
+                "having_conditions": Conjunction {
+                  "args": Array [],
+                },
+                "joins": Array [],
+                "limitbycolumns": undefined,
+                "limits": undefined,
+                "order_expressions": Array [],
+                "params": Object {},
+                "preconditions": Conjunction {
+                  "args": Array [],
+                },
+                "request_totals": undefined,
+                "sampling": undefined,
+                "select_list": Array [
+                  "sel_1.fingerprint",
+                ],
+                "tables": Array [
+                  Array [
+                    Subquery {
+                      "query": Select {
+                        "aggregations": Array [],
+                        "conditions": Conjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Term {
+                                      "term": "key",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "et_dolorem",
+                                    },
+                                  },
+                                  Condition {
+                                    "column": Term {
+                                      "term": "val",
+                                    },
+                                    "operator": "!=",
+                                    "value": Value {
+                                      "value": "nemo doloremque",
+                                    },
+                                  },
+                                ],
+                              },
+                              "operator": undefined,
+                              "value": Value {
+                                "value": undefined,
+                              },
+                            },
+                          ],
+                        },
+                        "ctx": Object {},
+                        "dist": false,
+                        "fmt": undefined,
+                        "having_conditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "joins": Array [],
+                        "limitbycolumns": undefined,
+                        "limits": undefined,
+                        "order_expressions": Array [],
+                        "params": Object {},
+                        "preconditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "request_totals": undefined,
+                        "sampling": undefined,
+                        "select_list": Array [
+                          "fingerprint",
+                        ],
+                        "tables": Array [
+                          Array [
+                            Term {
+                              "term": "loki.time_series_gin",
+                            },
+                          ],
+                        ],
+                        "withs": Object {},
+                      },
+                    },
+                    Term {
+                      "term": "sel_1",
+                    },
+                  ],
+                ],
+                "withs": Object {},
+              },
+            },
+          },
         },
         "operator": undefined,
         "value": Value {
@@ -8581,8 +12215,116 @@ Select {
         },
       },
       Condition {
-        "column": Raw {
-          "raw": "samples.fingerprint IN idx_sel",
+        "column": InSubreq {
+          "col": "samples.fingerprint",
+          "raw": undefined,
+          "sub": WithReference {
+            "ref": With {
+              "alias": "idx_sel",
+              "inline": undefined,
+              "query": Select {
+                "aggregations": Array [],
+                "conditions": Conjunction {
+                  "args": Array [],
+                },
+                "ctx": Object {},
+                "dist": false,
+                "fmt": undefined,
+                "having_conditions": Conjunction {
+                  "args": Array [],
+                },
+                "joins": Array [],
+                "limitbycolumns": undefined,
+                "limits": undefined,
+                "order_expressions": Array [],
+                "params": Object {},
+                "preconditions": Conjunction {
+                  "args": Array [],
+                },
+                "request_totals": undefined,
+                "sampling": undefined,
+                "select_list": Array [
+                  "sel_1.fingerprint",
+                ],
+                "tables": Array [
+                  Array [
+                    Subquery {
+                      "query": Select {
+                        "aggregations": Array [],
+                        "conditions": Conjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Conjunction {
+                                "args": Array [
+                                  Condition {
+                                    "column": Term {
+                                      "term": "key",
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": "rerum_laborum",
+                                    },
+                                  },
+                                  Condition {
+                                    "column": Match {
+                                      "col": "val",
+                                      "raw": "",
+                                      "re": Value {
+                                        "value": "^con.+q.at[a-z]r",
+                                      },
+                                    },
+                                    "operator": "=",
+                                    "value": Value {
+                                      "value": 0,
+                                    },
+                                  },
+                                ],
+                              },
+                              "operator": undefined,
+                              "value": Value {
+                                "value": undefined,
+                              },
+                            },
+                          ],
+                        },
+                        "ctx": Object {},
+                        "dist": false,
+                        "fmt": undefined,
+                        "having_conditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "joins": Array [],
+                        "limitbycolumns": undefined,
+                        "limits": undefined,
+                        "order_expressions": Array [],
+                        "params": Object {},
+                        "preconditions": Conjunction {
+                          "args": Array [],
+                        },
+                        "request_totals": undefined,
+                        "sampling": undefined,
+                        "select_list": Array [
+                          "fingerprint",
+                        ],
+                        "tables": Array [
+                          Array [
+                            Term {
+                              "term": "loki.time_series_gin",
+                            },
+                          ],
+                        ],
+                        "withs": Object {},
+                      },
+                    },
+                    Term {
+                      "term": "sel_1",
+                    },
+                  ],
+                ],
+                "withs": Object {},
+              },
+            },
+          },
         },
         "operator": undefined,
         "value": Value {
