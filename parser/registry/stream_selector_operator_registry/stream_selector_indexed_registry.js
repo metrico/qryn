@@ -29,6 +29,18 @@ class Match extends Sql.Raw {
   }
 }
 
+class InSubreq extends Sql.Raw {
+  constructor (col, sub) {
+    super()
+    this.col = col
+    this.sub = sub
+  }
+
+  toString () {
+    return `${this.col} IN ${this.sub}`
+  }
+}
+
 /**
  *
  * @param query {Select}
@@ -36,7 +48,7 @@ class Match extends Sql.Raw {
  * @returns {Select}
  */
 module.exports.indexedAnd = (query, subquery) => {
-  const idxSel = query.with() && query.with().idx_sel ? query.with().idx_sel : null
+  let idxSel = query.with() && query.with().idx_sel ? query.with().idx_sel : null
   query.ctx.idxId = (query.ctx.idxId || 0) + 1
   const id = `sel_${query.ctx.idxId}`
   if (idxSel) {
@@ -44,10 +56,11 @@ module.exports.indexedAnd = (query, subquery) => {
       Sql.Eq('sel_1.fingerprint', Sql.quoteTerm(`${id}.fingerprint`)))
     return query
   }
-  return query.with(new Sql.With('idx_sel', (new Sql.Select())
+  idxSel = new Sql.With('idx_sel', (new Sql.Select())
     .select(`${id}.fingerprint`)
-    .from([subquery, id])))
-    .where(Sql.raw('samples.fingerprint IN idx_sel'))
+    .from([subquery, id]))
+  return query.with(idxSel)
+    .where(new InSubreq('samples.fingerprint', new Sql.WithReference(idxSel)))
 }
 
 /**
