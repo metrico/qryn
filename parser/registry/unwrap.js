@@ -39,9 +39,9 @@ function unwrapLine (query) {
 function viaQuery (label, query) {
   query.limit(undefined, undefined)
   return query.select(
-    [new Sql.Raw(`toFloat64OrNull(JSONExtractString(labels,'${label}'))`, 'unwrapped')]
+    [new Sql.Raw(`toFloat64OrNull(arrayFirst(x -> x.1 == '${label}', labels).2)`, 'unwrapped')]
   ).where(
-    Sql.Eq(new Sql.Raw(`JSONHas(labels, '${label}')`), 1),
+    Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${label}', labels)`), 1),
     Sql.Eq(new Sql.Raw('isNotNull(unwrapped)'), 1)
   )
 }
@@ -57,10 +57,10 @@ function viaQueryWithExtraLabels (label, query) {
   return query.select(
     [new Sql.Raw(`toFloat64OrNull(if(arrayExists(x -> x.1 == '${label}', extra_labels), ` +
       `arrayFirst(x -> x.1 == '${label}', extra_labels).2, ` +
-      `JSONExtractString(labels,'${label}')))`), 'unwrapped']
+      `arrayFirst(x -> x.1 == '${label}', labels).2))`), 'unwrapped']
   ).where(Sql.Or(
     Sql.Ne(new Sql.Raw(`arrayFirstIndex(x -> x.1 == '${label}', extra_labels)`), 0),
-    Sql.Eq(new Sql.Raw(`JSONHas(labels, '${label}')`), 1)
+    Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${label}', labels)`), 1)
   ), Sql.Eq(new Sql.Raw('isNotNull(unwrapped)'), 1))
 }
 

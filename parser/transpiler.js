@@ -13,6 +13,7 @@ const compiler = require('./bnf')
 const { parseMs, DATABASE_NAME, samplesReadTableName, samplesTableName } = require('../lib/utils')
 const { getPlg } = require('../plugins/engine')
 const Sql = require('@cloki/clickhouse-sql')
+const { simpleAnd } = require('./registry/stream_selector_operator_registry/stream_selector_operator_registry')
 
 /**
  * @returns {Select}
@@ -41,11 +42,9 @@ module.exports.initQuery = () => {
   }
 
   return (new Sql.Select())
-    .select(['time_series.labels', 'labels'], ['samples.string', 'string'],
+    .select(['samples.labels', 'labels'], ['samples.string', 'string'],
       ['samples.fingerprint', 'fingerprint'], [tsGetter, 'timestamp_ns'])
     .from([samplesTable, 'samples'])
-    .join([timeSeriesTable, 'time_series'], 'left',
-      Sql.Eq('samples.fingerprint', Sql.quoteTerm('time_series.fingerprint')))
     .orderBy(['timestamp_ns', 'desc'], ['labels', 'desc'])
     .where(tsClause)
     .limit(limit)
@@ -84,9 +83,11 @@ module.exports.transpile = (request) => {
   let start = parseMs(request.start, Date.now() - 3600 * 1000)
   let end = parseMs(request.end, Date.now())
   const step = request.step ? Math.floor(parseFloat(request.step) * 1000) : 0
-  /*let start = BigInt(request.start || (BigInt(Date.now() - 3600 * 1000) * BigInt(1e6)))
+  /*
+  let start = BigInt(request.start || (BigInt(Date.now() - 3600 * 1000) * BigInt(1e6)))
   let end = BigInt(request.end || (BigInt(Date.now()) * BigInt(1e6)))
-  const step = BigInt(request.step ? Math.floor(parseFloat(request.step) * 1000) : 0) * BigInt(1e6)*/
+  const step = BigInt(request.step ? Math.floor(parseFloat(request.step) * 1000) : 0) * BigInt(1e6)
+  */
   let query = module.exports.initQuery()
   const limit = request.limit ? request.limit : 2000
   const order = request.direction === 'forward' ? 'asc' : 'desc'
@@ -136,6 +137,7 @@ module.exports.transpile = (request) => {
   setQueryParam(query, sharedParamNames.from, start + '000000')
   setQueryParam(query, sharedParamNames.to, end + '000000')
   setQueryParam(query, 'isMatrix', query.ctx.matrix)
+  // console.log(query.toString())
   return {
     query: request.rawQuery ? query : query.toString(),
     matrix: !!query.ctx.matrix,
@@ -206,19 +208,35 @@ module.exports.transpileSeries = (request) => {
    */
   const getQuery = (req) => {
     const expression = compiler.ParseScript(req.trim())
-    const query = module.exports.transpileLogStreamSelector(expression.rootToken, module.exports.initQuery())
+    let query = module.exports.transpileLogStreamSelector(expression.rootToken, module.exports.initQuery())
+    query = simpleAnd(query, new Sql.Raw('1 == 1'))
     const _query = query.withs.str_sel.query
+    if (query.with() && query.with().idx_sel) {
+      _query.with(query.withs.idx_sel)
+    }
     _query.params = query.params
     _query.columns = []
     return _query.select('labels')
   }
+  class UnionAll extends Sql.Raw {
+    constructor (sqls) {
+      super()
+      this.sqls = [sqls]
+    }
+
+    toString () {
+      return this.sqls.map(sql => `(${sql})`).join(' UNION ALL ')
+    }
+  }
   const query = getQuery(request[0])
+  query.withs.idx_sel.query = new UnionAll(query.withs.idx_sel.query)
   for (const req of request.slice(1)) {
     const _query = getQuery(req)
-    query.orWhere(...(Array.isArray(_query.conditions) ? _query.conditions : [_query.conditions]))
+    query.withs.idx_sel.query.sqls.push(_query.withs.idx_sel.query)
   }
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
   setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName()}`)
+  // console.log(query.toString())
   return query.toString()
 }
 
@@ -361,7 +379,7 @@ module.exports.requestToStr = (query) => {
   }
   let req = query.with
     ? 'WITH ' + Object.entries(query.with).filter(e => e[1])
-      .map(e => `${e[0]} as (${module.exports.requestToStr(e[1])})`).join(', ')
+        .map(e => `${e[0]} as (${module.exports.requestToStr(e[1])})`).join(', ')
     : ''
   req += ` SELECT ${query.distinct ? 'DISTINCT' : ''} ${query.select.join(', ')} FROM ${query.from} `
   for (const clause of query.left_join || []) {
