@@ -11,6 +11,7 @@ Select {
   },
   "ctx": Object {
     "duration": 300000,
+    "idxId": 1,
     "matrix": true,
     "step": 5000,
   },
@@ -121,6 +122,7 @@ Select {
             },
             "ctx": Object {
               "duration": 300000,
+              "idxId": 1,
               "matrix": true,
               "step": 5000,
             },
@@ -241,7 +243,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "11181629751084832.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -310,7 +312,7 @@ Select {
               },
             },
             Term {
-              "term": "11181629751084832",
+              "term": "sel_1",
             },
           ],
         ],
@@ -347,6 +349,7 @@ Select {
         },
         "ctx": Object {
           "duration": 300000,
+          "idxId": 1,
           "matrix": true,
           "step": 5000,
         },
@@ -442,7 +445,7 @@ Select {
 }
 `;
 
-exports[`log_range_aggregation 1 2`] = `"WITH idx_sel AS (select \`11181629751084832\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'minus_nam') and (\`val\` = 'aut illo'))) as \`11181629751084832\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc) select labels as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc"`;
+exports[`log_range_aggregation 1 2`] = `"WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'minus_nam') and (\`val\` = 'aut illo'))) as \`sel_1\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc) select labels as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc"`;
 
 exports[`log_range_aggregation 2 1`] = `
 Select {
@@ -455,6 +458,7 @@ Select {
   },
   "ctx": Object {
     "duration": 300000,
+    "idxId": 1,
     "matrix": true,
     "step": 5000,
   },
@@ -574,6 +578,7 @@ Select {
             },
             "ctx": Object {
               "duration": 300000,
+              "idxId": 1,
               "matrix": true,
               "step": 5000,
             },
@@ -694,7 +699,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "1489893072922741.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -767,7 +772,7 @@ Select {
               },
             },
             Term {
-              "term": "1489893072922741",
+              "term": "sel_1",
             },
           ],
         ],
@@ -813,6 +818,7 @@ Select {
         },
         "ctx": Object {
           "duration": 300000,
+          "idxId": 1,
           "matrix": true,
           "step": 5000,
         },
@@ -908,7 +914,7 @@ Select {
 }
 `;
 
-exports[`log_range_aggregation 2 2`] = `"WITH idx_sel AS (select \`1489893072922741\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'rerum_laborum') and (match(val, '^con.+q.at[a-z]r') = 1))) as \`1489893072922741\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ns\` desc,\`labels\` desc) select labels as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc"`;
+exports[`log_range_aggregation 2 2`] = `"WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'rerum_laborum') and (match(val, '^con.+q.at[a-z]r') = 1))) as \`sel_1\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ns\` desc,\`labels\` desc) select labels as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc"`;
 
 exports[`log_range_aggregation 3 1`] = `
 Select {
@@ -921,6 +927,7 @@ Select {
   },
   "ctx": Object {
     "duration": 300000,
+    "idxId": 1,
     "matrix": true,
     "step": 5000,
   },
@@ -1040,6 +1047,7 @@ Select {
             },
             "ctx": Object {
               "duration": 300000,
+              "idxId": 1,
               "matrix": true,
               "step": 5000,
             },
@@ -1160,7 +1168,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "731284440289071.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -1229,7 +1237,7 @@ Select {
               },
             },
             Term {
-              "term": "731284440289071",
+              "term": "sel_1",
             },
           ],
         ],
@@ -1275,6 +1283,7 @@ Select {
         },
         "ctx": Object {
           "duration": 300000,
+          "idxId": 1,
           "matrix": true,
           "step": 5000,
         },
@@ -1370,7 +1379,7 @@ Select {
 }
 `;
 
-exports[`log_range_aggregation 3 2`] = `"WITH idx_sel AS (select \`731284440289071\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'et_dolorem') and (\`val\` != 'nemo doloremque'))) as \`731284440289071\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)') != []) order by \`timestamp_ns\` desc,\`labels\` desc) select labels as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc"`;
+exports[`log_range_aggregation 3 2`] = `"WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'et_dolorem') and (\`val\` != 'nemo doloremque'))) as \`sel_1\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)') != []) order by \`timestamp_ns\` desc,\`labels\` desc) select labels as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc"`;
 
 exports[`log_range_aggregation 4 1`] = `
 Select {
@@ -1383,6 +1392,7 @@ Select {
   },
   "ctx": Object {
     "duration": 1000,
+    "idxId": 1,
     "matrix": true,
     "step": 5000,
   },
@@ -1487,7 +1497,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "6596991074968059.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -1560,7 +1570,7 @@ Select {
               },
             },
             Term {
-              "term": "6596991074968059",
+              "term": "sel_1",
             },
           ],
         ],
@@ -1606,6 +1616,7 @@ Select {
         },
         "ctx": Object {
           "duration": 1000,
+          "idxId": 1,
           "matrix": true,
           "step": 5000,
         },
@@ -1796,6 +1807,7 @@ Select {
                   },
                   "ctx": Object {
                     "duration": 1000,
+                    "idxId": 1,
                     "matrix": true,
                     "step": 5000,
                   },
@@ -1897,7 +1909,7 @@ Select {
 }
 `;
 
-exports[`log_range_aggregation 4 2`] = `"WITH idx_sel AS (select \`6596991074968059\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'rerum_laborum') and (match(val, '^con.+q.at[a-z]r') = 0))) as \`6596991074968059\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') = []) order by \`timestamp_ns\` desc,\`labels\` desc), rate_b AS (select labels as \`labels\`,intDiv(timestamp_ns, 1000) * 1000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 1000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select \`labels\`,intDiv(timestamp_ns, 5000) * 5000 as \`timestamp_ns\`,argMin(rate_b.value, rate_b.timestamp_ns) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc"`;
+exports[`log_range_aggregation 4 2`] = `"WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'rerum_laborum') and (match(val, '^con.+q.at[a-z]r') = 0))) as \`sel_1\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') = []) order by \`timestamp_ns\` desc,\`labels\` desc), rate_b AS (select labels as \`labels\`,intDiv(timestamp_ns, 1000) * 1000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 1000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select \`labels\`,intDiv(timestamp_ns, 5000) * 5000 as \`timestamp_ns\`,argMin(rate_b.value, rate_b.timestamp_ns) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc"`;
 
 exports[`shoud transpile unwrap 1`] = `
 Select {
@@ -1910,6 +1922,7 @@ Select {
   },
   "ctx": Object {
     "duration": 60000,
+    "idxId": 1,
     "matrix": true,
     "step": 120000,
   },
@@ -2089,6 +2102,7 @@ Select {
                       },
                       "ctx": Object {
                         "duration": 60000,
+                        "idxId": 1,
                         "matrix": true,
                         "step": 120000,
                       },
@@ -2220,7 +2234,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "1959161064612276.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -2289,7 +2303,7 @@ Select {
               },
             },
             Term {
-              "term": "1959161064612276",
+              "term": "sel_1",
             },
           ],
         ],
@@ -2347,6 +2361,7 @@ Select {
         },
         "ctx": Object {
           "duration": 60000,
+          "idxId": 1,
           "matrix": true,
           "step": 120000,
         },
@@ -2548,6 +2563,7 @@ Select {
                   },
                   "ctx": Object {
                     "duration": 60000,
+                    "idxId": 1,
                     "matrix": true,
                     "step": 120000,
                   },
@@ -2665,6 +2681,7 @@ Select {
   },
   "ctx": Object {
     "duration": 60000,
+    "idxId": 1,
     "matrix": true,
     "step": 120000,
   },
@@ -2866,6 +2883,7 @@ Select {
                       },
                       "ctx": Object {
                         "duration": 60000,
+                        "idxId": 1,
                         "matrix": true,
                         "step": 120000,
                       },
@@ -3004,7 +3022,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "539362417599242.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -3073,7 +3091,7 @@ Select {
               },
             },
             Term {
-              "term": "539362417599242",
+              "term": "sel_1",
             },
           ],
         ],
@@ -3153,6 +3171,7 @@ Select {
         },
         "ctx": Object {
           "duration": 60000,
+          "idxId": 1,
           "matrix": true,
           "step": 120000,
         },
@@ -3383,6 +3402,7 @@ Select {
                   },
                   "ctx": Object {
                     "duration": 60000,
+                    "idxId": 1,
                     "matrix": true,
                     "step": 120000,
                   },
@@ -3507,6 +3527,7 @@ Select {
   },
   "ctx": Object {
     "duration": 60000,
+    "idxId": 1,
     "matrix": true,
     "step": 120000,
   },
@@ -3708,6 +3729,7 @@ Select {
                       },
                       "ctx": Object {
                         "duration": 60000,
+                        "idxId": 1,
                         "matrix": true,
                         "step": 120000,
                       },
@@ -3846,7 +3868,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "8913008403474094.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -3915,7 +3937,7 @@ Select {
               },
             },
             Term {
-              "term": "8913008403474094",
+              "term": "sel_1",
             },
           ],
         ],
@@ -3995,6 +4017,7 @@ Select {
         },
         "ctx": Object {
           "duration": 60000,
+          "idxId": 1,
           "matrix": true,
           "step": 120000,
         },
@@ -4225,6 +4248,7 @@ Select {
                   },
                   "ctx": Object {
                     "duration": 60000,
+                    "idxId": 1,
                     "matrix": true,
                     "step": 120000,
                   },
@@ -4350,6 +4374,7 @@ Select {
   "ctx": Object {
     "duration": 300000,
     "end": 3600000,
+    "idxId": 1,
     "matrix": true,
     "start": 0,
   },
@@ -4432,6 +4457,7 @@ Select {
             "ctx": Object {
               "duration": 300000,
               "end": 3600000,
+              "idxId": 1,
               "matrix": true,
               "start": 0,
             },
@@ -4531,6 +4557,7 @@ Select {
         "ctx": Object {
           "duration": 300000,
           "end": 3600000,
+          "idxId": 1,
           "matrix": true,
           "start": 0,
         },
@@ -4637,7 +4664,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "07955134266021435.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -4706,7 +4733,7 @@ Select {
               },
             },
             Term {
-              "term": "07955134266021435",
+              "term": "sel_1",
             },
           ],
         ],
@@ -4744,6 +4771,7 @@ Select {
         "ctx": Object {
           "duration": 300000,
           "end": 3600000,
+          "idxId": 1,
           "matrix": true,
           "start": 0,
         },
@@ -4926,6 +4954,7 @@ Select {
                   "ctx": Object {
                     "duration": 300000,
                     "end": 3600000,
+                    "idxId": 1,
                     "matrix": true,
                     "start": 0,
                   },
@@ -5027,7 +5056,7 @@ Select {
 }
 `;
 
-exports[`should transpile aggregation_operator 2`] = `"WITH idx_sel AS (select \`07955134266021435\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'minus_nam') and (\`val\` = 'aut illo'))) as \`07955134266021435\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc), rate_b AS (select labels as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc), agg_a AS (select \`labels\`,intDiv(timestamp_ns, undefined) * undefined as \`timestamp_ns\`,argMin(rate_b.value, rate_b.timestamp_ns) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ns\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ns\` order by \`labels\`,\`timestamp_ns\`"`;
+exports[`should transpile aggregation_operator 2`] = `"WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'minus_nam') and (\`val\` = 'aut illo'))) as \`sel_1\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc), rate_b AS (select labels as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc), agg_a AS (select \`labels\`,intDiv(timestamp_ns, undefined) * undefined as \`timestamp_ns\`,argMin(rate_b.value, rate_b.timestamp_ns) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ns\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ns\` order by \`labels\`,\`timestamp_ns\`"`;
 
 exports[`should transpile aggregation_operator 3`] = `
 Select {
@@ -5041,6 +5070,7 @@ Select {
   "ctx": Object {
     "duration": 300000,
     "end": 3600000,
+    "idxId": 2,
     "matrix": true,
     "start": 0,
   },
@@ -5123,6 +5153,7 @@ Select {
             "ctx": Object {
               "duration": 300000,
               "end": 3600000,
+              "idxId": 2,
               "matrix": true,
               "start": 0,
             },
@@ -5222,6 +5253,7 @@ Select {
         "ctx": Object {
           "duration": 300000,
           "end": 3600000,
+          "idxId": 2,
           "matrix": true,
           "start": 0,
         },
@@ -5328,7 +5360,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "6110931787692697.fingerprint",
+          "sel_2.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -5401,7 +5433,7 @@ Select {
               },
             },
             Term {
-              "term": "6110931787692697",
+              "term": "sel_2",
             },
           ],
         ],
@@ -5457,6 +5489,7 @@ Select {
         "ctx": Object {
           "duration": 300000,
           "end": 3600000,
+          "idxId": 2,
           "matrix": true,
           "start": 0,
         },
@@ -5657,6 +5690,7 @@ Select {
                   "ctx": Object {
                     "duration": 300000,
                     "end": 3600000,
+                    "idxId": 2,
                     "matrix": true,
                     "start": 0,
                   },
@@ -5758,7 +5792,7 @@ Select {
 }
 `;
 
-exports[`should transpile aggregation_operator 4`] = `"WITH idx_sel AS (select \`6110931787692697\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'rerum_laborum') and (match(val, '^con.+q.at[a-z]r') = 1))) as \`6110931787692697\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (samples.fingerprint IN idx_sel) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ns\` desc,\`labels\` desc), rate_b AS (select labels as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc), agg_a AS (select \`labels\`,intDiv(timestamp_ns, undefined) * undefined as \`timestamp_ns\`,argMin(rate_b.value, rate_b.timestamp_ns) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ns\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ns\` order by \`labels\`,\`timestamp_ns\`"`;
+exports[`should transpile aggregation_operator 4`] = `"WITH idx_sel AS (select \`sel_2\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'rerum_laborum') and (match(val, '^con.+q.at[a-z]r') = 1))) as \`sel_2\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (samples.fingerprint IN idx_sel) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ns\` desc,\`labels\` desc), rate_b AS (select labels as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc), agg_a AS (select \`labels\`,intDiv(timestamp_ns, undefined) * undefined as \`timestamp_ns\`,argMin(rate_b.value, rate_b.timestamp_ns) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ns\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ns\` order by \`labels\`,\`timestamp_ns\`"`;
 
 exports[`should transpile aggregation_operator 5`] = `
 Select {
@@ -5772,6 +5806,7 @@ Select {
   "ctx": Object {
     "duration": 300000,
     "end": 3600000,
+    "idxId": 1,
     "matrix": true,
     "start": 0,
   },
@@ -5854,6 +5889,7 @@ Select {
             "ctx": Object {
               "duration": 300000,
               "end": 3600000,
+              "idxId": 1,
               "matrix": true,
               "start": 0,
             },
@@ -5953,6 +5989,7 @@ Select {
         "ctx": Object {
           "duration": 300000,
           "end": 3600000,
+          "idxId": 1,
           "matrix": true,
           "start": 0,
         },
@@ -6059,7 +6096,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "5936746745550483.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -6128,7 +6165,7 @@ Select {
               },
             },
             Term {
-              "term": "5936746745550483",
+              "term": "sel_1",
             },
           ],
         ],
@@ -6166,6 +6203,7 @@ Select {
         "ctx": Object {
           "duration": 300000,
           "end": 3600000,
+          "idxId": 1,
           "matrix": true,
           "start": 0,
         },
@@ -6348,6 +6386,7 @@ Select {
                   "ctx": Object {
                     "duration": 300000,
                     "end": 3600000,
+                    "idxId": 1,
                     "matrix": true,
                     "start": 0,
                   },
@@ -6449,13 +6488,13 @@ Select {
 }
 `;
 
-exports[`should transpile aggregation_operator 6`] = `"WITH idx_sel AS (select \`5936746745550483\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'minus_nam') and (\`val\` = 'aut illo'))) as \`5936746745550483\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc), rate_b AS (select labels as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc), agg_a AS (select \`labels\`,intDiv(timestamp_ns, undefined) * undefined as \`timestamp_ns\`,argMin(rate_b.value, rate_b.timestamp_ns) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ns\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ns\` order by \`labels\`,\`timestamp_ns\`"`;
+exports[`should transpile aggregation_operator 6`] = `"WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'minus_nam') and (\`val\` = 'aut illo'))) as \`sel_1\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc), rate_b AS (select labels as \`labels\`,intDiv(timestamp_ns, 300000) * 300000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 300000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc), agg_a AS (select \`labels\`,intDiv(timestamp_ns, undefined) * undefined as \`timestamp_ns\`,argMin(rate_b.value, rate_b.timestamp_ns) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select arrayFilter(x -> x.1 IN ('label_1'), labels) as \`labels\`,\`timestamp_ns\`,sum(value) as \`value\` from agg_a group by \`labels\`,\`timestamp_ns\` order by \`labels\`,\`timestamp_ns\`"`;
 
 exports[`should transpile complex pipelines 1`] = `
 Object {
   "duration": 1000,
   "matrix": false,
-  "query": "WITH idx_sel AS (select \`77340757019202\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '\${testID}'))) as \`77340757019202\`), str_sel AS (select DISTINCT \`fingerprint\` from loki.time_series where (fingerprint IN idx_sel) and ((JSONHas(labels, 'freq') = 1) and (toFloat64OrNull(JSONExtractString(labels, 'freq')) >= '4'))), sel_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 0000000 and 100000000000000) and (samples.fingerprint IN idx_sel) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` asc,\`labels\` asc limit 1000) select * from sel_a order by \`labels\` asc,\`timestamp_ns\` asc",
+  "query": "WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '\${testID}'))) as \`sel_1\`), str_sel AS (select DISTINCT \`fingerprint\` from loki.time_series where (fingerprint IN idx_sel) and ((JSONHas(labels, 'freq') = 1) and (toFloat64OrNull(JSONExtractString(labels, 'freq')) >= '4'))), sel_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 0000000 and 100000000000000) and (samples.fingerprint IN idx_sel) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` asc,\`labels\` asc limit 1000) select * from sel_a order by \`labels\` asc,\`timestamp_ns\` asc",
   "stream": Array [],
 }
 `;
@@ -6495,7 +6534,9 @@ Select {
       },
     ],
   },
-  "ctx": Object {},
+  "ctx": Object {
+    "idxId": 1,
+  },
   "dist": false,
   "fmt": undefined,
   "having_conditions": Conjunction {
@@ -6615,7 +6656,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "09996093162867026.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -6684,7 +6725,7 @@ Select {
               },
             },
             Term {
-              "term": "09996093162867026",
+              "term": "sel_1",
             },
           ],
         ],
@@ -6779,7 +6820,9 @@ Select {
       },
     ],
   },
-  "ctx": Object {},
+  "ctx": Object {
+    "idxId": 2,
+  },
   "dist": false,
   "fmt": undefined,
   "having_conditions": Conjunction {
@@ -6887,17 +6930,17 @@ Select {
             "conditions": Array [
               Condition {
                 "column": Term {
-                  "term": "5746970777490998.fingerprint",
+                  "term": "sel_1.fingerprint",
                 },
                 "operator": "=",
                 "value": Term {
-                  "term": "28460869635791464.fingerprint",
+                  "term": "sel_2.fingerprint",
                 },
               },
             ],
             "table": AliasedSelect {
               "alias": Term {
-                "term": "28460869635791464",
+                "term": "sel_2",
               },
               "sel": Select {
                 "aggregations": Array [],
@@ -6975,7 +7018,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "5746970777490998.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -7044,7 +7087,7 @@ Select {
               },
             },
             Term {
-              "term": "5746970777490998",
+              "term": "sel_1",
             },
           ],
         ],
@@ -7055,7 +7098,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector 2`] = `"WITH idx_sel AS (select \`5746970777490998\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'et_dolorem') and (\`val\` = 'nemo doloremque'))) as \`5746970777490998\`  inner any  join (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'quia') and (\`val\` = 'eum voluptatem non eligendi'))) as \`28460869635791464\` on \`5746970777490998\`.\`fingerprint\` = \`28460869635791464\`.\`fingerprint\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector 2`] = `"WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'et_dolorem') and (\`val\` = 'nemo doloremque'))) as \`sel_1\`  inner any  join (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'quia') and (\`val\` = 'eum voluptatem non eligendi'))) as \`sel_2\` on \`sel_1\`.\`fingerprint\` = \`sel_2\`.\`fingerprint\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector 3`] = `
 Select {
@@ -7083,7 +7126,9 @@ Select {
       },
     ],
   },
-  "ctx": Object {},
+  "ctx": Object {
+    "idxId": 1,
+  },
   "dist": false,
   "fmt": undefined,
   "having_conditions": Conjunction {
@@ -7197,7 +7242,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "08204898925396953.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -7270,7 +7315,7 @@ Select {
               },
             },
             Term {
-              "term": "08204898925396953",
+              "term": "sel_1",
             },
           ],
         ],
@@ -7281,7 +7326,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector 4`] = `"WITH idx_sel AS (select \`08204898925396953\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'rerum_laborum') and (match(val, '^con.+q.at[a-z]r') = 1))) as \`08204898925396953\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector 4`] = `"WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'rerum_laborum') and (match(val, '^con.+q.at[a-z]r') = 1))) as \`sel_1\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector 5`] = `
 Select {
@@ -7309,7 +7354,9 @@ Select {
       },
     ],
   },
-  "ctx": Object {},
+  "ctx": Object {
+    "idxId": 1,
+  },
   "dist": false,
   "fmt": undefined,
   "having_conditions": Conjunction {
@@ -7423,7 +7470,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "936685525854994.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -7492,7 +7539,7 @@ Select {
               },
             },
             Term {
-              "term": "936685525854994",
+              "term": "sel_1",
             },
           ],
         ],
@@ -7503,7 +7550,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector 6`] = `"WITH idx_sel AS (select \`936685525854994\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'et_dolorem') and (\`val\` != 'nemo doloremque'))) as \`936685525854994\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector 6`] = `"WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'et_dolorem') and (\`val\` != 'nemo doloremque'))) as \`sel_1\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector 7`] = `
 Select {
@@ -7531,7 +7578,9 @@ Select {
       },
     ],
   },
-  "ctx": Object {},
+  "ctx": Object {
+    "idxId": 1,
+  },
   "dist": false,
   "fmt": undefined,
   "having_conditions": Conjunction {
@@ -7645,7 +7694,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "5937073739314618.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -7718,7 +7767,7 @@ Select {
               },
             },
             Term {
-              "term": "5937073739314618",
+              "term": "sel_1",
             },
           ],
         ],
@@ -7729,7 +7778,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector 8`] = `"WITH idx_sel AS (select \`5937073739314618\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'rerum_laborum') and (match(val, '^con.+q.at[a-z]r') = 0))) as \`5937073739314618\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector 8`] = `"WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'rerum_laborum') and (match(val, '^con.+q.at[a-z]r') = 0))) as \`sel_1\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector with stream filter 1`] = `
 Select {
@@ -7766,7 +7815,9 @@ Select {
       },
     ],
   },
-  "ctx": Object {},
+  "ctx": Object {
+    "idxId": 2,
+  },
   "dist": false,
   "fmt": undefined,
   "having_conditions": Conjunction {
@@ -7874,17 +7925,17 @@ Select {
             "conditions": Array [
               Condition {
                 "column": Term {
-                  "term": "5204989896319352.fingerprint",
+                  "term": "sel_1.fingerprint",
                 },
                 "operator": "=",
                 "value": Term {
-                  "term": "115869529276029.fingerprint",
+                  "term": "sel_2.fingerprint",
                 },
               },
             ],
             "table": AliasedSelect {
               "alias": Term {
-                "term": "115869529276029",
+                "term": "sel_2",
               },
               "sel": Select {
                 "aggregations": Array [],
@@ -7962,7 +8013,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "5204989896319352.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -8031,7 +8082,7 @@ Select {
               },
             },
             Term {
-              "term": "5204989896319352",
+              "term": "sel_1",
             },
           ],
         ],
@@ -8042,7 +8093,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector with stream filter 2`] = `"WITH idx_sel AS (select \`5204989896319352\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'et_dolorem') and (\`val\` = 'nemo doloremque'))) as \`5204989896319352\`  inner any  join (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'quia') and (\`val\` = 'eum voluptatem non eligendi'))) as \`115869529276029\` on \`5204989896319352\`.\`fingerprint\` = \`115869529276029\`.\`fingerprint\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (position(string, 'at et') != 0) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector with stream filter 2`] = `"WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'et_dolorem') and (\`val\` = 'nemo doloremque'))) as \`sel_1\`  inner any  join (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'quia') and (\`val\` = 'eum voluptatem non eligendi'))) as \`sel_2\` on \`sel_1\`.\`fingerprint\` = \`sel_2\`.\`fingerprint\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (position(string, 'at et') != 0) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector with stream filter 3`] = `
 Select {
@@ -8079,7 +8130,9 @@ Select {
       },
     ],
   },
-  "ctx": Object {},
+  "ctx": Object {
+    "idxId": 1,
+  },
   "dist": false,
   "fmt": undefined,
   "having_conditions": Conjunction {
@@ -8193,7 +8246,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "3229572522610924.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -8266,7 +8319,7 @@ Select {
               },
             },
             Term {
-              "term": "3229572522610924",
+              "term": "sel_1",
             },
           ],
         ],
@@ -8277,7 +8330,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector with stream filter 4`] = `"WITH idx_sel AS (select \`3229572522610924\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'rerum_laborum') and (match(val, '^con.+q.at[a-z]r') = 1))) as \`3229572522610924\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector with stream filter 4`] = `"WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'rerum_laborum') and (match(val, '^con.+q.at[a-z]r') = 1))) as \`sel_1\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (position(string, 'consequatur nam soluta') = 0) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector with stream filter 5`] = `
 Select {
@@ -8314,7 +8367,9 @@ Select {
       },
     ],
   },
-  "ctx": Object {},
+  "ctx": Object {
+    "idxId": 1,
+  },
   "dist": false,
   "fmt": undefined,
   "having_conditions": Conjunction {
@@ -8428,7 +8483,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "8339135174165844.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -8497,7 +8552,7 @@ Select {
               },
             },
             Term {
-              "term": "8339135174165844",
+              "term": "sel_1",
             },
           ],
         ],
@@ -8508,7 +8563,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector with stream filter 6`] = `"WITH idx_sel AS (select \`8339135174165844\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'et_dolorem') and (\`val\` != 'nemo doloremque'))) as \`8339135174165844\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)') != []) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector with stream filter 6`] = `"WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'et_dolorem') and (\`val\` != 'nemo doloremque'))) as \`sel_1\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (extractAllGroups(string, '(^mol[eE][^ ]+e +voluptatibus)') != []) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile log_stream_selector with stream filter 7`] = `
 Select {
@@ -8545,7 +8600,9 @@ Select {
       },
     ],
   },
-  "ctx": Object {},
+  "ctx": Object {
+    "idxId": 1,
+  },
   "dist": false,
   "fmt": undefined,
   "having_conditions": Conjunction {
@@ -8659,7 +8716,7 @@ Select {
         "request_totals": undefined,
         "sampling": undefined,
         "select_list": Array [
-          "8734229022210214.fingerprint",
+          "sel_1.fingerprint",
         ],
         "tables": Array [
           Array [
@@ -8732,7 +8789,7 @@ Select {
               },
             },
             Term {
-              "term": "8734229022210214",
+              "term": "sel_1",
             },
           ],
         ],
@@ -8743,7 +8800,7 @@ Select {
 }
 `;
 
-exports[`should transpile log_stream_selector with stream filter 8`] = `"WITH idx_sel AS (select \`8734229022210214\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'rerum_laborum') and (match(val, '^con.+q.at[a-z]r') = 0))) as \`8734229022210214\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') = []) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
+exports[`should transpile log_stream_selector with stream filter 8`] = `"WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'rerum_laborum') and (match(val, '^con.+q.at[a-z]r') = 0))) as \`sel_1\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1 and 2) and (samples.fingerprint IN idx_sel) and (extractAllGroups(string, '(cons[eE][^ ]+r nam soluta)') = []) order by \`timestamp_ns\` desc,\`labels\` desc limit 3"`;
 
 exports[`should transpile logfmt requests 1`] = `
 Array [
@@ -8763,7 +8820,7 @@ exports[`should transpile new style 1 1`] = `
 Object {
   "duration": 1000,
   "matrix": false,
-  "query": "WITH idx_sel AS (select \`4723744981768927\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.7387779420506657'))) as \`4723744981768927\`), sel_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
+  "query": "WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.7387779420506657'))) as \`sel_1\`), sel_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
   "stream": Array [],
 }
 `;
@@ -8772,7 +8829,7 @@ exports[`should transpile new style 2 1`] = `
 Object {
   "duration": 1000,
   "matrix": false,
-  "query": "WITH idx_sel AS (select \`6713537948705173\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.2119268970232'))) as \`6713537948705173\`  inner any  join (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'freq') and (\`val\` = '2'))) as \`44485171270568213\` on \`6713537948705173\`.\`fingerprint\` = \`44485171270568213\`.\`fingerprint\`), sel_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) and (extractAllGroups(string, '(2[0-9]$)') != []) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
+  "query": "WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.2119268970232'))) as \`sel_1\`  inner any  join (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'freq') and (\`val\` = '2'))) as \`sel_2\` on \`sel_1\`.\`fingerprint\` = \`sel_2\`.\`fingerprint\`), sel_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) and (extractAllGroups(string, '(2[0-9]$)') != []) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
   "stream": Array [],
 }
 `;
@@ -8781,7 +8838,7 @@ exports[`should transpile new style 3 1`] = `
 Object {
   "duration": 1000,
   "matrix": true,
-  "query": "WITH idx_sel AS (select \`6797463243122837\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.7026038163617259'))) as \`6797463243122837\`  inner any  join (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'freq') and (\`val\` = '2'))) as \`9536252225565258\` on \`6797463243122837\`.\`fingerprint\` = \`9536252225565258\`.\`fingerprint\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,intDiv(samples.timestamp_ns, 1000000) as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) and (extractAllGroups(string, '(2[0-9]$)') != []) order by \`timestamp_ns\` desc,\`labels\` desc), rate_b AS (select labels as \`labels\`,intDiv(timestamp_ns, 1000) * 1000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 1000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select \`labels\`,intDiv(timestamp_ns, 2000) * 2000 as \`timestamp_ns\`,argMin(rate_b.value, rate_b.timestamp_ns) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc",
+  "query": "WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.7026038163617259'))) as \`sel_1\`  inner any  join (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'freq') and (\`val\` = '2'))) as \`sel_2\` on \`sel_1\`.\`fingerprint\` = \`sel_2\`.\`fingerprint\`), rate_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,intDiv(samples.timestamp_ns, 1000000) as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) and (extractAllGroups(string, '(2[0-9]$)') != []) order by \`timestamp_ns\` desc,\`labels\` desc), rate_b AS (select labels as \`labels\`,intDiv(timestamp_ns, 1000) * 1000 as \`timestamp_ns\`,toFloat64(count(1)) * 1000 / 1000 as \`value\` from rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc) select \`labels\`,intDiv(timestamp_ns, 2000) * 2000 as \`timestamp_ns\`,argMin(rate_b.value, rate_b.timestamp_ns) as \`value\` from \`rate_b\` group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc",
   "stream": Array [],
 }
 `;
@@ -8790,7 +8847,7 @@ exports[`should transpile new style 4 1`] = `
 Object {
   "duration": 1000,
   "matrix": true,
-  "query": "WITH idx_sel AS (select \`9234828605738199\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.7026038163617259'))) as \`9234828605738199\`  inner any  join (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'freq') and (\`val\` = '2'))) as \`5454316827980534\` on \`9234828605738199\`.\`fingerprint\` = \`5454316827980534\`.\`fingerprint\`) select \`labels\`,toUInt64(intDiv(timestamp_ns, 1000000000) * 1000) as \`timestamp_ns\`,toFloat64(0) as \`value\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) and (extractAllGroups(string, '(2[0-9]$)') != []) group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc",
+  "query": "WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.7026038163617259'))) as \`sel_1\`  inner any  join (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'freq') and (\`val\` = '2'))) as \`sel_2\` on \`sel_1\`.\`fingerprint\` = \`sel_2\`.\`fingerprint\`) select \`labels\`,toUInt64(intDiv(timestamp_ns, 1000000000) * 1000) as \`timestamp_ns\`,toFloat64(0) as \`value\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) and (extractAllGroups(string, '(2[0-9]$)') != []) group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc",
   "stream": Array [
     [Function],
   ],
@@ -8801,7 +8858,7 @@ exports[`should transpile new style 5 1`] = `
 Object {
   "duration": 1000,
   "matrix": false,
-  "query": "WITH idx_sel AS (select \`9722076203517864\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.000341166036469831_json'))) as \`9722076203517864\`), sel_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
+  "query": "WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.000341166036469831_json'))) as \`sel_1\`), sel_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
   "stream": Array [
     [Function],
   ],
@@ -8812,7 +8869,7 @@ exports[`should transpile new style 6 1`] = `
 Object {
   "duration": 1000,
   "matrix": false,
-  "query": "WITH idx_sel AS (select \`6910909133304983\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.2053747382122484_json'))) as \`6910909133304983\`), sel_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\`,arrayFilter((x) -> x.2 != '', [('lbl_repl', if(JSONType(samples.string, 'new_lbl') == 'String', JSONExtractString(samples.string, 'new_lbl'), JSONExtractRaw(samples.string, 'new_lbl')))]) as \`extra_labels\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) and (isValidJSON(samples.string) = 1) and ((indexOf(extra_labels, ('lbl_repl', 'new_val')) > 0) or ((arrayExists(x -> x.1 == 'lbl_repl', extra_labels) = 0) and ((arrayExists(x -> x.1 == 'lbl_repl', labels) = 1) and (arrayFirst(x -> x.1 == 'lbl_repl', labels).2 = 'new_val')))) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
+  "query": "WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.2053747382122484_json'))) as \`sel_1\`), sel_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\`,arrayFilter((x) -> x.2 != '', [('lbl_repl', if(JSONType(samples.string, 'new_lbl') == 'String', JSONExtractString(samples.string, 'new_lbl'), JSONExtractRaw(samples.string, 'new_lbl')))]) as \`extra_labels\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) and (isValidJSON(samples.string) = 1) and ((indexOf(extra_labels, ('lbl_repl', 'new_val')) > 0) or ((arrayExists(x -> x.1 == 'lbl_repl', extra_labels) = 0) and ((arrayExists(x -> x.1 == 'lbl_repl', labels) = 1) and (arrayFirst(x -> x.1 == 'lbl_repl', labels).2 = 'new_val')))) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
   "stream": Array [],
 }
 `;
@@ -8821,7 +8878,7 @@ exports[`should transpile new style 7 1`] = `
 Object {
   "duration": 3000,
   "matrix": true,
-  "query": "WITH idx_sel AS (select \`22149127010617375\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.1547558751138609_json'))) as \`22149127010617375\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,intDiv(samples.timestamp_ns, 1000000) as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc",
+  "query": "WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.1547558751138609_json'))) as \`sel_1\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,intDiv(samples.timestamp_ns, 1000000) as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc",
   "stream": Array [
     [Function],
     [Function],
@@ -8837,7 +8894,7 @@ exports[`should transpile new style 8 1`] = `
 Object {
   "duration": 1000,
   "matrix": true,
-  "query": "WITH idx_sel AS (select \`9643631571529434\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.4075242197275857'))) as \`9643631571529434\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,intDiv(samples.timestamp_ns, 1000000) as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc",
+  "query": "WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.4075242197275857'))) as \`sel_1\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,intDiv(samples.timestamp_ns, 1000000) as \`timestamp_ns\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc",
   "stream": Array [
     [Function],
     [Function],
@@ -8853,7 +8910,7 @@ exports[`should transpile new style 9 1`] = `
 Object {
   "duration": 1000,
   "matrix": false,
-  "query": "WITH idx_sel AS (select \`6359698086119736\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.7186063017626447_json'))) as \`6359698086119736\`), sel_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\`,arrayFilter((x) -> x.2 != '', [('sid', if(JSONType(samples.string, 'str_id') == 'String', JSONExtractString(samples.string, 'str_id'), JSONExtractRaw(samples.string, 'str_id')))]) as \`extra_labels\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) and (isValidJSON(samples.string) = 1) and ((arrayExists(x -> x.1 == 'sid' AND (coalesce(toFloat64OrNull(x.2) >= '598', 0)), extra_labels) != 0) or ((arrayExists(x -> x.1 == 'sid', extra_labels) = 0) and (arrayExists(x -> x.1 == 'sid', labels) = 1) and (toFloat64OrNull(arrayFirst(x -> x.1 == 'sid', labels).2) >= '598'))) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
+  "query": "WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.7186063017626447_json'))) as \`sel_1\`), sel_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\`,arrayFilter((x) -> x.2 != '', [('sid', if(JSONType(samples.string, 'str_id') == 'String', JSONExtractString(samples.string, 'str_id'), JSONExtractRaw(samples.string, 'str_id')))]) as \`extra_labels\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) and (isValidJSON(samples.string) = 1) and ((arrayExists(x -> x.1 == 'sid' AND (coalesce(toFloat64OrNull(x.2) >= '598', 0)), extra_labels) != 0) or ((arrayExists(x -> x.1 == 'sid', extra_labels) = 0) and (arrayExists(x -> x.1 == 'sid', labels) = 1) and (toFloat64OrNull(arrayFirst(x -> x.1 == 'sid', labels).2) >= '598'))) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
   "stream": Array [],
 }
 `;
@@ -8862,7 +8919,7 @@ exports[`should transpile new style 10 1`] = `
 Object {
   "duration": 1000,
   "matrix": false,
-  "query": "WITH idx_sel AS (select \`7314839285914427\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.5505504081219323'))) as \`7314839285914427\`), sel_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\`,arrayFilter(x -> x.1 != '' AND x.2 != '', arrayZip(['e'], arrayMap(x -> x[length(x)], extractAllGroupsHorizontal(string, '^([^0-9]+)[0-9]+$')))) as \`extra_labels\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
+  "query": "WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '0.5505504081219323'))) as \`sel_1\`), sel_a AS (select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\`,arrayFilter(x -> x.1 != '' AND x.2 != '', arrayZip(['e'], arrayMap(x -> x[length(x)], extractAllGroupsHorizontal(string, '^([^0-9]+)[0-9]+$')))) as \`extra_labels\` from loki.samples_read as \`samples\` where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` desc,\`labels\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
   "stream": Array [],
 }
 `;
@@ -8882,11 +8939,11 @@ Array [
 ]
 `;
 
-exports[`should transpile series 1`] = `"WITH idx_sel AS ((select \`9617929704701289\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '123'))) as \`9617929704701289\`)) select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where (fingerprint IN idx_sel) and (1 == 1)"`;
+exports[`should transpile series 1`] = `"WITH idx_sel AS ((select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (\`val\` = '123'))) as \`sel_1\`)) select DISTINCT \`fingerprint\`,\`labels\` from loki.time_series where (fingerprint IN idx_sel) and (1 == 1)"`;
 
 exports[`should transpile tail 1`] = `
 Object {
-  "query": "WITH idx_sel AS (select \`47513429828910003\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (match(val, '_ws') = 1))) as \`47513429828910003\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_v4 as \`samples\` where (\`samples\`.\`timestamp_ns\` > (toUnixTimestamp(now()) - 5) * 1000000000) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` asc",
+  "query": "WITH idx_sel AS (select \`sel_1\`.\`fingerprint\` from (select \`fingerprint\` from \`loki\`.\`time_series_gin\` where ((\`key\` = 'test_id') and (match(val, '_ws') = 1))) as \`sel_1\`) select \`samples\`.\`labels\` as \`labels\`,\`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\` from loki.samples_v4 as \`samples\` where (\`samples\`.\`timestamp_ns\` > (toUnixTimestamp(now()) - 5) * 1000000000) and (samples.fingerprint IN idx_sel) order by \`timestamp_ns\` asc",
   "stream": Array [],
 }
 `;

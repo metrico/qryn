@@ -37,10 +37,11 @@ class Match extends Sql.Raw {
  */
 module.exports.indexedAnd = (query, subquery) => {
   const idxSel = query.with() && query.with().idx_sel ? query.with().idx_sel : null
-  const id = Math.random().toString().substr(2)
+  query.ctx.idxId = (query.ctx.idxId || 0) + 1
+  const id = `sel_${query.ctx.idxId}`
   if (idxSel) {
     idxSel.query.join(new AliasedSelect(subquery, Sql.quoteTerm(id)), ' inner any ',
-      Sql.Eq(idxSel.query.tables[0][1].term + '.fingerprint', Sql.quoteTerm(`${id}.fingerprint`)))
+      Sql.Eq('sel_1.fingerprint', Sql.quoteTerm(`${id}.fingerprint`)))
     return query
   }
   return query.with(new Sql.With('idx_sel', (new Sql.Select())
