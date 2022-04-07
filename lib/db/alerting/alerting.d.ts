@@ -24,6 +24,7 @@ export namespace alerting {
         alert: string,
         expr: string,
         for: string,
+        ver: string,
         annotations: {
             [key: string]: string
         }

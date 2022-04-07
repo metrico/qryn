@@ -92,8 +92,10 @@ module.exports.transpile = (request) => {
   const limit = request.limit ? request.limit : 2000
   const order = request.direction === 'forward' ? 'asc' : 'desc'
   query.orderBy(...query.orderBy().map(o => [o[0], order]))
+  const readTable = samplesReadTableName(start)
   query.ctx = {
-    step: step
+    step: step,
+    legacy: readTable.match(/^samples_read/)
   }
   let duration = null
   const matrixOp = ['aggregation_operator', 'unwrap_function', 'log_range_aggregation'].find(t => token.Child(t))
@@ -133,11 +135,11 @@ module.exports.transpile = (request) => {
     query = numberOperatorRegistry[op](token.Child('compared_agg_statement'), query)
   }
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
-  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName(start)}`)
+  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${readTable}`)
   setQueryParam(query, sharedParamNames.from, start + '000000')
   setQueryParam(query, sharedParamNames.to, end + '000000')
   setQueryParam(query, 'isMatrix', query.ctx.matrix)
-  // console.log(query.toString())
+  console.log(query.toString())
   return {
     query: request.rawQuery ? query : query.toString(),
     matrix: !!query.ctx.matrix,

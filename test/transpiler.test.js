@@ -1,10 +1,12 @@
 const bnf = require('../parser/bnf')
 const transpiler = require('../parser/transpiler')
 const { DataStream } = require('scramjet')
+const UTILS = require('../lib/utils')
 const { DATABASE_NAME, samplesReadTableName } = require('../lib/utils')
 const { sharedParamNames } = require('../parser/registry/common')
 
 beforeAll(() => {
+  UTILS.samplesReadTableName = () => 'samples_v4'
   process.env.CLICKHOUSE_DB = 'loki'
 })
 
@@ -13,6 +15,14 @@ const setQueryParam = (query, name, val) => {
     query.getParam(name).set(val)
   }
 }
+
+jest.mock('../lib/utils', () => {
+  const originalModule = jest.requireActual('../lib/utils')
+  return {
+    ...originalModule,
+    samplesReadTableName: jest.fn(() => 'samples_vX')
+  }
+})
 
 const setParams = (query) => {
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
