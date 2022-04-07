@@ -207,7 +207,8 @@ if (this.http_user && this.http_password) {
   const validate = checkAuth.bind(this)
 
   fastify.register(require('fastify-basic-auth'), {
-    validate
+    validate,
+    authenticate: true
   })
   fastify.after(() => {
     fastify.addHook('preHandler', fastify.basicAuth)
