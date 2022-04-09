@@ -7,12 +7,12 @@
 
 ### like Loki, but for ClickHouse
 
-**cLoki** is a flexible [Loki](https://github.com/grafana/loki) & [Tempo](https://github.com/grafana/tempo) compatible **LogQL API** built on top of [ClickHouse](https://clickhouse.yandex/)<br/>
+**cLoki** is a flexible [Loki](https://github.com/grafana/loki) [^1] & [Tempo](https://github.com/grafana/tempo) [^1] compatible **LogQL API** built on top of [ClickHouse](https://clickhouse.com/)<br/>
 - Built in [Explore UI](https://github.com/metrico/cloki-view) and [LogQL CLI](https://github.com/lmangani/vLogQL) for querying data
-- Native support [Grafana](http://docs.grafana.org/features/explore/) and any [LogQL](https://grafana.com/docs/loki/latest/logql/) clients for [querying](https://github.com/lmangani/cLoki/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki), [tracing](https://github.com/lmangani/cLoki/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/cLoki/wiki/Ruler---Alerts)
+- Native support [Grafana](http://docs.grafana.org/features/explore/) [^3] and any [LogQL](https://grafana.com/docs/loki/latest/logql/) clients for [querying](https://github.com/lmangani/cLoki/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki), [tracing](https://github.com/lmangani/cLoki/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/cLoki/wiki/Ruler---Alerts) [^2] 
+<br>
 
-:bulb: Get started using the [cLoki Wiki](https://github.com/lmangani/cLoki/wiki)<br>
-:octocat: *Join us! All Contributions are Welcome!*
+:octocat: Get started using the [cLoki Wiki](https://github.com/lmangani/cLoki/wiki) :bulb: 
 
 
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
@@ -22,7 +22,7 @@
 
 The *Loki API* and its Grafana native integration are brilliant, simple and appealing - but we just love **ClickHouse**. 
 
-**cLoki** implements the same API functionality as Loki, buffered by a fast bulking **LRU** sitting on top of **ClickHouse** tables and relying on its *columnar search and insert performance alongside solid distribution and clustering capabilities* for stored data. Just like Loki, cLoki does not parse or index incoming logs, but rather groups log streams using the same label system as Prometheus. 
+**cLoki** implements a complete LogQL API buffered by a fast bulking **LRU** sitting on top of **ClickHouse** tables and relying on its *columnar search and insert performance alongside solid distribution and clustering capabilities* for stored data. Just like Loki, cLoki does not parse or index incoming logs, but rather groups log streams using the same label system as Prometheus. [^2]
 
 <img src="https://user-images.githubusercontent.com/1423657/54091852-5ce91000-4385-11e9-849d-998c1e5d3243.png" width=700 />
 
@@ -186,12 +186,12 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 
 ------------
 
-##### Project Status
+#### Disclaimer
 
-Consult the [Wiki](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries) for a detailed list of supported features, [changelog](https://github.com/lmangani/cLoki/wiki/Changelog) and [API functionality](https://github.com/lmangani/cLoki/wiki/HTTP-API)
+©️ QXIP BV, released under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE) for details.
 
---------------
+[^1]: cLoki is not affiliated or endorsed by Grafana Labs or ClickHouse Inc. All rights belong to their respective owners.
 
+[^2]: cLoki is a 100% clear-room api implementation and does not fork, use or derivate from Grafana Loki code or concepts.
 
-#### Acknowledgements
-cLoki is not affiliated or endorsed by Grafana Labs. All rights belong to their respective owners.
+[^3]: Grafana®, Loki™ and Tempo® are a Trademark of Raintank, Grafana Labs. ClickHouse® is a trademark of ClickHouse Inc. Prometheus is a trademark of The Linux Foundation.
