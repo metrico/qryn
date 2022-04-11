@@ -186,6 +186,12 @@ The following ENV Variables can be used to control cLoki parameters and backend 
 
 ------------
 
+#### Contributors
+
+<a href="https://github.com/lmangani/cloki/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=lmangani/cloki" />
+</a>
+
 #### Disclaimer
 
 ©️ QXIP BV, released under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE) for details.
