@@ -16,9 +16,10 @@ const Sql = require('@cloki/clickhouse-sql')
 const { simpleAnd } = require('./registry/stream_selector_operator_registry/stream_selector_operator_registry')
 
 /**
+ * @param joinLabels {boolean}
  * @returns {Select}
  */
-module.exports.initQuery = () => {
+module.exports.initQuery = (joinLabels) => {
   const samplesTable = new Sql.Parameter(sharedParamNames.samplesTable)
   const timeSeriesTable = new Sql.Parameter(sharedParamNames.timeSeriesTable)
   const from = new Sql.Parameter(sharedParamNames.from)
@@ -41,11 +42,11 @@ module.exports.initQuery = () => {
     return 'samples.timestamp_ns'
   }
 
-  return (new Sql.Select())
-    .select(['samples.labels', 'labels'], ['samples.string', 'string'],
+  const q = (new Sql.Select())
+    .select(['samples.string', 'string'],
       ['samples.fingerprint', 'fingerprint'], [tsGetter, 'timestamp_ns'])
     .from([samplesTable, 'samples'])
-    .orderBy(['timestamp_ns', 'desc'], ['labels', 'desc'])
+    .orderBy(['timestamp_ns', 'desc'])
     .where(tsClause)
     .limit(limit)
     .addParam(samplesTable)
@@ -54,6 +55,12 @@ module.exports.initQuery = () => {
     .addParam(to)
     .addParam(limit)
     .addParam(matrix)
+  if (joinLabels) {
+    q.join(`${DATABASE_NAME()}.time_series`, 'left any',
+      Sql.Eq('samples.fingerprint', new Sql.Raw('time_series.fingerprint')))
+    q.select([new Sql.Raw('JSONExtractKeysAndValues(time_series.labels, \'String\')'), 'labels'])
+  }
+  return q
 }
 
 /**
@@ -88,14 +95,18 @@ module.exports.transpile = (request) => {
   let end = BigInt(request.end || (BigInt(Date.now()) * BigInt(1e6)))
   const step = BigInt(request.step ? Math.floor(parseFloat(request.step) * 1000) : 0) * BigInt(1e6)
   */
-  let query = module.exports.initQuery()
+  const joinLabels = ['unwrap_function', 'log_range_aggregation', 'aggregation_operator',
+    'compared_agg_statement', 'user_macro', 'parser_expression', 'label_filter_pipeline',
+    'line_format_expression', 'labels_format_expression'].some(t => token.Child(t))
+  let query = module.exports.initQuery(joinLabels)
   const limit = request.limit ? request.limit : 2000
   const order = request.direction === 'forward' ? 'asc' : 'desc'
   query.orderBy(...query.orderBy().map(o => [o[0], order]))
   const readTable = samplesReadTableName(start)
   query.ctx = {
     step: step,
-    legacy: readTable.match(/^samples_read/)
+    legacy: readTable.match(/^samples_read/),
+    joinLabels: joinLabels
   }
   let duration = null
   const matrixOp = ['aggregation_operator', 'unwrap_function', 'log_range_aggregation'].find(t => token.Child(t))
@@ -129,6 +140,12 @@ module.exports.transpile = (request) => {
         .from(new Sql.WithReference(wth))
         .orderBy(['labels', order], ['timestamp_ns', order])
       setQueryParam(query, sharedParamNames.limit, limit)
+      if (!joinLabels) {
+        query.join(`${DATABASE_NAME()}.time_series`, 'left any',
+          Sql.Eq('sel_a.fingerprint', new Sql.Raw('time_series.fingerprint')))
+        query.select([new Sql.Raw('JSONExtractKeysAndValues(time_series.labels, \'String\')'), 'labels'],
+          new Sql.Raw('sel_a.*'))
+      }
   }
   if (token.Child('compared_agg_statement')) {
     const op = token.Child('compared_agg_statement_cmp').Child('number_operator').value
@@ -139,7 +156,7 @@ module.exports.transpile = (request) => {
   setQueryParam(query, sharedParamNames.from, start + '000000')
   setQueryParam(query, sharedParamNames.to, end + '000000')
   setQueryParam(query, 'isMatrix', query.ctx.matrix)
-  console.log(query.toString())
+  //console.log(query.toString())
   return {
     query: request.rawQuery ? query : query.toString(),
     matrix: !!query.ctx.matrix,
@@ -180,7 +197,11 @@ module.exports.transpileTail = (request) => {
     }
   }
 
-  let query = module.exports.initQuery()
+  let query = module.exports.initQuery(true)
+  query.ctx = {
+    ...(query.ctx || {}),
+    legacy: true
+  }
   query = module.exports.transpileLogStreamSelector(expression.rootToken, query)
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
   setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesTableName}`)
@@ -188,6 +209,7 @@ module.exports.transpileTail = (request) => {
   query.order_expressions = []
   query.orderBy(['timestamp_ns', 'asc'])
   query.limit(undefined, undefined)
+  //console.log(query.toString())
   return {
     query: request.rawRequest ? query : query.toString(),
     stream: getStream(query)
