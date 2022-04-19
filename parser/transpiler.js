@@ -10,7 +10,7 @@ const unwrap = require('./registry/unwrap')
 const unwrapRegistry = require('./registry/unwrap_registry')
 const { durationToMs, sharedParamNames, getStream } = require('./registry/common')
 const compiler = require('./bnf')
-const { parseMs, DATABASE_NAME, samplesReadTableName, samplesTableName } = require('../lib/utils')
+const { parseMs, DATABASE_NAME, samplesReadTableName, samplesTableName, checkVersion } = require('../lib/utils')
 const { getPlg } = require('../plugins/engine')
 const Sql = require('@cloki/clickhouse-sql')
 const { simpleAnd } = require('./registry/stream_selector_operator_registry/stream_selector_operator_registry')
@@ -105,7 +105,7 @@ module.exports.transpile = (request) => {
   const readTable = samplesReadTableName(start)
   query.ctx = {
     step: step,
-    legacy: readTable.match(/^samples_read/),
+    legacy:  !checkVersion('v3_1', start),
     joinLabels: joinLabels
   }
   let duration = null
@@ -156,7 +156,7 @@ module.exports.transpile = (request) => {
   setQueryParam(query, sharedParamNames.from, start + '000000')
   setQueryParam(query, sharedParamNames.to, end + '000000')
   setQueryParam(query, 'isMatrix', query.ctx.matrix)
-  //console.log(query.toString())
+  console.log(query.toString())
   return {
     query: request.rawQuery ? query : query.toString(),
     matrix: !!query.ctx.matrix,
