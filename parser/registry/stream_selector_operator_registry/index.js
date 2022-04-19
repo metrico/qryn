@@ -1,4 +1,5 @@
 const reg = require('./stream_selector_operator_registry')
+const idxReg = require('./stream_selector_indexed_registry')
 const { hasExtraLabels } = require('../common')
 
 module.exports = {
@@ -15,7 +16,10 @@ module.exports = {
     if (hasExtraLabels(query)) {
       return query.where(reg.neqExtraLabels(token))
     }
-    return reg.simpleAnd(query, reg.neqSimple(token))
+    if (query.ctx.legacy) {
+      return reg.simpleAnd(query, reg.neqSimple(token))
+    }
+    return idxReg.indexedAnd(query, idxReg.neqIndexed(token))
   },
   /**
      *
@@ -30,7 +34,10 @@ module.exports = {
     if (hasExtraLabels(query)) {
       return query.where(query, reg.regExtraLabels(token))
     }
-    return reg.simpleAnd(query, reg.regSimple(token))
+    if (query.ctx.legacy) {
+      return reg.simpleAnd(query, reg.regSimple(token))
+    }
+    return idxReg.indexedAnd(query, idxReg.reIndexed(token))
   },
   /**
      *
@@ -45,7 +52,10 @@ module.exports = {
     if (hasExtraLabels(query)) {
       return query.where(query, reg.nregExtraLabels(token))
     }
-    return reg.simpleAnd(query, reg.nregSimple(token))
+    if (query.ctx.legacy) {
+      return reg.simpleAnd(query, reg.nregSimple(token))
+    }
+    return idxReg.indexedAnd(query, idxReg.nreIndexed(token))
   },
   /**
      *
@@ -60,7 +70,10 @@ module.exports = {
     if (hasExtraLabels(query)) {
       return query.where(query, reg.eqExtraLabels(token))
     }
-    return reg.simpleAnd(query, reg.eqSimple(token))
+    if (query.ctx.legacy) {
+      return reg.simpleAnd(query, reg.eqSimple(token))
+    }
+    return idxReg.indexedAnd(query, idxReg.eqIndexed(token))
   }
 }
 

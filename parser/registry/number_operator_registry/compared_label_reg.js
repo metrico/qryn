@@ -54,7 +54,8 @@ const genericExtraLabelSearch =
       ), 0),
       Sql.And(
         Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${lbl}', extra_labels)`), 0),
-        genericSimpleLabelSearch(lbl, val, sign)
+        Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${lbl}', labels)`), 1),
+        sign(new Sql.Raw(`toFloat64OrNull(arrayFirst(x -> x.1 == '${lbl}', labels).2)`), val)
       )
     )
 

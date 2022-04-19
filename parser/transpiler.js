@@ -10,14 +10,16 @@ const unwrap = require('./registry/unwrap')
 const unwrapRegistry = require('./registry/unwrap_registry')
 const { durationToMs, sharedParamNames, getStream } = require('./registry/common')
 const compiler = require('./bnf')
-const { parseMs, DATABASE_NAME, samplesReadTableName, samplesTableName } = require('../lib/utils')
+const { parseMs, DATABASE_NAME, samplesReadTableName, samplesTableName, checkVersion } = require('../lib/utils')
 const { getPlg } = require('../plugins/engine')
 const Sql = require('@cloki/clickhouse-sql')
+const { simpleAnd } = require('./registry/stream_selector_operator_registry/stream_selector_operator_registry')
 
 /**
+ * @param joinLabels {boolean}
  * @returns {Select}
  */
-module.exports.initQuery = () => {
+module.exports.initQuery = (joinLabels) => {
   const samplesTable = new Sql.Parameter(sharedParamNames.samplesTable)
   const timeSeriesTable = new Sql.Parameter(sharedParamNames.timeSeriesTable)
   const from = new Sql.Parameter(sharedParamNames.from)
@@ -40,13 +42,11 @@ module.exports.initQuery = () => {
     return 'samples.timestamp_ns'
   }
 
-  return (new Sql.Select())
-    .select(['time_series.labels', 'labels'], ['samples.string', 'string'],
+  const q = (new Sql.Select())
+    .select(['samples.string', 'string'],
       ['samples.fingerprint', 'fingerprint'], [tsGetter, 'timestamp_ns'])
     .from([samplesTable, 'samples'])
-    .join([timeSeriesTable, 'time_series'], 'left',
-      Sql.Eq('samples.fingerprint', Sql.quoteTerm('time_series.fingerprint')))
-    .orderBy(['timestamp_ns', 'desc'], ['labels', 'desc'])
+    .orderBy(['timestamp_ns', 'desc'])
     .where(tsClause)
     .limit(limit)
     .addParam(samplesTable)
@@ -55,6 +55,12 @@ module.exports.initQuery = () => {
     .addParam(to)
     .addParam(limit)
     .addParam(matrix)
+  if (joinLabels) {
+    q.join(`${DATABASE_NAME()}.time_series`, 'left any',
+      Sql.Eq('samples.fingerprint', new Sql.Raw('time_series.fingerprint')))
+    q.select([new Sql.Raw('JSONExtractKeysAndValues(time_series.labels, \'String\')'), 'labels'])
+  }
+  return q
 }
 
 /**
@@ -84,15 +90,23 @@ module.exports.transpile = (request) => {
   let start = parseMs(request.start, Date.now() - 3600 * 1000)
   let end = parseMs(request.end, Date.now())
   const step = request.step ? Math.floor(parseFloat(request.step) * 1000) : 0
-  /*let start = BigInt(request.start || (BigInt(Date.now() - 3600 * 1000) * BigInt(1e6)))
+  /*
+  let start = BigInt(request.start || (BigInt(Date.now() - 3600 * 1000) * BigInt(1e6)))
   let end = BigInt(request.end || (BigInt(Date.now()) * BigInt(1e6)))
-  const step = BigInt(request.step ? Math.floor(parseFloat(request.step) * 1000) : 0) * BigInt(1e6)*/
-  let query = module.exports.initQuery()
+  const step = BigInt(request.step ? Math.floor(parseFloat(request.step) * 1000) : 0) * BigInt(1e6)
+  */
+  const joinLabels = ['unwrap_function', 'log_range_aggregation', 'aggregation_operator',
+    'compared_agg_statement', 'user_macro', 'parser_expression', 'label_filter_pipeline',
+    'line_format_expression', 'labels_format_expression'].some(t => token.Child(t))
+  let query = module.exports.initQuery(joinLabels)
   const limit = request.limit ? request.limit : 2000
   const order = request.direction === 'forward' ? 'asc' : 'desc'
   query.orderBy(...query.orderBy().map(o => [o[0], order]))
+  const readTable = samplesReadTableName(start)
   query.ctx = {
-    step: step
+    step: step,
+    legacy:  !checkVersion('v3_1', start),
+    joinLabels: joinLabels
   }
   let duration = null
   const matrixOp = ['aggregation_operator', 'unwrap_function', 'log_range_aggregation'].find(t => token.Child(t))
@@ -126,16 +140,23 @@ module.exports.transpile = (request) => {
         .from(new Sql.WithReference(wth))
         .orderBy(['labels', order], ['timestamp_ns', order])
       setQueryParam(query, sharedParamNames.limit, limit)
+      if (!joinLabels) {
+        query.join(`${DATABASE_NAME()}.time_series`, 'left any',
+          Sql.Eq('sel_a.fingerprint', new Sql.Raw('time_series.fingerprint')))
+        query.select([new Sql.Raw('JSONExtractKeysAndValues(time_series.labels, \'String\')'), 'labels'],
+          new Sql.Raw('sel_a.*'))
+      }
   }
   if (token.Child('compared_agg_statement')) {
     const op = token.Child('compared_agg_statement_cmp').Child('number_operator').value
     query = numberOperatorRegistry[op](token.Child('compared_agg_statement'), query)
   }
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
-  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName(start)}`)
+  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${readTable}`)
   setQueryParam(query, sharedParamNames.from, start + '000000')
   setQueryParam(query, sharedParamNames.to, end + '000000')
   setQueryParam(query, 'isMatrix', query.ctx.matrix)
+  console.log(query.toString())
   return {
     query: request.rawQuery ? query : query.toString(),
     matrix: !!query.ctx.matrix,
@@ -176,7 +197,11 @@ module.exports.transpileTail = (request) => {
     }
   }
 
-  let query = module.exports.initQuery()
+  let query = module.exports.initQuery(true)
+  query.ctx = {
+    ...(query.ctx || {}),
+    legacy: true
+  }
   query = module.exports.transpileLogStreamSelector(expression.rootToken, query)
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
   setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesTableName}`)
@@ -184,6 +209,7 @@ module.exports.transpileTail = (request) => {
   query.order_expressions = []
   query.orderBy(['timestamp_ns', 'asc'])
   query.limit(undefined, undefined)
+  //console.log(query.toString())
   return {
     query: request.rawRequest ? query : query.toString(),
     stream: getStream(query)
@@ -206,19 +232,35 @@ module.exports.transpileSeries = (request) => {
    */
   const getQuery = (req) => {
     const expression = compiler.ParseScript(req.trim())
-    const query = module.exports.transpileLogStreamSelector(expression.rootToken, module.exports.initQuery())
+    let query = module.exports.transpileLogStreamSelector(expression.rootToken, module.exports.initQuery())
+    query = simpleAnd(query, new Sql.Raw('1 == 1'))
     const _query = query.withs.str_sel.query
+    if (query.with() && query.with().idx_sel) {
+      _query.with(query.withs.idx_sel)
+    }
     _query.params = query.params
     _query.columns = []
     return _query.select('labels')
   }
+  class UnionAll extends Sql.Raw {
+    constructor (sqls) {
+      super()
+      this.sqls = [sqls]
+    }
+
+    toString () {
+      return this.sqls.map(sql => `(${sql})`).join(' UNION ALL ')
+    }
+  }
   const query = getQuery(request[0])
+  query.withs.idx_sel.query = new UnionAll(query.withs.idx_sel.query)
   for (const req of request.slice(1)) {
     const _query = getQuery(req)
-    query.orWhere(...(Array.isArray(_query.conditions) ? _query.conditions : [_query.conditions]))
+    query.withs.idx_sel.query.sqls.push(_query.withs.idx_sel.query)
   }
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
   setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName()}`)
+  // console.log(query.toString())
   return query.toString()
 }
 
@@ -361,7 +403,7 @@ module.exports.requestToStr = (query) => {
   }
   let req = query.with
     ? 'WITH ' + Object.entries(query.with).filter(e => e[1])
-      .map(e => `${e[0]} as (${module.exports.requestToStr(e[1])})`).join(', ')
+        .map(e => `${e[0]} as (${module.exports.requestToStr(e[1])})`).join(', ')
     : ''
   req += ` SELECT ${query.distinct ? 'DISTINCT' : ''} ${query.select.join(', ')} FROM ${query.from} `
   for (const clause of query.left_join || []) {

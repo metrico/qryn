@@ -160,7 +160,11 @@ async function genericJSONOrYAMLParser (req) {
     const fp = this.fingerPrint(tag)
     profiler = setInterval(() => {
       this.bulk_labels.add([[new Date().toISOString().split('T')[0], fp, tag, '']])
-      this.bulk.add([[fp, BigInt(Date.now()) * BigInt(1000000), process.memoryUsage().rss / 1024 / 1024, '']])
+      this.bulk.add([[fp,
+        [['label', 'RAM usage'], ['profiler_id', process.env.PROFILE]],
+        BigInt(Date.now()) * BigInt(1000000),
+        process.memoryUsage().rss / 1024 / 1024, ''
+      ]])
     }, 1000)
   }
 })().catch((err) => {

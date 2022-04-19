@@ -160,11 +160,9 @@ module.exports.hasExtraLabels = (query) => {
  */
 module.exports.concatLabels = (query) => {
   if (module.exports.hasExtraLabels(query)) {
-    return new Sql.Raw('arraySort(arrayConcat(arrayFilter(' +
-            'x -> arrayExists(y -> y.1 == x.1, extra_labels) == 0, ' +
-            'JSONExtractKeysAndValues(labels, \'String\')), extra_labels))')
+    return new Sql.Raw('arraySort(arrayConcat(arrayFilter(x -> arrayExists(y -> y.1 == x.1, extra_labels) == 0, labels), extra_labels))')
   }
-  return new Sql.Raw('JSONExtractKeysAndValues(labels, \'String\')')
+  return new Sql.Raw('labels')
 }
 
 /**

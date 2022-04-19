@@ -1,4 +1,5 @@
-const { unquoteToken, isEOF } = require('../common')
+const { isEOF } = require('../common')
+const { labelAndVal } = require('./common')
 const Sql = require('@cloki/clickhouse-sql')
 /**
  * @param regex {boolean}
@@ -8,6 +9,17 @@ const Sql = require('@cloki/clickhouse-sql')
  * @returns {Conditions}
  */
 function selectorClauses (regex, eq, label, value) {
+  const call = regex
+    ? [new Sql.Raw(`match(arrayFirst(x -> x.1 == '${label}', labels).2, '${value}')`),
+        0, eq ? Sql.Ne : Sql.Eq]
+    : [new Sql.Raw(`arrayFirst(x -> x.1 == '${label}', labels).2`), value, eq ? Sql.Eq : Sql.Ne]
+  return Sql.And(
+    Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${label}', labels)`), 1),
+    call[2](call[0], call[1])
+  )
+}
+
+function simpleSelectorClauses (regex, eq, label, value) {
   const call = regex
     ? [new Sql.Raw(`extractAllGroups(JSONExtractString(labels, '${label}'), '(${value})')`),
         '[]', eq ? Sql.Ne : Sql.Eq]
@@ -24,29 +36,23 @@ function selectorClauses (regex, eq, label, value) {
 }
 
 /**
- *
- * @param token {Token}
- * @returns {string[]}
- */
-const labelAndVal = (token) => {
-  const label = token.Child('label').value
-  return [label, unquoteToken(token)]
-}
-
-/**
  * @param query {Select}
  * @returns {With}
  */
 const streamSelectQuery = (query) => {
   const param = query.getParam('timeSeriesTable') || new Sql.Parameter('timeSeriesTable')
   query.addParam(param)
-  return new Sql.With(
+  let res = new Sql.With(
     'str_sel',
     (new Sql.Select())
       .select('fingerprint')
       .distinct(true)
       .from(param)
   )
+  if (query.with() && query.with().idx_sel) {
+    res.query = res.query.where(new Sql.Raw('fingerprint IN idx_sel'))
+  }
+  return res
 }
 
 /**
@@ -85,7 +91,7 @@ module.exports.simpleAnd = (query, clauses) => {
  */
 module.exports.neqSimple = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
-  return selectorClauses(false, false, label, value)
+  return simpleSelectorClauses(false, false, label, value)
 }
 
 /**
@@ -123,7 +129,7 @@ module.exports.neqStream = (token/*, query */) => {
  */
 module.exports.nregSimple = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
-  return selectorClauses(true, false, label, value)
+  return simpleSelectorClauses(true, false, label, value)
 }
 
 /**
@@ -164,7 +170,7 @@ module.exports.nregStream = (token/*, query */) => {
  */
 module.exports.regSimple = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
-  return selectorClauses(true, true, label, value)
+  return simpleSelectorClauses(true, true, label, value)
 }
 
 /**
@@ -205,7 +211,7 @@ module.exports.regStream = (token/*, query */) => {
  */
 module.exports.eqSimple = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
-  return selectorClauses(false, true, label, value)
+  return simpleSelectorClauses(false, true, label, value)
 }
 /**
  *
