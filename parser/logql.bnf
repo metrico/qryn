@@ -1,10 +1,10 @@
-<SYNTAX> ::= <log_stream_selector> | <unwrap_function> | <log_range_aggregation> | <aggregation_operator> | <compared_agg_statement> | <user_macro>
+<SYNTAX> ::= <log_stream_selector> | <unwrap_function> | <log_range_aggregation> | <aggregation_operator> | <compared_agg_statement> | <user_macro> | <unwrap_expression>
 
 log_stream_fp_selector ::= "{" <OWSP> <log_stream_selector_rule> *(<OWSP> "," <OWSP> <log_stream_selector_rule>) <OWSP> "}"
 log_stream_selector ::= <log_stream_fp_selector> <OWSP> *(<OWSP><log_pipeline>)
 
 log_stream_selector_rule ::= <label> <OWSP> <operator> <OWSP> <quoted_str>
-label ::= (<ALPHA> | "_") *(<ALPHA> | "_" | <DIGITS>)
+label ::= ["--"] (<ALPHA> | "_") *(<ALPHA> | "_" | <DIGITS>)
 operator ::= <stream_selector_operator_registry>
 quoted_str ::= <QLITERAL> | <AQLITERAL>
 

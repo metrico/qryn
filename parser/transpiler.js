@@ -14,6 +14,7 @@ const { parseMs, DATABASE_NAME, samplesReadTableName, samplesTableName, checkVer
 const { getPlg } = require('../plugins/engine')
 const Sql = require('@cloki/clickhouse-sql')
 const { simpleAnd } = require('./registry/stream_selector_operator_registry/stream_selector_operator_registry')
+const cliql = require('./cliql/transpiler')
 
 /**
  * @param joinLabels {boolean}
@@ -86,6 +87,9 @@ module.exports.transpile = (request) => {
       query: module.exports.transpileMacro(token.Child('user_macro'))
     })
   }
+  if (token.Children('label').some(c => c.value.substr(0, 2) === '--')) {
+    return cliql.transpile(token, request)
+  }
 
   let start = parseMs(request.start, Date.now() - 3600 * 1000)
   let end = parseMs(request.end, Date.now())
@@ -156,7 +160,7 @@ module.exports.transpile = (request) => {
   setQueryParam(query, sharedParamNames.from, start + '000000')
   setQueryParam(query, sharedParamNames.to, end + '000000')
   setQueryParam(query, 'isMatrix', query.ctx.matrix)
-  console.log(query.toString())
+  // console.log(query.toString())
   return {
     query: request.rawQuery ? query : query.toString(),
     matrix: !!query.ctx.matrix,
