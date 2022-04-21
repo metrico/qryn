@@ -2966,24 +2966,31 @@ Select {
                             },
                           },
                           Condition {
-                            "column": Condition {
-                              "column": Raw {
-                                "raw": "arrayExists(x -> x.1 == 'int_lbl', labels)",
-                              },
-                              "operator": "=",
-                              "value": Value {
-                                "value": 1,
-                              },
+                            "column": Conjunction {
+                              "args": Array [
+                                Condition {
+                                  "column": Raw {
+                                    "raw": "arrayExists(x -> x.1 == 'int_lbl', labels)",
+                                  },
+                                  "operator": "=",
+                                  "value": Value {
+                                    "value": 1,
+                                  },
+                                },
+                                Condition {
+                                  "column": Raw {
+                                    "raw": "isNotNull(unwrapped)",
+                                  },
+                                  "operator": "=",
+                                  "value": Value {
+                                    "value": 1,
+                                  },
+                                },
+                              ],
                             },
-                            "operator": "=",
-                            "value": Condition {
-                              "column": Raw {
-                                "raw": "isNotNull(unwrapped)",
-                              },
-                              "operator": "=",
-                              "value": Value {
-                                "value": 1,
-                              },
+                            "operator": undefined,
+                            "value": Value {
+                              "value": undefined,
                             },
                           },
                         ],
@@ -3321,24 +3328,31 @@ Select {
               },
             },
             Condition {
-              "column": Condition {
-                "column": Raw {
-                  "raw": "arrayExists(x -> x.1 == 'int_lbl', labels)",
-                },
-                "operator": "=",
-                "value": Value {
-                  "value": 1,
-                },
+              "column": Conjunction {
+                "args": Array [
+                  Condition {
+                    "column": Raw {
+                      "raw": "arrayExists(x -> x.1 == 'int_lbl', labels)",
+                    },
+                    "operator": "=",
+                    "value": Value {
+                      "value": 1,
+                    },
+                  },
+                  Condition {
+                    "column": Raw {
+                      "raw": "isNotNull(unwrapped)",
+                    },
+                    "operator": "=",
+                    "value": Value {
+                      "value": 1,
+                    },
+                  },
+                ],
               },
-              "operator": "=",
-              "value": Condition {
-                "column": Raw {
-                  "raw": "isNotNull(unwrapped)",
-                },
-                "operator": "=",
-                "value": Value {
-                  "value": 1,
-                },
+              "operator": undefined,
+              "value": Value {
+                "value": undefined,
               },
             },
           ],
@@ -3619,24 +3633,31 @@ Select {
                         },
                       },
                       Condition {
-                        "column": Condition {
-                          "column": Raw {
-                            "raw": "arrayExists(x -> x.1 == 'int_lbl', labels)",
-                          },
-                          "operator": "=",
-                          "value": Value {
-                            "value": 1,
-                          },
+                        "column": Conjunction {
+                          "args": Array [
+                            Condition {
+                              "column": Raw {
+                                "raw": "arrayExists(x -> x.1 == 'int_lbl', labels)",
+                              },
+                              "operator": "=",
+                              "value": Value {
+                                "value": 1,
+                              },
+                            },
+                            Condition {
+                              "column": Raw {
+                                "raw": "isNotNull(unwrapped)",
+                              },
+                              "operator": "=",
+                              "value": Value {
+                                "value": 1,
+                              },
+                            },
+                          ],
                         },
-                        "operator": "=",
-                        "value": Condition {
-                          "column": Raw {
-                            "raw": "isNotNull(unwrapped)",
-                          },
-                          "operator": "=",
-                          "value": Value {
-                            "value": 1,
-                          },
+                        "operator": undefined,
+                        "value": Value {
+                          "value": undefined,
                         },
                       },
                     ],
@@ -4022,20 +4043,33 @@ Select {
                             },
                           },
                           Condition {
-                            "column": Disjunction {
+                            "column": Conjunction {
                               "args": Array [
-                                Condition {
-                                  "column": Raw {
-                                    "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl2', extra_labels)",
-                                  },
-                                  "operator": "!=",
-                                  "value": Value {
-                                    "value": 0,
-                                  },
+                                Disjunction {
+                                  "args": Array [
+                                    Condition {
+                                      "column": Raw {
+                                        "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl2', extra_labels)",
+                                      },
+                                      "operator": "!=",
+                                      "value": Value {
+                                        "value": 0,
+                                      },
+                                    },
+                                    Condition {
+                                      "column": Raw {
+                                        "raw": "arrayExists(x -> x.1 == 'int_lbl2', labels)",
+                                      },
+                                      "operator": "=",
+                                      "value": Value {
+                                        "value": 1,
+                                      },
+                                    },
+                                  ],
                                 },
                                 Condition {
                                   "column": Raw {
-                                    "raw": "arrayExists(x -> x.1 == 'int_lbl2', labels)",
+                                    "raw": "isNotNull(unwrapped)",
                                   },
                                   "operator": "=",
                                   "value": Value {
@@ -4044,15 +4078,9 @@ Select {
                                 },
                               ],
                             },
-                            "operator": "=",
-                            "value": Condition {
-                              "column": Raw {
-                                "raw": "isNotNull(unwrapped)",
-                              },
-                              "operator": "=",
-                              "value": Value {
-                                "value": 1,
-                              },
+                            "operator": undefined,
+                            "value": Value {
+                              "value": undefined,
                             },
                           },
                         ],
@@ -4406,20 +4434,33 @@ Select {
               },
             },
             Condition {
-              "column": Disjunction {
+              "column": Conjunction {
                 "args": Array [
-                  Condition {
-                    "column": Raw {
-                      "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl2', extra_labels)",
-                    },
-                    "operator": "!=",
-                    "value": Value {
-                      "value": 0,
-                    },
+                  Disjunction {
+                    "args": Array [
+                      Condition {
+                        "column": Raw {
+                          "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl2', extra_labels)",
+                        },
+                        "operator": "!=",
+                        "value": Value {
+                          "value": 0,
+                        },
+                      },
+                      Condition {
+                        "column": Raw {
+                          "raw": "arrayExists(x -> x.1 == 'int_lbl2', labels)",
+                        },
+                        "operator": "=",
+                        "value": Value {
+                          "value": 1,
+                        },
+                      },
+                    ],
                   },
                   Condition {
                     "column": Raw {
-                      "raw": "arrayExists(x -> x.1 == 'int_lbl2', labels)",
+                      "raw": "isNotNull(unwrapped)",
                     },
                     "operator": "=",
                     "value": Value {
@@ -4428,15 +4469,9 @@ Select {
                   },
                 ],
               },
-              "operator": "=",
-              "value": Condition {
-                "column": Raw {
-                  "raw": "isNotNull(unwrapped)",
-                },
-                "operator": "=",
-                "value": Value {
-                  "value": 1,
-                },
+              "operator": undefined,
+              "value": Value {
+                "value": undefined,
               },
             },
           ],
@@ -4733,20 +4768,33 @@ Select {
                         },
                       },
                       Condition {
-                        "column": Disjunction {
+                        "column": Conjunction {
                           "args": Array [
-                            Condition {
-                              "column": Raw {
-                                "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl2', extra_labels)",
-                              },
-                              "operator": "!=",
-                              "value": Value {
-                                "value": 0,
-                              },
+                            Disjunction {
+                              "args": Array [
+                                Condition {
+                                  "column": Raw {
+                                    "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl2', extra_labels)",
+                                  },
+                                  "operator": "!=",
+                                  "value": Value {
+                                    "value": 0,
+                                  },
+                                },
+                                Condition {
+                                  "column": Raw {
+                                    "raw": "arrayExists(x -> x.1 == 'int_lbl2', labels)",
+                                  },
+                                  "operator": "=",
+                                  "value": Value {
+                                    "value": 1,
+                                  },
+                                },
+                              ],
                             },
                             Condition {
                               "column": Raw {
-                                "raw": "arrayExists(x -> x.1 == 'int_lbl2', labels)",
+                                "raw": "isNotNull(unwrapped)",
                               },
                               "operator": "=",
                               "value": Value {
@@ -4755,15 +4803,9 @@ Select {
                             },
                           ],
                         },
-                        "operator": "=",
-                        "value": Condition {
-                          "column": Raw {
-                            "raw": "isNotNull(unwrapped)",
-                          },
-                          "operator": "=",
-                          "value": Value {
-                            "value": 1,
-                          },
+                        "operator": undefined,
+                        "value": Value {
+                          "value": undefined,
                         },
                       },
                     ],
@@ -5156,20 +5198,33 @@ Select {
                             },
                           },
                           Condition {
-                            "column": Disjunction {
+                            "column": Conjunction {
                               "args": Array [
-                                Condition {
-                                  "column": Raw {
-                                    "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl', extra_labels)",
-                                  },
-                                  "operator": "!=",
-                                  "value": Value {
-                                    "value": 0,
-                                  },
+                                Disjunction {
+                                  "args": Array [
+                                    Condition {
+                                      "column": Raw {
+                                        "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl', extra_labels)",
+                                      },
+                                      "operator": "!=",
+                                      "value": Value {
+                                        "value": 0,
+                                      },
+                                    },
+                                    Condition {
+                                      "column": Raw {
+                                        "raw": "arrayExists(x -> x.1 == 'int_lbl', labels)",
+                                      },
+                                      "operator": "=",
+                                      "value": Value {
+                                        "value": 1,
+                                      },
+                                    },
+                                  ],
                                 },
                                 Condition {
                                   "column": Raw {
-                                    "raw": "arrayExists(x -> x.1 == 'int_lbl', labels)",
+                                    "raw": "isNotNull(unwrapped)",
                                   },
                                   "operator": "=",
                                   "value": Value {
@@ -5178,15 +5233,9 @@ Select {
                                 },
                               ],
                             },
-                            "operator": "=",
-                            "value": Condition {
-                              "column": Raw {
-                                "raw": "isNotNull(unwrapped)",
-                              },
-                              "operator": "=",
-                              "value": Value {
-                                "value": 1,
-                              },
+                            "operator": undefined,
+                            "value": Value {
+                              "value": undefined,
                             },
                           },
                         ],
@@ -5540,20 +5589,33 @@ Select {
               },
             },
             Condition {
-              "column": Disjunction {
+              "column": Conjunction {
                 "args": Array [
-                  Condition {
-                    "column": Raw {
-                      "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl', extra_labels)",
-                    },
-                    "operator": "!=",
-                    "value": Value {
-                      "value": 0,
-                    },
+                  Disjunction {
+                    "args": Array [
+                      Condition {
+                        "column": Raw {
+                          "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl', extra_labels)",
+                        },
+                        "operator": "!=",
+                        "value": Value {
+                          "value": 0,
+                        },
+                      },
+                      Condition {
+                        "column": Raw {
+                          "raw": "arrayExists(x -> x.1 == 'int_lbl', labels)",
+                        },
+                        "operator": "=",
+                        "value": Value {
+                          "value": 1,
+                        },
+                      },
+                    ],
                   },
                   Condition {
                     "column": Raw {
-                      "raw": "arrayExists(x -> x.1 == 'int_lbl', labels)",
+                      "raw": "isNotNull(unwrapped)",
                     },
                     "operator": "=",
                     "value": Value {
@@ -5562,15 +5624,9 @@ Select {
                   },
                 ],
               },
-              "operator": "=",
-              "value": Condition {
-                "column": Raw {
-                  "raw": "isNotNull(unwrapped)",
-                },
-                "operator": "=",
-                "value": Value {
-                  "value": 1,
-                },
+              "operator": undefined,
+              "value": Value {
+                "value": undefined,
               },
             },
           ],
@@ -5867,20 +5923,33 @@ Select {
                         },
                       },
                       Condition {
-                        "column": Disjunction {
+                        "column": Conjunction {
                           "args": Array [
-                            Condition {
-                              "column": Raw {
-                                "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl', extra_labels)",
-                              },
-                              "operator": "!=",
-                              "value": Value {
-                                "value": 0,
-                              },
+                            Disjunction {
+                              "args": Array [
+                                Condition {
+                                  "column": Raw {
+                                    "raw": "arrayFirstIndex(x -> x.1 == 'int_lbl', extra_labels)",
+                                  },
+                                  "operator": "!=",
+                                  "value": Value {
+                                    "value": 0,
+                                  },
+                                },
+                                Condition {
+                                  "column": Raw {
+                                    "raw": "arrayExists(x -> x.1 == 'int_lbl', labels)",
+                                  },
+                                  "operator": "=",
+                                  "value": Value {
+                                    "value": 1,
+                                  },
+                                },
+                              ],
                             },
                             Condition {
                               "column": Raw {
-                                "raw": "arrayExists(x -> x.1 == 'int_lbl', labels)",
+                                "raw": "isNotNull(unwrapped)",
                               },
                               "operator": "=",
                               "value": Value {
@@ -5889,15 +5958,9 @@ Select {
                             },
                           ],
                         },
-                        "operator": "=",
-                        "value": Condition {
-                          "column": Raw {
-                            "raw": "isNotNull(unwrapped)",
-                          },
-                          "operator": "=",
-                          "value": Value {
-                            "value": 1,
-                          },
+                        "operator": undefined,
+                        "value": Value {
+                          "value": undefined,
                         },
                       },
                     ],
