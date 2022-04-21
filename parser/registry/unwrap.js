@@ -40,10 +40,10 @@ function viaQuery (label, query) {
   query.limit(undefined, undefined)
   return query.select(
     [new Sql.Raw(`toFloat64OrNull(arrayFirst(x -> x.1 == '${label}', labels).2)`, 'unwrapped')]
-  ).where(
+  ).where(Sql.And(
     Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${label}', labels)`), 1),
     Sql.Eq(new Sql.Raw('isNotNull(unwrapped)'), 1)
-  )
+  ))
 }
 
 /**
@@ -58,10 +58,10 @@ function viaQueryWithExtraLabels (label, query) {
     [new Sql.Raw(`toFloat64OrNull(if(arrayExists(x -> x.1 == '${label}', extra_labels), ` +
       `arrayFirst(x -> x.1 == '${label}', extra_labels).2, ` +
       `arrayFirst(x -> x.1 == '${label}', labels).2))`), 'unwrapped']
-  ).where(Sql.Or(
+  ).where(Sql.And(Sql.Or(
     Sql.Ne(new Sql.Raw(`arrayFirstIndex(x -> x.1 == '${label}', extra_labels)`), 0),
     Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${label}', labels)`), 1)
-  ), Sql.Eq(new Sql.Raw('isNotNull(unwrapped)'), 1))
+  ), Sql.Eq(new Sql.Raw('isNotNull(unwrapped)'), 1)))
 }
 
 /**
