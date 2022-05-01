@@ -305,6 +305,13 @@ fastify.get('/ready', handlerHello)
 const handlerPush = require('./lib/handlers/push.js').bind(this)
 fastify.post('/loki/api/v1/push', handlerPush)
 
+/* Elastic Write Handler */
+const handlerElasticPush = require('./lib/handlers/elastic_index.js').bind(this)
+fastify.post('/:target/_doc', handlerElasticPush)
+fastify.post('/:target/_create/:id', handlerElasticPush)
+fastify.put('/:target/_doc/:id', handlerElasticPush)
+fastify.put('/:target/_create/:id', handlerElasticPush)
+
 /* Tempo Write Handler */
 this.tempo_tagtrace = process.env.TEMPO_TAGTRACE || false
 const handlerTempoPush = require('./lib/handlers/tempo_push.js').bind(this)
