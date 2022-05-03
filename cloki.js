@@ -311,6 +311,9 @@ fastify.post('/:target/_doc', handlerElasticPush)
 fastify.post('/:target/_create/:id', handlerElasticPush)
 fastify.put('/:target/_doc/:id', handlerElasticPush)
 fastify.put('/:target/_create/:id', handlerElasticPush)
+const handlerElasticBulk = require('./lib/handlers/elastic_bulk.js').bind(this)
+fastify.post('/_bulk', handlerElasticBulk)
+fastify.post('/:target/_bulk', handlerElasticBulk)
 
 /* Tempo Write Handler */
 this.tempo_tagtrace = process.env.TEMPO_TAGTRACE || false
