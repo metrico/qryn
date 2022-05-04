@@ -141,10 +141,6 @@ async function genericJSONOrYAMLParser (req) {
     }
     await shaper.register(length)
     const body = await getContentBody(req)
-    if (req.routerPath === '/_bulk') {
-      // ndjson bypass
-      return body
-    }
     try { return JSON.parse(body) } catch (e) {}
     try { return yaml.parse(body) } catch (e) {}
     throw new Error('Unexpected request content-type')
@@ -285,6 +281,11 @@ try {
 }
 
 fastify.addContentTypeParser('application/json', {},
+  async function (req, body, done) {
+    return await genericJSONParser(req)
+  })
+
+fastify.addContentTypeParser('application/x-ndjson', {},
   async function (req, body, done) {
     return await genericJSONParser(req)
   })
