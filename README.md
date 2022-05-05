@@ -7,9 +7,13 @@
 
 ### like Loki, but for ClickHouse
 
-**cLoki** is a flexible [Loki](https://github.com/grafana/loki) [^1] & [Tempo](https://github.com/grafana/tempo) [^1] compatible **LogQL API** built on top of [ClickHouse](https://clickhouse.com/)<br/>
-- Built in [Explore UI](https://github.com/metrico/cloki-view) and [LogQL CLI](https://github.com/lmangani/vLogQL) for querying data
-- Native support [Grafana](http://docs.grafana.org/features/explore/) [^3] and any [LogQL](https://grafana.com/docs/loki/latest/logql/) clients for [querying](https://github.com/lmangani/cLoki/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki), [tracing](https://github.com/lmangani/cLoki/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/cLoki/wiki/Ruler---Alerts) [^2] 
+**cLoki** is a flexible [Loki](https://github.com/grafana/loki) [^1] compatible **LogQL API** built on top of [ClickHouse](https://clickhouse.com/)<br/>
+- Built in [Explore UI](https://github.com/metrico/cloki-view) and [LogQL CLI](https://github.com/lmangani/vLogQL) for querying and extracting data
+- Native support for [Grafana](http://docs.grafana.org/features/explore/) [^3] and any [LogQL](https://grafana.com/docs/loki/latest/logql/) clients for [querying](https://github.com/lmangani/cLoki/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/cLoki/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki), [tracing](https://github.com/lmangani/cLoki/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/cLoki/wiki/Ruler---Alerts) [^2] 
+- Powerful pipeline parsers to dynamically search, filter and extract values or tags from logs, events, traces _and beyond_
+- Ingestion and PUSH APIs transparently compatible with LogQL, PromQL, InfluxDB, Elastic _and more_
+- Natively support in Agents such as Promtail, Grafana-Agent, Vector, Logstash, Telegraf and _many others_
+- Cloud native, stateless and compact design
 <br>
 
 :octocat: Get started using the [cLoki Wiki](https://github.com/lmangani/cLoki/wiki) :bulb: 

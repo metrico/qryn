@@ -285,6 +285,11 @@ fastify.addContentTypeParser('application/json', {},
     return await genericJSONParser(req)
   })
 
+fastify.addContentTypeParser('application/x-ndjson', {},
+  async function (req, body, done) {
+    return await genericJSONParser(req)
+  })
+
 /* Null content-type handler for CH-MV HTTP PUSH */
 fastify.addContentTypeParser('*', {},
   async function (req, body, done) {
@@ -304,6 +309,16 @@ fastify.get('/ready', handlerHello)
 /* Write Handler */
 const handlerPush = require('./lib/handlers/push.js').bind(this)
 fastify.post('/loki/api/v1/push', handlerPush)
+
+/* Elastic Write Handler */
+const handlerElasticPush = require('./lib/handlers/elastic_index.js').bind(this)
+fastify.post('/:target/_doc', handlerElasticPush)
+fastify.post('/:target/_create/:id', handlerElasticPush)
+fastify.put('/:target/_doc/:id', handlerElasticPush)
+fastify.put('/:target/_create/:id', handlerElasticPush)
+const handlerElasticBulk = require('./lib/handlers/elastic_bulk.js').bind(this)
+fastify.post('/_bulk', handlerElasticBulk)
+fastify.post('/:target/_bulk', handlerElasticBulk)
 
 /* Tempo Write Handler */
 this.tempo_tagtrace = process.env.TEMPO_TAGTRACE || false
