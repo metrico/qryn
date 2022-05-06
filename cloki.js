@@ -305,6 +305,7 @@ fastify.setErrorHandler(require('./lib/handlers/errors').handler.bind(this))
 const handlerHello = require('./lib/handlers/ready').bind(this)
 fastify.get('/hello', handlerHello)
 fastify.get('/ready', handlerHello)
+fastify.get('/api/echo', handlerHello)
 
 /* Write Handler */
 const handlerPush = require('./lib/handlers/push.js').bind(this)
