@@ -340,6 +340,10 @@ fastify.get('/api/search/tags', handlerTempoLabel)
 const handlerTempoLabelValues = require('./lib/handlers/tags_values.js').bind(this)
 fastify.get('/api/search/tag/:name/values', handlerTempoLabelValues)
 
+/* Tempo Echo Handler */
+const handlerTempoEcho = require('./lib/handlers/echo.js').bind(this)
+fastify.get('/api/echo', handlerTempoEcho)
+
 /* Telegraf HTTP Bulk handler */
 const handlerTelegraf = require('./lib/handlers/telegraf.js').bind(this)
 fastify.post('/telegraf', handlerTelegraf)
