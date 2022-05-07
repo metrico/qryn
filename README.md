@@ -54,7 +54,7 @@ The Grafana Loki datasource can be used to natively query _logs_ and display ext
 
 ### :fuelpump: Log Streams
 
-cLoki supports input via Push API using *JSON* or *Protobuf* and it is compatible with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/) and any other [Loki compatible agent](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki)
+cLoki supports input via Push API using *JSON* or *Protobuf* and it is compatible with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/) and any other [Loki compatible agent](https://github.com/lmangani/cLoki/wiki/Inserting-Logs-to-cLoki). On top of that, cLoki also accepts and converts log and metric inserts using Influx, Elastic, Tempo and other common API formats.
 
 Our _preferred_ companion for parsing and shipping log streams to **cLoki** is [paStash](https://github.com/sipcapture/paStash/wiki/Example:-Loki) with extensive interpolation capabilities to create tags and trim any log fat. Sending JSON formatted logs is _suggested_ when dealing with metrics.
 
