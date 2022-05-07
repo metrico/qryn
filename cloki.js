@@ -305,7 +305,6 @@ fastify.setErrorHandler(require('./lib/handlers/errors').handler.bind(this))
 const handlerHello = require('./lib/handlers/ready').bind(this)
 fastify.get('/hello', handlerHello)
 fastify.get('/ready', handlerHello)
-fastify.get('/api/echo', handlerHello)
 
 /* Write Handler */
 const handlerPush = require('./lib/handlers/push.js').bind(this)
@@ -340,6 +339,10 @@ fastify.get('/api/search/tags', handlerTempoLabel)
 /* Tempo Tag Value Handler */
 const handlerTempoLabelValues = require('./lib/handlers/tags_values.js').bind(this)
 fastify.get('/api/search/tag/:name/values', handlerTempoLabelValues)
+
+/* Tempo Echo Handler */
+const handlerTempoEcho = require('./lib/handlers/echo.js').bind(this)
+fastify.get('/api/echo', handlerTempoEcho)
 
 /* Telegraf HTTP Bulk handler */
 const handlerTelegraf = require('./lib/handlers/telegraf.js').bind(this)
