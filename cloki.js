@@ -116,6 +116,7 @@ async function getContentBody (req) {
  */
 async function genericJSONParser (req) {
   try {
+    if (req.routerPath === '/tempo/api/push') { return JSON.parse(await getContentBody(req)) } /* deal with bad spans w/o content-length */
     const length = getContentLength(req, 1e9)
     if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
       return
