@@ -86,7 +86,7 @@ const shaper = {
  */
 function getContentLength (req, limit) {
   if (!req.headers['content-length'] || isNaN(parseInt(req.headers['content-length']))) {
-    throw new CLokiError(400, 'Content-Length is required')
+    return 5 * 1024 * 1024
   }
   const res = parseInt(req.headers['content-length'])
   if (limit && res > limit) {
