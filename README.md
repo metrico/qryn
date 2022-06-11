@@ -178,7 +178,7 @@ The following ENV Variables can be used to control qryn parameters and backend s
 #### Contributors
 
 <a href="https://github.com/lmangani/qryn/graphs/contributors">
-  <img src="https://contributors-img.web.app/image?repo=lmangani/qryn" />
+  <img src="https://contributors-img.web.app/image?repo=lmangani/cloki" />
 </a>
 
 #### Disclaimer
