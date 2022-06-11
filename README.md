@@ -19,6 +19,8 @@
 
 :octocat: Get started using our [Wiki](https://github.com/lmangani/qryn/wiki) :bulb: 
 
+⚠️: Existing user and confused? The project has been renamed to `qryn` _(querying)_ 👍: 
+
 
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
 
