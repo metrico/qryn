@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /*
- * Loki API to Clickhouse Gateway
+ * LogQL API to Clickhouse Gateway
  * (C) 2018-2022 QXIP BV
  */
 

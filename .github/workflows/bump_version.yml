@@ -88,5 +88,7 @@ jobs:
         with:
           push: true
           tags: |
+            qxip/qryn:latest
+            qxip/qryn:${{ steps.version-bump.outputs.newTag }}
             qxip/cloki:latest
             qxip/cloki:${{ steps.version-bump.outputs.newTag }}

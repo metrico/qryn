@@ -1,15 +1,15 @@
 {
-  "name": "cloki",
-  "version": "2.0.31",
+  "name": "qryn",
+  "version": "2.1.0",
   "description": "LogQL API with Clickhouse Backend",
-  "main": "cloki.js",
+  "main": "qryn.js",
   "bin": {
     "cloki": "./cloki.js"
   },
   "scripts": {
     "test": "jest",
-    "start": "node cloki.js",
-    "pretty": "node cloki.js | pino-pretty",
+    "start": "node qryn.js",
+    "pretty": "node qryn.js | pino-pretty",
     "postinstall": "patch-package",
     "install-view": "mkdir -p view && curl -L https://github.com/metrico/cloki-view/releases/latest/download/dist.zip | busybox unzip - -d ./view",
     "lint": "npx eslint --fix *.js lib parser plugins test"
@@ -21,14 +21,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/lmangani/cloki.git"
+    "url": "git+ssh://git@github.com/lmangani/qryn.git"
   },
   "author": "lorenzo.mangani@gmail.com",
   "license": "AGPL-3.0",
   "bugs": {
-    "url": "https://github.com/lmangani/cloki/issues"
+    "url": "https://github.com/lmangani/qryn/issues"
   },
-  "homepage": "https://github.com/lmangani/cloki#readme",
+  "homepage": "https://github.com/lmangani/qryn#readme",
   "dependencies": {
     "@apla/clickhouse": "^1.6.4",
     "@cloki/clickhouse-sql": "1.2.2",
@@ -80,7 +80,6 @@
     "lib": "lib"
   },
   "keywords": [
-    "loki",
     "logs",
     "logging",
     "logql",

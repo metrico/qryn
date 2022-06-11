@@ -1,7 +1,7 @@
 module.exports = {
   apps: [{
-    name: 'cloki',
-    script: './cloki.js',
+    name: 'qryn',
+    script: './qryn.js',
     env: {
       CLICKHOUSE_SERVER: 'localhost',
       CLICKHOUSE_PORT: 8123,
