@@ -24,10 +24,10 @@ jobs:
       uses: actions/setup-node@v2
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm install --unsafe-perm -g cloki
+    - run: npm install --unsafe-perm -g qryn
     - env:
         CLICKHOUSE_DB: loki
         DEBUG: true
-      run: cd $(dirname $(readlink -f `which cloki`)) && (timeout 10s cloki || ( [[ $? -eq 124 ]] && exit 0 ))
+      run: cd $(dirname $(readlink -f `which qryn`)) && (timeout 10s qryn || ( [[ $? -eq 124 ]] && exit 0 ))
 #   - run: npm install -g jest
-#   - run: cd $(dirname $(readlink -f `which cloki`)) && npm run test
+#   - run: cd $(dirname $(readlink -f `which qryn`)) && npm run test
