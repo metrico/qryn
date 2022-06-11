@@ -6,7 +6,7 @@
 
 # qryn 
 
-### It's LogQL for Uptrace
+### LogQL for ClickHouse
 
 **qryn** is a flexible **LogQL API** built on top of [ClickHouse](https://clickhouse.com/) and natively integrated in [Uptrace](https://uptrace.dev)<br/>
 - Built in [Explore UI](https://github.com/metrico/cloki-view) and [LogQL CLI](https://github.com/lmangani/vLogQL) for querying and extracting data
