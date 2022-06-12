@@ -1,5 +1,5 @@
 #!/bin/bash
-## Test Metrics for Loki/cLoki
+## Test Metrics for Loki/Qryn
 
         DOMAINS=("up" "down" "left" "right")
 
