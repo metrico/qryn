@@ -2,7 +2,7 @@
 
 ## [cLoki](https://github.com/lmangani/cLoki) + Clickhouse
 
-This docker compose bundle will spin up a `cLoki`, `Clickhouse`, `Grafana` and `paStash` to compose a working lab system.
+This docker compose bundle will spin up a `qryn`, `Clickhouse`, `Grafana` and `paStash` to compose a working lab system.
 
 #### THIS EXAMPLE IS INTENDED FOR TESTING PURPOSES!
 
@@ -10,7 +10,7 @@ This docker compose bundle will spin up a `cLoki`, `Clickhouse`, `Grafana` and `
 ## Components
 
 #### Core
-* cLoki 
+* Qryn 
 * clickhouse-server
 
 #### Add-Ons

@@ -1,6 +1,6 @@
-# This workflow will validate cloki using nodejs + clickhouse + npm without the git repository sources
+# This workflow will validate qryn using nodejs + clickhouse + npm without the git repository sources
 
-name: CLOKI NPM CI
+name: QRYN NPM CI
 
 on:
   push:

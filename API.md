@@ -1,4 +1,4 @@
-# cLoki
+# Qryn
 
 ### API Examples
 

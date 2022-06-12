@@ -1,6 +1,6 @@
-# This workflow will validate cloki using nodejs + clickhouse
+# This workflow will validate qryn using nodejs + clickhouse
 
-name: CLOKI CI
+name: QRYN CI
 
 on:
   push:
