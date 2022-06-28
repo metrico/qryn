@@ -182,6 +182,11 @@ const fastify = require('fastify')({
 fastify.register(require('fastify-url-data'))
 fastify.register(require('fastify-websocket'))
 
+/* Fastify local metrics exporter */
+if (process.env.FASTIFY_METRICS){
+  const metricsPlugin = require('fastify-metrics');
+  fastify.register(metricsPlugin, { endpoint: '/metrics' });
+}
 /* CORS Helper */
 const CORS = process.env.CORS_ALLOW_ORIGIN || '*'
 fastify.register(require('fastify-cors'), {
