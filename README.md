@@ -168,6 +168,7 @@ The following ENV Variables can be used to control qryn parameters and backend s
 | FASTIFY_BODYLIMIT      | 5242880   | API Maximum payload size in bytes |
 | FASTIFY_REQUESTTIMEOUT | 0 | API Maximum Request Timeout in ms |
 | FASTIFY_MAXREQUESTS    | 0 | API Maximum Requests per socket |
+| FASTIFY_METRICS.       | false | API /metrics exporter |
 | TEMPO_SPAN             | 24 | Default span for Tempo queries in hours |
 | TEMPO_TAGTRACE         | false | Optional tagging of TraceID (expensive) |
 | DEBUG  			             | false  	    | Debug Mode (for backwards compatibility) 		|
