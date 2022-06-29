@@ -1,6 +1,6 @@
 {
   "name": "qryn",
-  "version": "2.1.2",
+  "version": "2.1.4",
   "description": "LogQL API with Clickhouse Backend",
   "main": "qryn.js",
   "bin": {
@@ -39,6 +39,7 @@
     "fastify": "^3.25.1",
     "fastify-basic-auth": "^0.4.0",
     "fastify-cors": "^6.0.2",
+    "fastify-metrics": "^8.0.0",
     "fastify-static": "^4.5.0",
     "fastify-url-data": "^2.4.0",
     "fastify-websocket": "^4.0.0",

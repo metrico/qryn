@@ -1,4 +1,4 @@
-# cLoki
+# Qryn
 FROM node:14-slim
 
 # BUILD FORCE

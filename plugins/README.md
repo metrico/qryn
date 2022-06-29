@@ -1,14 +1,14 @@
-# cLoki Plugins
+# Qryn Plugins
 
 * WORK IN PROGRESS!
 
-Missing a LogQL function in cLoki? Extend functionality in in _no time_ using [cLoki Plugins](https://github.com/lmangani/cLoki/tree/master/plugins)
+Missing a LogQL function in Qryn? Extend functionality in in _no time_ using [Qryn Plugins](https://github.com/metrico/qryn/tree/master/plugins)
 Need to alias a complex query? Use macros to turn complex queries into easy to use queries
 
 ## Overall plugin structure
 
 Plugins are supported via plugnplay module https://github.com/e0ipso/plugnplay .
-To create a plugin you have to create a nodejs project with subfolders for each plugin or add them into your cLoki plugins folder:
+To create a plugin you have to create a nodejs project with subfolders for each plugin or add them into your Qryn plugins folder:
 ```
 /
 |- package.json
@@ -22,7 +22,7 @@ To create a plugin you have to create a nodejs project with subfolders for each 
 
 ## Different types of plugins
 
-There is a number of different types of plugins supported by cLoki. Each type extends particular functionality:
+There is a number of different types of plugins supported by Qryn. Each type extends particular functionality:
 - Log-range aggregator over unwrapped range: `unwrap_registry` type (vanilla LogQL example: avg_over_time)
 - Custom macro function to wrap or shorten an existing request statement: `macros` type
 
@@ -171,12 +171,12 @@ module.exports = class extends PluginLoaderBase {
 
 ## Macro plugin implementation (macros)
 
-cLoki parses logql requests using the bnf package https://github.com/daKuleMune/nodebnf#readme
+Qryn parses logql requests using the bnf package https://github.com/daKuleMune/nodebnf#readme
 
 You can provide a custom bnf token representation and map it to a relevant logql request via a plugin with `macros`
 type.
 
-The raw ABNF description: https://github.com/lmangani/cLoki/blob/master/parser/logql.bnf .
+The raw ABNF description: https://github.com/metrico/qryn/blob/master/parser/logql.bnf .
 
 If you are unfamiliar BNF rules, here is a good resource to get a quick introduction: http://www.cs.umsl.edu/~janikow/cs4280/bnf.pdf
 
@@ -253,7 +253,7 @@ module.exports = class extends PluginLoaderBase {
 
 You can use the common rules already defined in the core BNF description.
 
-The raw ABNF description with all the rules: https://github.com/lmangani/cLoki/blob/master/parser/logql.bnf .
+The raw ABNF description with all the rules: https://github.com/metrico/qryn/blob/master/parser/logql.bnf .
 
 The rules defined in the BNF package are here: https://github.com/daKuleMune/nodebnf#readme
 

@@ -38,5 +38,5 @@ services:
     image: centos/nodejs-12-centos7
     container_name: centos
     volumes:
-      - ../:/opt/cloki
-    entrypoint: bash -c 'cd ~ ; cp -rf /opt/cloki . ; cd cloki; ls -la ; rm -rf node_modules ; npm install ; CLICKHOUSE_DB=loki CLICKHOUSE_TSDB=loki INTEGRATION_E2E=1 CLICKHOUSE_SERVER=clickhouse-seed node cloki.js'
+      - ../:/opt/qryn
+    entrypoint: bash -c 'cd ~ ; cp -rf /opt/qryn . ; cd qryn; ls -la ; rm -rf node_modules ; npm install ; CLICKHOUSE_DB=loki CLICKHOUSE_TSDB=loki INTEGRATION_E2E=1 CLICKHOUSE_SERVER=clickhouse-seed node qryn.js'
