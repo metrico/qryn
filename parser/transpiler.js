@@ -10,7 +10,14 @@ const unwrap = require('./registry/unwrap')
 const unwrapRegistry = require('./registry/unwrap_registry')
 const { durationToMs, sharedParamNames, getStream } = require('./registry/common')
 const compiler = require('./bnf')
-const { parseMs, DATABASE_NAME, samplesReadTableName, samplesTableName, checkVersion } = require('../lib/utils')
+const {
+  parseMs,
+  DATABASE_NAME,
+  samplesReadTableName,
+  samplesTableName,
+  checkVersion,
+  parseDurationSecOrDefault
+} = require('../lib/utils')
 const { getPlg } = require('../plugins/engine')
 const Sql = require('@cloki/clickhouse-sql')
 const { simpleAnd } = require('./registry/stream_selector_operator_registry/stream_selector_operator_registry')
@@ -89,7 +96,7 @@ module.exports.transpile = (request) => {
 
   let start = parseMs(request.start, Date.now() - 3600 * 1000)
   let end = parseMs(request.end, Date.now())
-  const step = request.step ? Math.floor(parseFloat(request.step) * 1000) : 0
+  const step = request.step ? Math.floor(parseDurationSecOrDefault(request.step, 5) * 1000) : 0
   /*
   let start = BigInt(request.start || (BigInt(Date.now() - 3600 * 1000) * BigInt(1e6)))
   let end = BigInt(request.end || (BigInt(Date.now()) * BigInt(1e6)))
