@@ -1,5 +1,6 @@
 const bnf = require('../parser/bnf')
 const regexp = require('../parser/registry/parser_registry/regexp')
+const UTILS = require('../lib/utils')
 
 it('should compile', () => {
   let res = bnf.ParseScript('bytes_rate({run="kokoko",u_ru_ru!="lolol",zozo=~"sssss"}  |~"atltlt" !~   "rmrmrm" [5m])')
@@ -112,4 +113,11 @@ it('should match 3339', () => {
 it('should stable stringify', () => {
   const stringify = require('json-stable-stringify')
   expect(stringify({ a: 'a', b: 'b' })).toEqual(stringify({ b: 'b', a: 'a' }))
+})
+
+it('should parse duration', () => {
+  expect(UTILS.parseDurationSecOrDefault('120ms', 5)).toEqual(0.12)
+  expect(UTILS.parseDurationSecOrDefault('1', 5)).toEqual(1)
+  expect(UTILS.parseDurationSecOrDefault('145d', 5)).toEqual(5)
+  expect(UTILS.parseDurationSecOrDefault('trash', 5)).toEqual(5)
 })
