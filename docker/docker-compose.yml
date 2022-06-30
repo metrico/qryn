@@ -33,8 +33,8 @@ services:
     command:
       - infinity
 
-  cloki:
-    image: qxip/cloki:latest
+  qryn:
+    image: qxip/qryn:latest
     container_name: loki
     restart: unless-stopped
     expose:

@@ -6,8 +6,8 @@
  */
 
 this.readonly = process.env.READONLY || false
-this.http_user = process.env.CLOKI_LOGIN || undefined
-this.http_password = process.env.CLOKI_PASSWORD || undefined
+this.http_user = process.env.QRYN_LOGIN || process.env.CLOKI_LOGIN || undefined
+this.http_password = process.env.QRYN_PASSWORD || process.env.CLOKI_PASSWORD || undefined
 
 require('./plugins/engine')
 
@@ -28,7 +28,7 @@ const logger = require('./lib/logger')
 /* Alerting */
 const { startAlerting, stop } = require('./lib/db/alerting')
 const yaml = require('yaml')
-const { CLokiError } = require('./lib/handlers/errors')
+const { QrynError } = require('./lib/handlers/errors')
 
 /* Fingerprinting */
 this.fingerPrint = UTILS.fingerPrint
@@ -90,7 +90,7 @@ function getContentLength (req, limit) {
   }
   const res = parseInt(req.headers['content-length'])
   if (limit && res > limit) {
-    throw new CLokiError(400, 'Request is too big')
+    throw new QrynError(400, 'Request is too big')
   }
   return res
 }
@@ -168,7 +168,7 @@ async function genericJSONOrYAMLParser (req) {
     }, 1000)
   }
 })().catch((err) => {
-  logger.error(err, 'Error starting cloki')
+  logger.error(err, 'Error starting qryn')
   process.exit(1)
 })
 
@@ -182,6 +182,11 @@ const fastify = require('fastify')({
 fastify.register(require('fastify-url-data'))
 fastify.register(require('fastify-websocket'))
 
+/* Fastify local metrics exporter */
+if (process.env.FASTIFY_METRICS){
+  const metricsPlugin = require('fastify-metrics');
+  fastify.register(metricsPlugin, { endpoint: '/metrics' });
+}
 /* CORS Helper */
 const CORS = process.env.CORS_ALLOW_ORIGIN || '*'
 fastify.register(require('fastify-cors'), {
@@ -301,7 +306,7 @@ const handler404 = require('./lib/handlers/404.js').bind(this)
 fastify.setNotFoundHandler(handler404)
 fastify.setErrorHandler(require('./lib/handlers/errors').handler.bind(this))
 
-/* Hello cloki test API */
+/* Hello qryn test API */
 const handlerHello = require('./lib/handlers/ready').bind(this)
 fastify.get('/hello', handlerHello)
 fastify.get('/ready', handlerHello)
@@ -384,7 +389,7 @@ fastify.get('/prometheus/api/v1/rules', require('./lib/handlers/alerts/prom_get_
 fastify.post('/api/v1/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
 fastify.post('/api/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
 
-/* CLOKI-VIEW Optional Handler */
+/* QRYN-VIEW Optional Handler */
 if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
   fastify.register(require('fastify-static'), {
     root: path.join(__dirname, 'view'),
@@ -398,8 +403,8 @@ fastify.listen(
   process.env.HOST || '0.0.0.0',
   (err, address) => {
     if (err) throw err
-    logger.info('cLoki API up')
-    fastify.log.info(`cloki API listening on ${address}`)
+    logger.info('Qryn API up')
+    fastify.log.info(`Qryn API listening on ${address}`)
   }
 )
 
