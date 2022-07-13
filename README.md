@@ -4,7 +4,8 @@
 [![Codefresh build status]( https://g.codefresh.io/api/badges/pipeline/lmangani/lmangani%2FcLoki%2FcLoki?branch=master&key=eyJhbGciOiJIUzI1NiJ9.NTkxMzIxNGZlNjQxOWIwMDA2OWY1ZjU4.s1Y7vvE73ZWAIGYb4YCkATleW61RZ8sKypOc8Vae1c0&type=cf-1)]( https://g.codefresh.io/pipelines/cLoki/builds?repoOwner=lmangani&repoName=cLoki&serviceName=lmangani%2FcLoki&filter=trigger:build~Build;branch:master;pipeline:5cdf4a833a13130275ac87a8~cLoki)
 ![CodeQL](https://github.com/lmangani/cLoki/workflows/CodeQL/badge.svg)
 
-# qryn'
+# qryn 
+_/ˈkwɪr..ɪŋ/_
 
 ### LogQL for ClickHouse
 
@@ -19,7 +20,7 @@
 
 :octocat: Get started using our [Wiki](https://github.com/lmangani/qryn/wiki) :bulb: 
 
-⚠️ Existing user and confused? The project has been renamed to `qryn` _(querying)_ 👍 
+⚠️ Existing user and confused? The project has been renamed to `qryn` _(/ˈkwɪr..ɪŋ/)_ 👍 
 
 
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
