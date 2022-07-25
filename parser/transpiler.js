@@ -21,6 +21,7 @@ const {
 const { getPlg } = require('../plugins/engine')
 const Sql = require('@cloki/clickhouse-sql')
 const { simpleAnd } = require('./registry/stream_selector_operator_registry/stream_selector_operator_registry')
+const logger = require('../lib/logger')
 
 /**
  * @param joinLabels {boolean}
@@ -163,7 +164,7 @@ module.exports.transpile = (request) => {
   setQueryParam(query, sharedParamNames.from, start + '000000')
   setQueryParam(query, sharedParamNames.to, end + '000000')
   setQueryParam(query, 'isMatrix', query.ctx.matrix)
-  console.log(query.toString())
+  logger.debug(query.toString())
   return {
     query: request.rawQuery ? query : query.toString(),
     matrix: !!query.ctx.matrix,
@@ -216,7 +217,7 @@ module.exports.transpileTail = (request) => {
   query.order_expressions = []
   query.orderBy(['timestamp_ns', 'asc'])
   query.limit(undefined, undefined)
-  //console.log(query.toString())
+  //logger.debug(query.toString())
   return {
     query: request.rawRequest ? query : query.toString(),
     stream: getStream(query)
@@ -267,7 +268,7 @@ module.exports.transpileSeries = (request) => {
   }
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
   setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName()}`)
-  // console.log(query.toString())
+  // logger.debug(query.toString())
   return query.toString()
 }
 
