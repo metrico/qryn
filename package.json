@@ -4,7 +4,7 @@
   "description": "LogQL API with Clickhouse Backend",
   "main": "qryn.js",
   "bin": {
-    "cloki": "./cloki.js"
+    "cloki": "./qryn.js"
   },
   "scripts": {
     "test": "jest",
