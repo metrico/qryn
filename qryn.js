@@ -389,6 +389,13 @@ fastify.get('/prometheus/api/v1/rules', require('./lib/handlers/alerts/prom_get_
 fastify.post('/api/v1/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
 fastify.post('/api/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
 
+/* PROMQETHEUS API EMULATION */
+const handlerPromQueryRange = require('./lib/handlers/prom_query_range.js').bind(this)
+fastify.get('/api/v1/query_range', handlerPromQueryRange)
+fastify.get('/api/v1/labels', handlerLabel) // piggyback on qryn labels
+fastify.get('/api/v1/label/:name/values', handlerLabelValues) // piggyback on qryn values
+
+
 /* QRYN-VIEW Optional Handler */
 if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
   fastify.register(require('fastify-static'), {
