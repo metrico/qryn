@@ -394,10 +394,18 @@ const handlerPromQueryRange = require('./lib/handlers/prom_query_range.js').bind
 fastify.get('/api/v1/query_range', handlerPromQueryRange)
 const handlerPromQuery = require('./lib/handlers/prom_query.js').bind(this)
 fastify.get('/api/v1/query', handlerPromQuery)
-fastify.get('/api/v1/labels', handlerLabel) // piggyback on qryn labels
-fastify.get('/api/v1/label/:name/values', handlerLabelValues) // piggyback on qryn values
-fastify.post('/api/v1/labels', handlerLabel) // piggyback on qryn labels
-fastify.post('/api/v1/label/:name/values', handlerLabelValues) // piggyback on qryn values
+const handlerPromLabel = require('./lib/handlers/promlabel.js').bind(this)
+const handlerPromLabelValues = require('./lib/handlers/promlabel_values.js').bind(this)
+fastify.get('/api/v1/labels', handlerPromLabel) // piggyback on qryn labels
+fastify.get('/api/v1/label/:name/values', handlerPromLabelValues) // piggyback on qryn values
+fastify.post('/api/v1/labels', handlerPromLabel) // piggyback on qryn labels
+fastify.post('/api/v1/label/:name/values', handlerPromLabelValues) // piggyback on qryn values
+const handlerPromDefault = require('./lib/handlers/prom_default.js').bind(this)
+fastify.post('/api/v1/metadata', handlerPromDefault) // default handler TBD
+fastify.post('/api/v1/rules', handlerPromDefault) // default handler TBD
+fastify.post('/api/v1/query_exemplars', handlerPromDefault) // default handler TBD
+fastify.post('/api/v1/status/buildinfo', handlerPromDefault) // default handler TBD
+
 
 /* QRYN-VIEW Optional Handler */
 if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
