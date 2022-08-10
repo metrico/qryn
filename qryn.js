@@ -396,7 +396,8 @@ const handlerPromQuery = require('./lib/handlers/prom_query.js').bind(this)
 fastify.get('/api/v1/query', handlerPromQuery)
 fastify.get('/api/v1/labels', handlerLabel) // piggyback on qryn labels
 fastify.get('/api/v1/label/:name/values', handlerLabelValues) // piggyback on qryn values
-
+fastify.post('/api/v1/labels', handlerLabel) // piggyback on qryn labels
+fastify.post('/api/v1/label/:name/values', handlerLabelValues) // piggyback on qryn values
 
 /* QRYN-VIEW Optional Handler */
 if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
