@@ -64,7 +64,7 @@
     "xxhash-wasm": "^0.4.2",
     "yaml": "^1.10.2",
     "json-stable-stringify": "^1.0.1",
-    "@qxip/promql2logql": "^1.0.4"
+    "@qxip/promql2logql": "^1.0.5"
   },
   "devDependencies": {
     "casual": "^1.6.2",
