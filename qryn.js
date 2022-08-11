@@ -401,10 +401,10 @@ fastify.get('/api/v1/label/:name/values', handlerPromLabelValues) // piggyback o
 fastify.post('/api/v1/labels', handlerPromLabel) // piggyback on qryn labels
 fastify.post('/api/v1/label/:name/values', handlerPromLabelValues) // piggyback on qryn values
 const handlerPromDefault = require('./lib/handlers/prom_default.js').bind(this)
-fastify.post('/api/v1/metadata', handlerPromDefault) // default handler TBD
-fastify.post('/api/v1/rules', handlerPromDefault) // default handler TBD
-fastify.post('/api/v1/query_exemplars', handlerPromDefault) // default handler TBD
-fastify.post('/api/v1/status/buildinfo', handlerPromDefault) // default handler TBD
+fastify.get('/api/v1/metadata', handlerPromDefault) // default handler TBD
+fastify.get('/api/v1/rules', handlerPromDefault) // default handler TBD
+fastify.get('/api/v1/query_exemplars', handlerPromDefault) // default handler TBD
+fastify.get('/api/v1/status/buildinfo', handlerPromDefault) // default handler TBD
 
 
 /* QRYN-VIEW Optional Handler */
