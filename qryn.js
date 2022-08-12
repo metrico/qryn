@@ -392,7 +392,7 @@ fastify.post('/api/prom/remote/write', require('./lib/handlers/prom_push.js').bi
 /* INFLUX WRITE Handlers */
 const handlerInfluxWrite = require('./lib/handlers/influx_write.js').bind(this)
 fastify.post('/write', handlerInfluxWrite)
-fastify.post('/influx/write', handlerInfluxWrite)
+fastify.post('/influx/api/v2/write', handlerInfluxWrite)
 
 /* QRYN-VIEW Optional Handler */
 if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
