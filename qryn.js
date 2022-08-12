@@ -389,6 +389,11 @@ fastify.get('/prometheus/api/v1/rules', require('./lib/handlers/alerts/prom_get_
 fastify.post('/api/v1/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
 fastify.post('/api/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
 
+/* INFLUX WRITE Handlers */
+const handlerInfluxWrite = require('./lib/handlers/influx_write.js').bind(this)
+fastify.post('/write', handlerInfluxWrite).bind(this))
+fastify.post('/influx/write', handlerInfluxWrite).bind(this))
+
 /* QRYN-VIEW Optional Handler */
 if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
   fastify.register(require('fastify-static'), {
