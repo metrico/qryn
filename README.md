@@ -3,12 +3,12 @@
 [![Codefresh build status]( https://g.codefresh.io/api/badges/pipeline/lmangani/lmangani%2FcLoki%2FcLoki?branch=master&key=eyJhbGciOiJIUzI1NiJ9.NTkxMzIxNGZlNjQxOWIwMDA2OWY1ZjU4.s1Y7vvE73ZWAIGYb4YCkATleW61RZ8sKypOc8Vae1c0&type=cf-1)]( https://g.codefresh.io/pipelines/cLoki/builds?repoOwner=lmangani&repoName=cLoki&serviceName=lmangani%2FcLoki&filter=trigger:build~Build;branch:master;pipeline:5cdf4a833a13130275ac87a8~cLoki)
 ![CodeQL](https://github.com/lmangani/cLoki/workflows/CodeQL/badge.svg)
 
-# qryn 
+# [qryn](https://metrico.in/qryn) 
 _/ˈkwɪr..ɪŋ/_
 
 ### LogQL for ClickHouse, _and beyond_
 
-**qryn** is a flexible **LogQL API** built on top of [ClickHouse](https://clickhouse.com/) with _native support for popular data ingestion formats_<br/>
+**qryn** is a polyglot **LogQL API** built on top of [ClickHouse](https://clickhouse.com/) with _native support for popular data ingestion formats_<br/>
 - Built in [Explore UI](https://github.com/metrico/cloki-view) and [LogQL CLI](https://github.com/lmangani/vLogQL) for querying and extracting data
 - Native [Grafana](http://docs.grafana.org/features/explore/) [^3] and [LogQL](https://grafana.com/docs/loki/latest/logql/) APIs for [querying](https://github.com/lmangani/qryn/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/qryn/wiki/Inserting-Logs-to-cLoki), [tracing](https://github.com/lmangani/qryn/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/qryn/wiki/Ruler---Alerts) [^2] 
 - Powerful pipeline to dynamically search, filter and extract data from logs, events, traces _and beyond_
@@ -17,7 +17,7 @@ _/ˈkwɪr..ɪŋ/_
 - Cloud native, stateless and compact design
 <br>
 
-:octocat: Get started using our [Wiki](https://github.com/lmangani/qryn/wiki) :bulb: 
+:octocat: Get started using our [Documentation](https://metrico.in/qryn) or consult the [Wiki](https://github.com/lmangani/qryn/wiki) :bulb: 
 
 ⚠️ Existing user and confused? The project has been renamed to `qryn` _(/ˈkwɪr..ɪŋ/)_ 👍 
 
