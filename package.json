@@ -63,7 +63,8 @@
     "ws": "^8.4.0",
     "xxhash-wasm": "^0.4.2",
     "yaml": "^1.10.2",
-    "json-stable-stringify": "^1.0.1"
+    "json-stable-stringify": "^1.0.1",
+    "@qxip/influx-line-protocol-parser": "^0.2.1"
   },
   "devDependencies": {
     "casual": "^1.6.2",
