@@ -406,6 +406,10 @@ fastify.get('/api/v1/rules', handlerPromDefault) // default handler TBD
 fastify.get('/api/v1/query_exemplars', handlerPromDefault) // default handler TBD
 fastify.get('/api/v1/status/buildinfo', handlerPromDefault) // default handler TBD
 
+/* INFLUX WRITE Handlers */
+const handlerInfluxWrite = require('./lib/handlers/influx_write.js').bind(this)
+fastify.post('/write', handlerInfluxWrite)
+fastify.post('/influx/api/v2/write', handlerInfluxWrite)
 
 /* QRYN-VIEW Optional Handler */
 if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
