@@ -180,7 +180,7 @@ const fastify = require('fastify')({
 })
 
 fastify.register(require('fastify-url-data'))
-fastify.register(require('fastify-websocket'))
+fastify.register(require('@fastify/websocket'))
 
 /* Fastify local metrics exporter */
 if (process.env.FASTIFY_METRICS){
@@ -189,7 +189,7 @@ if (process.env.FASTIFY_METRICS){
 }
 /* CORS Helper */
 const CORS = process.env.CORS_ALLOW_ORIGIN || '*'
-fastify.register(require('fastify-cors'), {
+fastify.register(require('@fastify/cors'), {
   origin: CORS
 })
 
@@ -396,7 +396,7 @@ fastify.post('/influx/api/v2/write', handlerInfluxWrite)
 
 /* QRYN-VIEW Optional Handler */
 if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
-  fastify.register(require('fastify-static'), {
+  fastify.register(require('@fastify/static'), {
     root: path.join(__dirname, 'view'),
     prefix: '/'
   })
