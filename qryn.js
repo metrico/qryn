@@ -404,8 +404,9 @@ if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
 
 // Run API Service
 fastify.listen(
-  process.env.PORT || 3100,
-  process.env.HOST || '0.0.0.0',
+  { port: process.env.PORT || 3100,
+    host: process.env.HOST || '0.0.0.0'
+  },
   (err, address) => {
     if (err) throw err
     logger.info('Qryn API up')
