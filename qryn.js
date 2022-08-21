@@ -389,6 +389,23 @@ fastify.get('/prometheus/api/v1/rules', require('./lib/handlers/alerts/prom_get_
 fastify.post('/api/v1/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
 fastify.post('/api/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
 
+/* PROMQETHEUS API EMULATION */
+const handlerPromQueryRange = require('./lib/handlers/prom_query_range.js').bind(this)
+fastify.get('/api/v1/query_range', handlerPromQueryRange)
+const handlerPromQuery = require('./lib/handlers/prom_query.js').bind(this)
+fastify.get('/api/v1/query', handlerPromQuery)
+const handlerPromLabel = require('./lib/handlers/promlabel.js').bind(this)
+const handlerPromLabelValues = require('./lib/handlers/promlabel_values.js').bind(this)
+fastify.get('/api/v1/labels', handlerPromLabel) // piggyback on qryn labels
+fastify.get('/api/v1/label/:name/values', handlerPromLabelValues) // piggyback on qryn values
+fastify.post('/api/v1/labels', handlerPromLabel) // piggyback on qryn labels
+fastify.post('/api/v1/label/:name/values', handlerPromLabelValues) // piggyback on qryn values
+const handlerPromDefault = require('./lib/handlers/prom_default.js').bind(this)
+fastify.get('/api/v1/metadata', handlerPromDefault) // default handler TBD
+fastify.get('/api/v1/rules', handlerPromDefault) // default handler TBD
+fastify.get('/api/v1/query_exemplars', handlerPromDefault) // default handler TBD
+fastify.get('/api/v1/status/buildinfo', handlerPromDefault) // default handler TBD
+
 /* INFLUX WRITE Handlers */
 const handlerInfluxWrite = require('./lib/handlers/influx_write.js').bind(this)
 fastify.post('/write', handlerInfluxWrite)
