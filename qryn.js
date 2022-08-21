@@ -19,7 +19,7 @@ const { EventEmitter } = require('events')
 const fs = require('fs')
 const path = require('path')
 const protoBuff = require('protocol-buffers')
-const messages = protoBuff(fs.readFileSync('lib/loki.proto'))
+const messages = protoBuff(fs.readFileSync(path.join(__dirname,'lib/loki.proto')))
 const protobufjs = require('protobufjs')
 const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib/prompb.proto')).lookupType('WriteRequest')
 
