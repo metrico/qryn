@@ -375,7 +375,9 @@ fastify.get('/loki/api/v1/label/:name/values', handlerLabelValues)
 const handlerSeries = require('./lib/handlers/series.js').bind(this)
 fastify.get('/loki/api/v1/series', handlerSeries)
 
-fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/tail').bind(this))
+fastify.register(async (fastify) => {
+  fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/tail').bind(this))
+})
 
 /* ALERT MANAGER Handlers */
 fastify.get('/api/prom/rules', require('./lib/handlers/alerts/get_rules').bind(this))
