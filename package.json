@@ -13,7 +13,9 @@
     "pretty": "node qryn.js | pino-pretty",
     "postinstall": "patch-package",
     "install-view": "mkdir -p view && curl -L https://github.com/metrico/cloki-view/releases/latest/download/dist.zip | busybox unzip - -d ./view",
-    "lint": "npx eslint --fix *.js lib parser plugins test"
+    "lint": "npx eslint --fix *.js lib parser plugins test",
+    "bun-install": "bun install --platform node",
+    "bun-start": "bun run qryn.js"
   },
   "standard": {
     "env": [
@@ -33,20 +35,22 @@
   "dependencies": {
     "@apla/clickhouse": "^1.6.4",
     "@cloki/clickhouse-sql": "1.2.2",
+    "@fastify/cors": "^8.1.0",
+    "@fastify/static": "^6.5.0",
+    "@fastify/websocket": "^7.0.0",
+    "@qxip/influx-line-protocol-parser": "^0.2.1",
     "@qxip/plugnplay": "^3.3.1",
     "axios": "^0.21.4",
     "bnf": "^1.0.1",
     "date-fns": "^2.27.0",
-    "fastify": "^3.25.1",
+    "fastify": "^4.5.2",
     "fastify-basic-auth": "^0.4.0",
-    "fastify-cors": "^6.0.2",
     "fastify-metrics": "^8.0.0",
-    "fastify-static": "^4.5.0",
     "fastify-url-data": "^2.4.0",
-    "fastify-websocket": "^4.0.0",
     "glob": "^7.1.2",
     "handlebars": "^4.7.7",
     "handlebars-helpers": "^0.9.8",
+    "json-stable-stringify": "^1.0.1",
     "jsonic": "^0.3.1",
     "patch-package": "^6.4.7",
     "pino": "^7.6.5",
@@ -60,12 +64,10 @@
     "snappyjs": "^0.6.1",
     "stream-chain": "^2.2.4",
     "stream-json": "^1.7.3",
-    "ws": "^8.4.0",
+    "ws": "^8.0.0",
     "xxhash-wasm": "^0.4.2",
     "yaml": "^1.10.2",
-    "json-stable-stringify": "^1.0.1",
-    "@qxip/promql2logql": "^1.0.10",
-    "@qxip/influx-line-protocol-parser": "^0.2.1"
+    "@qxip/promql2logql": "^1.0.10"
   },
   "devDependencies": {
     "casual": "^1.6.2",

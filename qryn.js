@@ -9,6 +9,9 @@ this.readonly = process.env.READONLY || false
 this.http_user = process.env.QRYN_LOGIN || process.env.CLOKI_LOGIN || undefined
 this.http_password = process.env.QRYN_PASSWORD || process.env.CLOKI_PASSWORD || undefined
 
+this.maxListeners = process.env.MAXLISTENERS || 0;
+process.setMaxListeners(this.maxListeners)
+
 require('./plugins/engine')
 
 const DATABASE = require('./lib/db/clickhouse')
@@ -19,9 +22,16 @@ const { EventEmitter } = require('events')
 const fs = require('fs')
 const path = require('path')
 const protoBuff = require('protocol-buffers')
-const messages = protoBuff(fs.readFileSync('lib/loki.proto'))
+const messages = protoBuff(fs.readFileSync(path.join(__dirname,'lib/loki.proto')))
 const protobufjs = require('protobufjs')
 const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib/prompb.proto')).lookupType('WriteRequest')
+
+/* Streaming JSON parser for lengthless TEMPOs */
+const StreamArray = require('stream-json/streamers/StreamArray')
+const { parser: jsonlParser } = require('stream-json/jsonl/Parser')
+/*const { StringStream } = require('scramjet')
+const { Transform } = require('stream')*/
+/* ----------------------- */
 
 const logger = require('./lib/logger')
 
@@ -112,10 +122,54 @@ async function getContentBody (req) {
 /**
  *
  * @param req {FastifyRequest}
+ * @returns {any}
+ */
+async function parseTempoPush (req) {
+  if (req.routerPath === '/tempo/api/push' || req.routerPath === '/api/v2/spans') {
+    const firstData = await new Promise((resolve, reject) => {
+      req.raw.once('data', resolve)
+      req.raw.once('error', reject)
+      req.raw.once('close', () => resolve(null))
+      req.raw.once('end', () => resolve(null))
+    })
+    const parser = StreamArray.withParser()
+    parser.on('error', err => { parser.error = err })
+    parser.write(firstData || '[]')
+    if (!firstData) {
+      parser.end()
+      return parser
+    }
+    req.raw.pipe(parser)
+    return parser
+  }
+  return undefined
+}
+
+/**
+ *
+ * @param req {FastifyRequest}
+ * @returns {any}
+ */
+function parseTempoNDJson (req) {
+  if (req.routerPath === '/tempo/api/push' || req.routerPath === '/api/v2/spans') {
+    const parser = req.raw.pipe(jsonlParser())
+    parser.on('error', err => { parser.error = err })
+    return parser
+  }
+  return undefined
+}
+
+/**
+ *
+ * @param req {FastifyRequest}
  * @returns {Promise<void>}
  */
 async function genericJSONParser (req) {
   try {
+    const tempoPush = await parseTempoPush(req)
+    if (tempoPush) {
+      return tempoPush
+    }
     const length = getContentLength(req, 1e9)
     if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
       return
@@ -135,6 +189,10 @@ async function genericJSONParser (req) {
  */
 async function genericJSONOrYAMLParser (req) {
   try {
+    const tempoPush = await parseTempoPush(req)
+    if (tempoPush) {
+      return tempoPush
+    }
     const length = getContentLength(req, 1e9)
     if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
       return
@@ -180,16 +238,16 @@ const fastify = require('fastify')({
 })
 
 fastify.register(require('fastify-url-data'))
-fastify.register(require('fastify-websocket'))
+fastify.register(require('@fastify/websocket'))
 
 /* Fastify local metrics exporter */
-if (process.env.FASTIFY_METRICS){
-  const metricsPlugin = require('fastify-metrics');
-  fastify.register(metricsPlugin, { endpoint: '/metrics' });
+if (process.env.FASTIFY_METRICS) {
+  const metricsPlugin = require('fastify-metrics')
+  fastify.register(metricsPlugin, { endpoint: '/metrics' })
 }
 /* CORS Helper */
 const CORS = process.env.CORS_ALLOW_ORIGIN || '*'
-fastify.register(require('fastify-cors'), {
+fastify.register(require('@fastify/cors'), {
   origin: CORS
 })
 
@@ -292,6 +350,10 @@ fastify.addContentTypeParser('application/json', {},
 
 fastify.addContentTypeParser('application/x-ndjson', {},
   async function (req, body, done) {
+    const tempoNDJson = parseTempoNDJson(req)
+    if (tempoNDJson) {
+      return tempoNDJson
+    }
     return await genericJSONParser(req)
   })
 
@@ -345,6 +407,9 @@ fastify.get('/api/search/tags', handlerTempoLabel)
 const handlerTempoLabelValues = require('./lib/handlers/tags_values.js').bind(this)
 fastify.get('/api/search/tag/:name/values', handlerTempoLabelValues)
 
+/* Tempo Traces Query Handler */
+fastify.get('/api/search', handlerTempoTraces)
+
 /* Tempo Echo Handler */
 const handlerTempoEcho = require('./lib/handlers/echo.js').bind(this)
 fastify.get('/api/echo', handlerTempoEcho)
@@ -375,7 +440,9 @@ fastify.get('/loki/api/v1/label/:name/values', handlerLabelValues)
 const handlerSeries = require('./lib/handlers/series.js').bind(this)
 fastify.get('/loki/api/v1/series', handlerSeries)
 
-fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/tail').bind(this))
+fastify.register(async (fastify) => {
+  fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/tail').bind(this))
+})
 
 /* ALERT MANAGER Handlers */
 fastify.get('/api/prom/rules', require('./lib/handlers/alerts/get_rules').bind(this))
@@ -413,7 +480,7 @@ fastify.post('/influx/api/v2/write', handlerInfluxWrite)
 
 /* QRYN-VIEW Optional Handler */
 if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
-  fastify.register(require('fastify-static'), {
+  fastify.register(require('@fastify/static'), {
     root: path.join(__dirname, 'view'),
     prefix: '/'
   })
@@ -421,8 +488,9 @@ if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
 
 // Run API Service
 fastify.listen(
-  process.env.PORT || 3100,
-  process.env.HOST || '0.0.0.0',
+  { port: process.env.PORT || 3100,
+    host: process.env.HOST || '0.0.0.0'
+  },
   (err, address) => {
     if (err) throw err
     logger.info('Qryn API up')
