@@ -1,5 +1,5 @@
 # Qryn
-FROM node:14-slim
+FROM node:16-slim
 
 # BUILD FORCE
 ENV BUILD 703030
