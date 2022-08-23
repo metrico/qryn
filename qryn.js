@@ -408,7 +408,8 @@ const handlerTempoLabelValues = require('./lib/handlers/tags_values.js').bind(th
 fastify.get('/api/search/tag/:name/values', handlerTempoLabelValues)
 
 /* Tempo Traces Query Handler */
-fastify.get('/api/search', handlerTempoTraces)
+const handlerTempoSearch = require('./lib/handlers/tempo_search.js').bind(this)
+fastify.get('/api/search', handlerTempoSearch)
 
 /* Tempo Echo Handler */
 const handlerTempoEcho = require('./lib/handlers/echo.js').bind(this)
