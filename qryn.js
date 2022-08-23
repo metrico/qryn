@@ -28,6 +28,8 @@ const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib/prompb.proto'
 
 /* Streaming JSON parser for lengthless TEMPOs */
 const StreamArray = require('stream-json/streamers/StreamArray')
+
+const {parser: jsonlParser} =  require('stream-json/jsonl/Parser');
 /* ----------------------- */
 
 const logger = require('./lib/logger')
@@ -119,12 +121,41 @@ async function getContentBody (req) {
 /**
  *
  * @param req {FastifyRequest}
+ * @returns {any}
+ */
+function parseTempoPush (req) {
+  if (req.routerPath === '/tempo/api/push' || req.routerPath === '/api/v2/spans') {
+    const parser = req.raw.pipe(StreamArray.withParser())
+    parser.on('error', err => { parser.error = err })
+    return parser
+  }
+  return undefined
+}
+
+/**
+ *
+ * @param req {FastifyRequest}
+ * @returns {any}
+ */
+function parseTempoNDJson (req) {
+  if (req.routerPath === '/tempo/api/push' || req.routerPath === '/api/v2/spans') {
+    const parser = req.raw.pipe(jsonlParser())
+    parser.on('error', err => { parser.error = err })
+    return parser
+  }
+  return undefined
+}
+
+/**
+ *
+ * @param req {FastifyRequest}
  * @returns {Promise<void>}
  */
 async function genericJSONParser (req) {
   try {
-    if (req.routerPath === '/tempo/api/push' || req.routerPath === '/api/v2/spans') {
-      return req.raw.pipe(StreamArray.withParser())
+    const tempoPush = parseTempoPush(req)
+    if (tempoPush) {
+      return tempoPush
     }
     const length = getContentLength(req, 1e9)
     if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
@@ -145,6 +176,10 @@ async function genericJSONParser (req) {
  */
 async function genericJSONOrYAMLParser (req) {
   try {
+    const tempoPush = parseTempoPush(req)
+    if (tempoPush) {
+      return tempoPush
+    }
     const length = getContentLength(req, 1e9)
     if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
       return
@@ -302,6 +337,10 @@ fastify.addContentTypeParser('application/json', {},
 
 fastify.addContentTypeParser('application/x-ndjson', {},
   async function (req, body, done) {
+    const tempoNDJson = parseTempoNDJson(req)
+    if (tempoNDJson) {
+      return tempoNDJson
+    }
     return await genericJSONParser(req)
   })
 
