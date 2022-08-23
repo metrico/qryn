@@ -398,7 +398,6 @@ this.tempo_span = process.env.TEMPO_SPAN || 24
 const handlerTempoTraces = require('./lib/handlers/tempo_traces.js').bind(this)
 fastify.get('/api/traces/:traceId', handlerTempoTraces)
 fastify.get('/api/traces/:traceId/:json', handlerTempoTraces)
-fastify.get('/api/search', handlerTempoTraces)
 
 /* Tempo Tag Handlers */
 const handlerTempoLabel = require('./lib/handlers/tags.js').bind(this)
@@ -407,6 +406,9 @@ fastify.get('/api/search/tags', handlerTempoLabel)
 /* Tempo Tag Value Handler */
 const handlerTempoLabelValues = require('./lib/handlers/tags_values.js').bind(this)
 fastify.get('/api/search/tag/:name/values', handlerTempoLabelValues)
+
+/* Tempo Traces Query Handler */
+fastify.get('/api/search', handlerTempoTraces)
 
 /* Tempo Echo Handler */
 const handlerTempoEcho = require('./lib/handlers/echo.js').bind(this)
