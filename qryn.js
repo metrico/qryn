@@ -26,6 +26,10 @@ const messages = protoBuff(fs.readFileSync(path.join(__dirname,'lib/loki.proto')
 const protobufjs = require('protobufjs')
 const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib/prompb.proto')).lookupType('WriteRequest')
 
+/* Streaming JSON parser for lengthless TEMPOs */
+const StreamArray = require('stream-json/streamers/StreamArray')
+/* ----------------------- */
+
 const logger = require('./lib/logger')
 
 /* Alerting */
@@ -119,6 +123,9 @@ async function getContentBody (req) {
  */
 async function genericJSONParser (req) {
   try {
+    if (req.routerPath === '/tempo/api/push' || req.routerPath === '/api/v2/spans') {
+      return req.raw.pipe(StreamArray.withParser())
+    }
     const length = getContentLength(req, 1e9)
     if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
       return
@@ -186,9 +193,9 @@ fastify.register(require('fastify-url-data'))
 fastify.register(require('@fastify/websocket'))
 
 /* Fastify local metrics exporter */
-if (process.env.FASTIFY_METRICS){
-  const metricsPlugin = require('fastify-metrics');
-  fastify.register(metricsPlugin, { endpoint: '/metrics' });
+if (process.env.FASTIFY_METRICS) {
+  const metricsPlugin = require('fastify-metrics')
+  fastify.register(metricsPlugin, { endpoint: '/metrics' })
 }
 /* CORS Helper */
 const CORS = process.env.CORS_ALLOW_ORIGIN || '*'
