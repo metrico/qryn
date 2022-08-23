@@ -28,8 +28,9 @@ const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib/prompb.proto'
 
 /* Streaming JSON parser for lengthless TEMPOs */
 const StreamArray = require('stream-json/streamers/StreamArray')
-
-const {parser: jsonlParser} =  require('stream-json/jsonl/Parser');
+const { parser: jsonlParser } = require('stream-json/jsonl/Parser')
+/*const { StringStream } = require('scramjet')
+const { Transform } = require('stream')*/
 /* ----------------------- */
 
 const logger = require('./lib/logger')
@@ -123,10 +124,22 @@ async function getContentBody (req) {
  * @param req {FastifyRequest}
  * @returns {any}
  */
-function parseTempoPush (req) {
+async function parseTempoPush (req) {
   if (req.routerPath === '/tempo/api/push' || req.routerPath === '/api/v2/spans') {
-    const parser = req.raw.pipe(StreamArray.withParser())
+    const firstData = await new Promise((resolve, reject) => {
+      req.raw.once('data', resolve)
+      req.raw.once('error', reject)
+      req.raw.once('close', () => resolve(null))
+      req.raw.once('end', () => resolve(null))
+    })
+    const parser = StreamArray.withParser()
     parser.on('error', err => { parser.error = err })
+    parser.write(firstData || '[]')
+    if (!firstData) {
+      parser.end()
+      return parser
+    }
+    req.raw.pipe(parser)
     return parser
   }
   return undefined
@@ -153,7 +166,7 @@ function parseTempoNDJson (req) {
  */
 async function genericJSONParser (req) {
   try {
-    const tempoPush = parseTempoPush(req)
+    const tempoPush = await parseTempoPush(req)
     if (tempoPush) {
       return tempoPush
     }
@@ -176,7 +189,7 @@ async function genericJSONParser (req) {
  */
 async function genericJSONOrYAMLParser (req) {
   try {
-    const tempoPush = parseTempoPush(req)
+    const tempoPush = await parseTempoPush(req)
     if (tempoPush) {
       return tempoPush
     }
