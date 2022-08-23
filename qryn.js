@@ -9,6 +9,9 @@ this.readonly = process.env.READONLY || false
 this.http_user = process.env.QRYN_LOGIN || process.env.CLOKI_LOGIN || undefined
 this.http_password = process.env.QRYN_PASSWORD || process.env.CLOKI_PASSWORD || undefined
 
+this.maxListeners = process.env.MAXLISTENERS || 0;
+process.setMaxListeners(this.maxListeners)
+
 require('./plugins/engine')
 
 const DATABASE = require('./lib/db/clickhouse')
