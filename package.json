@@ -68,7 +68,7 @@
     "ws": "^8.0.0",
     "xxhash-wasm": "^0.4.2",
     "yaml": "^1.10.2",
-    "@qxip/promql2logql": "^1.0.20"
+    "@qxip/promql2logql": "^1.0.21"
   },
   "devDependencies": {
     "casual": "^1.6.2",
