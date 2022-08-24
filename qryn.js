@@ -462,7 +462,7 @@ fastify.post('/api/prom/remote/write', require('./lib/handlers/prom_push.js').bi
 const handlerPromQueryRange = require('./lib/handlers/prom_query_range.js').bind(this)
 fastify.get('/api/v1/query_range', handlerPromQueryRange)
 const handlerPromQuery = require('./lib/handlers/prom_query.js').bind(this)
-fastify.get('/api/v1/query', handlerPromQuery)
+fastify.all('/api/v1/query', handlerPromQuery)
 const handlerPromLabel = require('./lib/handlers/promlabel.js').bind(this)
 const handlerPromLabelValues = require('./lib/handlers/promlabel_values.js').bind(this)
 fastify.get('/api/v1/labels', handlerPromLabel) // piggyback on qryn labels
