@@ -38,6 +38,7 @@
     "@fastify/cors": "^8.1.0",
     "@fastify/static": "^6.5.0",
     "@fastify/websocket": "^7.0.0",
+    "@fastify/formbody": "^7.0.1",
     "@qxip/influx-line-protocol-parser": "^0.2.1",
     "@qxip/plugnplay": "^3.3.1",
     "axios": "^0.21.4",
@@ -67,7 +68,7 @@
     "ws": "^8.0.0",
     "xxhash-wasm": "^0.4.2",
     "yaml": "^1.10.2",
-    "@qxip/promql2logql": "^1.0.12"
+    "@qxip/promql2logql": "^1.0.21"
   },
   "devDependencies": {
     "casual": "^1.6.2",
