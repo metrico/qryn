@@ -438,9 +438,10 @@ fastify.get('/loki/api/v1/labels', handlerLabel)
 const handlerLabelValues = require('./lib/handlers/label_values.js').bind(this)
 fastify.get('/loki/api/v1/label/:name/values', handlerLabelValues)
 
-/* Series Placeholder - we do not track this as of yet */
+/* Series Handler - experimental support for both Loki and Prometheus */
 const handlerSeries = require('./lib/handlers/series.js').bind(this)
 fastify.get('/loki/api/v1/series', handlerSeries)
+fastify.get('/api/v1/series', handlerSeries)
 
 fastify.register(async (fastify) => {
   fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/tail').bind(this))
