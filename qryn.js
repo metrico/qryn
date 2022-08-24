@@ -55,6 +55,7 @@ this.labelParser = UTILS.labelParser
 const init = DATABASE.init
 this.reloadFingerprints = DATABASE.reloadFingerprints
 this.scanFingerprints = DATABASE.scanFingerprints
+this.scanTempo = DATABASE.scanTempo
 this.instantQueryScan = DATABASE.instantQueryScan
 this.tempoQueryScan = DATABASE.tempoQueryScan
 this.scanMetricFingerprints = DATABASE.scanMetricFingerprints
