@@ -111,7 +111,7 @@ clickhouse({
 
 ### Setup
 
-Check out the [Wiki](https://github.com/lmangani/qryn/wiki) for detailed instructions or choose a quick method:
+Check out the [docs](https://qryn.metrico.in) for detailed instructions or choose a quick method:
 
 ##### :busstop: GIT (Manual)
 Clone this repository, install with `npm`and run using `nodejs` 14.x *(or higher)*
@@ -123,14 +123,12 @@ CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLIC
 Install `qryn` as global package on your system using `npm`
 ```bash
 sudo npm install -g qryn
-cd $(dirname $(readlink -f `which qryn`)) \
-  && CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLICKHOUSE_DB="qryn" qryn
+CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLICKHOUSE_DB="qryn" qryn
 ```
 ##### :busstop: PM2
 ```bash
 sudo npm install -g qryn pm2
-cd $(dirname $(readlink -f `which qryn`)) \
-  && CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLICKHOUSE_DB="qryn" pm2 start qryn
+CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLICKHOUSE_DB="qryn" pm2 start qryn
 pm2 save
 pm2 startup
 ```
