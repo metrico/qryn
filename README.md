@@ -6,7 +6,7 @@
 # [qryn](https://metrico.in/qryn) 
 _/ˈkwɪr..ɪŋ/_
 
-**qryn** is a polyglot **LogQL API** built on top of [ClickHouse](https://clickhouse.com/) with _native support for popular data ingestion formats_<br/>
+**qryn** is a **polyglot observability** stack built on top of [ClickHouse](https://clickhouse.com/) with _native support for popular data ingestion formats_<br/>
 - Built in [Explore UI](https://github.com/metrico/cloki-view) and [LogQL CLI](https://github.com/lmangani/vLogQL) for querying and extracting data
 - Native [Grafana](http://docs.grafana.org/features/explore/) [^3] and [LogQL](https://grafana.com/docs/loki/latest/logql/) APIs for [querying](https://github.com/lmangani/qryn/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/qryn/wiki/Inserting-Logs-to-cLoki), [tracing](https://github.com/lmangani/qryn/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/qryn/wiki/Ruler---Alerts) [^2] 
 - Powerful pipeline to dynamically search, filter and extract data from logs, events, traces _and beyond_
