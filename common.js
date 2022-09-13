@@ -56,6 +56,29 @@ module.exports.durationToMs = (durationStr) => {
   throw new Error('Unsupported duration')
 }
 
+/**
+ *
+ * @param durationStr {string}
+ * @returns {number}
+ */
+module.exports.durationToNs = (durationStr) => {
+  const durations = {
+    ns: 1,
+    us: 1000,
+    ms: 1000000,
+    s: 1000000000,
+    m: 60000000000,
+    h: 60000000000 * 60
+  }
+  for (const k of Object.keys(durations)) {
+    const m = durationStr.match(new RegExp(`^([0-9][.0-9]*)${k}$`))
+    if (m) {
+      return parseInt(m[1]) * durations[k]
+    }
+  }
+  throw new Error('Unsupported duration')
+}
+
 module.exports.LineFmtOption = () => process.env.LINE_FMT || 'handlebars'
 
 module.exports.errors = require('./lib/handlers/errors')
