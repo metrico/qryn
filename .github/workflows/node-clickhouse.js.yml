@@ -5,8 +5,16 @@ name: QRYN CI
 on:
   push:
     branches: [ master ]
+    paths-ignore:
+      - '**.md'
+      - '**.yml'
+      - '**.yaml'
   pull_request:
     branches: [ master ]
+    paths-ignore:
+      - '**.md'
+      - '**.yml'
+      - '**.yaml'
 
 jobs:
   build:

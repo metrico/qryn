@@ -6,9 +6,7 @@
 # [qryn](https://metrico.in/qryn) 
 _/ˈkwɪr..ɪŋ/_
 
-### LogQL for ClickHouse, _and beyond_
-
-**qryn** is a polyglot **LogQL API** built on top of [ClickHouse](https://clickhouse.com/) with _native support for popular data ingestion formats_<br/>
+**qryn** is a **polyglot observability** framework built on top of [ClickHouse](https://clickhouse.com/)<br/>
 - Built in [Explore UI](https://github.com/metrico/cloki-view) and [LogQL CLI](https://github.com/lmangani/vLogQL) for querying and extracting data
 - Native [Grafana](http://docs.grafana.org/features/explore/) [^3] and [LogQL](https://grafana.com/docs/loki/latest/logql/) APIs for [querying](https://github.com/lmangani/qryn/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/qryn/wiki/Inserting-Logs-to-cLoki), [tracing](https://github.com/lmangani/qryn/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/qryn/wiki/Ruler---Alerts) [^2] 
 - Powerful pipeline to dynamically search, filter and extract data from logs, events, traces _and beyond_
@@ -111,7 +109,7 @@ clickhouse({
 
 ### Setup
 
-Check out the [Wiki](https://github.com/lmangani/qryn/wiki) for detailed instructions or choose a quick method:
+Check out the [docs](https://qryn.metrico.in) for detailed instructions or choose a quick method:
 
 ##### :busstop: GIT (Manual)
 Clone this repository, install with `npm`and run using `nodejs` 14.x *(or higher)*
@@ -123,14 +121,12 @@ CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLIC
 Install `qryn` as global package on your system using `npm`
 ```bash
 sudo npm install -g qryn
-cd $(dirname $(readlink -f `which qryn`)) \
-  && CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLICKHOUSE_DB="qryn" qryn
+CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLICKHOUSE_DB="qryn" qryn
 ```
 ##### :busstop: PM2
 ```bash
 sudo npm install -g qryn pm2
-cd $(dirname $(readlink -f `which qryn`)) \
-  && CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLICKHOUSE_DB="qryn" pm2 start qryn
+CLICKHOUSE_SERVER="my.clickhouse.server" CLICKHOUSE_AUTH="default:password" CLICKHOUSE_DB="qryn" pm2 start qryn
 pm2 save
 pm2 startup
 ```

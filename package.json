@@ -1,6 +1,6 @@
 {
   "name": "qryn",
-  "version": "2.1.16",
+  "version": "2.1.21",
   "description": "LogQL API with Clickhouse Backend",
   "main": "qryn.js",
   "bin": {
@@ -38,6 +38,7 @@
     "@fastify/cors": "^8.1.0",
     "@fastify/static": "^6.5.0",
     "@fastify/websocket": "^7.0.0",
+    "@fastify/formbody": "^7.0.1",
     "@qxip/influx-line-protocol-parser": "^0.2.1",
     "@qxip/plugnplay": "^3.3.1",
     "axios": "^0.21.4",
@@ -50,6 +51,7 @@
     "glob": "^7.1.2",
     "handlebars": "^4.7.7",
     "handlebars-helpers": "^0.9.8",
+    "logfmt": "^1.3.2",
     "json-stable-stringify": "^1.0.1",
     "jsonic": "^0.3.1",
     "patch-package": "^6.4.7",
@@ -67,7 +69,7 @@
     "ws": "^8.0.0",
     "xxhash-wasm": "^0.4.2",
     "yaml": "^1.10.2",
-    "@qxip/promql2logql": "^1.0.10"
+    "@qxip/promql2logql": "^1.0.21"
   },
   "devDependencies": {
     "casual": "^1.6.2",
@@ -78,7 +80,6 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^5.2.0",
     "jest": "^27.4.5",
-    "logfmt": "^1.3.2",
     "pino-pretty": "^7.5.1",
     "standard": "^16.0.4"
   },
