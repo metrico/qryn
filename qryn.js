@@ -61,6 +61,9 @@ this.tempoQueryScan = DATABASE.tempoQueryScan
 this.scanMetricFingerprints = DATABASE.scanMetricFingerprints
 this.tempoQueryScan = DATABASE.tempoQueryScan
 this.scanClickhouse = DATABASE.scanClickhouse
+this.pushZipkin = DATABASE.pushZipkin
+this.queryTempoTags = DATABASE.queryTempoTags
+this.queryTempoValues = DATABASE.queryTempoValues
 let profiler = null
 
 const shaper = {
@@ -402,11 +405,12 @@ fastify.get('/api/traces/:traceId', handlerTempoTraces)
 fastify.get('/api/traces/:traceId/:json', handlerTempoTraces)
 
 /* Tempo Tag Handlers */
-const handlerTempoLabel = require('./lib/handlers/tags.js').bind(this)
+
+const handlerTempoLabel = require('./lib/handlers/tempo_tags').bind(this)
 fastify.get('/api/search/tags', handlerTempoLabel)
 
 /* Tempo Tag Value Handler */
-const handlerTempoLabelValues = require('./lib/handlers/tags_values.js').bind(this)
+const handlerTempoLabelValues = require('./lib/handlers/tempo_values').bind(this)
 fastify.get('/api/search/tag/:name/values', handlerTempoLabelValues)
 
 /* Tempo Traces Query Handler */
@@ -482,6 +486,10 @@ fastify.get('/api/v1/status/buildinfo', handlerPromDefault) // default handler T
 const handlerInfluxWrite = require('./lib/handlers/influx_write.js').bind(this)
 fastify.post('/write', handlerInfluxWrite)
 fastify.post('/influx/api/v2/write', handlerInfluxWrite)
+/* INFLUX HEALTH Handlers */
+const handlerInfluxHealth = require('./lib/handlers/influx_health.js').bind(this)
+fastify.get('/health', handlerInfluxHealth)
+fastify.get('/influx/health', handlerInfluxHealth)
 
 /* QRYN-VIEW Optional Handler */
 if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
