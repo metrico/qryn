@@ -486,6 +486,10 @@ fastify.get('/api/v1/status/buildinfo', handlerPromDefault) // default handler T
 const handlerInfluxWrite = require('./lib/handlers/influx_write.js').bind(this)
 fastify.post('/write', handlerInfluxWrite)
 fastify.post('/influx/api/v2/write', handlerInfluxWrite)
+/* INFLUX HEALTH Handlers */
+const handlerInfluxHealth = require('./lib/handlers/influx_health.js').bind(this)
+fastify.get('/health', handlerInfluxHealth)
+fastify.get('/influx/api/v2/write/health', handlerInfluxHealth)
 
 /* QRYN-VIEW Optional Handler */
 if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
