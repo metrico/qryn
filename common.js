@@ -82,3 +82,18 @@ module.exports.durationToNs = (durationStr) => {
 module.exports.LineFmtOption = () => process.env.LINE_FMT || 'handlebars'
 
 module.exports.errors = require('./lib/handlers/errors')
+/**
+ * @returns {string}
+ */
+module.exports.samplesOrderingRule = () => {
+  return process.env.ADVANCED_SAMPLES_ORDERING
+    ? process.env.ADVANCED_SAMPLES_ORDERING
+    : 'timestamp_ns'
+}
+
+/**
+ * @returns {boolean}
+ */
+module.exports.isCustomSamplesOrderingRule = () => {
+  return process.env.ADVANCED_SAMPLES_ORDERING && process.env.ADVANCED_SAMPLES_ORDERING !== 'timestamp_ns'
+}
