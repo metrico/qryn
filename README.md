@@ -4,9 +4,9 @@
 ![CodeQL](https://github.com/lmangani/cLoki/workflows/CodeQL/badge.svg)
 
 # [qryn](https://metrico.in/qryn) 
-_/ˈkwɪr..ɪŋ/_
+> ... it's pronounced /ˈkwɪr..ɪŋ/ or just querying
 
-**qryn** is a **polyglot observability** framework built on top of [ClickHouse](https://clickhouse.com/)<br/>
+:rocket: **qryn** is a **polyglot observability** framework built on top of [ClickHouse](https://clickhouse.com/)<br/>
 - Built in [Explore UI](https://github.com/metrico/cloki-view) and [LogQL CLI](https://github.com/lmangani/vLogQL) for querying and extracting data
 - Native [Grafana](http://docs.grafana.org/features/explore/) [^3] and [LogQL](https://grafana.com/docs/loki/latest/logql/) APIs for [querying](https://github.com/lmangani/qryn/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/qryn/wiki/Inserting-Logs-to-cLoki), [tracing](https://github.com/lmangani/qryn/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/qryn/wiki/Ruler---Alerts) [^2] 
 - Powerful pipeline to dynamically search, filter and extract data from logs, events, traces _and beyond_
@@ -17,7 +17,7 @@ _/ˈkwɪr..ɪŋ/_
 
 :octocat: Get started using our [Documentation](https://metrico.in/qryn) or consult the [Wiki](https://github.com/lmangani/qryn/wiki) :bulb: 
 
-⚠️ Existing user and confused? The project has been renamed to `qryn` _(/ˈkwɪr..ɪŋ/)_ 👍 
+⚠️ Existing user and confused? The project has been renamed to `qryn` 👍 
 
 
 ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif)
