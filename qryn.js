@@ -21,9 +21,8 @@ const { EventEmitter } = require('events')
 /* ProtoBuf Helpers */
 const fs = require('fs')
 const path = require('path')
-const protoBuff = require('protocol-buffers')
-const messages = protoBuff(fs.readFileSync(path.join(__dirname,'lib/loki.proto')))
 const protobufjs = require('protobufjs')
+const PushRequest = protobufjs.loadSync(path.join(__dirname, 'lib', 'loki.proto')).lookupType('PushRequest')
 const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib/prompb.proto')).lookupType('WriteRequest')
 
 /* Streaming JSON parser for lengthless TEMPOs */
@@ -310,7 +309,7 @@ try {
         })
         await new Promise(resolve => req.raw.once('end', resolve))
         // Prometheus Protobuf Write Handler
-        if (req.url === '/api/v1/prom/remote/write') {
+        if (req.url === '/api/v1/prom/remote/write' || req.url === '/prom/remote/write') {
           let _data = await snappy.uncompress(body)
           _data = WriteRequest.decode(_data)
           _data.timeseries = _data.timeseries.map(s => ({
@@ -327,13 +326,16 @@ try {
           // Loki Protobuf Push Handler
         } else {
           let _data = await snappy.uncompress(body)
-          _data = messages.PushRequest.decode(Buffer.from(_data))
+          _data = PushRequest.decode(_data)
           _data.streams = _data.streams.map(s => ({
             ...s,
             entries: s.entries.map(e => {
+              const ts = e.timestamp
+                ? BigInt(e.timestamp.seconds) * BigInt(1e9) + BigInt(e.timestamp.nanos)
+                : BigInt(Date.now().toString() + '000000')
               return {
                 ...e,
-                timestamp: BigInt(e.timestamp.seconds) * BigInt(1e9) + BigInt(e.timestamp.nanos)
+                timestamp: ts
               }
             })
           }))
@@ -464,6 +466,7 @@ fastify.get('/prometheus/api/v1/rules', require('./lib/handlers/alerts/prom_get_
 /* PROMETHEUS REMOTE WRITE Handlers */
 fastify.post('/api/v1/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
 fastify.post('/api/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
+fastify.post('/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
 
 /* PROMQETHEUS API EMULATION */
 const handlerPromQueryRange = require('./lib/handlers/prom_query_range.js').bind(this)
