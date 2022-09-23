@@ -1,0 +1,4 @@
+id: custom_processor
+name: Custom Processor Plugin
+description: plugin to custom process a logql / promql request
+loader: index.js
