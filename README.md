@@ -52,10 +52,6 @@ The Grafana Tempo datasource can be used to natively browse and query _traces_ i
 
 <img src="https://user-images.githubusercontent.com/1423657/184538094-13c11500-24ef-4468-9f33-dc9d564238e3.gif" width=800 class=border />
 
-### Latest changelog notes
-
-!!! The default hash function is switched to xxhash64. Please change it back with `HASH=short-hash` env variable if it's important for your setup.
-
 ------------
 
 #### Contributors
