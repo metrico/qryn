@@ -18,8 +18,6 @@
 
 ![qryn](https://user-images.githubusercontent.com/1423657/191464140-48851b2c-ada0-4cfb-b27d-315edc0ba890.gif)
 
-<!-- ![ezgif com-optimize 15](https://user-images.githubusercontent.com/1423657/50496835-404e6480-0a33-11e9-87a4-aebb71a668a7.gif) -->
-
 <br>
 
 ## 🚀 [Get Started](https://qryn.metrico.in/#/installation)
@@ -56,9 +54,11 @@ The Grafana Tempo datasource can be used to natively browse and query _traces_ i
 
 #### Contributors
 
-<a href="https://github.com/lmangani/qryn/graphs/contributors">
-  <img src="https://contributors-img.web.app/image?repo=lmangani/cloki" />
-</a>
+&nbsp;&nbsp;&nbsp;&nbsp;[![Contributors for @metrico/qryn](https://contributors-img.web.app/image?repo=lmangani/cloki)](https://github.com/metrico/qryn/graph/contributors)
+
+[![Stargazers repo roster for @metrico/qryn](https://reporoster.com/stars/metrico/qryn)](https://github.com/metrico/qryn/stargazers)
+
+[![Forkers repo roster for @metrico/qryn](https://reporoster.com/forks/metrico/qryn)](https://github.com/metrico/qryn/network/members)
 
 #### Disclaimer
 
