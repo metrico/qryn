@@ -16,28 +16,15 @@ require('./plugins/engine')
 
 const DATABASE = require('./lib/db/clickhouse')
 const UTILS = require('./lib/utils')
-const { EventEmitter } = require('events')
 
 /* ProtoBuf Helpers */
 const fs = require('fs')
 const path = require('path')
-const protobufjs = require('protobufjs')
-const PushRequest = protobufjs.loadSync(path.join(__dirname, 'lib', 'loki.proto')).lookupType('PushRequest')
-const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib/prompb.proto')).lookupType('WriteRequest')
-
-/* Streaming JSON parser for lengthless TEMPOs */
-const StreamArray = require('stream-json/streamers/StreamArray')
-const { parser: jsonlParser } = require('stream-json/jsonl/Parser')
-/*const { StringStream } = require('scramjet')
-const { Transform } = require('stream')*/
-/* ----------------------- */
 
 const logger = require('./lib/logger')
 
 /* Alerting */
 const { startAlerting, stop } = require('./lib/db/alerting')
-const yaml = require('yaml')
-const { QrynError } = require('./lib/handlers/errors')
 
 /* Fingerprinting */
 this.fingerPrint = UTILS.fingerPrint
@@ -61,158 +48,17 @@ this.scanMetricFingerprints = DATABASE.scanMetricFingerprints
 this.tempoQueryScan = DATABASE.tempoQueryScan
 this.scanClickhouse = DATABASE.scanClickhouse
 this.pushZipkin = DATABASE.pushZipkin
+this.pushOTLP = DATABASE.pushOTLP
 this.queryTempoTags = DATABASE.queryTempoTags
 this.queryTempoValues = DATABASE.queryTempoValues
 let profiler = null
 
-const shaper = {
-  onParse: 0,
-  onParsed: new EventEmitter(),
-  shapeInterval: setInterval(() => {
-    shaper.onParse = 0
-    shaper.onParsed.emit('parsed')
-  }, 1000),
-  /**
-   *
-   * @param size {number}
-   * @returns {Promise<void>}
-   */
-  register: async (size) => {
-    while (shaper.onParse + size > 50e6) {
-      await new Promise(resolve => { shaper.onParsed.once('parsed', resolve) })
-    }
-    shaper.onParse += size
-  },
-  stop: () => {
-    shaper.shapeInterval && clearInterval(shaper.shapeInterval)
-    shaper.shapeInterval = null
-    shaper.onParsed.removeAllListeners('parsed')
-    shaper.onParsed = null
-  }
-}
-
-/**
- *
- * @param req {FastifyRequest}
- * @param limit {number}
- * @returns {number}
- */
-function getContentLength (req, limit) {
-  if (!req.headers['content-length'] || isNaN(parseInt(req.headers['content-length']))) {
-    return 5 * 1024 * 1024
-  }
-  const res = parseInt(req.headers['content-length'])
-  if (limit && res > limit) {
-    throw new QrynError(400, 'Request is too big')
-  }
-  return res
-}
-
-/**
- *
- * @param req {FastifyRequest}
- * @returns {Promise<string>}
- */
-async function getContentBody (req) {
-  let body = ''
-  req.raw.on('data', data => {
-    body += data.toString()
-  })
-  await new Promise(resolve => req.raw.once('end', resolve))
-  return body
-}
-
-/**
- *
- * @param req {FastifyRequest}
- * @returns {any}
- */
-async function parseTempoPush (req) {
-  if (req.routerPath === '/tempo/api/push' || req.routerPath === '/api/v2/spans') {
-    const firstData = await new Promise((resolve, reject) => {
-      req.raw.once('data', resolve)
-      req.raw.once('error', reject)
-      req.raw.once('close', () => resolve(null))
-      req.raw.once('end', () => resolve(null))
-    })
-    const parser = StreamArray.withParser()
-    parser.on('error', err => { parser.error = err })
-    parser.write(firstData || '[]')
-    if (!firstData) {
-      parser.end()
-      return parser
-    }
-    req.raw.pipe(parser)
-    return parser
-  }
-  return undefined
-}
-
-/**
- *
- * @param req {FastifyRequest}
- * @returns {any}
- */
-function parseTempoNDJson (req) {
-  if (req.routerPath === '/tempo/api/push' || req.routerPath === '/api/v2/spans') {
-    const parser = req.raw.pipe(jsonlParser())
-    parser.on('error', err => { parser.error = err })
-    return parser
-  }
-  return undefined
-}
-
-/**
- *
- * @param req {FastifyRequest}
- * @returns {Promise<void>}
- */
-async function genericJSONParser (req) {
-  try {
-    const tempoPush = await parseTempoPush(req)
-    if (tempoPush) {
-      return tempoPush
-    }
-    const length = getContentLength(req, 1e9)
-    if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
-      return
-    }
-    await shaper.register(length)
-    return JSON.parse(await getContentBody(req))
-  } catch (err) {
-    err.statusCode = 400
-    throw err
-  }
-}
-
-/**
- *
- * @param req {FastifyRequest}
- * @returns {Promise<void>}
- */
-async function genericJSONOrYAMLParser (req) {
-  try {
-    const tempoPush = await parseTempoPush(req)
-    if (tempoPush) {
-      return tempoPush
-    }
-    const length = getContentLength(req, 1e9)
-    if (req.routerPath === '/loki/api/v1/push' && length > 5e6) {
-      return
-    }
-    await shaper.register(length)
-    const body = await getContentBody(req)
-    if (req.routerPath === '/influx/api/v2/write') {
-      return body
-    }
-    try { return JSON.parse(body) } catch (e) {}
-    try { return yaml.parse(body) } catch (e) {}
-    throw new Error('Unexpected request content-type')
-  } catch (err) {
-    err.statusCode = 400
-    throw err
-  }
-}
+const {
+  shaper,
+  parsers,
+  lokiPushJSONParser, lokiPushProtoParser, jsonParser, rawStringParser, tempoPushParser, tempoPushNDJSONParser,
+  yamlParser, prometheusPushProtoParser, combinedParser, otlpPushProtoParser
+} = require('./parsers');
 
 (async () => {
   if (!this.readonly) {
@@ -237,7 +83,7 @@ async function genericJSONOrYAMLParser (req) {
 })
 
 /* Fastify Helper */
-const fastify = require('fastify')({
+let fastify = require('fastify')({
   logger,
   requestTimeout: parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
   maxRequestsPerSocket: parseInt(process.env.FASTIFY_MAXREQUESTS) || 0
@@ -265,6 +111,37 @@ fastify.after((err) => {
   }
 })
 
+fastify.__post = fastify.post
+fastify.post = (route, handler, _parsers) => {
+  if (_parsers) {
+    for (const t of Object.keys(_parsers)) {
+      parsers.register('post', route, t, _parsers[t])
+    }
+  }
+  return fastify.__post(route, handler)
+}
+
+fastify.__put = fastify.put
+fastify.put = (route, handler) => {
+  if (handler.parsers) {
+    for (const t of Object.keys(handler.parsers)) {
+      parsers.register('put', route, t, handler.parsers[t])
+    }
+  }
+  return fastify.__put(route, handler)
+}
+
+fastify.__all = fastify.all
+fastify.all = (route, handler) => {
+  if (handler.parsers) {
+    for (const t of Object.keys(handler.parsers)) {
+      parsers.register('post', route, t, handler.parsers[t])
+      parsers.register('put', route, t, handler.parsers[t])
+    }
+  }
+  return fastify.__all(route, handler)
+}
+
 /* Enable Simple Authentication */
 if (this.http_user && this.http_password) {
   function checkAuth (username, password, req, reply, done) {
@@ -285,94 +162,6 @@ if (this.http_user && this.http_password) {
   })
 }
 
-fastify.addContentTypeParser('application/yaml', {},
-  async function (req, body, done) {
-    try {
-      const length = getContentLength(req, 5e6)
-      await shaper.register(length)
-      const json = yaml.parse(await getContentBody(req))
-      return json
-    } catch (err) {
-      err.statusCode = 400
-      throw err
-    }
-  })
-
-try {
-  const snappy = require('snappyjs')
-  /* Protobuf Handler */
-  fastify.addContentTypeParser('application/x-protobuf', {},
-    async function (req, body, done) {
-      try {
-        const length = getContentLength(req, 5e6)
-        await shaper.register(length)
-        let body = new Uint8Array()
-        req.raw.on('data', (data) => {
-          body = new Uint8Array([...body, ...Uint8Array.from(data)])
-        })
-        await new Promise(resolve => req.raw.once('end', resolve))
-        // Prometheus Protobuf Write Handler
-        if (req.url === '/api/v1/prom/remote/write' || req.url === '/prom/remote/write') {
-          let _data = await snappy.uncompress(body)
-          _data = WriteRequest.decode(_data)
-          _data.timeseries = _data.timeseries.map(s => ({
-            ...s,
-            samples: s.samples.map(e => {
-              const nanos = e.timestamp + '000000'
-              return {
-                ...e,
-                timestamp: nanos
-              }
-            })
-          }))
-          return _data
-          // Loki Protobuf Push Handler
-        } else {
-          let _data = await snappy.uncompress(body)
-          _data = PushRequest.decode(_data)
-          _data.streams = _data.streams.map(s => ({
-            ...s,
-            entries: s.entries.map(e => {
-              const ts = e.timestamp
-                ? BigInt(e.timestamp.seconds) * BigInt(1e9) + BigInt(e.timestamp.nanos)
-                : BigInt(Date.now().toString() + '000000')
-              return {
-                ...e,
-                timestamp: ts
-              }
-            })
-          }))
-          return _data.streams
-        }
-      } catch (err) {
-        logger.error({ err }, 'Error handling protobuf conversion')
-        throw err
-      }
-    })
-} catch (err) {
-  logger.error({ err }, 'Protobuf ingesting is unsupported')
-}
-
-fastify.addContentTypeParser('application/json', {},
-  async function (req, body, done) {
-    return await genericJSONParser(req)
-  })
-
-fastify.addContentTypeParser('application/x-ndjson', {},
-  async function (req, body, done) {
-    const tempoNDJson = parseTempoNDJson(req)
-    if (tempoNDJson) {
-      return tempoNDJson
-    }
-    return await genericJSONParser(req)
-  })
-
-/* Null content-type handler for CH-MV HTTP PUSH */
-fastify.addContentTypeParser('*', {},
-  async function (req, body, done) {
-    return await genericJSONOrYAMLParser(req)
-  })
-
 /* 404 Handler */
 const handler404 = require('./lib/handlers/404.js').bind(this)
 fastify.setNotFoundHandler(handler404)
@@ -385,23 +174,51 @@ fastify.get('/ready', handlerHello)
 
 /* Write Handler */
 const handlerPush = require('./lib/handlers/push.js').bind(this)
-fastify.post('/loki/api/v1/push', handlerPush)
+fastify.post('/loki/api/v1/push', handlerPush, {
+  'application/json': lokiPushJSONParser,
+  'application/x-protobuf': lokiPushProtoParser,
+  '*': lokiPushJSONParser
+})
 
 /* Elastic Write Handler */
 const handlerElasticPush = require('./lib/handlers/elastic_index.js').bind(this)
-fastify.post('/:target/_doc', handlerElasticPush)
-fastify.post('/:target/_create/:id', handlerElasticPush)
-fastify.put('/:target/_doc/:id', handlerElasticPush)
-fastify.put('/:target/_create/:id', handlerElasticPush)
+fastify.post('/:target/_doc', handlerElasticPush, {
+  'application/json': jsonParser,
+  '*': rawStringParser
+})
+fastify.post('/:target/_create/:id', handlerElasticPush, {
+  'application/json': jsonParser,
+  '*': rawStringParser
+})
+fastify.put('/:target/_doc/:id', handlerElasticPush, {
+  'application/json': jsonParser,
+  '*': rawStringParser
+})
+fastify.put('/:target/_create/:id', handlerElasticPush, {
+  'application/json': jsonParser,
+  '*': rawStringParser
+})
 const handlerElasticBulk = require('./lib/handlers/elastic_bulk.js').bind(this)
-fastify.post('/_bulk', handlerElasticBulk)
-fastify.post('/:target/_bulk', handlerElasticBulk)
+fastify.post('/_bulk', handlerElasticBulk, {
+  '*': rawStringParser
+})
+fastify.post('/:target/_bulk', handlerElasticBulk, {
+  '*': rawStringParser
+})
 
 /* Tempo Write Handler */
 this.tempo_tagtrace = process.env.TEMPO_TAGTRACE || false
 const handlerTempoPush = require('./lib/handlers/tempo_push.js').bind(this)
-fastify.post('/tempo/api/push', handlerTempoPush)
-fastify.post('/api/v2/spans', handlerTempoPush)
+fastify.post('/tempo/api/push', handlerTempoPush, {
+  'application/json': tempoPushParser,
+  'application/x-ndjson': tempoPushNDJSONParser,
+  '*': tempoPushParser
+})
+fastify.post('/api/v2/spans', handlerTempoPush, {
+  'application/json': tempoPushParser,
+  'application/x-ndjson': tempoPushNDJSONParser,
+  '*': tempoPushParser
+})
 
 /* Tempo Traces Query Handler */
 this.tempo_span = process.env.TEMPO_SPAN || 24
@@ -428,7 +245,9 @@ fastify.get('/api/echo', handlerTempoEcho)
 
 /* Telegraf HTTP Bulk handler */
 const handlerTelegraf = require('./lib/handlers/telegraf.js').bind(this)
-fastify.post('/telegraf', handlerTelegraf)
+fastify.post('/telegraf', handlerTelegraf, {
+  '*': jsonParser
+})
 
 /* Query Handler */
 const handlerQueryRange = require('./lib/handlers/query_range.js').bind(this)
@@ -461,15 +280,30 @@ fastify.register(async (fastify) => {
 /* ALERT MANAGER Handlers */
 fastify.get('/api/prom/rules', require('./lib/handlers/alerts/get_rules').bind(this))
 fastify.get('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/get_group').bind(this))
-fastify.post('/api/prom/rules/:ns', require('./lib/handlers/alerts/post_group').bind(this))
+fastify.post('/api/prom/rules/:ns', require('./lib/handlers/alerts/post_group').bind(this), {
+  '*': yamlParser
+})
 fastify.delete('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/del_group').bind(this))
 fastify.delete('/api/prom/rules/:ns', require('./lib/handlers/alerts/del_ns').bind(this))
 fastify.get('/prometheus/api/v1/rules', require('./lib/handlers/alerts/prom_get_rules').bind(this))
 
 /* PROMETHEUS REMOTE WRITE Handlers */
-fastify.post('/api/v1/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
-fastify.post('/api/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
-fastify.post('/prom/remote/write', require('./lib/handlers/prom_push.js').bind(this))
+const promWriteHandler = require('./lib/handlers/prom_push.js').bind(this)
+fastify.post('/api/v1/prom/remote/write', promWriteHandler, {
+  'application/x-protobuf': prometheusPushProtoParser,
+  'application/json': jsonParser,
+  '*': combinedParser(prometheusPushProtoParser, jsonParser)
+})
+fastify.post('/api/prom/remote/write', promWriteHandler, {
+  'application/x-protobuf': prometheusPushProtoParser,
+  'application/json': jsonParser,
+  '*': combinedParser(prometheusPushProtoParser, jsonParser)
+})
+fastify.post('/prom/remote/write', promWriteHandler, {
+  'application/x-protobuf': prometheusPushProtoParser,
+  'application/json': jsonParser,
+  '*': combinedParser(prometheusPushProtoParser, jsonParser)
+})
 
 /* PROMQETHEUS API EMULATION */
 const handlerPromQueryRange = require('./lib/handlers/prom_query_range.js').bind(this)
@@ -480,8 +314,12 @@ const handlerPromLabel = require('./lib/handlers/promlabel.js').bind(this)
 const handlerPromLabelValues = require('./lib/handlers/promlabel_values.js').bind(this)
 fastify.get('/api/v1/labels', handlerPromLabel) // piggyback on qryn labels
 fastify.get('/api/v1/label/:name/values', handlerPromLabelValues) // piggyback on qryn values
-fastify.post('/api/v1/labels', handlerPromLabel) // piggyback on qryn labels
-fastify.post('/api/v1/label/:name/values', handlerPromLabelValues) // piggyback on qryn values
+fastify.post('/api/v1/labels', handlerPromLabel, {
+  '*': rawStringParser
+}) // piggyback on qryn labels
+fastify.post('/api/v1/label/:name/values', handlerPromLabelValues, {
+  '*': rawStringParser
+}) // piggyback on qryn values
 const handlerPromDefault = require('./lib/handlers/prom_default.js').bind(this)
 fastify.get('/api/v1/metadata', handlerPromDefault) // default handler TBD
 fastify.get('/api/v1/rules', handlerPromDefault) // default handler TBD
@@ -490,12 +328,23 @@ fastify.get('/api/v1/status/buildinfo', handlerPromDefault) // default handler T
 
 /* INFLUX WRITE Handlers */
 const handlerInfluxWrite = require('./lib/handlers/influx_write.js').bind(this)
-fastify.post('/write', handlerInfluxWrite)
-fastify.post('/influx/api/v2/write', handlerInfluxWrite)
+fastify.post('/write', handlerInfluxWrite, {
+  '*': rawStringParser
+})
+fastify.post('/influx/api/v2/write', handlerInfluxWrite, {
+  '*': rawStringParser
+})
 /* INFLUX HEALTH Handlers */
 const handlerInfluxHealth = require('./lib/handlers/influx_health.js').bind(this)
 fastify.get('/health', handlerInfluxHealth)
 fastify.get('/influx/health', handlerInfluxHealth)
+
+const handlerOTLPPush = require('./lib/handlers/otlp_push').bind(this)
+fastify.post('/v1/traces', handlerOTLPPush, {
+  '*': otlpPushProtoParser
+})
+
+fastify = parsers.init(fastify)
 
 /* QRYN-VIEW Optional Handler */
 if (fs.existsSync(path.join(__dirname, 'view/index.html'))) {
