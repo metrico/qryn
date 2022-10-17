@@ -164,7 +164,10 @@ async function otlpPushProtoParser (req) {
     body = await gzip.ungzip(body)
   } catch (e) {}
 
-  body = OTLPTraceData.decode(body)
+  body = OTLPTraceData.toObject(OTLPTraceData.decode(body), {
+    longs: String,
+    bytes: String
+  })
   return body
 }
 
