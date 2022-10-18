@@ -82,7 +82,16 @@
     "eslint-plugin-promise": "^5.2.0",
     "jest": "^27.4.5",
     "pino-pretty": "^7.5.1",
-    "standard": "^16.0.4"
+    "standard": "^16.0.4",
+    "@opentelemetry/api": "^1.0.2",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.33.0",
+    "@opentelemetry/instrumentation": "^0.25.0",
+    "@opentelemetry/instrumentation-connect": "^0.30.0",
+    "@opentelemetry/instrumentation-http": "^0.25.0",
+    "@opentelemetry/sdk-trace-node": "^0.25.0",
+    "@opentelemetry/resources": "^0.25.0",
+    "@opentelemetry/semantic-conventions": "^0.25.0",
+    "@opentelemetry/sdk-trace-base": "^0.25.0"
   },
   "directories": {
     "lib": "lib"
