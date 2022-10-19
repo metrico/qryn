@@ -32,23 +32,54 @@
 qryn implements a complete [LogQL API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) to provide transparent compatibility with Loki clients<br>
 The Grafana Loki datasource can be used to natively browse and query _logs_ and display extracted _timeseries_<br>
 
-:tada: _No plugins needed_ 
-
-### 📈 Prometheus
-qryn implements a complete [Prometheus API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) to provide transparent compatibility with Prometheus clients<br>
-The Grafana Prometheus datasource can be used to natively browse and query _metrics_ and display extracted _timeseries_<br>
-
-:tada: _No plugins needed_ 
-
-### 🕛 Tempo
-qryn implements the [Tempo API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) to provide transparent compatibility with Tempo/OTLP clients<br>
-The Grafana Tempo datasource can be used to natively browse and query _traces_ including _beta search_ and _service graphs_<br>
+<a href="https://qryn.dev" target="_blank">
+<img src="https://user-images.githubusercontent.com/1423657/196654073-b84a218c-6a70-49bb-a477-e8be5714e0ba.gif" width=800 class=border />
+</a>
 
 :tada: _No plugins needed_ 
 
 <br>
 
+### 📈 Prometheus
+qryn implements a complete [Prometheus API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) to provide transparent compatibility with Prometheus clients<br>
+The Grafana Prometheus datasource can be used to natively browse and query _metrics_ and display extracted _timeseries_<br>
+
+<a href="https://qryn.dev" target="_blank">
+<img src="https://user-images.githubusercontent.com/1423657/196654084-1f1d8a62-3fd2-4420-a2fa-57ac2872938c.gif" width=800 class=border />
+</a>
+
+:tada: _No plugins needed_ 
+
+<br>
+
+### 🕛 Tempo
+qryn implements the [Tempo API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) to provide transparent compatibility with Tempo/OTLP clients<br>
+The Grafana Tempo datasource can be used to natively browse and query _traces_ including _beta search_ and _service graphs_<br>
+
+<a href="https://qryn.dev" target="_blank">
+<img src="https://user-images.githubusercontent.com/1423657/196654097-8a235253-bf5d-4937-9e78-fddf12819d44.gif" width=800 class=border />
+</a>
+
+:tada: _No plugins needed_ 
+
+<br>
+
+### ↔️ Correlation
+Data correlation made simple with dynamic **links** between _logs, metrics and traces_
+
 <img src="https://user-images.githubusercontent.com/1423657/184538094-13c11500-24ef-4468-9f33-dc9d564238e3.gif" width=800 class=border />
+
+<br>
+
+### :eye: View
+
+No Grafana? No Problem. **qryn** ships with **view** - it's own lightweight data exploration tool
+
+<a href="https://qryn.dev" target="_blank">
+<img src="https://user-images.githubusercontent.com/1423657/196665571-8a251b1a-e5fa-4a8f-9832-952c6e519e9f.jpg" width=800 class=border />
+</a>
+
+
 
 ------------
 
