@@ -53,8 +53,7 @@ The Grafana Prometheus datasource can be used to natively browse and query _metr
 <br>
 
 ### 🕛 Tempo
-qryn implements the [Tempo API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) to provide transparent compatibility with Tempo/OTLP clients<br>
-The Grafana Tempo datasource can be used to natively browse and query _traces_ including _beta search_ and _service graphs_<br>
+qryn implements the [Tempo API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) to provide transparent compatibility with Tempo/OTLP clients. The Grafana Tempo datasource can be used to natively browse and query _traces_ including _beta search_ and _service graphs_<br>
 
 <a href="https://qryn.dev" target="_blank">
 <img src="https://user-images.githubusercontent.com/1423657/196654097-8a235253-bf5d-4937-9e78-fddf12819d44.gif" width=800 class=border />
