@@ -15,8 +15,9 @@
 - Cloud native, stateless and compact design
 <br>
 
-
-![qryn](https://user-images.githubusercontent.com/1423657/191464140-48851b2c-ada0-4cfb-b27d-315edc0ba890.gif)
+<a href="https://qryn.dev" target="_blank">
+<img src="https://user-images.githubusercontent.com/1423657/191464140-48851b2c-ada0-4cfb-b27d-315edc0ba890.gif">
+</a>
 
 <br>
 
