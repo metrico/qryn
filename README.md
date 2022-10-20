@@ -67,7 +67,9 @@ The Tempo datasource can be used to natively query _traces_ including _beta sear
 ### ↔️ Correlation
 Data correlation made simple with dynamic **links** between _logs, metrics and traces_
 
+<a href="https://qryn.dev" target="_blank">
 <img src="https://user-images.githubusercontent.com/1423657/184538094-13c11500-24ef-4468-9f33-dc9d564238e3.gif" width=800 class=border />
+</a>
 
 <br>
 
