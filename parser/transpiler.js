@@ -165,6 +165,7 @@ module.exports.transpile = (request) => {
   setQueryParam(query, sharedParamNames.to, end + '000000')
   setQueryParam(query, 'isMatrix', query.ctx.matrix)
   logger.debug(query.toString())
+  console.log(query.toString())
   return {
     query: request.rawQuery ? query : query.toString(),
     matrix: !!query.ctx.matrix,

@@ -10,22 +10,22 @@ const Sql = require('@cloki/clickhouse-sql')
  */
 function selectorClauses (regex, eq, label, value) {
   const call = regex
-    ? [new Sql.Raw(`match(arrayFirst(x -> x.1 == '${label}', labels).2, '${value}')`),
+    ? [new Sql.Raw(`match(arrayFirst(x -> x.1 == ${Sql.quoteVal(label)}, labels).2, ${Sql.quoteVal(value)})`),
         0, eq ? Sql.Ne : Sql.Eq]
-    : [new Sql.Raw(`arrayFirst(x -> x.1 == '${label}', labels).2`), value, eq ? Sql.Eq : Sql.Ne]
+    : [new Sql.Raw(`arrayFirst(x -> x.1 == ${Sql.quoteVal(label)}, labels).2`), value, eq ? Sql.Eq : Sql.Ne]
   return Sql.And(
-    Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${label}', labels)`), 1),
+    Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == ${Sql.quoteVal(label)}, labels)`), 1),
     call[2](call[0], call[1])
   )
 }
 
 function simpleSelectorClauses (regex, eq, label, value) {
   const call = regex
-    ? [new Sql.Raw(`extractAllGroups(JSONExtractString(labels, '${label}'), '(${value})')`),
+    ? [new Sql.Raw(`extractAllGroups(JSONExtractString(labels, ${Sql.quoteVal(label)}), ${Sql.quoteVal('(' + value + ')')})`),
         '[]', eq ? Sql.Ne : Sql.Eq]
-    : [new Sql.Raw(`JSONExtractString(labels, '${label}')`), value, eq ? Sql.Eq : Sql.Ne]
+    : [new Sql.Raw(`JSONExtractString(labels, ${Sql.quoteVal(label)})`), value, eq ? Sql.Eq : Sql.Ne]
   return Sql.And(
-    Sql.Eq(new Sql.Raw(`JSONHas(labels, '${label}')`), 1),
+    Sql.Eq(new Sql.Raw(`JSONHas(labels, ${Sql.quoteVal(label)})`), 1),
     call[2](call[0], call[1])
   ) /* [
         `JSONHas(labels, '${label}')`,
@@ -42,7 +42,7 @@ function simpleSelectorClauses (regex, eq, label, value) {
 const streamSelectQuery = (query) => {
   const param = query.getParam('timeSeriesTable') || new Sql.Parameter('timeSeriesTable')
   query.addParam(param)
-  let res = new Sql.With(
+  const res = new Sql.With(
     'str_sel',
     (new Sql.Select())
       .select('fingerprint')
@@ -103,9 +103,9 @@ module.exports.neqSimple = (token/*, query */) => {
 module.exports.neqExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
   return Sql.Or(
-    new Sql.Ne(new Sql.Raw(`arrayExists(x -> x.1 == '${label}' AND x.2 != '${value}', extra_labels)`), 0),
+    new Sql.Ne(new Sql.Raw(`arrayExists(x -> x.1 == ${Sql.quoteVal(label)} AND x.2 != ${Sql.quoteVal(value)}, extra_labels)`), 0),
     Sql.And(
-      Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${label}', extra_labels)`), 0),
+      Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == ${Sql.quoteVal(label)}, extra_labels)`), 0),
       selectorClauses(false, false, label, value)
     ))
 }
@@ -143,10 +143,12 @@ module.exports.nregExtraLabels = (token/*, query */) => {
   return Sql.Or(
     Sql.Eq(
       new Sql.Raw(
-        `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') == [], extra_labels)`), 0
+        `arrayExists(x -> x.1 == ${Sql.quoteVal(label)} AND extractAllGroups(x.2, ${
+          Sql.quoteVal('(' + value + ')')
+        }) == [], extra_labels)`), 0
     ),
     Sql.And(
-      Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${label}', extra_labels)`), 0),
+      Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == ${Sql.quoteVal(label)}, extra_labels)`), 0),
       selectorClauses(true, true, label, value)))
 }
 
@@ -185,9 +187,11 @@ module.exports.regExtraLabels = (token/*, query */) => {
   return Sql.Or(
     Sql.Eq(
       new Sql.Raw(
-        `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') != [], extra_labels)`), 0
+        `arrayExists(x -> x.1 == ${Sql.quoteVal(label)} AND extractAllGroups(x.2, ${
+          Sql.quoteVal('(' + value + ')')
+        }) != [], extra_labels)`), 0
     ),
-    Sql.And(`arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
+    Sql.And(`arrayExists(x -> x.1 == ${Sql.quoteVal(label)}, extra_labels) == 0`,
       selectorClauses(true, true, label, value)))
 }
 
@@ -223,9 +227,9 @@ module.exports.eqExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
 
   return Sql.Or(
-    Sql.Gt(new Sql.Raw(`indexOf(extra_labels, ('${label}', '${value}'))`), 0),
+    Sql.Gt(new Sql.Raw(`indexOf(extra_labels, (${Sql.quoteVal(label)}, ${Sql.quoteVal(value)}))`), 0),
     Sql.And(
-      Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${label}', extra_labels)`), 0),
+      Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == ${Sql.quoteVal(label)}, extra_labels)`), 0),
       selectorClauses(false, true, label, value)))
 }
 
