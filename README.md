@@ -79,10 +79,8 @@ Data correlation made simple with dynamic **links** between _logs, metrics and t
 No Grafana? No Problem. **qryn** ships with **view** - it's own lightweight data exploration tool
 
 <a href="https://qryn.dev" target="_blank">
-<img src="https://user-images.githubusercontent.com/1423657/196665571-8a251b1a-e5fa-4a8f-9832-952c6e519e9f.jpg" width=800 class=border />
+<img src="https://user-images.githubusercontent.com/1423657/198894721-65e29bc8-697f-4fbb-b95d-4cdc5427e2a2.gif" width=800 class=border />
 </a>
-
-
 
 ------------
 
