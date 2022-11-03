@@ -277,7 +277,7 @@ fastify.register(async (fastify) => {
   fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/tail').bind(this))
 })
 
-/* ALERT MANAGER Handlers */
+/* ALERT MANAGER Handlers    */
 fastify.get('/api/prom/rules', require('./lib/handlers/alerts/get_rules').bind(this))
 fastify.get('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/get_group').bind(this))
 fastify.post('/api/prom/rules/:ns', require('./lib/handlers/alerts/post_group').bind(this), {
