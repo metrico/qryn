@@ -85,7 +85,7 @@ No Grafana? No Problem. **qryn** ships with **view** - it's own lightweight data
 
 ------------
 
-:book: Follow our team _behind the scenes_ on the [qryn blog](https://blog.qryn.dev)
+📚 Follow our team _behind the scenes_ on the [qryn blog](https://blog.qryn.dev)
 
 ------------
 
@@ -98,9 +98,20 @@ No Grafana? No Problem. **qryn** ships with **view** - it's own lightweight data
 [![Forkers repo roster for @metrico/qryn](https://reporoster.com/forks/metrico/qryn)](https://github.com/metrico/qryn/network/members)
 
 
-#### Disclaimer
+#### License
+
+<img src="https://camo.githubusercontent.com/473b62766b498e4f2b008ada39f1d56fb3183649f24447866e25d958ac3fd79a/68747470733a2f2f7777772e676e752e6f72672f67726170686963732f6167706c76332d3135357835312e706e67">
 
 ©️ QXIP BV, released under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE) for details.
+
+We encourage forking and changing the code, hacking around with it, and experimenting. If you modify the qryn source code, and run that modified code in a way that's accessible over a network, you _must_ make your modifications to the source code available following the guidelines of the license:
+```
+[I]f you modify the Program, your modified version must prominently offer all users interacting with it remotely 
+through a computer network (if your version supports such interaction) an opportunity to receive the Corresponding 
+Source of your version by providing access to the Corresponding Source from a network server at no charge, through 
+some standard or customary means of facilitating copying of software.
+```
+
 
 [^1]: qryn is not affiliated or endorsed by Grafana Labs or ClickHouse Inc. All rights belong to their respective owners.
 
