@@ -10,6 +10,9 @@ module.exports = {
      */
   '|=': (token, query) => {
     const val = unquoteToken(token)
+    if (!val) {
+      return query
+    }
     query.where(Sql.Ne(new Sql.Raw(`position(string, '${val}')`), 0))
     return query
   },
@@ -21,6 +24,9 @@ module.exports = {
      */
   '|~': (token, query) => {
     const val = unquoteToken(token)
+    if (!val) {
+      return query
+    }
     query.where(Sql.Ne(new Sql.Raw(`extractAllGroups(string, '(${val})')`), new Sql.Raw('[]')))
     return query
   },
