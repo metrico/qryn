@@ -6,7 +6,7 @@ log_stream_selector ::= <log_stream_fp_selector> <OWSP> *(<OWSP><log_pipeline>)
 log_stream_selector_rule ::= <label> <OWSP> <operator> <OWSP> <quoted_str>
 label ::= (<ALPHA> | "_") *(<ALPHA> | "." | "_" | <DIGITS>)
 operator ::= <stream_selector_operator_registry>
-quoted_str ::= <QLITERAL> | <AQLITERAL>
+quoted_str ::= (<QUOTE><QUOTE>) | (<AQUOTE><AQUOTE>) | <QLITERAL> | <AQLITERAL>
 
 log_pipeline ::= <line_filter_expression> | <parser_expression> | <label_filter_pipeline> | <line_format_expression> | <labels_format_expression>
 
