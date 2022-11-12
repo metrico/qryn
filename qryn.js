@@ -256,6 +256,13 @@ fastify.post('/api/v2/logs', handlerDatadogLogPush, {
   '*': rawStringParser
 })
 
+/* Datadog Series Push Handler */
+const handlerDatadogSeriesPush = require('./lib/handlers/datadog_series_push.js').bind(this)
+fastify.post('/api/v2/series', handlerDatadogSeriesPush, {
+  'application/json': jsonParser,
+  '*': rawStringParser
+})
+
 /* Query Handler */
 const handlerQueryRange = require('./lib/handlers/query_range.js').bind(this)
 fastify.get('/loki/api/v1/query_range', handlerQueryRange)
