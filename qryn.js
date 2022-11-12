@@ -249,6 +249,13 @@ fastify.post('/telegraf', handlerTelegraf, {
   '*': jsonParser
 })
 
+/* Datadog Log Push Handler */
+const handlerDatadogLogPush = require('./lib/handlers/datadog_log_push.js').bind(this)
+fastify.post('/api/v2/logs', handlerDatadogLogPush, {
+  'application/json': jsonParser,
+  '*': rawStringParser
+})
+
 /* Query Handler */
 const handlerQueryRange = require('./lib/handlers/query_range.js').bind(this)
 fastify.get('/loki/api/v1/query_range', handlerQueryRange)
