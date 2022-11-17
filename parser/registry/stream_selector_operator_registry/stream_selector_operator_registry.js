@@ -42,7 +42,7 @@ function simpleSelectorClauses (regex, eq, label, value) {
 const streamSelectQuery = (query) => {
   const param = query.getParam('timeSeriesTable') || new Sql.Parameter('timeSeriesTable')
   query.addParam(param)
-  let res = new Sql.With(
+  const res = new Sql.With(
     'str_sel',
     (new Sql.Select())
       .select('fingerprint')
@@ -141,9 +141,9 @@ module.exports.nregSimple = (token/*, query */) => {
 module.exports.nregExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
   return Sql.Or(
-    Sql.Eq(
+    Sql.Ne(
       new Sql.Raw(
-        `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') == [], extra_labels)`), 0
+        `arrayExists(x -> x.1 == '${label}' AND match(x.2, '${value}') == 0, extra_labels)`), 0
     ),
     Sql.And(
       Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${label}', extra_labels)`), 0),
@@ -183,9 +183,9 @@ module.exports.regExtraLabels = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
 
   return Sql.Or(
-    Sql.Eq(
+    Sql.Ne(
       new Sql.Raw(
-        `arrayExists(x -> x.1 == '${label}' AND extractAllGroups(x.2, '(${value})') != [], extra_labels)`), 0
+        `arrayExists(x -> x.1 == '${label}' AND match(x.2, '${value}') != 0, extra_labels)`), 0
     ),
     Sql.And(`arrayExists(x -> x.1 == '${label}', extra_labels) == 0`,
       selectorClauses(true, true, label, value)))
