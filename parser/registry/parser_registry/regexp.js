@@ -123,6 +123,7 @@ module.exports.viaStream = (token, query) => {
         }
       : e
   }))
+  return query
 }
 
 module.exports.internal = {

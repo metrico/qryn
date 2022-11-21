@@ -364,6 +364,12 @@ describe('should transpile new style', () => {
     ))
     expect(res).toMatchSnapshot()
   })
+  it('12', () => {
+    const res = transpiler.transpile(cq(
+      '{freq="1"} | line_format "1x" | regexp "^(?<e>.)x"'
+    ))
+    expect(res).toMatchSnapshot()
+  })
 })
 
 it('should transpile tail', () => {

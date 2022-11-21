@@ -12485,6 +12485,18 @@ Object {
 }
 `;
 
+exports[`should transpile new style 12 1`] = `
+Object {
+  "duration": 1000,
+  "matrix": false,
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\` from loki.time_series where ((JSONHas(labels, 'freq') = 1) and (JSONExtractString(labels, 'freq') = '1'))), sel_a AS (select \`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\`,JSONExtractKeysAndValues(time_series.labels, 'String') as \`labels\` from loki.samples_vX as \`samples\` left any join \`loki\`.\`time_series\` on \`samples\`.\`fingerprint\` = time_series.fingerprint where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
+  "stream": Array [
+    [Function],
+    [Function],
+  ],
+}
+`;
+
 exports[`should transpile plugins 1`] = `
 Array [
   Object {
