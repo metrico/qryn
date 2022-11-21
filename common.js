@@ -79,6 +79,24 @@ module.exports.durationToNs = (durationStr) => {
   throw new Error('Unsupported duration')
 }
 
+module.exports.asyncLogError = async (err, logger) => {
+  try {
+    const resp = err.response || err.err.response
+    if (resp) {
+      if (typeof resp.data === 'object') {
+        err.responseData = ''
+        err.response.data.on('data', data => { err.responseData += data })
+        await new Promise((resolve) => err.response.data.once('end', resolve))
+      } else {
+        err.responseData = err.response.data
+      }
+      logger.error(err)
+    }
+  } catch (e) {
+    logger.error(err)
+  }
+}
+
 module.exports.LineFmtOption = () => process.env.LINE_FMT || 'handlebars'
 
 module.exports.errors = require('./lib/handlers/errors')
