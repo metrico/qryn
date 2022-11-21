@@ -3070,6 +3070,7 @@ Select {
                           Raw {
                             "raw": "toFloat64OrNull(arrayFirst(x -> x.1 == 'int_lbl', labels).2)",
                           },
+                          "unwrapped",
                         ],
                       ],
                       "tables": Array [
@@ -3432,6 +3433,7 @@ Select {
             Raw {
               "raw": "toFloat64OrNull(arrayFirst(x -> x.1 == 'int_lbl', labels).2)",
             },
+            "unwrapped",
           ],
         ],
         "tables": Array [
@@ -3737,6 +3739,7 @@ Select {
                       Raw {
                         "raw": "toFloat64OrNull(arrayFirst(x -> x.1 == 'int_lbl', labels).2)",
                       },
+                      "unwrapped",
                     ],
                   ],
                   "tables": Array [
@@ -12469,6 +12472,15 @@ Object {
   "duration": 1000,
   "matrix": false,
   "query": "WITH str_sel AS (select DISTINCT \`fingerprint\` from loki.time_series where ((JSONHas(labels, 'test_id') = 1) and (JSONExtractString(labels, 'test_id') = '0.5505504081219323'))), sel_a AS (select \`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,samples.timestamp_ns as \`timestamp_ns\`,JSONExtractKeysAndValues(time_series.labels, 'String') as \`labels\`,arrayFilter(x -> x.1 != '' AND x.2 != '', arrayZip(['e'], arrayMap(x -> x[length(x)], extractAllGroupsHorizontal(string, '^([^0-9]+)[0-9]+$')))) as \`extra_labels\` from loki.samples_vX as \`samples\` left any join \`loki\`.\`time_series\` on \`samples\`.\`fingerprint\` = time_series.fingerprint where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) order by \`timestamp_ns\` desc limit 2000) select * from sel_a order by \`labels\` desc,\`timestamp_ns\` desc",
+  "stream": Array [],
+}
+`;
+
+exports[`should transpile new style 11 1`] = `
+Object {
+  "duration": 1000,
+  "matrix": true,
+  "query": "WITH str_sel AS (select DISTINCT \`fingerprint\` from loki.time_series where ((JSONHas(labels, 'label') = 1) and (JSONExtractString(labels, 'label') = 'val'))), uw_rate_a AS (select \`samples\`.\`string\` as \`string\`,\`samples\`.\`fingerprint\` as \`fingerprint\`,intDiv(samples.timestamp_ns, 1000000) as \`timestamp_ns\`,JSONExtractKeysAndValues(time_series.labels, 'String') as \`labels\`,toFloat64OrNull(arrayFirst(x -> x.1 == 'b', labels).2) as \`unwrapped\` from loki.samples_vX as \`samples\` left any join \`loki\`.\`time_series\` on \`samples\`.\`fingerprint\` = time_series.fingerprint where (\`samples\`.\`timestamp_ns\`   between 1638802620000000000 and 1638803220000000000) and (\`samples\`.\`fingerprint\` in (select \`fingerprint\` from str_sel)) and ((arrayExists(x -> x.1 == 'b', labels) = 1) and (isNotNull(unwrapped) = 1)) order by \`timestamp_ns\` desc), uw_rate_b AS (select labels as \`labels\`,SUM(unwrapped) / 1 as \`value\`,intDiv(timestamp_ns, 1000) * 1000 as \`timestamp_ns\` from uw_rate_a group by \`labels\`,\`timestamp_ns\` order by \`labels\`,\`timestamp_ns\`) select \`labels\`,intDiv(timestamp_ns, 2000) * 2000 as \`timestamp_ns\`,argMin(uw_rate_b.value, uw_rate_b.timestamp_ns) as \`value\` from uw_rate_b group by \`labels\`,\`timestamp_ns\` order by \`labels\` asc,\`timestamp_ns\` asc",
   "stream": Array [],
 }
 `;

@@ -358,6 +358,12 @@ describe('should transpile new style', () => {
     ))
     expect(res).toMatchSnapshot()
   })
+  it('11', () => {
+    const res = transpiler.transpile(cq(
+      'rate({label="val"} | unwrap b [1s])'
+    ))
+    expect(res).toMatchSnapshot()
+  })
 })
 
 it('should transpile tail', () => {
