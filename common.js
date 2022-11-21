@@ -97,6 +97,8 @@ module.exports.asyncLogError = async (err, logger) => {
   }
 }
 
+module.exports.isOmitTablesCreation = () => process.env.OMIT_CREATE_TABLES === '1'
+
 module.exports.LineFmtOption = () => process.env.LINE_FMT || 'handlebars'
 
 module.exports.errors = require('./lib/handlers/errors')
