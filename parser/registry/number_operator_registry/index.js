@@ -11,7 +11,8 @@ const labelReg = require('./compared_label_reg')
  */
 function genericReq (token, query,
   aggregatedProcessor, labelComparer) {
-  if (token.name === 'compared_agg_statement' || token.Child('compared_agg_statement')) {
+  if ((token.name === 'agg_statement' || token.Child('agg_statement')) &&
+    token.Child('compared_agg_statement_cmp')) {
     return aggregatedProcessor(token, query)
   }
   if (token.name === 'number_label_filter_expression' || token.Child('number_label_filter_expression')) {

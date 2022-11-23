@@ -1,5 +1,5 @@
 diff --git a/node_modules/bnf/BnfRules.js b/node_modules/bnf/BnfRules.js
-index 1f949c1..5d02c75 100755
+index 1f949c1..aa002da 100755
 --- a/node_modules/bnf/BnfRules.js
 +++ b/node_modules/bnf/BnfRules.js
 @@ -135,9 +135,13 @@ exports.bnfRules = {
@@ -32,8 +32,26 @@ index 1f949c1..5d02c75 100755
        token.Rule( "ESCAQUOTE" ),
        token.Rule( "ANYCHAR" ),
        token.Rule( "SQUOTE" ),
+@@ -285,7 +291,7 @@ exports.parserRules = {
+     }
+     else{
+       //This can be optimized @LHF
+-      for( let i = 0; i < token._tokenTrees.length - 1; i++ ){
++      /*for( let i = 0; i < token._tokenTrees.length - 1; i++ ){
+         for( let t = 0; t < token._tokenTrees[i].length; t++ ){
+           for( let line in token._tokenTrees[i][t].expected ){
+             for( let char in token._tokenTrees[i][t].expected[line] ){
+@@ -295,7 +301,7 @@ exports.parserRules = {
+             }
+           }
+         }
+-      }
++      }*/
+       token._tokenTrees[0] = [];
+       
+       return false;
 diff --git a/node_modules/bnf/Token.js b/node_modules/bnf/Token.js
-index f592ae5..9c47803 100755
+index f592ae5..d8fc55a 100755
 --- a/node_modules/bnf/Token.js
 +++ b/node_modules/bnf/Token.js
 @@ -226,13 +226,13 @@ exports.Token = class Token{

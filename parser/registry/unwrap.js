@@ -39,7 +39,7 @@ function unwrapLine (query) {
 function viaQuery (label, query) {
   query.limit(undefined, undefined)
   return query.select(
-    [new Sql.Raw(`toFloat64OrNull(arrayFirst(x -> x.1 == '${label}', labels).2)`, 'unwrapped')]
+    [new Sql.Raw(`toFloat64OrNull(arrayFirst(x -> x.1 == '${label}', labels).2)`), 'unwrapped']
   ).where(Sql.And(
     Sql.Eq(new Sql.Raw(`arrayExists(x -> x.1 == '${label}', labels)`), 1),
     Sql.Eq(new Sql.Raw('isNotNull(unwrapped)'), 1)
