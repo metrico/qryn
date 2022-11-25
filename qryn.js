@@ -329,6 +329,7 @@ fastify.get('/api/v1/status/buildinfo', handlerPromDefault) // default handler T
 /* NewRelic Log Handler */
 const handlerNewrelicLogPush = require('./lib/handlers/newrelic_log_push.js').bind(this)
 fastify.post('/log/v1', handlerNewrelicLogPush, {
+  'text/plain': jsonParser,
   '*': jsonParser
 })
 
