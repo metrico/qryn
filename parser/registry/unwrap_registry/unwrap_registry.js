@@ -61,7 +61,7 @@ function applyByWithoutLabels (token, query) {
 function applyViaRequest (token, query, valueExpr, lastValue) {
   valueExpr = new Sql.Raw(valueExpr)
   const labels = token.Child('by_without_unwrap')
-    ? applyByWithoutLabels(token.Child('opt_by_without_unwrap'), query)
+    ? applyByWithoutLabels(token.Child('req_by_without_unwrap'), query)
     : concatLabels(query)
   const duration = getDuration(token, query)
   query.ctx.matrix = true

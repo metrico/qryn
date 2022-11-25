@@ -22,6 +22,7 @@ const { getPlg } = require('../plugins/engine')
 const Sql = require('@cloki/clickhouse-sql')
 const { simpleAnd } = require('./registry/stream_selector_operator_registry/stream_selector_operator_registry')
 const logger = require('../lib/logger')
+const { QrynBadRequest } = require('../common').errors
 
 /**
  * @param joinLabels {boolean}
@@ -87,6 +88,9 @@ module.exports.initQuery = (joinLabels) => {
  */
 module.exports.transpile = (request) => {
   const expression = compiler.ParseScript(request.query.trim())
+  if (!expression) {
+    throw new QrynBadRequest('invalid request')
+  }
   const token = expression.rootToken
   if (token.Child('user_macro')) {
     return module.exports.transpile({
@@ -104,7 +108,7 @@ module.exports.transpile = (request) => {
   const step = BigInt(request.step ? Math.floor(parseFloat(request.step) * 1000) : 0) * BigInt(1e6)
   */
   const joinLabels = ['unwrap_function', 'log_range_aggregation', 'aggregation_operator',
-    'compared_agg_statement', 'user_macro', 'parser_expression', 'label_filter_pipeline',
+    'agg_statement', 'user_macro', 'parser_expression', 'label_filter_pipeline',
     'line_format_expression', 'labels_format_expression'].some(t => token.Child(t))
   let query = module.exports.initQuery(joinLabels)
   const limit = request.limit ? request.limit : 2000
@@ -155,9 +159,9 @@ module.exports.transpile = (request) => {
           new Sql.Raw('sel_a.*'))
       }
   }
-  if (token.Child('compared_agg_statement')) {
+  if (token.Child('agg_statement') && token.Child('compared_agg_statement_cmp')) {
     const op = token.Child('compared_agg_statement_cmp').Child('number_operator').value
-    query = numberOperatorRegistry[op](token.Child('compared_agg_statement'), query)
+    query = numberOperatorRegistry[op](token.Child('agg_statement'), query)
   }
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
   setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${readTable}`)
