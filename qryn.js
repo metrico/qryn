@@ -326,6 +326,12 @@ fastify.get('/api/v1/rules', handlerPromDefault) // default handler TBD
 fastify.get('/api/v1/query_exemplars', handlerPromDefault) // default handler TBD
 fastify.get('/api/v1/status/buildinfo', handlerPromDefault) // default handler TBD
 
+/* NewRelic Log Handler */
+const handlerNewrelicLogPush = require('./lib/handlers/newrelic_log_push.js').bind(this)
+fastify.post('/log/v1', handlerNewrelicLogPush, {
+  '*': jsonParser
+})
+
 /* INFLUX WRITE Handlers */
 const handlerInfluxWrite = require('./lib/handlers/influx_write.js').bind(this)
 fastify.post('/write', handlerInfluxWrite, {
