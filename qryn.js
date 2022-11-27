@@ -89,6 +89,12 @@ let fastify = require('fastify')({
   maxRequestsPerSocket: parseInt(process.env.FASTIFY_MAXREQUESTS) || 0
 })
 
+/* Fastify global decompression header */
+fastify.register(
+  require('@fastify/compress'),
+  { requestEncodings: ['gzip'] }
+)
+
 fastify.register(require('fastify-url-data'))
 fastify.register(require('@fastify/websocket'))
 // fastify.register(require('@fastify/formbody'))
