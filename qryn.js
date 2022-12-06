@@ -57,7 +57,7 @@ const {
   shaper,
   parsers,
   lokiPushJSONParser, lokiPushProtoParser, jsonParser, rawStringParser, tempoPushParser, tempoPushNDJSONParser,
-  yamlParser, prometheusPushProtoParser, combinedParser, otlpPushProtoParser
+  yamlParser, prometheusPushProtoParser, combinedParser, otlpPushProtoParser, wwwFormParser
 } = require('./parsers');
 
 (async () => {
@@ -92,9 +92,6 @@ let fastify = require('fastify')({
 fastify.register(require('fastify-url-data'))
 fastify.register(require('@fastify/websocket'))
 
-/* Formbody parser for Prometheus Checks */
-fastify.register(require('@fastify/formbody'), { options: { prefix: '/api/v1/'} })
-
 /* Fastify local metrics exporter */
 if (process.env.FASTIFY_METRICS) {
   const metricsPlugin = require('fastify-metrics')
@@ -124,21 +121,23 @@ fastify.post = (route, handler, _parsers) => {
 }
 
 fastify.__put = fastify.put
-fastify.put = (route, handler) => {
-  if (handler.parsers) {
-    for (const t of Object.keys(handler.parsers)) {
-      parsers.register('put', route, t, handler.parsers[t])
+fastify.put = (route, handler, _parsers) => {
+  const __parsers = handler.parsers || _parsers
+  if (__parsers) {
+    for (const t of Object.keys(__parsers)) {
+      parsers.register('put', route, t, __parsers[t])
     }
   }
   return fastify.__put(route, handler)
 }
 
 fastify.__all = fastify.all
-fastify.all = (route, handler) => {
-  if (handler.parsers) {
-    for (const t of Object.keys(handler.parsers)) {
-      parsers.register('post', route, t, handler.parsers[t])
-      parsers.register('put', route, t, handler.parsers[t])
+fastify.all = (route, handler, _parsers) => {
+  const __parsers = handler.parsers || _parsers
+  if (__parsers) {
+    for (const t of Object.keys(__parsers)) {
+      parsers.register('post', route, t, __parsers[t])
+      parsers.register('put', route, t, __parsers[t])
     }
   }
   return fastify.__all(route, handler)
@@ -309,9 +308,15 @@ fastify.post('/prom/remote/write', promWriteHandler, {
 
 /* PROMQETHEUS API EMULATION */
 const handlerPromQueryRange = require('./lib/handlers/prom_query_range.js').bind(this)
-fastify.all('/api/v1/query_range', handlerPromQueryRange)
+fastify.post('/api/v1/query_range', handlerPromQueryRange, {
+  'application/x-www-form-urlencoded': wwwFormParser
+})
+fastify.get('/api/v1/query_range', handlerPromQueryRange)
 const handlerPromQuery = require('./lib/handlers/prom_query.js').bind(this)
-fastify.all('/api/v1/query', handlerPromQuery)
+fastify.post('/api/v1/query', handlerPromQuery, {
+  'application/x-www-form-urlencoded': wwwFormParser
+})
+fastify.get('/api/v1/query', handlerPromQuery)
 const handlerPromLabel = require('./lib/handlers/promlabel.js').bind(this)
 const handlerPromLabelValues = require('./lib/handlers/promlabel_values.js').bind(this)
 fastify.get('/api/v1/labels', handlerPromLabel) // piggyback on qryn labels
