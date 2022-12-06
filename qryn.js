@@ -93,7 +93,7 @@ fastify.register(require('fastify-url-data'))
 fastify.register(require('@fastify/websocket'))
 
 /* Formbody parser for Prometheus Checks */
-fastify.register(require('@fastify/formbody'), { prefix: '/api/v1/' })
+fastify.register(require('@fastify/formbody'), { options: { prefix: '/api/v1/'} })
 
 /* Fastify local metrics exporter */
 if (process.env.FASTIFY_METRICS) {
