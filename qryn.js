@@ -215,6 +215,11 @@ fastify.post('/tempo/api/push', handlerTempoPush, {
   'application/x-ndjson': tempoPushNDJSONParser,
   '*': tempoPushParser
 })
+fastify.post('/tempo/spans', handlerTempoPush, {
+  'application/json': tempoPushParser,
+  'application/x-ndjson': tempoPushNDJSONParser,
+  '*': tempoPushParser
+})
 fastify.post('/api/v2/spans', handlerTempoPush, {
   'application/json': tempoPushParser,
   'application/x-ndjson': tempoPushNDJSONParser,
