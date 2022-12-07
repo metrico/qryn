@@ -90,10 +90,7 @@ let fastify = require('fastify')({
 })
 
 /* Fastify global decompression header */
-fastify.register(
-  require('@fastify/compress'),
-  { requestEncodings: ['gzip'] }
-)
+fastify.register(require('@fastify/compress'))
 
 fastify.register(require('fastify-url-data'))
 fastify.register(require('@fastify/websocket'))
