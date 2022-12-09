@@ -332,11 +332,11 @@ fastify.post('/api/v1/labels', handlerPromLabel, {
 fastify.post('/api/v1/label/:name/values', handlerPromLabelValues, {
   '*': rawStringParser
 }) // piggyback on qryn values
-const handlerPromDefault = require('./lib/handlers/prom_default.js').bind(this)
-fastify.get('/api/v1/metadata', handlerPromDefault) // default handler TBD
-fastify.get('/api/v1/rules', handlerPromDefault) // default handler TBD
-fastify.get('/api/v1/query_exemplars', handlerPromDefault) // default handler TBD
-fastify.get('/api/v1/status/buildinfo', handlerPromDefault) // default handler TBD
+const handlerPromDefault = require('./lib/handlers/prom_default.js')
+fastify.get('/api/v1/metadata', handlerPromDefault.misc.bind(this)) // default handler TBD
+fastify.get('/api/v1/rules', handlerPromDefault.rules.bind(this)) // default handler TBD
+fastify.get('/api/v1/query_exemplars', handlerPromDefault.misc.bind(this)) // default handler TBD
+fastify.get('/api/v1/status/buildinfo', handlerPromDefault.buildinfo.bind(this)) // default handler TBD
 
 /* NewRelic Log Handler */
 const handlerNewrelicLogPush = require('./lib/handlers/newrelic_log_push.js').bind(this)
