@@ -38,7 +38,7 @@
     "@fastify/cors": "^8.1.0",
     "@fastify/static": "^6.5.0",
     "@fastify/websocket": "^7.1.1",
-    "@fastify/formbody": "^7.0.1",
+    "@fastify/formbody": "^7.4.0",
     "@qxip/influx-line-protocol-parser": "^0.2.1",
     "@qxip/plugnplay": "^3.3.1",
     "axios": "^0.21.4",
