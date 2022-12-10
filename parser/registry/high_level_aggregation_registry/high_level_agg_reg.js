@@ -9,7 +9,7 @@ function getByWithout (token) {
   return token.Child('by_without')
     ? [
         token.Child('by_without').value.toString().toLowerCase(),
-        token.Child('opt_by_without').Children('label').map(c => c.value)
+        token.Child('req_by_without').Children('label').map(c => c.value)
       ]
     : [undefined, undefined]
 }

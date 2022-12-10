@@ -265,7 +265,7 @@ module.exports.applyViaStream = (token, query,
   query.ctx.matrix = true
   byWithoutName = byWithoutName || 'by_without'
   if (token.Child(byWithoutName)) {
-    query = applyByWithoutStream(token.Child(`opt_${byWithoutName}`), query, byWithoutName)
+    query = applyByWithoutStream(token.Child(`req_${byWithoutName}`), query, byWithoutName)
   }
   let results = new Map()
   const duration = getDuration(token, query)

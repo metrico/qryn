@@ -1,6 +1,6 @@
 {
   "name": "qryn",
-  "version": "2.1.45",
+  "version": "2.1.53",
   "description": "LogQL API with Clickhouse Backend",
   "main": "qryn.js",
   "bin": {
@@ -38,7 +38,7 @@
     "@fastify/cors": "^8.1.0",
     "@fastify/static": "^6.5.0",
     "@fastify/websocket": "^7.1.1",
-    "@fastify/formbody": "^7.0.1",
+    "@fastify/formbody": "^7.4.0",
     "@qxip/influx-line-protocol-parser": "^0.2.1",
     "@qxip/plugnplay": "^3.3.1",
     "axios": "^0.21.4",
@@ -69,7 +69,7 @@
     "ws": "^8.0.0",
     "xxhash-wasm": "^0.4.2",
     "yaml": "^1.10.2",
-    "@qxip/promql2logql": "^1.0.21",
+    "@qxip/promql2logql": "^1.0.22",
     "node-gzip": "^1.1.2",
     "csv-writer": "^1.6.0"
   },

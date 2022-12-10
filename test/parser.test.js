@@ -121,3 +121,10 @@ it('should parse duration', () => {
   expect(UTILS.parseDurationSecOrDefault('145d', 5)).toEqual(5)
   expect(UTILS.parseDurationSecOrDefault('trash', 5)).toEqual(5)
 })
+
+it('should parse invalid expressions fast', () => {
+  const start = Date.now()
+  expect(bnf.ParseScript('sum(count_over_time({namespace=~"qefqef", pod=~"3e3e3e3", stream="stdout", container="nginx"} |= `wee`  | json request_uri="message.request_uri" | unwrap [5m]))'))
+    .toBeFalsy()
+  expect(Date.now() - start).toBeLessThan(1000)
+})
