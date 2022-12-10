@@ -45,7 +45,7 @@
     "axios": "^0.21.4",
     "bnf": "^1.0.1",
     "date-fns": "^2.27.0",
-    "fastify": "^4.5.2",
+    "fastify": "^4.10.2",
     "fastify-basic-auth": "^0.4.0",
     "fastify-metrics": "^8.0.0",
     "fastify-url-data": "^2.4.0",

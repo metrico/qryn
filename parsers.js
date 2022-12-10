@@ -18,25 +18,26 @@ const { parse: queryParser } = require('fast-querystring')
 /**
  *
  * @param req {FastifyRequest}
+ * @param payload {Stream}
  * @returns {any}
  */
-const wwwFormParser = async (req) => {
-  return queryParser(await getContentBody(req))
+const wwwFormParser = async (req, payload) => {
+  return queryParser(await getContentBody(req, payload))
 }
 
 /**
  *
  * @param req {FastifyRequest}
- *
+ * @param payload {Stream}
  */
-const lokiPushJSONParser = async (req) => {
+const lokiPushJSONParser = async (req, payload) => {
   try {
     const length = getContentLength(req, 1e9)
     if (length > 5e6) {
       return
     }
     await shaper.register(length)
-    return JSON.parse(await getContentBody(req))
+    return JSON.parse(await getContentBody(req, payload))
   } catch (err) {
     err.statusCode = 400
     throw err
@@ -46,36 +47,40 @@ const lokiPushJSONParser = async (req) => {
 /**
  *
  * @param req {FastifyRequest}
+ * @param payload {Stream}
  * @returns {any}
  */
-async function tempoPushNDJSONParser (req) {
-  const parser = req.raw.pipe(jsonlParser())
+async function tempoPushNDJSONParser (req, payload) {
+  const parser = payload.pipe(jsonlParser())
   parser.on('error', err => { parser.error = err })
   return parser
 }
 
 /**
  * @param req {FastifyRequest}
+ * @param payload {Stream}
  * @returns {any}
  */
-async function jsonParser (req) {
-  return JSON.parse(await getContentBody(req))
+async function jsonParser (req, payload) {
+  return JSON.parse(await getContentBody(req, payload))
 }
 
 /**
  * @param req {FastifyRequest}
+ * @param payload {Stream}
  * @returns {any}
  */
-async function yamlParser (req) {
-  return yaml.parse(await getContentBody(req))
+async function yamlParser (req, payload) {
+  return yaml.parse(await getContentBody(req, payload))
 }
 
 /**
  *
  * @param req {FastifyRequest}
+ * @param payload {Stream}
  * @returns {any}
  */
-async function tempoPushParser (req) {
+async function tempoPushParser (req, payload) {
   const firstData = await new Promise((resolve, reject) => {
     req.raw.once('data', resolve)
     req.raw.once('error', reject)
@@ -95,15 +100,17 @@ async function tempoPushParser (req) {
 
 /**
  * @param req {FastifyRequest}
+ * @param payload {Stream}
  */
-async function rawStringParser (req) {
-  return await getContentBody(req)
+async function rawStringParser (req, payload) {
+  return await getContentBody(req, payload)
 }
 
 /**
  * @param req {FastifyRequest}
+ * @param payload {Stream}
  */
-async function lokiPushProtoParser (req) {
+async function lokiPushProtoParser (req, payload) {
   if (!snappy) {
     throw new Error('snappy not found')
   }
@@ -133,8 +140,9 @@ async function lokiPushProtoParser (req) {
 
 /**
  * @param req {FastifyRequest}
+ * @param payload {Stream}
  */
-async function prometheusPushProtoParser (req) {
+async function prometheusPushProtoParser (req, payload) {
   if (!snappy) {
     throw new Error('snappy not found')
   }
@@ -162,8 +170,9 @@ async function prometheusPushProtoParser (req) {
 
 /**
  * @param req {FastifyRequest}
+ * @param payload {Stream}
  */
-async function otlpPushProtoParser (req) {
+async function otlpPushProtoParser (req, payload) {
   const length = getContentLength(req, 5e6)
   await shaper.register(length)
   let body = []
@@ -186,9 +195,10 @@ async function otlpPushProtoParser (req) {
 /**
  *
  * @param req {FastifyRequest}
+ * @param payload {Stream}
  * @returns {*}
  */
-function tempoNDJsonParser (req) {
+function tempoNDJsonParser (req, payload) {
   const parser = req.raw.pipe(jsonlParser())
   parser.on('error', err => { parser.error = err })
   return parser
@@ -205,10 +215,10 @@ function combinedParser (...subparsers) {
    * @param req {FastifyRequest}
    * @returns {any}
    */
-  return async (req) => {
+  return async (req, payload) => {
     for (const p of subparsers) {
       try {
-        return await p(req)
+        return await p(req, payload)
       } catch (e) {}
     }
     return undefined
@@ -227,27 +237,35 @@ const parsers = {
     }
     return fastify
   },
+
   /**
    *
-   * @param req {FastifyRequest}
+   * @param contentType {string}
+   * @returns {function(FastifyRequest, Stream): Promise<*>}
    */
-  parse: (contentType) => async (req) => {
-    const find = (obj, path) => {
-      for (const p of path) {
-        if (!obj[p]) {
-          return null
+  parse: (contentType) =>
+    /**
+     *
+     * @param req {FastifyRequest}
+     * @param payload {Stream}
+     */
+    async (req, payload) => {
+      const find = (obj, path) => {
+        for (const p of path) {
+          if (!obj[p]) {
+            return null
+          }
+          obj = obj[p]
         }
-        obj = obj[p]
+        return obj
       }
-      return obj
-    }
-    const parser = find(parsers._parsers, [contentType, req.routerMethod, req.routerPath]) ||
-      find(parsers._parsers, ['*', req.routerMethod, req.routerPath])
-    if (!parser) {
-      throw new Error('undefined parser')
-    }
-    return await parser(req)
-  },
+      const parser = find(parsers._parsers, [contentType, req.routerMethod, req.routerPath]) ||
+        find(parsers._parsers, ['*', req.routerMethod, req.routerPath])
+      if (!parser) {
+        throw new Error('undefined parser')
+      }
+      return await parser(req, payload)
+    },
 
   /**
    *
@@ -309,17 +327,24 @@ function getContentLength (req, limit) {
 /**
  *
  * @param req {FastifyRequest}
+ * @param payload {Stream}
  * @returns {Promise<string>}
  */
-async function getContentBody (req) {
+async function getContentBody (req, payload) {
   if (req._rawBody) {
     return req._rawBody
   }
   let body = ''
-  req.raw.on('data', data => {
+  payload.on('data', data => {
     body += data.toString()
   })
-  await new Promise(resolve => req.raw.once('end', resolve))
+  if (payload.isPaused && payload.isPaused()) {
+    payload.resume()
+  }
+  await new Promise(resolve => {
+    payload.on('end', resolve)
+    payload.on('close', resolve)
+  })
   req._rawBody = body
   return body
 }
