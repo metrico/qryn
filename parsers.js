@@ -13,9 +13,21 @@ const path = require('path')
 const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib', 'prompb.proto')).lookupType('WriteRequest')
 const PushRequest = protobufjs.loadSync(path.join(__dirname, 'lib', 'loki.proto')).lookupType('PushRequest')
 const OTLPTraceData = protobufjs.loadSync(path.join(__dirname, 'lib', 'otlp.proto')).lookupType('TracesData')
+const { parse: queryParser } = require('fast-querystring')
+
 /**
  *
  * @param req {FastifyRequest}
+ * @returns {any}
+ */
+const wwwFormParser = async (req) => {
+  return queryParser(await getContentBody(req))
+}
+
+/**
+ *
+ * @param req {FastifyRequest}
+ *
  */
 const lokiPushJSONParser = async (req) => {
   try {
@@ -327,5 +339,6 @@ module.exports = {
   prometheusPushProtoParser,
   tempoNDJsonParser,
   otlpPushProtoParser,
+  wwwFormParser,
   parsers
 }
