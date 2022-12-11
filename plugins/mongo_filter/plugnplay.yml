@@ -1,0 +1,5 @@
+id: mongo_filter
+name: Format Output
+description: Filter JSON using MongoDB functions
+loader: index.js
+type: custom_processor
