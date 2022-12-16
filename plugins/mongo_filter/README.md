@@ -14,5 +14,8 @@ Original LogQL Selector:
 
 Mongo Filter:
 ```
-mongo({age: {$exists: true}}, {type="people"} |="alive" | json)
+mongo({stream: { event: { $exists: true }}}, {type="people"} |="alive" | json)
+```
+```
+mongo({$where: 'this.stream.event === "user"'},  {type="people"} |="alive" | json )
 ```
