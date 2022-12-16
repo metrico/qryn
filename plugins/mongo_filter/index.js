@@ -39,18 +39,17 @@ class Plugin {
    */
   async process () {
     const match = this.query.match(/^mongo\({(.+)},\s*(.+)\)$/)
-    const response = await this.API.logql(match[2], this.start, this.end, this.limit)
+    let response = await this.API.logql(match[2], this.start, this.end, this.limit)
     
     // Sanity Check. What error should this return?
     if (!match || !match[1] || !match[2]) return response;
 
     // Filter using Mongo Query Compiler
-    let query = match[1];
-    let filterer = compileMongoQuery(query);
-    let results = response.data.result.filter(filterer);
+    let filterer = compileMongoQuery(match[1]);
+    response.data.result = response.data.result.filter(filterer);
     return {
       type: 'application/json',
-      out: results
+      out: response
     }
   }
 }
