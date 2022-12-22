@@ -85,6 +85,7 @@ const {
 /* Fastify Helper */
 let fastify = require('fastify')({
   logger,
+  bodyLimit: parseInt(process.env.FASTIFY_BODYLIMIT) || 5242880,
   requestTimeout: parseInt(process.env.FASTIFY_REQUESTTIMEOUT) || 0,
   maxRequestsPerSocket: parseInt(process.env.FASTIFY_MAXREQUESTS) || 0
 })
