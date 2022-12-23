@@ -102,3 +102,5 @@ module.exports.isOmitTablesCreation = () => process.env.OMIT_CREATE_TABLES === '
 module.exports.LineFmtOption = () => process.env.LINE_FMT || 'handlebars'
 
 module.exports.errors = require('./lib/handlers/errors')
+
+module.exports.CORS = process.env.CORS_ALLOW_ORIGIN || '*'
