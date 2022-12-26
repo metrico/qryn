@@ -45,7 +45,9 @@ module.exports.durationToMs = (durationStr) => {
     ms: 1,
     s: 1000,
     m: 60000,
-    h: 60000 * 60
+    h: 60000 * 60,
+    d: 60000 * 60 * 24,
+    w: 60000 * 60 * 24 * 7
   }
   for (const k of Object.keys(durations)) {
     const m = durationStr.match(new RegExp(`^([0-9][.0-9]*)${k}$`))
@@ -68,7 +70,9 @@ module.exports.durationToNs = (durationStr) => {
     ms: 1000000,
     s: 1000000000,
     m: 60000000000,
-    h: 60000000000 * 60
+    h: 60000000000 * 60,
+    d: 60000000000 * 60 * 24,
+    w: 60000000000 * 60 * 24 * 7
   }
   for (const k of Object.keys(durations)) {
     const m = durationStr.match(new RegExp(`^([0-9][.0-9]*)${k}$`))
