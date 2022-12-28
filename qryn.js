@@ -50,7 +50,7 @@ this.scanClickhouse = DATABASE.scanClickhouse
 this.pushZipkin = DATABASE.pushZipkin
 this.pushOTLP = DATABASE.pushOTLP
 this.queryTempoTags = DATABASE.queryTempoTags
-this.queryTempoValues = DATABASE.queryTempoValues;
+this.queryTempoValues = DATABASE.queryTempoValues
 const {
   shaper,
   parsers,
