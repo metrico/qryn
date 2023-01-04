@@ -280,6 +280,9 @@ let fastify = require('fastify')({
   fastify.get('/loki/api/v1/series', handlerSeries)
   const handlerPromSeries = require('./lib/handlers/prom_series.js').bind(this)
   fastify.get('/api/v1/series', handlerPromSeries)
+  fastify.post('/api/v1/series', handlerPromSeries, {
+    'application/x-www-form-urlencoded': wwwFormParser
+  })
 
   fastify.register(async (fastify) => {
     fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/tail').bind(this))
@@ -338,6 +341,13 @@ let fastify = require('fastify')({
   fastify.get('/api/v1/metadata', handlerPromDefault.misc.bind(this)) // default handler TBD
   fastify.get('/api/v1/rules', handlerPromDefault.rules.bind(this)) // default handler TBD
   fastify.get('/api/v1/query_exemplars', handlerPromDefault.misc.bind(this)) // default handler TBD
+  fastify.post('/api/v1/query_exemplars', handlerPromDefault.misc.bind(this), {
+    'application/x-www-form-urlencoded': wwwFormParser
+  }) // default handler TBD
+  fastify.get('/api/v1/format_query', handlerPromDefault.misc.bind(this)) // default handler TBD
+  fastify.post('/api/v1/format_query', handlerPromDefault.misc.bind(this), {
+    'application/x-www-form-urlencoded': wwwFormParser
+  }) // default handler TBD
   fastify.get('/api/v1/status/buildinfo', handlerPromDefault.buildinfo.bind(this)) // default handler TBD
 
   /* NewRelic Log Handler */
