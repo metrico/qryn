@@ -29,7 +29,7 @@ string_label_filter_expression ::= <label> <OWSP> <operator> <OWSP> <quoted_str>
 number_label_filter_expression ::= <label> <OWSP> <number_operator> <OWSP> <number_value>
 number_operator ::= <number_operator_registry>
 number_value ::= <duration_value> | <bytes_value> | <NUMBER>
-duration_value ::= <NUMBER> ("ns"|"us"|"ms"|"s"|"m"|"h")
+duration_value ::= <NUMBER> ("ns"|"us"|"ms"|"s"|"m"|"h"|"d"|"w")
 bytes_value ::= <NUMBER> ("b"|"kib"|"kb"|"mb"|"mib"|"gib"|"gb"|"lib"|"tb"|"pib"|"pb"|"eib"|"eb")
 
 line_format_fn ::= "line_format_native" | "line_format"
