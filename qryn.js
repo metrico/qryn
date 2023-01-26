@@ -57,6 +57,7 @@ const {
   lokiPushJSONParser, lokiPushProtoParser, jsonParser, rawStringParser, tempoPushParser, tempoPushNDJSONParser,
   yamlParser, prometheusPushProtoParser, combinedParser, otlpPushProtoParser, wwwFormParser
 } = require('./parsers')
+const fastifyPlugin = require('fastify-plugin')
 let profiler = null
 let fastify = require('fastify')({
   logger,
@@ -87,6 +88,23 @@ let fastify = require('fastify')({
     process.exit(1)
   }
 
+  await fastify.register(fastifyPlugin((fastify, opts, done) => {
+    const snappyPaths = [
+      '/api/v1/prom/remote/write',
+      '/api/prom/remote/write',
+      '/prom/remote/write',
+      '/loki/api/v1/push'
+    ]
+    fastify.addHook('preParsing', (request, reply, payload, done) => {
+      if (snappyPaths.indexOf(request.routerPath) !== -1) {
+        if (request.headers['content-encoding'] === 'snappy') {
+          delete request.headers['content-encoding']
+        }
+      }
+      done(null, payload)
+    })
+    done()
+  }))
   await fastify.register(require('@fastify/compress'))
   await fastify.register(require('fastify-url-data'))
   await fastify.register(require('@fastify/websocket'))
