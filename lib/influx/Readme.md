@@ -3,8 +3,11 @@
 ## API
 
 `async init()` - initialize WASM
+
 `parse('<INFLUX LINE REQUEST>')` - parse influx request to JSON
+
 - output: `[{timestamp: "<timestmap in ns>", measurement: "<measurement>", tags:{tag1: "val1"}, fields:{f1: "v1"}]`
+
 NOTE: Currently supports only `ns` precision!!!
 
 ## Example
