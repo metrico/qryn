@@ -9,6 +9,11 @@ on:
       - '**.yml'
       - '**.yaml'
 
+permissions:
+  contents: read
+  pull-requests: write
+  packages: write
+
 jobs:
   bump-version:
     name: 'Bump Version on master & Publish'
