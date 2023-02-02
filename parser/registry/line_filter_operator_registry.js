@@ -7,7 +7,7 @@ const Sql = require('@cloki/clickhouse-sql')
  */
 const likePercent = (val) => {
   if (!val) {
-    return "''"
+    return "'%'"
   }
   val = Sql.quoteVal(val).toString()
   val = val.substring(1, val.length - 1)
@@ -24,6 +24,9 @@ module.exports = {
      */
   '|=': (token, query) => {
     const val = unquoteToken(token)
+    if (!val) {
+      return query
+    }
     query.where(Sql.Ne(new Sql.Raw(`like(string, ${likePercent(val)})`), 0))
     return query
   },
@@ -35,6 +38,9 @@ module.exports = {
      */
   '|~': (token, query) => {
     const val = unquoteToken(token)
+    if (!val) {
+      return query
+    }
     query.where(Sql.Eq(new Sql.Raw(`match(string, ${Sql.quoteVal(val)})`), new Sql.Raw('1')))
     return query
   },
