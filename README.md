@@ -1,4 +1,6 @@
+<a href="https://qryn.dev" target="_blank">
 <img src='https://user-images.githubusercontent.com/1423657/218816262-e0e8d7ad-44d0-4a7d-9497-0d383ed78b83.png' style="margin-left:-10px" width=350/>
+</a>
 
 [![Codefresh build status]( https://g.codefresh.io/api/badges/pipeline/lmangani/lmangani%2FcLoki%2FcLoki?branch=master&key=eyJhbGciOiJIUzI1NiJ9.NTkxMzIxNGZlNjQxOWIwMDA2OWY1ZjU4.s1Y7vvE73ZWAIGYb4YCkATleW61RZ8sKypOc8Vae1c0&type=cf-1)]( https://g.codefresh.io/pipelines/cLoki/builds?repoOwner=lmangani&repoName=cLoki&serviceName=lmangani%2FcLoki&filter=trigger:build~Build;branch:master;pipeline:5cdf4a833a13130275ac87a8~cLoki)
 ![CodeQL](https://github.com/lmangani/cLoki/workflows/CodeQL/badge.svg)
@@ -7,7 +9,7 @@
 </a>
 
 
-# [qryn.dev](https://metrico.in/qryn) 
+# [qryn.dev](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud) :heart:
 > ... it's pronounced /ˈkwɪr..ɪŋ/ or just querying
 
 :rocket: **qryn** is a **polyglot observability** framework built on top of [ClickHouse](https://clickhouse.com/)<br/>
