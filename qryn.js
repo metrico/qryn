@@ -251,23 +251,30 @@ let fastify = require('fastify')({
   const handlerTempoTraces = require('./lib/handlers/tempo_traces.js').bind(this)
   fastify.get('/api/traces/:traceId', handlerTempoTraces)
   fastify.get('/api/traces/:traceId/:json', handlerTempoTraces)
+  fastify.get('/tempo/api/traces/:traceId', handlerTempoTraces)
+  fastify.get('/tempo/api/traces/:traceId/:json', handlerTempoTraces)
+
 
   /* Tempo Tag Handlers */
 
   const handlerTempoLabel = require('./lib/handlers/tempo_tags').bind(this)
   fastify.get('/api/search/tags', handlerTempoLabel)
+  fastify.get('/tempo/api/search/tags', handlerTempoLabel)
 
   /* Tempo Tag Value Handler */
   const handlerTempoLabelValues = require('./lib/handlers/tempo_values').bind(this)
   fastify.get('/api/search/tag/:name/values', handlerTempoLabelValues)
+  fastify.get('/tempo/api/search/tag/:name/values', handlerTempoLabelValues)
 
   /* Tempo Traces Query Handler */
   const handlerTempoSearch = require('./lib/handlers/tempo_search.js').bind(this)
   fastify.get('/api/search', handlerTempoSearch)
+  fastify.get('/tempo/api/search', handlerTempoSearch)
 
   /* Tempo Echo Handler */
   const handlerTempoEcho = require('./lib/handlers/echo.js').bind(this)
   fastify.get('/api/echo', handlerTempoEcho)
+  fastify.get('/tempo/api/echo', handlerTempoEcho)
 
   /* Telegraf HTTP Bulk handler */
   const handlerTelegraf = require('./lib/handlers/telegraf.js').bind(this)
