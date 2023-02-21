@@ -23,6 +23,7 @@ const Sql = require('@cloki/clickhouse-sql')
 const { simpleAnd } = require('./registry/stream_selector_operator_registry/stream_selector_operator_registry')
 const logger = require('../lib/logger')
 const { QrynBadRequest } = require('../common').errors
+const optimizations = require('./registry/smart_optimizations')
 
 /**
  * @param joinLabels {boolean}
@@ -73,6 +74,34 @@ module.exports.initQuery = (joinLabels) => {
 }
 
 /**
+ * @param joinLabels {boolean}
+ * @returns {Select}
+ */
+module.exports.initQueryV3_2 = (joinLabels) => {
+  const from = new Sql.Parameter(sharedParamNames.from)
+  const to = new Sql.Parameter(sharedParamNames.to)
+  const tsClause = new Sql.Raw('')
+  tsClause.toString = () => {
+    if (to.get()) {
+      return Sql.between('samples.timestamp_ns', from, to).toString()
+    }
+    return Sql.Gt('samples.timestamp_ns', from).toString()
+  }
+  const q = (new Sql.Select())
+    .select(['samples.fingerprint', 'fingerprint'])
+    .from(['metrics_15s', 'samples'])
+    .where(tsClause)
+    .addParam(from)
+    .addParam(to)
+  if (joinLabels) {
+    q.join(`${DATABASE_NAME()}.time_series`, 'left any',
+      Sql.Eq('samples.fingerprint', new Sql.Raw('time_series.fingerprint')))
+    q.select([new Sql.Raw('JSONExtractKeysAndValues(time_series.labels, \'String\')'), 'labels'])
+  }
+  return q
+}
+
+/**
  *
  * @param request {{
  * query: string,
@@ -87,6 +116,12 @@ module.exports.initQuery = (joinLabels) => {
  * @returns {{query: string, stream: (function (DataStream): DataStream)[], matrix: boolean, duration: number | undefined}}
  */
 module.exports.transpile = (request) => {
+  const response = (query) => ({
+    query: request.rawQuery ? query : query.toString(),
+    matrix: !!query.ctx.matrix,
+    duration: query.ctx && query.ctx.duration ? query.ctx.duration : 1000,
+    stream: getStream(query)
+  })
   const expression = compiler.ParseScript(request.query.trim())
   if (!expression) {
     throw new QrynBadRequest('invalid request')
@@ -107,6 +142,12 @@ module.exports.transpile = (request) => {
   let end = BigInt(request.end || (BigInt(Date.now()) * BigInt(1e6)))
   const step = BigInt(request.step ? Math.floor(parseFloat(request.step) * 1000) : 0) * BigInt(1e6)
   */
+  if (request.optimizations) {
+    const query = optimizations.apply(token, start * 1000000, end * 1000000, step * 1000000)
+    if (query) {
+      return response(query)
+    }
+  }
   const joinLabels = ['unwrap_function', 'log_range_aggregation', 'aggregation_operator',
     'agg_statement', 'user_macro', 'parser_expression', 'label_filter_pipeline',
     'line_format_expression', 'labels_format_expression'].some(t => token.Child(t))
@@ -117,7 +158,7 @@ module.exports.transpile = (request) => {
   const readTable = samplesReadTableName(start)
   query.ctx = {
     step: step,
-    legacy:  !checkVersion('v3_1', start),
+    legacy: !checkVersion('v3_1', start),
     joinLabels: joinLabels
   }
   let duration = null
@@ -170,12 +211,7 @@ module.exports.transpile = (request) => {
   setQueryParam(query, 'isMatrix', query.ctx.matrix)
   logger.debug(query.toString())
   console.log(query.toString())
-  return {
-    query: request.rawQuery ? query : query.toString(),
-    matrix: !!query.ctx.matrix,
-    duration: query.ctx && query.ctx.duration ? query.ctx.duration : 1000,
-    stream: getStream(query)
-  }
+  return response(query)
 }
 
 /**
