@@ -51,6 +51,7 @@
     "fastify": "^4.10.2",
     "fastify-basic-auth": "^0.4.0",
     "fastify-metrics": "^8.0.0",
+    "fastify-plugin": "^4.5.0",
     "fastify-url-data": "^2.4.0",
     "glob": "^7.1.2",
     "handlebars": "^4.7.7",
