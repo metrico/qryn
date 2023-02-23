@@ -19,7 +19,17 @@ module.exports.isApplicable = (token, fromMS) => {
   }
   const durationMs = getDuration(token)
   return checkVersion('v3_2', fromMS) &&
-    !token.Child('log_pipeline') && reg[logAggFn] && durationMs >= 15000 && durationMs % 15000 === 0
+    !isLogPipeline(token) && reg[logAggFn] && durationMs >= 15000 && durationMs % 15000 === 0
+}
+
+function isLogPipeline (token) {
+  let isPipeline = false
+  for (const pipeline of token.Children('log_pipeline')) {
+    isPipeline |= !pipeline.Child('line_filter_operator') ||
+      !(pipeline.Child('line_filter_operator').value === '|=' &&
+        ['""', '``'].includes(pipeline.Child('quoted_str').value))
+  }
+  return isPipeline
 }
 
 /**
