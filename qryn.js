@@ -51,6 +51,7 @@ this.pushZipkin = DATABASE.pushZipkin
 this.pushOTLP = DATABASE.pushOTLP
 this.queryTempoTags = DATABASE.queryTempoTags
 this.queryTempoValues = DATABASE.queryTempoValues
+
 const {
   shaper,
   parsers,
@@ -71,6 +72,7 @@ let fastify = require('fastify')({
       await init(process.env.CLICKHOUSE_DB || 'cloki')
       await startAlerting()
     }
+    await DATABASE.checkDB()
     if (!this.readonly && process.env.PROFILE) {
       const tag = JSON.stringify({ profiler_id: process.env.PROFILE, label: 'RAM usage' })
       const fp = this.fingerPrint(tag)
