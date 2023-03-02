@@ -34,7 +34,7 @@
   "homepage": "https://github.com/lmangani/qryn#readme",
   "dependencies": {
     "@apla/clickhouse": "^1.6.4",
-    "@cloki/clickhouse-sql": "1.2.2",
+    "@cloki/clickhouse-sql": "1.2.10",
     "@fastify/compress": "^6.2.0",
     "@fastify/cors": "^8.1.0",
     "@fastify/static": "^6.5.0",
