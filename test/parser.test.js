@@ -22,7 +22,7 @@ it('should compile', () => {
 it('should compile strings with escaped quotes', () => {
   const res = bnf.ParseScript('bytes_rate({run="kok\\"oko",u_ru_ru!="lolol",zozo=~"sssss"}  |~"atltlt" !~   "rmrmrm" [5m])')
   expect(res.rootToken.Children('log_stream_selector_rule').map(c => c.value)).toEqual(
-    ['run="kok\\\"oko"', 'u_ru_ru!="lolol"', 'zozo=~"sssss"']
+    ['run="kok\\"oko"', 'u_ru_ru!="lolol"', 'zozo=~"sssss"']
   )
   const res2 = bnf.ParseScript('bytes_rate({run=`kok\\`oko`,u_ru_ru!="lolol",zozo=~"sssss"}  |~"atltlt" !~   "rmrmrm" [5m])')
   expect(res2.rootToken.Children('log_stream_selector_rule').map(c => c.value)).toEqual(
@@ -127,4 +127,18 @@ it('should parse invalid expressions fast', () => {
   expect(bnf.ParseScript('sum(count_over_time({namespace=~"qefqef", pod=~"3e3e3e3", stream="stdout", container="nginx"} |= `wee`  | json request_uri="message.request_uri" | unwrap [5m]))'))
     .toBeFalsy()
   expect(Date.now() - start).toBeLessThan(1000)
+})
+
+it('should parse parameterized fns', () => {
+  let exp = bnf.ParseScript('topk(5, rate({a="b"}[1s]))')
+  expect(exp.rootToken.value).toEqual('topk(5, rate({a="b"}[1s]))')
+
+  exp = bnf.ParseScript('topk(5, sum(rate({a="b"}[1s])) by (a))')
+  expect(exp.rootToken.value).toEqual('topk(5, sum(rate({a="b"}[1s])) by (a))')
+
+  exp = bnf.ParseScript('topk(5, rate({a="b"}|unwrap b[1s]) by (a))')
+  expect(exp.rootToken.value).toEqual('topk(5, rate({a="b"}|unwrap b[1s]) by (a))')
+
+  exp = bnf.ParseScript('topk(5, sum(rate({a="b"}|unwrap b[1s]) by (a)) by (b) > 1)')
+  expect(exp.rootToken.value).toEqual('topk(5, sum(rate({a="b"}|unwrap b[1s]) by (a)) by (b) > 1)')
 })

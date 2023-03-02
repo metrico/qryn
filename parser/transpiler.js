@@ -3,6 +3,7 @@ const lineFilterOperatorRegistry = require('./registry/line_filter_operator_regi
 const logRangeAggregationRegistry = require('./registry/log_range_aggregation_registry')
 const highLevelAggregationRegistry = require('./registry/high_level_aggregation_registry')
 const numberOperatorRegistry = require('./registry/number_operator_registry')
+const parameterizedAggregationRegistry = require('./registry/parameterized_aggregation_registry')
 const complexLabelFilterRegistry = require('./registry/complex_label_filter_expression')
 const lineFormat = require('./registry/line_format')
 const parserRegistry = require('./registry/parser_registry')
@@ -117,7 +118,7 @@ module.exports.transpile = (request) => {
   const readTable = samplesReadTableName(start)
   query.ctx = {
     step: step,
-    legacy:  !checkVersion('v3_1', start),
+    legacy: !checkVersion('v3_1', start),
     joinLabels: joinLabels
   }
   let duration = null
@@ -162,6 +163,10 @@ module.exports.transpile = (request) => {
   if (token.Child('agg_statement') && token.Child('compared_agg_statement_cmp')) {
     const op = token.Child('compared_agg_statement_cmp').Child('number_operator').value
     query = numberOperatorRegistry[op](token.Child('agg_statement'), query)
+  }
+  if (token.Child('parameterized_expression')) {
+    const op = token.Child('parameterized_expression_fn').value
+    query = parameterizedAggregationRegistry[op](token.Child('parameterized_expression'), query)
   }
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
   setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${readTable}`)
@@ -222,7 +227,7 @@ module.exports.transpileTail = (request) => {
   query.order_expressions = []
   query.orderBy(['timestamp_ns', 'asc'])
   query.limit(undefined, undefined)
-  //logger.debug(query.toString())
+  // logger.debug(query.toString())
   return {
     query: request.rawRequest ? query : query.toString(),
     stream: getStream(query)
