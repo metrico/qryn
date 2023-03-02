@@ -12,6 +12,8 @@ const Sql = require('@cloki/clickhouse-sql')
  * @param byWithoutName {string} name of the by_without token
  */
 const applyViaStream = (token, query, counterFn, summarizeFn, lastValue, byWithoutName) => {
+  query.limit(undefined, undefined)
+  query.ctx.matrix = true
   return _applyViaStream(token, timeShiftViaStream(token, query), counterFn, summarizeFn, lastValue, byWithoutName)
 }
 
@@ -72,7 +74,6 @@ module.exports.genericRate = genericRate
  */
 module.exports.rateStream = (token, query) => {
   const duration = getDuration(token, query)
-  query.limit(undefined, undefined)
   return applyViaStream(token, query, (sum) => {
     sum = sum || 0
     ++sum

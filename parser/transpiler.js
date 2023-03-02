@@ -22,7 +22,7 @@ const { getPlg } = require('../plugins/engine')
 const Sql = require('@cloki/clickhouse-sql')
 const { simpleAnd } = require('./registry/stream_selector_operator_registry/stream_selector_operator_registry')
 const logger = require('../lib/logger')
-const { QrynBadRequest } = require('../common').errors
+const { QrynBadRequest } = require('../lib/handlers/errors')
 
 /**
  * @param joinLabels {boolean}
