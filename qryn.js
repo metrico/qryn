@@ -51,12 +51,14 @@ this.pushZipkin = DATABASE.pushZipkin
 this.pushOTLP = DATABASE.pushOTLP
 this.queryTempoTags = DATABASE.queryTempoTags
 this.queryTempoValues = DATABASE.queryTempoValues
+
 const {
   shaper,
   parsers,
   lokiPushJSONParser, lokiPushProtoParser, jsonParser, rawStringParser, tempoPushParser, tempoPushNDJSONParser,
   yamlParser, prometheusPushProtoParser, combinedParser, otlpPushProtoParser, wwwFormParser
 } = require('./parsers')
+const fastifyPlugin = require('fastify-plugin')
 let profiler = null
 let fastify = require('fastify')({
   logger,
@@ -70,6 +72,7 @@ let fastify = require('fastify')({
       await init(process.env.CLICKHOUSE_DB || 'cloki')
       await startAlerting()
     }
+    await DATABASE.checkDB()
     if (!this.readonly && process.env.PROFILE) {
       const tag = JSON.stringify({ profiler_id: process.env.PROFILE, label: 'RAM usage' })
       const fp = this.fingerPrint(tag)
@@ -87,6 +90,23 @@ let fastify = require('fastify')({
     process.exit(1)
   }
 
+  await fastify.register(fastifyPlugin((fastify, opts, done) => {
+    const snappyPaths = [
+      '/api/v1/prom/remote/write',
+      '/api/prom/remote/write',
+      '/prom/remote/write',
+      '/loki/api/v1/push'
+    ]
+    fastify.addHook('preParsing', (request, reply, payload, done) => {
+      if (snappyPaths.indexOf(request.routerPath) !== -1) {
+        if (request.headers['content-encoding'] === 'snappy') {
+          delete request.headers['content-encoding']
+        }
+      }
+      done(null, payload)
+    })
+    done()
+  }))
   await fastify.register(require('@fastify/compress'))
   await fastify.register(require('fastify-url-data'))
   await fastify.register(require('@fastify/websocket'))
@@ -233,23 +253,30 @@ let fastify = require('fastify')({
   const handlerTempoTraces = require('./lib/handlers/tempo_traces.js').bind(this)
   fastify.get('/api/traces/:traceId', handlerTempoTraces)
   fastify.get('/api/traces/:traceId/:json', handlerTempoTraces)
+  fastify.get('/tempo/api/traces/:traceId', handlerTempoTraces)
+  fastify.get('/tempo/api/traces/:traceId/:json', handlerTempoTraces)
+
 
   /* Tempo Tag Handlers */
 
   const handlerTempoLabel = require('./lib/handlers/tempo_tags').bind(this)
   fastify.get('/api/search/tags', handlerTempoLabel)
+  fastify.get('/tempo/api/search/tags', handlerTempoLabel)
 
   /* Tempo Tag Value Handler */
   const handlerTempoLabelValues = require('./lib/handlers/tempo_values').bind(this)
   fastify.get('/api/search/tag/:name/values', handlerTempoLabelValues)
+  fastify.get('/tempo/api/search/tag/:name/values', handlerTempoLabelValues)
 
   /* Tempo Traces Query Handler */
   const handlerTempoSearch = require('./lib/handlers/tempo_search.js').bind(this)
   fastify.get('/api/search', handlerTempoSearch)
+  fastify.get('/tempo/api/search', handlerTempoSearch)
 
   /* Tempo Echo Handler */
   const handlerTempoEcho = require('./lib/handlers/echo.js').bind(this)
   fastify.get('/api/echo', handlerTempoEcho)
+  fastify.get('/tempo/api/echo', handlerTempoEcho)
 
   /* Telegraf HTTP Bulk handler */
   const handlerTelegraf = require('./lib/handlers/telegraf.js').bind(this)
