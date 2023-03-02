@@ -13,9 +13,6 @@ const topBottom = (token, query, isTop) => {
   if (hasStream(query)) {
     throw new QrynBadRequest('Not supported')
   }
-  if (token.Child('unwrap_function')) {
-    throw new QrynBadRequest('Not implemented')
-  }
 
   const parA = new Sql.With('par_a', query)
   const len = parseInt(token.Child('parameter_value').value)
