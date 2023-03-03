@@ -93,7 +93,12 @@
     "@opentelemetry/sdk-trace-node": "^0.25.0",
     "@opentelemetry/resources": "^0.25.0",
     "@opentelemetry/semantic-conventions": "^0.25.0",
-    "@opentelemetry/sdk-trace-base": "^0.25.0"
+    "@opentelemetry/sdk-trace-base": "^0.25.0",
+    "@influxdata/influxdb-client": "^1.33.2",
+    "prometheus-remote-write": "^0.3.0",
+    "node-fetch": "^2.6.7",
+    "@elastic/elasticsearch": "^8.5.0",
+    "node-abort-controller": "^3.1.1"
   },
   "directories": {
     "lib": "lib"
