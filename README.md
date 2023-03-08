@@ -13,12 +13,13 @@
 > ... it's pronounced /ˈkwɪr..ɪŋ/ or just querying
 
 :rocket: **qryn** is a **polyglot observability** framework built on top of [ClickHouse](https://clickhouse.com/)<br/>
-- Built in [Explore UI](https://github.com/metrico/cloki-view) and [LogQL CLI](https://github.com/lmangani/vLogQL) for querying and extracting data
+- All your **Logs, Metrics and Traces**. Compatible with multiple standards, with native correlation, shared labels
+- Ingestion and [PUSH APIs](https://qryn.metrico.in/#/support) transparently compatible with [LogQL, PromQL, InfluxDB, Elastic](https://qryn.dev) _and more_
 - Native [Grafana](http://docs.grafana.org/features/explore/) [^3] and [LogQL](https://grafana.com/docs/loki/latest/logql/) APIs for [querying](https://github.com/lmangani/qryn/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/qryn/wiki/Inserting-Logs-to-cLoki), [tracing](https://github.com/lmangani/qryn/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/qryn/wiki/Ruler---Alerts) [^2] 
 - Powerful pipeline to dynamically search, filter and extract data from logs, events, traces _and beyond_
-- Ingestion and [PUSH APIs](https://qryn.metrico.in/#/support) transparently compatible with [LogQL, PromQL, InfluxDB, Elastic](https://qryn.dev) _and more_
 - Ready to use with Agents such as [Promtail, Grafana-Agent, Vector, Logstash, Telegraf](https://qryn.metrico.in/#/ingestion) and _many others_
-- Cloud native, stateless and compact design
+- Built in [Explore UI](https://github.com/metrico/cloki-view) and [CLI](https://github.com/lmangani/vLogQL) for querying and extracting data
+- [Cloud native](https://qryn.cloud), object storage friendly, stateless and compact.
 <br>
 
 <a href="https://qryn.dev" target="_blank">
