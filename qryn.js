@@ -10,6 +10,7 @@ this.http_user = process.env.QRYN_LOGIN || process.env.CLOKI_LOGIN || undefined
 this.http_password = process.env.QRYN_PASSWORD || process.env.CLOKI_PASSWORD || undefined
 
 this.maxListeners = process.env.MAXLISTENERS || 0;
+
 process.setMaxListeners(this.maxListeners)
 
 require('./plugins/engine')
@@ -59,8 +60,9 @@ const {
   lokiPushJSONParser, lokiPushProtoParser, jsonParser, rawStringParser, tempoPushParser, tempoPushNDJSONParser,
   yamlParser, prometheusPushProtoParser, combinedParser, otlpPushProtoParser, wwwFormParser
 } = require('./parsers')
+
 const fastifyPlugin = require('fastify-plugin')
-let profiler = null
+
 let fastify = require('fastify')({
   logger,
   bodyLimit: parseInt(process.env.FASTIFY_BODYLIMIT) || 5242880,
@@ -256,7 +258,6 @@ let fastify = require('fastify')({
   fastify.get('/api/traces/:traceId/:json', handlerTempoTraces)
   fastify.get('/tempo/api/traces/:traceId', handlerTempoTraces)
   fastify.get('/tempo/api/traces/:traceId/:json', handlerTempoTraces)
-
 
   /* Tempo Tag Handlers */
 
