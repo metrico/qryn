@@ -4,13 +4,13 @@ name: QRYN CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, beta ]
     paths-ignore:
       - '**.md'
       - '**.yml'
       - '**.yaml'
   pull_request:
-    branches: [ master ]
+    branches: [ master, beta ]
     paths-ignore:
       - '**.md'
       - '**.yml'

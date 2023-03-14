@@ -27,7 +27,7 @@ services:
       org.label-schema.group: "monitoring"
 
   clickhouse-seed:
-    image: yandex/clickhouse-server
+    image: clickhouse/clickhouse-server
     container_name: clickhouse-seed
     ports:
       - 8123:8123

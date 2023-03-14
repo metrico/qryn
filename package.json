@@ -1,6 +1,6 @@
 {
   "name": "qryn",
-  "version": "2.1.53",
+  "version": "2.2.17",
   "description": "LogQL API with Clickhouse Backend",
   "main": "qryn.js",
   "bin": {
@@ -34,7 +34,8 @@
   "homepage": "https://github.com/lmangani/qryn#readme",
   "dependencies": {
     "@apla/clickhouse": "^1.6.4",
-    "@cloki/clickhouse-sql": "1.2.2",
+    "@cloki/clickhouse-sql": "1.2.10",
+    "@fastify/compress": "^6.2.0",
     "@fastify/cors": "^8.1.0",
     "@fastify/static": "^6.5.0",
     "@fastify/websocket": "^7.1.1",
@@ -44,7 +45,7 @@
     "axios": "^0.21.4",
     "bnf": "^1.0.1",
     "date-fns": "^2.27.0",
-    "fastify": "^4.5.2",
+    "fastify": "^4.10.2",
     "fastify-basic-auth": "^0.4.0",
     "fastify-metrics": "^8.0.0",
     "fastify-url-data": "^2.4.0",
@@ -92,7 +93,12 @@
     "@opentelemetry/sdk-trace-node": "^0.25.0",
     "@opentelemetry/resources": "^0.25.0",
     "@opentelemetry/semantic-conventions": "^0.25.0",
-    "@opentelemetry/sdk-trace-base": "^0.25.0"
+    "@opentelemetry/sdk-trace-base": "^0.25.0",
+    "@influxdata/influxdb-client": "^1.33.2",
+    "prometheus-remote-write": "^0.3.0",
+    "node-fetch": "^2.6.7",
+    "@elastic/elasticsearch": "^8.5.0",
+    "node-abort-controller": "^3.1.1"
   },
   "directories": {
     "lib": "lib"

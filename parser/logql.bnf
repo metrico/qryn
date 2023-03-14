@@ -29,7 +29,7 @@ string_label_filter_expression ::= <label> <OWSP> <operator> <OWSP> <quoted_str>
 number_label_filter_expression ::= <label> <OWSP> <number_operator> <OWSP> <number_value>
 number_operator ::= <number_operator_registry>
 number_value ::= <duration_value> | <bytes_value> | <NUMBER>
-duration_value ::= <NUMBER> ("ns"|"us"|"ms"|"s"|"m"|"h")
+duration_value ::= <NUMBER> ("ns"|"us"|"ms"|"s"|"m"|"h"|"d"|"w")
 bytes_value ::= <NUMBER> ("b"|"kib"|"kb"|"mb"|"mib"|"gib"|"gb"|"lib"|"tb"|"pib"|"pb"|"eib"|"eb")
 
 line_format_fn ::= "line_format_native" | "line_format"
@@ -64,7 +64,14 @@ unwrap_fn ::= <unwrap_registry>
 req_by_without_unwrap ::= <by_without_unwrap> <OWSP> "(" <OWSP> <label_list> <OWSP> ")"
 by_without_unwrap ::= "by" | "without"
 
-agg_statement ::= (<aggregation_operator> | <log_range_aggregation> | <unwrap_function>) [<OWSP> <compared_agg_statement_cmp>]
+agg_statement ::= (<aggregation_operator> | <log_range_aggregation> | <unwrap_function> | <parameterized_expression> | <parameterized_unwrapped_expression>) [<OWSP> <compared_agg_statement_cmp>]
 compared_agg_statement_cmp ::= <number_operator> <OWSP> <number_value>
 
 unwrap_value_statement ::= "unwrap_value"
+
+parameterized_unwrapped_expression ::= <parameterized_unwrapped_expression_fn><OWSP>"("<OWSP><parameter_value><OWSP>","<OWSP><unwrap_expression><OWSP>"["<duration_value>"]"<OWSP>")" [ <OWSP> <req_by_without_unwrap> ] [<OWSP> <compared_agg_statement_cmp>]
+parameterized_unwrapped_expression_fn ::= <parameterized_unwrapped_registry>
+
+parameterized_expression ::= <parameterized_expression_fn><OWSP>"("<OWSP><parameter_value><OWSP>","<OWSP>(<agg_statement>|<parameterized_unwrapped_expression>)<OWSP>")" [<OWSP> <compared_agg_statement_cmp>]
+parameter_value ::= <NUMBER>
+parameterized_expression_fn ::= <parameterized_aggregation_registry>

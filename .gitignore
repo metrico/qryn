@@ -2,3 +2,5 @@ node_modules
 /docker-env/
 /docker-env/
 /test/e2e/
+/lib/influx/.idea/
+/lib/influx/influx.iml
