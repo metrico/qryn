@@ -49,6 +49,8 @@
     "fastify-basic-auth": "^0.4.0",
     "fastify-metrics": "^8.0.0",
     "fastify-url-data": "^2.4.0",
+    "fastify-plugin": "^4.5.0",
+    "fast-querystring": "^1.1.0",
     "glob": "^7.1.2",
     "handlebars": "^4.7.7",
     "handlebars-helpers": "^0.9.8",
