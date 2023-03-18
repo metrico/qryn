@@ -7,7 +7,6 @@ let snappy = null
 try {
   snappy = require('snappyjs')
 } catch (e) {}
-const { pipeline } = require('stream')
 const stream = require('stream')
 const protobufjs = require('protobufjs')
 const path = require('path')
@@ -171,41 +170,23 @@ async function prometheusPushProtoParser (req, payload) {
 
 /**
  * @param req {FastifyRequest}
- * @param payload {Stream}
+ * @param payload {Stream} zlib.Gunzip
  */
 async function otlpPushProtoParser (req, payload) {
   const length = getContentLength(req, 5e6)
   await shaper.register(length)
+  let body = []
   const otelStream = stream.Readable.from(payload)
-
-  const transform = new stream.Transform({
-    objectMode: true,
-
-    transform (chunk, _, callback) {
-      try {
-        const decodedBody = OTLPTraceData.decode(chunk)
-        const parsedBody = OTLPTraceData.toObject(decodedBody, {
-          longs: String,
-          bytes: String
-        })
-        callback(null, parsedBody)
-      } catch (err) {
-        callback(err)
-      }
-    }
+  otelStream.on('data', data => {
+    body.push(data)
   })
-
-  await new Promise((resolve, reject) => {
-    pipeline(otelStream, transform, (err) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve()
-      }
-    })
+  await new Promise(resolve => otelStream.once('end', resolve))
+  body = Buffer.concat(body)
+  body = OTLPTraceData.toObject(OTLPTraceData.decode(body), {
+    longs: String,
+    bytes: String
   })
-
-  return transform.read()
+  return body
 }
 
 /**
