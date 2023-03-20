@@ -7,7 +7,7 @@ let snappy = null
 try {
   snappy = require('snappyjs')
 } catch (e) {}
-const gzip = require('node-gzip')
+const stream = require('stream')
 const protobufjs = require('protobufjs')
 const path = require('path')
 const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib', 'prompb.proto')).lookupType('WriteRequest')
@@ -170,21 +170,18 @@ async function prometheusPushProtoParser (req, payload) {
 
 /**
  * @param req {FastifyRequest}
- * @param payload {Stream}
+ * @param payload {Stream} zlib.Gunzip
  */
 async function otlpPushProtoParser (req, payload) {
   const length = getContentLength(req, 5e6)
   await shaper.register(length)
   let body = []
-  req.raw.on('data', (data) => {
+  const otelStream = stream.Readable.from(payload)
+  otelStream.on('data', data => {
     body.push(data)
   })
-  await new Promise(resolve => req.raw.once('end', resolve))
+  await new Promise(resolve => otelStream.once('end', resolve))
   body = Buffer.concat(body)
-  try {
-    body = await gzip.ungzip(body)
-  } catch (e) {}
-
   body = OTLPTraceData.toObject(OTLPTraceData.decode(body), {
     longs: String,
     bytes: String
