@@ -1,6 +1,6 @@
 {
   "name": "qryn",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "LogQL API with Clickhouse Backend",
   "main": "qryn.js",
   "bin": {
