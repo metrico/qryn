@@ -9,7 +9,7 @@
 </a>
 
 
-# [qryn.dev](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud) :heart:
+# [qryn.dev](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud)
 > ... it's pronounced /ˈkwɪr..ɪŋ/ or just querying
 
 :rocket: **qryn** is a **polyglot observability** framework built on top of [ClickHouse](https://clickhouse.com/)<br/>
