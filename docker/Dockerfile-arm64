@@ -1,0 +1,9 @@
+# qryn builder for arm64v8
+FROM arm64v8/node:16-slim
+ENV PORT 3100
+# use local source
+COPY . /app
+WORKDIR /app
+RUN npm install
+EXPOSE 3100
+CMD [ "npm", "start" ]
