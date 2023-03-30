@@ -1,4 +1,4 @@
-name: 'Bump & Publish'
+name: 'Bump & Publish Multi-Arch'
 
 on:
   push:
@@ -71,7 +71,9 @@ jobs:
           SECRET: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Set up Docker QEMU
         if: ${{ steps.checkdocker.outputs.secretspresent }}
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
+        with:
+           platforms: amd64, arm64
       - name: Set up Docker Buildx
         if: ${{ steps.checkdocker.outputs.secretspresent }}
         uses: docker/setup-buildx-action@v1
@@ -87,6 +89,7 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v3.0.0
         with:
+          platforms: linux/amd64, linux/arm64
           push: true
           tags: |
             qxip/qryn:latest
@@ -104,6 +107,7 @@ jobs:
       - name: Build and push to GHCR
         uses: docker/build-push-action@v3.0.0
         with:
+          platforms: linux/amd64, linux/arm64
           push: true
           tags: |
              ghcr.io/metrico/qryn:latest
