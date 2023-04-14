@@ -15,7 +15,7 @@
 ![image](https://user-images.githubusercontent.com/1423657/232089970-c4536f16-5967-4051-85a5-8ad94fcde67c.png)
 
 
-:rocket: **qryn** is a **polyglot observability** framework built on top of [ClickHouse](https://clickhouse.com/) and a _drop-in replacement for many popular tools._<br/>
+:rocket: **qryn** is a drop-in compatible **polyglot observability** framework built on top of [ClickHouse](https://clickhouse.com/)<br/>
 - All your **Logs, Metrics and Traces**. Compatible with multiple standards, with native correlation, shared labels
 - Ingestion and [PUSH APIs](https://qryn.metrico.in/#/support) transparently compatible with [LogQL, PromQL, InfluxDB, Elastic](https://qryn.dev) _and many more_
 - Native [Grafana](http://docs.grafana.org/features/explore/) [^3] and [LogQL/Tempo/Prometheus APIs](https://qryn.metrico.in/#/support) for [querying](https://github.com/lmangani/qryn/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/qryn/wiki/Inserting-Logs-to-cLoki), [tracing](https://github.com/lmangani/qryn/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/qryn/wiki/Ruler---Alerts) [^2] 
