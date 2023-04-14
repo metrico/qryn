@@ -9,7 +9,7 @@
 </a>
 
 
-# [qryn.dev](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud) :heart:
+# [qryn.dev](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud)
 > ... it's pronounced /ˈkwɪr..ɪŋ/ or just querying
 
 :rocket: **qryn** is a **polyglot observability** framework built on top of [ClickHouse](https://clickhouse.com/)<br/>
@@ -98,7 +98,7 @@ No Grafana? No Problem. **qryn** ships with **view** - it's own lightweight data
 
 #### Contributors
 
-&nbsp;&nbsp;&nbsp;&nbsp;[![Contributors for @metrico/qryn](https://contributors-img.web.app/image?repo=lmangani/cloki)](https://github.com/metrico/qryn/graph/contributors)
+&nbsp;&nbsp;&nbsp;&nbsp;[![Contributors for @metrico/qryn](https://contributors-img.web.app/image?repo=lmangani/cloki)](https://github.com/metrico/qryn/graphs/contributors)
 
 [![Stargazers repo roster for @metrico/qryn](https://reporoster.com/stars/metrico/qryn)](https://github.com/metrico/qryn/stargazers)
 
