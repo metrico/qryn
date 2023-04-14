@@ -2,24 +2,28 @@
 <img src='https://user-images.githubusercontent.com/1423657/218816262-e0e8d7ad-44d0-4a7d-9497-0d383ed78b83.png' style="margin-left:-10px" width=350/>
 </a>
 
-[![Codefresh build status]( https://g.codefresh.io/api/badges/pipeline/lmangani/lmangani%2FcLoki%2FcLoki?branch=master&key=eyJhbGciOiJIUzI1NiJ9.NTkxMzIxNGZlNjQxOWIwMDA2OWY1ZjU4.s1Y7vvE73ZWAIGYb4YCkATleW61RZ8sKypOc8Vae1c0&type=cf-1)]( https://g.codefresh.io/pipelines/cLoki/builds?repoOwner=lmangani&repoName=cLoki&serviceName=lmangani%2FcLoki&filter=trigger:build~Build;branch:master;pipeline:5cdf4a833a13130275ac87a8~cLoki)
+[![Build Status](https://github.com/metrico/qryn/actions/workflows/bump_version.yml/badge.svg)](https://github.com/metrico/qryn/actions/workflows/bump_version.yml)
 ![CodeQL](https://github.com/lmangani/cLoki/workflows/CodeQL/badge.svg)
 <a href="https://matrix.to/#/#qryn:matrix.org">
   <img src="https://img.shields.io/badge/Join%20Matrix-Chat-green" alt="Matrix">
 </a>
 
 
-# [qryn.dev](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud)
+# [qryn.dev](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud) :heart:
 > ... it's pronounced /ˈkwɪr..ɪŋ/ or just querying
 
-:rocket: **qryn** is a **polyglot observability** framework built on top of [ClickHouse](https://clickhouse.com/)<br/>
+![image](https://user-images.githubusercontent.com/1423657/232089970-c4536f16-5967-4051-85a5-8ad94fcde67c.png)
+
+
+:rocket: **qryn** is a **polyglot observability** framework built on top of [ClickHouse](https://clickhouse.com/) and a _drop-in replacement for many popular tools._<br/>
 - All your **Logs, Metrics and Traces**. Compatible with multiple standards, with native correlation, shared labels
-- Ingestion and [PUSH APIs](https://qryn.metrico.in/#/support) transparently compatible with [LogQL, PromQL, InfluxDB, Elastic](https://qryn.dev) _and more_
-- Native [Grafana](http://docs.grafana.org/features/explore/) [^3] and [LogQL](https://grafana.com/docs/loki/latest/logql/) APIs for [querying](https://github.com/lmangani/qryn/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/qryn/wiki/Inserting-Logs-to-cLoki), [tracing](https://github.com/lmangani/qryn/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/qryn/wiki/Ruler---Alerts) [^2] 
-- Powerful pipeline to dynamically search, filter and extract data from logs, events, traces _and beyond_
-- Ready to use with Agents such as [Promtail, Grafana-Agent, Vector, Logstash, Telegraf](https://qryn.metrico.in/#/ingestion) and _many others_
-- Built in [Explore UI](https://github.com/metrico/cloki-view) and [CLI](https://github.com/lmangani/vLogQL) for querying and extracting data
+- Ingestion and [PUSH APIs](https://qryn.metrico.in/#/support) transparently compatible with [LogQL, PromQL, InfluxDB, Elastic](https://qryn.dev) _and many more_
+- Native [Grafana](http://docs.grafana.org/features/explore/) [^3] and [LogQL/Tempo/Prometheus APIs](https://qryn.metrico.in/#/support) for [querying](https://github.com/lmangani/qryn/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries), [ingesting](https://github.com/lmangani/qryn/wiki/Inserting-Logs-to-cLoki), [tracing](https://github.com/lmangani/qryn/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/qryn/wiki/Ruler---Alerts) [^2] 
+- Powerful pipelines to dynamically search, filter and extract metrics from _logs, events, spans and traces_. _NO SQL required_.
+- Ready to use with popular Agents such as [Promtail, Grafana-Agent, Vector, Logstash, Telegraf](https://qryn.metrico.in/#/ingestion) and _many others_
+- Built in [Explore UI](https://github.com/metrico/cloki-view) and [CLI](https://github.com/lmangani/vLogQL) for querying supported datasources
 - [Cloud native](https://qryn.cloud), object storage friendly, stateless and compact.
+- Designed for both edge _(js/wasm)_ and core/backend deployments _(go/rust)_.
 <br>
 
 <a href="https://qryn.dev" target="_blank">
