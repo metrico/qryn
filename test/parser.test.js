@@ -19,6 +19,12 @@ it('should compile', () => {
   expect(res).toBeTruthy()
 })
 
+it('should compile log_stream_selector with ciryllic', () => {
+  const scr = '{et_dolorem=`тететёąĄ`}'
+  const script = bnf.ParseScript(scr)
+  expect(script).toBeTruthy()
+})
+
 it('should compile strings with escaped quotes', () => {
   const res = bnf.ParseScript('bytes_rate({run="kok\\"oko",u_ru_ru!="lolol",zozo=~"sssss"}  |~"atltlt" !~   "rmrmrm" [5m])')
   expect(res.rootToken.Children('log_stream_selector_rule').map(c => c.value)).toEqual(
