@@ -19,8 +19,8 @@
 - All your **Logs, Metrics and Traces**. Compatible with multiple standards, with native correlation, shared labels
 - Ingestion and [PUSH APIs](https://qryn.metrico.in/#/support) transparently compatible with [LogQL, PromQL, InfluxDB, Elastic](https://qryn.dev) _and many more_
 - Native [Grafana](http://docs.grafana.org/features/explore/) [^3] and [LogQL/PromQL/Tempo APIs](https://qryn.metrico.in/#/support) for [querying](https://github.com/lmangani/qryn/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries), [tracing](https://github.com/lmangani/qryn/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/qryn/wiki/Ruler---Alerts) [^2] 
-- Powerful pipelines to dynamically search, filter and extract metrics from _logs, events, spans and traces_. _NO SQL required_.
-- Ready to use with popular Agents such as [Promtail, Grafana-Agent, Vector, Logstash, Telegraf](https://qryn.metrico.in/#/ingestion) and _many others_
+- Dynamically search, filter and extract metrics from _logs, events, spans and traces_. _NO SQL required_.
+- Ready to use with popular Agents such as [Promtail, Grafana-Agent, Vector, Logstash, Telegraf](https://qryn.metrico.in/#/ingestion) _and more_
 - Built in [Explore UI](https://github.com/metrico/cloki-view) and [CLI](https://github.com/lmangani/vLogQL) for querying supported datasources
 - [Cloud native](https://qryn.cloud), object storage friendly, stateless and compact.
 - Designed for both edge _(js/wasm)_ and core/backend deployments _(go/rust)_.
