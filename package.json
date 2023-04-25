@@ -71,7 +71,7 @@
     "stream-json": "^1.7.3",
     "ws": "^8.0.0",
     "xxhash-wasm": "^0.4.2",
-    "yaml": "^1.10.2",
+    "yaml": "^2.2.2",
     "@qxip/promql2logql": "^1.0.22",
     "node-gzip": "^1.1.2",
     "csv-writer": "^1.6.0"
