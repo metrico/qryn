@@ -17,7 +17,7 @@
 
 :rocket: **qryn** is a drop-in compatible **polyglot observability** framework built on top of [ClickHouse](https://clickhouse.com/)<br/>
 - All your **Logs, Metrics and Traces**. Compatible with multiple standards, with shared labels & correlation
-- Ingestion and [PUSH APIs](https://qryn.metrico.in/#/support) transparently compatible with [LogQL, PromQL, InfluxDB, Elastic](https://qryn.dev) _and many more_
+- Ingestion and [PUSH APIs](https://qryn.metrico.in/#/support) transparently compatible with [LogQL, PromQL, InfluxDB, Elastic](https://qryn.dev) _and [many more](https://github.com/metrico/otel-collector)_
 - Native [Grafana](http://docs.grafana.org/features/explore/) [^3] and [LogQL/PromQL/Tempo APIs](https://qryn.metrico.in/#/support) for [querying](https://github.com/lmangani/qryn/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries), [tracing](https://github.com/lmangani/qryn/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/qryn/wiki/Ruler---Alerts) [^2] 
 - Dynamically search, filter and extract metrics from _logs, events, spans and traces_. _NO SQL required_.
 - Ready to use with popular Agents such as [Promtail, Grafana-Agent, Vector, Logstash, Telegraf](https://qryn.metrico.in/#/ingestion) _and more_
