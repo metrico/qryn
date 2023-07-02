@@ -41,6 +41,9 @@
 
 ## Supported Features
 
+### 📚 OpenTelemetry
+qryn fully supports opentelemetry and comes with a powerful [otel-collector](https://github.com/metrico/otel-collector) supporting _any log, trace or metric format_.
+
 ### 📚 LogQL
 qryn implements a complete [LogQL API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) to provide transparent compatibility with Loki clients<br>
 The Grafana Loki datasource can be used to natively browse and query _logs_ and display extracted _timeseries_<br>
