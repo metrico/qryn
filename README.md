@@ -42,7 +42,7 @@
 ## Supported Features
 
 ### 📚 OpenTelemetry
-qryn fully supports opentelemetry and comes with a powerful [otel-collector](https://github.com/metrico/otel-collector) supporting _any log, trace or metric format_.
+qryn fully supports opentelemetry and comes with a powerful [otel-collector](https://github.com/metrico/otel-collector) distribution supporting _any log, trace or metric format_ and writing directly to ClickHouse _qryn tables_ ready to be consumed through any query API.
 
 ### 📚 LogQL
 qryn implements a complete [LogQL API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) to provide transparent compatibility with Loki clients<br>
