@@ -24,6 +24,9 @@
 - Built in [Explore UI](https://github.com/metrico/cloki-view) and [CLI](https://github.com/lmangani/vLogQL) for querying supported datasources
 - [Cloud native](https://qryn.cloud), object storage friendly, stateless and compact.
 - Designed for both edge _(js/wasm)_ and core/backend deployments _(go/rust)_.
+
+:rocket: **qryn.cloud** is the _cloud-only_ version of **qryn** developed in _go/rust_ and powered by [Gigapipe](https://gigapipe.com/)<br/>
+
 <br>
 
 <a href="https://qryn.dev" target="_blank">
