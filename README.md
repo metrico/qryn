@@ -37,7 +37,9 @@
 
 ## 🚀 [Get Started](https://qryn.metrico.in/#/installation)
 
-:octocat: Get qryn up and running in no time using our [Documentation](https://qryn.metrico.in/#/installation) or join our [Matrix Room](https://matrix.to/#/#qryn:matrix.org)
+:octocat: Get qryn OSS up and running on-prem in no time using the [Documentation](https://qryn.metrico.in/#/installation) or join our [Matrix Room](https://matrix.to/#/#qryn:matrix.org)
+
+☁️ Create a free account on [qryn.cloud](https://qryn.cloud) and go straight to production at any scale with **polyglot confidence**.
 
 
 <br>
