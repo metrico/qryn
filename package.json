@@ -1,7 +1,7 @@
 {
   "name": "qryn",
-  "version": "2.3.6",
-  "description": "LogQL API with Clickhouse Backend",
+  "version": "2.3.7",
+  "description": "Polyglot Observability Stack with ClickHouse storage",
   "main": "qryn.js",
   "bin": {
     "cloki": "./qryn.js",
