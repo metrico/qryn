@@ -1,7 +1,7 @@
 {
   "name": "qryn",
-  "version": "2.2.16",
-  "description": "LogQL API with Clickhouse Backend",
+  "version": "2.3.9",
+  "description": "Polyglot Observability Stack with ClickHouse storage",
   "main": "qryn.js",
   "bin": {
     "cloki": "./qryn.js",
@@ -34,7 +34,7 @@
   "homepage": "https://github.com/lmangani/qryn#readme",
   "dependencies": {
     "@apla/clickhouse": "^1.6.4",
-    "@cloki/clickhouse-sql": "1.2.2",
+    "@cloki/clickhouse-sql": "1.2.10",
     "@fastify/compress": "^6.2.0",
     "@fastify/cors": "^8.1.0",
     "@fastify/static": "^6.5.0",
@@ -49,6 +49,8 @@
     "fastify-basic-auth": "^0.4.0",
     "fastify-metrics": "^8.0.0",
     "fastify-url-data": "^2.4.0",
+    "fastify-plugin": "^4.5.0",
+    "fast-querystring": "^1.1.0",
     "glob": "^7.1.2",
     "handlebars": "^4.7.7",
     "handlebars-helpers": "^0.9.8",
@@ -59,7 +61,7 @@
     "patch-package": "^6.4.7",
     "pino": "^7.6.5",
     "plugnplay": "npm:@qxip/plugnplay@^3.3.1",
-    "protobufjs": "^6.11.2",
+    "protobufjs": "^7.2.4",
     "protocol-buffers": "^4.2.0",
     "protocol-buffers-encodings": "^1.1.1",
     "record-cache": "^1.1.1",
@@ -71,7 +73,7 @@
     "ws": "^8.0.0",
     "xxhash-wasm": "^0.4.2",
     "yaml": "^1.10.2",
-    "@qxip/promql2logql": "^1.0.22",
+    "@qxip/promql2logql": "^1.0.30",
     "node-gzip": "^1.1.2",
     "csv-writer": "^1.6.0"
   },
@@ -94,7 +96,12 @@
     "@opentelemetry/sdk-trace-node": "^0.25.0",
     "@opentelemetry/resources": "^0.25.0",
     "@opentelemetry/semantic-conventions": "^0.25.0",
-    "@opentelemetry/sdk-trace-base": "^0.25.0"
+    "@opentelemetry/sdk-trace-base": "^0.25.0",
+    "@influxdata/influxdb-client": "^1.33.2",
+    "prometheus-remote-write": "^0.3.0",
+    "node-fetch": "^2.6.7",
+    "@elastic/elasticsearch": "^8.5.0",
+    "node-abort-controller": "^3.1.1"
   },
   "directories": {
     "lib": "lib"
