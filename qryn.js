@@ -10,6 +10,7 @@ this.http_user = process.env.QRYN_LOGIN || process.env.CLOKI_LOGIN || undefined
 this.http_password = process.env.QRYN_PASSWORD || process.env.CLOKI_PASSWORD || undefined
 
 this.maxListeners = process.env.MAXLISTENERS || 0;
+
 process.setMaxListeners(this.maxListeners)
 
 require('./plugins/engine')
@@ -51,14 +52,17 @@ this.pushZipkin = DATABASE.pushZipkin
 this.pushOTLP = DATABASE.pushOTLP
 this.queryTempoTags = DATABASE.queryTempoTags
 this.queryTempoValues = DATABASE.queryTempoValues
+let profiler = null
+
 const {
   shaper,
   parsers,
   lokiPushJSONParser, lokiPushProtoParser, jsonParser, rawStringParser, tempoPushParser, tempoPushNDJSONParser,
   yamlParser, prometheusPushProtoParser, combinedParser, otlpPushProtoParser, wwwFormParser
 } = require('./parsers')
+
 const fastifyPlugin = require('fastify-plugin')
-let profiler = null
+
 let fastify = require('fastify')({
   logger,
   bodyLimit: parseInt(process.env.FASTIFY_BODYLIMIT) || 5242880,
@@ -71,6 +75,7 @@ let fastify = require('fastify')({
       await init(process.env.CLICKHOUSE_DB || 'cloki')
       await startAlerting()
     }
+    await DATABASE.checkDB()
     if (!this.readonly && process.env.PROFILE) {
       const tag = JSON.stringify({ profiler_id: process.env.PROFILE, label: 'RAM usage' })
       const fp = this.fingerPrint(tag)
@@ -254,7 +259,6 @@ let fastify = require('fastify')({
   fastify.get('/tempo/api/traces/:traceId', handlerTempoTraces)
   fastify.get('/tempo/api/traces/:traceId/:json', handlerTempoTraces)
 
-
   /* Tempo Tag Handlers */
 
   const handlerTempoLabel = require('./lib/handlers/tempo_tags').bind(this)
@@ -280,6 +284,20 @@ let fastify = require('fastify')({
   const handlerTelegraf = require('./lib/handlers/telegraf.js').bind(this)
   fastify.post('/telegraf', handlerTelegraf, {
     '*': jsonParser
+  })
+
+  /* Datadog Log Push Handler */
+  const handlerDatadogLogPush = require('./lib/handlers/datadog_log_push.js').bind(this)
+  fastify.post('/api/v2/logs', handlerDatadogLogPush, {
+    'application/json': jsonParser,
+    '*': rawStringParser
+  })
+
+  /* Datadog Series Push Handler */
+  const handlerDatadogSeriesPush = require('./lib/handlers/datadog_series_push.js').bind(this)
+  fastify.post('/api/v2/series', handlerDatadogSeriesPush, {
+    'application/json': jsonParser,
+    '*': rawStringParser
   })
 
   /* Query Handler */

@@ -3,6 +3,8 @@ const lineFilterOperatorRegistry = require('./registry/line_filter_operator_regi
 const logRangeAggregationRegistry = require('./registry/log_range_aggregation_registry')
 const highLevelAggregationRegistry = require('./registry/high_level_aggregation_registry')
 const numberOperatorRegistry = require('./registry/number_operator_registry')
+const parameterizedAggregationRegistry = require('./registry/parameterized_aggregation_registry')
+const parameterizedUnwrappedRegistry = require('./registry/parameterized_unwrapped_registry')
 const complexLabelFilterRegistry = require('./registry/complex_label_filter_expression')
 const lineFormat = require('./registry/line_format')
 const parserRegistry = require('./registry/parser_registry')
@@ -22,7 +24,7 @@ const { getPlg } = require('../plugins/engine')
 const Sql = require('@cloki/clickhouse-sql')
 const { simpleAnd } = require('./registry/stream_selector_operator_registry/stream_selector_operator_registry')
 const logger = require('../lib/logger')
-const { QrynBadRequest } = require('../common').errors
+const { QrynBadRequest } = require('../lib/handlers/errors')
 const optimizations = require('./registry/smart_optimizations')
 
 /**
@@ -162,7 +164,11 @@ module.exports.transpile = (request) => {
     joinLabels: joinLabels
   }
   let duration = null
-  const matrixOp = ['aggregation_operator', 'unwrap_function', 'log_range_aggregation'].find(t => token.Child(t))
+  const matrixOp = [
+    'aggregation_operator',
+    'unwrap_function',
+    'log_range_aggregation',
+    'parameterized_unwrapped_expression'].find(t => token.Child(t))
   if (matrixOp) {
     duration = durationToMs(token.Child(matrixOp).Child('duration_value').value)
     start = Math.floor(start / duration) * duration
@@ -182,6 +188,9 @@ module.exports.transpile = (request) => {
       break
     case 'log_range_aggregation':
       query = module.exports.transpileLogRangeAggregation(token, query)
+      break
+    case 'parameterized_unwrapped_expression':
+      query = module.exports.transpileParameterizedUnwrappedExpression(token, query)
       break
     default:
       // eslint-disable-next-line no-case-declarations
@@ -204,14 +213,22 @@ module.exports.transpile = (request) => {
     const op = token.Child('compared_agg_statement_cmp').Child('number_operator').value
     query = numberOperatorRegistry[op](token.Child('agg_statement'), query)
   }
+  if (token.Child('parameterized_expression')) {
+    const op = token.Child('parameterized_expression_fn').value
+    query = parameterizedAggregationRegistry[op](token.Child('parameterized_expression'), query)
+  }
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
   setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${readTable}`)
   setQueryParam(query, sharedParamNames.from, start + '000000')
   setQueryParam(query, sharedParamNames.to, end + '000000')
   setQueryParam(query, 'isMatrix', query.ctx.matrix)
   logger.debug(query.toString())
-  console.log(query.toString())
-  return response(query)
+  return {
+    query: request.rawQuery ? query : query.toString(),
+    matrix: !!query.ctx.matrix,
+    duration: query.ctx && query.ctx.duration ? query.ctx.duration : 1000,
+    stream: getStream(query)
+  }
 }
 
 /**
@@ -224,6 +241,26 @@ const setQueryParam = (query, name, val) => {
   if (query.getParam(name)) {
     query.getParam(name).set(val)
   }
+}
+
+/**
+ *
+ * @param token {Token}
+ * @param query {Select}
+ * @returns {Select}
+ */
+module.exports.transpileParameterizedUnwrappedExpression = (token, query) => {
+  query = module.exports.transpileLogStreamSelector(token, query)
+  if (token.Child('unwrap_value_statement')) {
+    if (token.Child('log_pipeline')) {
+      throw new Error('log pipeline not supported')
+    }
+    query = transpileUnwrapMetrics(token, query)
+  } else {
+    query = module.exports.transpileUnwrapExpression(token.Child('unwrap_expression'), query)
+  }
+  return parameterizedUnwrappedRegistry[token.Child('parameterized_unwrapped_expression_fn').value](
+    token, query)
 }
 
 /**

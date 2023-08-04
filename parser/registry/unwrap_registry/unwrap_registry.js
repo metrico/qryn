@@ -219,15 +219,6 @@ module.exports = {
     }, (sum) => sum, false, 'by_without_unwrap')
   }),
   /**
-     * quantileOverTime(scalar,unwrapped-range): the φ-quantile (0 ≤ φ ≤ 1) of the values in the specified interval.
-     * //@param token {Token}
-     * //@param query {Select}
-     * @returns {Select}
-     */
-  quantileOverTime: (/* token, query */) => {
-    throw new Error('Not implemented')
-  },
-  /**
      * absentOverTime(unwrapped-range): returns an empty vector if the range vector passed to it has any elements and a 1-element vector with the value 1 if the range vector passed to it has no elements. (absentOverTime is useful for alerting on when no time series and logs stream exist for label combination for a certain amount of time.)
      * //@param token {Token}
      * //@param query {Select}
@@ -235,5 +226,6 @@ module.exports = {
      */
   absentOverTime: (/* token, query */) => {
     throw new Error('Not implemented')
-  }
+  },
+  applyByWithoutLabels
 }

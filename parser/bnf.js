@@ -6,7 +6,9 @@ const registryNames = [
   'stream_selector_operator_registry',
   'line_filter_operator_registry',
   'parser_registry',
-  'unwrap_registry'
+  'unwrap_registry',
+  'parameterized_aggregation_registry',
+  'parameterized_unwrapped_registry'
 ]
 const path = require('path')
 const registries = registryNames.reduce((sum, n) => {
