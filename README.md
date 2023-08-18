@@ -108,6 +108,15 @@ No Grafana? No Problem. **qryn** ships with **view** - it's own lightweight data
 
 ------------
 
+#### Contributions
+
+Whether it's code, documentation or grammar, we ❤️ all contributions. Not sure where to get started?
+
+- Join our [Matrix Channel](https://matrix.to/#/#qryn:matrix.org), and ask us any questions.
+- Have a PR or idea? Request a session / code walkthrough with our team for guidance.
+
+<br>
+
 #### Contributors
 
 &nbsp;&nbsp;&nbsp;&nbsp;[![Contributors for @metrico/qryn](https://contributors-img.web.app/image?repo=lmangani/cloki)](https://github.com/metrico/qryn/graphs/contributors)
