@@ -118,7 +118,7 @@ const getDuration = module.exports.getDuration
  * @param eof {any}
  * @returns boolean
  */
-module.exports.isEOF = (eof) => eof.EOF
+module.exports.isEOF = (eof) => eof && eof.EOF
 
 /**
  *
