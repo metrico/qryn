@@ -118,7 +118,7 @@ module.exports.neqExtraLabels = (token/*, query */) => {
  */
 module.exports.neqStream = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
-  return (e) => e.labels[label] && e.labels[label] !== value
+  return (e) => isEOF(e) || (e && e.labels[label] && e.labels[label] !== value)
 }
 
 /**
@@ -159,7 +159,7 @@ module.exports.nregExtraLabels = (token/*, query */) => {
 module.exports.nregStream = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
   const re = new RegExp(value)
-  return (e) => e.labels[label] && !e.labels[label].match(re)
+  return (e) => isEOF(e) || (e && e.labels[label] && !e.labels[label].match(re))
 }
 
 /**
