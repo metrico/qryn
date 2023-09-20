@@ -1,0 +1,41 @@
+version: '3.8'
+
+volumes:
+    grafana_data: {}
+    
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    container_name: clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+
+  qryn:
+    build: 
+      context: ..
+      dockerfile: Dockerfile
+    container_name: qryn
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    environment:
+      - CLICKHOUSE_SERVER=clickhouse
+      - DEBUG=true
+    depends_on:
+      - clickhouse
+
+  grafana:
+    image: grafana/grafana:master
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    environment:
+      - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_EXPLORE_ENABLED=true
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
