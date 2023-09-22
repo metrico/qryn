@@ -15,21 +15,21 @@
 ![image](https://user-images.githubusercontent.com/1423657/232089970-c4536f16-5967-4051-85a5-8ad94fcde67c.png)
 
 
-:rocket: **qryn** is a drop-in compatible **polyglot observability** framework built on top of [ClickHouse](https://clickhouse.com/)<br/>
-- All your **Logs, Metrics and Traces**. Compatible with multiple standards, with shared labels & correlation
-- Ingestion and [PUSH APIs](https://qryn.metrico.in/#/support) transparently compatible with [LogQL, PromQL, InfluxDB, Elastic](https://qryn.dev) _and [many more](https://github.com/metrico/otel-collector)_
-- Native [Grafana](http://docs.grafana.org/features/explore/) [^3] and [LogQL/PromQL/Tempo APIs](https://qryn.metrico.in/#/support) for [querying](https://github.com/lmangani/qryn/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries), [tracing](https://github.com/lmangani/qryn/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/qryn/wiki/Ruler---Alerts) [^2] 
+:rocket: **qryn** is a _drop-in Grafana compatible_ **polyglot observability** framework<br/>
+- All your **Logs, Metrics and Traces** live happily together. Locksmith compatible with multiple vendors formats and standards.
+- Native [LogQL/PromQL/TempoQL APIs](https://qryn.cloud) support for [querying](https://github.com/lmangani/qryn/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries), [tracing](https://github.com/lmangani/qryn/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/qryn/wiki/Ruler---Alerts) [^2] in [Grafana](http://docs.grafana.org/features/explore/) [^3]
+- Ingestion [APIs](https://qryn.metrico.in/#/support) transparently compatible with [Opentelemetry, Loki, Prometheus, InfluxDB, Elastic](https://qryn.dev) _and [many more](https://github.com/metrico/otel-collector)_
 - Dynamically search, filter and extract metrics from _logs, events, spans and traces_. _NO SQL required_.
 - Ready to use with popular Agents such as [Promtail, Grafana-Agent, Vector, Logstash, Telegraf](https://qryn.metrico.in/#/ingestion) _and more_
 - Built in [Explore UI](https://github.com/metrico/cloki-view) and [CLI](https://github.com/lmangani/vLogQL) for querying supported datasources
-- [Cloud native](https://qryn.cloud), object storage friendly, stateless and compact.
-- Designed for both edge _(js/wasm)_ and core/backend deployments _(go/rust)_.
-
-:rocket: **qryn.cloud** is the _cloud-only_ version of **qryn** developed in _go/rust_ and powered by [Gigapipe](https://gigapipe.com/)<br/>
+- Designed for edge _(js/wasm)_ and core/backend deployments _(go/rust)_.
+- Total data control. Compatible with [ClickHouse](https://clickhouse.com/) or [InfluxDB IOx](https://influxdata.com) with S3 object storage.
+- 
+:rocket: **qryn.cloud** is the _supercharged_ version of **qryn** developed in _go/rust_ with additional _functionality, speed and features!_<br/>
 
 <br>
 
-<a href="https://qryn.dev" target="_blank">
+<a href="https://qryn.cloud" target="_blank">
 <img src="https://user-images.githubusercontent.com/1423657/218818279-3efff74f-0191-498a-bdc4-f2650c9d3b49.gif">
 </a>
 
