@@ -164,7 +164,7 @@ module.exports.transpile = (request) => {
     step: step,
     legacy: !checkVersion('v3_1', start),
     joinLabels: joinLabels,
-    inline: clusterName !== ''
+    inline: !!clusterName
   }
   let duration = null
   const matrixOp = [
