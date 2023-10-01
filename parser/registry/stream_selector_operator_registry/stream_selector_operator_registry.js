@@ -1,4 +1,4 @@
-const { isEOF } = require('../common')
+const { isEOF, sharedParamNames } = require('../common')
 const { labelAndVal } = require('./common')
 const Sql = require('@cloki/clickhouse-sql')
 /**
@@ -40,17 +40,17 @@ function simpleSelectorClauses (regex, eq, label, value) {
  * @returns {With}
  */
 const streamSelectQuery = (query) => {
-  const param = query.getParam('timeSeriesTable') || new Sql.Parameter('timeSeriesTable')
+  const param = query.getParam(sharedParamNames.timeSeriesTable) ||
+      new Sql.Parameter(sharedParamNames.timeSeriesTable)
   query.addParam(param)
   const res = new Sql.With(
     'str_sel',
     (new Sql.Select())
       .select('fingerprint')
       .distinct(true)
-      .from(param)
-  )
+      .from(param), query.ctx.inline)
   if (query.with() && query.with().idx_sel) {
-    res.query = res.query.where(new Sql.Raw('fingerprint IN idx_sel'))
+    res.query = res.query.where(new Sql.In('fingerprint', 'in', new Sql.WithReference(query.with().idx_sel)))
   }
   return res
 }

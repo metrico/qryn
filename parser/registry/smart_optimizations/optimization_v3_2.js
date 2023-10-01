@@ -1,4 +1,4 @@
-const { getDuration } = require('../common')
+const { getDuration, dist, Aliased } = require('../common')
 const reg = require('./log_range_agg_reg_v3_2')
 const Sql = require('@cloki/clickhouse-sql')
 const { DATABASE_NAME, checkVersion } = require('../../../lib/utils')
@@ -48,7 +48,7 @@ module.exports.apply = (token, fromNS, toNS, stepNS) => {
     .select(['samples.fingerprint', 'fingerprint'])
     .from([`${DATABASE_NAME()}.metrics_15s`, 'samples'])
     .where(tsClause)
-  q.join(`${DATABASE_NAME()}.time_series`, 'left any',
+  q.join(new Aliased(`${DATABASE_NAME()}.time_series${dist}`, 'time_series'), 'left any',
     Sql.Eq('samples.fingerprint', new Sql.Raw('time_series.fingerprint')))
   q.select([new Sql.Raw('any(JSONExtractKeysAndValues(time_series.labels, \'String\'))'), 'labels'])
 
