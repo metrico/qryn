@@ -293,7 +293,7 @@ module.exports.transpileTail = (request) => {
   }
   query = module.exports.transpileLogStreamSelector(expression.rootToken, query)
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
-  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesTableName}`)
+  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesTableName}${dist}`)
   setQueryParam(query, sharedParamNames.from, new Sql.Raw('(toUnixTimestamp(now()) - 5) * 1000000000'))
   query.order_expressions = []
   query.orderBy(['timestamp_ns', 'asc'])
