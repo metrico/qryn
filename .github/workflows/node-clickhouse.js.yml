@@ -27,7 +27,7 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - run: docker run --name clickhouse -p 9000:9000 -p 8123:8123 -d clickhouse/clickhouse-server 23.8-alpine
+    - run: docker run --name clickhouse -p 9000:9000 -p 8123:8123 -d clickhouse/clickhouse-server:23.8-alpine
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v2
