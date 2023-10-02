@@ -110,6 +110,7 @@ let fastify = require('fastify')({
     })
     done()
   }))
+
   await fastify.register(require('@fastify/compress'))
   await fastify.register(require('fastify-url-data'))
   await fastify.register(require('@fastify/websocket'))
