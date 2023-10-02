@@ -42,4 +42,5 @@ jobs:
         CLICKHOUSE_DB: loki
         CLICKHOUSE_TSDB: loki
         INTEGRATION_E2E: 1
+        CLOKI_EXT_URL: 127.0.0.1:3100
       run: node qryn.js >/dev/stdout & npm run test --forceExit
