@@ -58,7 +58,7 @@ module.exports.indexedAnd = (query, subquery) => {
   }
   idxSel = new Sql.With('idx_sel', (new Sql.Select())
     .select(`${id}.fingerprint`)
-    .from([subquery, id]))
+    .from([subquery, id]), query.ctx.inline)
   return query.with(idxSel)
     .where(new InSubreq('samples.fingerprint', new Sql.WithReference(idxSel)))
 }

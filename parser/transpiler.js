@@ -10,7 +10,7 @@ const lineFormat = require('./registry/line_format')
 const parserRegistry = require('./registry/parser_registry')
 const unwrap = require('./registry/unwrap')
 const unwrapRegistry = require('./registry/unwrap_registry')
-const { durationToMs, sharedParamNames, getStream } = require('./registry/common')
+const { durationToMs, sharedParamNames, getStream, Aliased } = require('./registry/common')
 const compiler = require('./bnf')
 const {
   parseMs,
@@ -26,6 +26,8 @@ const { simpleAnd } = require('./registry/stream_selector_operator_registry/stre
 const logger = require('../lib/logger')
 const { QrynBadRequest } = require('../lib/handlers/errors')
 const optimizations = require('./registry/smart_optimizations')
+const clusterName = require('../common').clusterName
+const dist = clusterName ? '_dist' : ''
 
 /**
  * @param joinLabels {boolean}
@@ -68,7 +70,7 @@ module.exports.initQuery = (joinLabels) => {
     .addParam(limit)
     .addParam(matrix)
   if (joinLabels) {
-    q.join(`${DATABASE_NAME()}.time_series`, 'left any',
+    q.join(new Aliased(`${DATABASE_NAME()}.time_series`, 'time_series'), 'left any',
       Sql.Eq('samples.fingerprint', new Sql.Raw('time_series.fingerprint')))
     q.select([new Sql.Raw('JSONExtractKeysAndValues(time_series.labels, \'String\')'), 'labels'])
   }
@@ -96,7 +98,7 @@ module.exports.initQueryV3_2 = (joinLabels) => {
     .addParam(from)
     .addParam(to)
   if (joinLabels) {
-    q.join(`${DATABASE_NAME()}.time_series`, 'left any',
+    q.join(new Aliased(`${DATABASE_NAME()}.time_series${dist}`, 'time_series'), 'left any',
       Sql.Eq('samples.fingerprint', new Sql.Raw('time_series.fingerprint')))
     q.select([new Sql.Raw('JSONExtractKeysAndValues(time_series.labels, \'String\')'), 'labels'])
   }
@@ -161,7 +163,8 @@ module.exports.transpile = (request) => {
   query.ctx = {
     step: step,
     legacy: !checkVersion('v3_1', start),
-    joinLabels: joinLabels
+    joinLabels: joinLabels,
+    inline: !!clusterName
   }
   let duration = null
   const matrixOp = [
@@ -203,7 +206,7 @@ module.exports.transpile = (request) => {
         .orderBy(['labels', order], ['timestamp_ns', order])
       setQueryParam(query, sharedParamNames.limit, limit)
       if (!joinLabels) {
-        query.join(`${DATABASE_NAME()}.time_series`, 'left any',
+        query.join(new Aliased(`${DATABASE_NAME()}.time_series${dist}`, 'time_series'), 'left any',
           Sql.Eq('sel_a.fingerprint', new Sql.Raw('time_series.fingerprint')))
         query.select([new Sql.Raw('JSONExtractKeysAndValues(time_series.labels, \'String\')'), 'labels'],
           new Sql.Raw('sel_a.*'))
@@ -218,7 +221,7 @@ module.exports.transpile = (request) => {
     query = parameterizedAggregationRegistry[op](token.Child('parameterized_expression'), query)
   }
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
-  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${readTable}`)
+  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${readTable}${dist}`)
   setQueryParam(query, sharedParamNames.from, start + '000000')
   setQueryParam(query, sharedParamNames.to, end + '000000')
   setQueryParam(query, 'isMatrix', query.ctx.matrix)
@@ -290,7 +293,7 @@ module.exports.transpileTail = (request) => {
   }
   query = module.exports.transpileLogStreamSelector(expression.rootToken, query)
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
-  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesTableName}`)
+  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesTableName}${dist}`)
   setQueryParam(query, sharedParamNames.from, new Sql.Raw('(toUnixTimestamp(now()) - 5) * 1000000000'))
   query.order_expressions = []
   query.orderBy(['timestamp_ns', 'asc'])
@@ -344,8 +347,8 @@ module.exports.transpileSeries = (request) => {
     const _query = getQuery(req)
     query.withs.idx_sel.query.sqls.push(_query.withs.idx_sel.query)
   }
-  setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series`)
-  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName()}`)
+  setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series${dist}`)
+  setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName()}${dist}`)
   // logger.debug(query.toString())
   return query.toString()
 }

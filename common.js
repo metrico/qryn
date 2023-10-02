@@ -123,3 +123,5 @@ module.exports.isCustomSamplesOrderingRule = () => {
 }
 
 module.exports.CORS = process.env.CORS_ALLOW_ORIGIN || '*'
+
+module.exports.clusterName = process.env.CLUSTER_NAME
