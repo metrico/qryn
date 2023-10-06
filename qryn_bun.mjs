@@ -282,7 +282,7 @@ export default async() => {
 
 
   app.use(404, wrapper(handle404))
-  app.port = 3100
-  app.host = '0.0.0.0'
+  app.port = process.env.PORT || 3100
+  app.hostname = process.env.HOST || '0.0.0.0'
   app.listen()
 }
