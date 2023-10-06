@@ -118,7 +118,11 @@ let fastify = require('fastify')({
   if (process.env.FASTIFY_METRICS) {
     const metricsPlugin = require('fastify-metrics')
     fastify.register(metricsPlugin, { endpoint: '/metrics' })
+  } else {
+    fastify.get('/metrics', () => 'not supported')
   }
+  fastify.get('/config', () => 'not supported')
+  fastify.get('/influx/api/v2/write/health', () => 'ok')
   /* CORS Helper */
   const CORS = process.env.CORS_ALLOW_ORIGIN || '*'
   fastify.register(require('@fastify/cors'), {
