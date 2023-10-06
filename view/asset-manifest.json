@@ -1,16 +1,26 @@
 {
   "files": {
-    "main.css": "/static/css/main.cdb19822.css",
-    "main.js": "/static/js/main.b3d5d4c3.js",
+    "main.css": "/static/css/main.91f5a756.css",
+    "main.js": "/static/js/main.b5a8989c.js",
+    "static/js/14.934f9e37.chunk.js": "/static/js/14.934f9e37.chunk.js",
+    "static/js/368.6610f292.chunk.js": "/static/js/368.6610f292.chunk.js",
+    "static/css/380.87716002.chunk.css": "/static/css/380.87716002.chunk.css",
+    "static/js/380.ce6a5eca.chunk.js": "/static/js/380.ce6a5eca.chunk.js",
+    "static/js/886.192408f9.chunk.js": "/static/js/886.192408f9.chunk.js",
+    "static/js/261.2d8f2bda.chunk.js": "/static/js/261.2d8f2bda.chunk.js",
+    "static/js/966.0d040013.chunk.js": "/static/js/966.0d040013.chunk.js",
+    "static/js/826.afd610f0.chunk.js": "/static/js/826.afd610f0.chunk.js",
+    "static/js/119.3b6be156.chunk.js": "/static/js/119.3b6be156.chunk.js",
+    "static/js/345.689efdc6.chunk.js": "/static/js/345.689efdc6.chunk.js",
+    "static/js/951.d000bc13.chunk.js": "/static/js/951.d000bc13.chunk.js",
     "static/media/logs_icon.png": "/static/media/logs_icon.09d704bc457f4670bc5d.png",
+    "static/media/qryn-logo.png": "/static/media/qryn-logo.26a5a5a8cc98abd3f4b1.png",
     "static/media/metrics_icon.png": "/static/media/metrics_icon.5c6e7fed7a326bf2e476.png",
     "static/media/traces_icon.png": "/static/media/traces_icon.f163c9469c353d621a8b.png",
-    "index.html": "/index.html",
-    "main.cdb19822.css.map": "/static/css/main.cdb19822.css.map",
-    "main.b3d5d4c3.js.map": "/static/js/main.b3d5d4c3.js.map"
+    "index.html": "/index.html"
   },
   "entrypoints": [
-    "static/css/main.cdb19822.css",
-    "static/js/main.b3d5d4c3.js"
+    "static/css/main.91f5a756.css",
+    "static/js/main.b5a8989c.js"
   ]
 }
