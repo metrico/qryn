@@ -24,7 +24,7 @@
 - Built in [Explore UI](https://github.com/metrico/cloki-view) and [CLI](https://github.com/lmangani/vLogQL) for querying supported datasources
 - Designed for edge _(js/wasm)_ and core/backend deployments _(go/rust)_.
 - Total data control. Compatible with [ClickHouse](https://clickhouse.com/) or [InfluxDB IOx](https://influxdata.com) with S3 object storage.
-- 
+
 :rocket: **qryn.cloud** is the _supercharged_ **qryn** version developed in _go_ with additional _functionality, speed and features!_<br/>
 
 <br>
