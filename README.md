@@ -132,14 +132,6 @@ Whether it's code, documentation or grammar, we ❤️ all contributions. Not su
 
 ©️ QXIP BV, released under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE) for details.
 
-We encourage forking and changing the code, hacking around with it, and experimenting. If you modify the qryn source code, and run that modified code in a way that's accessible over a network, you _must_ make your modifications to the source code available following the guidelines of the license:
-```
-[I]f you modify the Program, your modified version must prominently offer all users interacting with it remotely 
-through a computer network (if your version supports such interaction) an opportunity to receive the Corresponding 
-Source of your version by providing access to the Corresponding Source from a network server at no charge, through 
-some standard or customary means of facilitating copying of software.
-```
-
 
 [^1]: qryn is not affiliated or endorsed by Grafana Labs or ClickHouse Inc. All rights belong to their respective owners.
 
