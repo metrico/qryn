@@ -4,3 +4,8 @@ node_modules
 /test/e2e/
 /lib/influx/.idea/
 /lib/influx/influx.iml
+/wasm_parts/_vendor.zip
+/wasm_parts/.idea/
+/wasm_parts/vendor/
+/wasm_parts/main.wasm
+/wasm_parts/wasm_parts.iml
