@@ -56,6 +56,26 @@ module.exports.pqlInstantQuery = async (query, timeMs, getData) => {
     (matchers) => getData(matchers, time - 300000, time))
 }
 
+module.exports.pqlMatchers = (query) => {
+  const _wasm = wasm
+  const id = counter
+  counter = (counter + 1) & 0xFFFFFFFF
+  const ctx = new Ctx(id, _wasm)
+  ctx.create()
+  try {
+      ctx.write(query)
+      const res1 = _wasm.exports.pqlSeries(id)
+      if (res1 !== 0) {
+        throw new Error('pql failed: ', ctx.read())
+      }
+      /** @type {[[[string]]]} */
+      const matchersObj = JSON.parse(ctx.read())
+      return matchersObj
+  } finally {
+      ctx.destroy()
+  }
+}
+
 /**
  *
  * @param query {string}

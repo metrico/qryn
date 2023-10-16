@@ -21,8 +21,34 @@ module.exports.instantQuery = async (query, timeMs) => {
   return JSON.parse(resp)
 }
 
-module.exports.getData = async (matchers, fromMs, toMs) => {
-  const matches = []
+module.exports.series = async (query, fromMs, toMs) => {
+  const fromS = Math.floor(fromMs / 1000)
+  const toS = Math.floor(toMs / 1000)
+  const matchers = prometheus.pqlMatchers(query)
+  const conds = getMatchersIdxCond(matchers[0])
+  const idx = getIdxSubquery(conds, fromMs, toMs)
+  const withIdx = new Sql.With('idx', idx, !!clusterName)
+  const req = (new Sql.Select())
+    .with(withIdx)
+    .select([new Sql.Raw('any(labels)'), 'labels'])
+    .from(`time_series${_dist}`)
+    .where(Sql.And(
+      Sql.Gte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${fromS}))`)),
+      Sql.Lte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${toS}))`)),
+      new Sql.In('fingerprint', 'in', new Sql.WithReference(withIdx))))
+    .groupBy(new Sql.Raw('fingerprint'))
+  const data = await rawRequest(req.toString() + ' FORMAT JSON',
+    null,
+    DATABASE_NAME())
+  return data.data.data.map(l => JSON.parse(l.labels))
+}
+
+/**
+ *
+ * @param matchers {[[string]]}
+ */
+const getMatchersIdxCond = (matchers) => {
+  const matchesCond = []
   for (const matcher of matchers) {
     const _matcher = [
       Sql.Eq('key', matcher[0])
@@ -40,27 +66,42 @@ module.exports.getData = async (matchers, fromMs, toMs) => {
       case '!~':
         _matcher.push(Sql.Ne(Sql.Raw(`match(val, ${Sql.quoteVal(matcher[2])})`), 1))
     }
-    matches.push(Sql.And(..._matcher))
+    matchesCond.push(Sql.And(..._matcher))
   }
+  return matchesCond
+}
 
-  const idx = (new Sql.Select())
+const getIdxSubquery = (conds, fromMs, toMs) => {
+  const fromS = Math.floor(fromMs / 1000)
+  const toS = Math.floor(toMs / 1000)
+  return (new Sql.Select())
     .select('fingerprint')
     .from('time_series_gin')
-    .where(Sql.Or(...matches))
+    .where(Sql.And(
+      Sql.Or(...conds),
+      Sql.Gte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${fromS}))`)),
+      Sql.Lte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${toS}))`))))
     .having(
       Sql.Eq(
-        new Sql.Raw('groupBitOr(' + matches.map(
+        new Sql.Raw('groupBitOr(' + conds.map(
           (m, i) => new Sql.Raw(`bitShiftLeft((${m})::UInt64, ${i})`)
-        ).join('+') + ')'), (1 << matches.length) - 1)
+        ).join('+') + ')'), (1 << conds.length) - 1)
     ).groupBy('fingerprint')
-  const withIdx = new Sql.With('idx', idx, false)
+}
+
+module.exports.getData = async (matchers, fromMs, toMs) => {
+  const db = DATABASE_NAME()
+  const matches = getMatchersIdxCond(matchers)
+  const idx = getIdxSubquery(matches, fromMs, toMs)
+
+  const withIdx = new Sql.With('idx', idx, !!clusterName)
   const raw = (new Sql.Select())
     .with(withIdx)
     .select(
       [new Sql.Raw('argMaxMerge(last)'), 'value'],
       'fingerprint',
       [new Sql.Raw('intDiv(timestamp_ns, 15000000000) * 15000'), 'timestamp_ms'])
-    .from('metrics_15s')
+    .from(`metrics_15s${_dist}`)
     .where(
       new Sql.And(
         new Sql.In('fingerprint', 'in', new Sql.WithReference(withIdx)),
@@ -90,8 +131,6 @@ module.exports.getData = async (matchers, fromMs, toMs) => {
     ).groupBy('raw.fingerprint')
     .orderBy('raw.fingerprint')
 
-  const db = DATABASE_NAME()
-  console.log('!!!!!!!!!!! ' + res.toString())
   const data = await rawRequest(res.toString() + ' FORMAT RowBinary',
     null, db, { responseType: 'arraybuffer' })
   return new Uint8Array(data.data)

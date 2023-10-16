@@ -102,13 +102,25 @@ func pqlInstantQuery(id uint32, timeMS float64) uint32 {
 	})
 }
 
-func pql(c *ctx, query func() (promql.Query, error)) uint32 {
-	rq, err := query()
-
+//export pqlSeries
+func pqlSeries(id uint32) uint32 {
+	queriable := &TestQueryable{id: id}
+	query, err := eng.NewRangeQuery(
+		queriable,
+		nil,
+		string(data[id].request),
+		time.Unix(0, 1),
+		time.Unix(0, 2),
+		time.Second)
 	if err != nil {
-		c.response = []byte(fmt.Sprintf(`{"status":"error", "error":%s}`, strconv.Quote(err.Error())))
+		data[id].response = wrapError(err)
 		return 1
 	}
+	data[id].response = []byte(getmatchersJSON(query))
+	return 0
+}
+
+func getmatchersJSON(q promql.Query) string {
 	var matchersJson = strings.Builder{}
 	var walk func(node parser.Node, i func(node parser.Node))
 	walk = func(node parser.Node, i func(node parser.Node)) {
@@ -119,7 +131,7 @@ func pql(c *ctx, query func() (promql.Query, error)) uint32 {
 	}
 	i := 0
 	matchersJson.WriteString("[")
-	walk(rq.Statement(), func(node parser.Node) {
+	walk(q.Statement(), func(node parser.Node) {
 		switch n := node.(type) {
 		case *parser.VectorSelector:
 			if i != 0 {
@@ -130,8 +142,34 @@ func pql(c *ctx, query func() (promql.Query, error)) uint32 {
 		}
 	})
 	matchersJson.WriteString("]")
+	return matchersJson.String()
+}
 
-	c.response = []byte(matchersJson.String())
+func wrapError(err error) []byte {
+	return []byte(wrapErrorStr(err))
+}
+
+func wrapErrorStr(err error) string {
+	return fmt.Sprintf(`{"status":"error", "error":%s}`, strconv.Quote(err.Error()))
+}
+
+func pql(c *ctx, query func() (promql.Query, error)) uint32 {
+	rq, err := query()
+
+	if err != nil {
+		c.response = wrapError(err)
+		return 1
+	}
+	var walk func(node parser.Node, i func(node parser.Node))
+	walk = func(node parser.Node, i func(node parser.Node)) {
+		i(node)
+		for _, n := range parser.Children(node) {
+			walk(n, i)
+		}
+	}
+	matchersJSON := getmatchersJSON(rq)
+
+	c.response = []byte(matchersJSON)
 	c.onDataLoad = func(c *ctx) {
 		res := rq.Exec(context.Background())
 		c.response = []byte(writeResponse(res))
@@ -147,23 +185,23 @@ func onDataLoad(idx uint32) {
 
 func writeResponse(res *promql.Result) string {
 	if res.Err != nil {
-		return fmt.Sprintf(`{"status": "error", "error": %s}`, strconv.Quote(res.Err.Error()))
+		return wrapErrorStr(res.Err)
 	}
 	switch res.Value.Type() {
 	case parser.ValueTypeMatrix:
 		m, err := res.Matrix()
 		if err != nil {
-			return fmt.Sprintf(`{"status": "error", "error": %s}`, strconv.Quote(err.Error()))
+			return wrapErrorStr(err)
 		}
 		return writeMatrix(m)
 	case parser.ValueTypeVector:
 		v, err := res.Vector()
 		if err != nil {
-			return fmt.Sprintf(`{"status": "error", "error": %s}`, strconv.Quote(err.Error()))
+			return wrapErrorStr(err)
 		}
 		return writeVector(v)
 	}
-	return `{"status": "error", "error": "result type not supported"}`
+	return wrapErrorStr(fmt.Errorf("result type not supported"))
 }
 
 func writeMatrix(m promql.Matrix) string {
