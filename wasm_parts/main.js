@@ -8,22 +8,20 @@ class WasmError extends Error {}
 module.exports.WasmError = WasmError
 
 let counter = 0
-var go
+var go = new Go();
 var wasm
 
 async function init () {
-  const _go = new Go()
-  const _wasm = await WebAssembly.instantiate(
-    gunzipSync(fs.readFileSync(WASM_URL)), _go.importObject)
-  _go.run(_wasm.instance)
-  wasm = _wasm.instance
-  go = _go
+    const _wasm = await WebAssembly.instantiate(
+      gunzipSync(fs.readFileSync(WASM_URL)), go.importObject)
+    go.run(_wasm.instance)
+    wasm = _wasm.instance
 }
 
 init()
 setInterval(async () => {
   init()
-}, 600000)
+}, 300000)
 
 /**
  *
