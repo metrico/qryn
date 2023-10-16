@@ -150,7 +150,8 @@ func wrapError(err error) []byte {
 }
 
 func wrapErrorStr(err error) string {
-	return fmt.Sprintf(`{"status":"error", "error":%s}`, strconv.Quote(err.Error()))
+	//return fmt.Sprintf(`{"status":"error", "error":%s}`, strconv.Quote(err.Error()))
+	return err.Error()
 }
 
 func pql(c *ctx, query func() (promql.Query, error)) uint32 {

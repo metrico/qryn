@@ -4,6 +4,10 @@ const { rawRequest } = require('../lib/db/clickhouse')
 const { DATABASE_NAME } = require('../lib/utils')
 const { clusterName } = require('../common')
 const _dist = clusterName ? '_dist' : ''
+
+class PSQLError extends Error {}
+module.exports.PSQLError = PSQLError
+
 /**
  *
  * @param query {string}
@@ -12,35 +16,56 @@ const _dist = clusterName ? '_dist' : ''
  * @param stepMs {number}
  */
 module.exports.rangeQuery = async (query, startMs, endMs, stepMs) => {
-  const resp = await prometheus.pqlRangeQuery(query, startMs, endMs, stepMs, module.exports.getData)
-  return JSON.parse(resp)
+  try {
+    const resp = await prometheus.pqlRangeQuery(query, startMs, endMs, stepMs, module.exports.getData)
+    return JSON.parse(resp)
+  } catch (e) {
+    if (e instanceof prometheus.WasmError) {
+      throw new PSQLError(e.message)
+    }
+    throw e
+  }
 }
 
 module.exports.instantQuery = async (query, timeMs) => {
-  const resp = await prometheus.pqlInstantQuery(query, timeMs, module.exports.getData)
-  return JSON.parse(resp)
+  try {
+    const resp = await prometheus.pqlInstantQuery(query, timeMs, module.exports.getData)
+    return JSON.parse(resp)
+  } catch (e) {
+    if (e instanceof prometheus.WasmError) {
+      throw new PSQLError(e.message)
+    }
+    throw e
+  }
 }
 
 module.exports.series = async (query, fromMs, toMs) => {
-  const fromS = Math.floor(fromMs / 1000)
-  const toS = Math.floor(toMs / 1000)
-  const matchers = prometheus.pqlMatchers(query)
-  const conds = getMatchersIdxCond(matchers[0])
-  const idx = getIdxSubquery(conds, fromMs, toMs)
-  const withIdx = new Sql.With('idx', idx, !!clusterName)
-  const req = (new Sql.Select())
-    .with(withIdx)
-    .select([new Sql.Raw('any(labels)'), 'labels'])
-    .from(`time_series${_dist}`)
-    .where(Sql.And(
-      Sql.Gte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${fromS}))`)),
-      Sql.Lte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${toS}))`)),
-      new Sql.In('fingerprint', 'in', new Sql.WithReference(withIdx))))
-    .groupBy(new Sql.Raw('fingerprint'))
-  const data = await rawRequest(req.toString() + ' FORMAT JSON',
-    null,
-    DATABASE_NAME())
-  return data.data.data.map(l => JSON.parse(l.labels))
+  try {
+    const fromS = Math.floor(fromMs / 1000)
+    const toS = Math.floor(toMs / 1000)
+    const matchers = prometheus.pqlMatchers(query)
+    const conds = getMatchersIdxCond(matchers[0])
+    const idx = getIdxSubquery(conds, fromMs, toMs)
+    const withIdx = new Sql.With('idx', idx, !!clusterName)
+    const req = (new Sql.Select())
+      .with(withIdx)
+      .select([new Sql.Raw('any(labels)'), 'labels'])
+      .from(`time_series${_dist}`)
+      .where(Sql.And(
+        Sql.Gte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${fromS}))`)),
+        Sql.Lte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${toS}))`)),
+        new Sql.In('fingerprint', 'in', new Sql.WithReference(withIdx))))
+      .groupBy(new Sql.Raw('fingerprint'))
+    const data = await rawRequest(req.toString() + ' FORMAT JSON',
+      null,
+      DATABASE_NAME())
+    return data.data.data.map(l => JSON.parse(l.labels))
+  } catch (e) {
+    if (e instanceof prometheus.WasmError) {
+      throw new PSQLError(e.message)
+    }
+    throw e
+  }
 }
 
 /**

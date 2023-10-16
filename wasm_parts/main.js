@@ -4,6 +4,9 @@ const WASM_URL = join(__dirname, 'main.wasm.gz')
 const fs = require('fs')
 const { gunzipSync } = require('zlib')
 
+class WasmError extends Error {}
+module.exports.WasmError = WasmError
+
 let counter = 0
 var go
 var wasm
@@ -66,7 +69,7 @@ module.exports.pqlMatchers = (query) => {
       ctx.write(query)
       const res1 = _wasm.exports.pqlSeries(id)
       if (res1 !== 0) {
-        throw new Error('pql failed: ', ctx.read())
+        throw new WasmError(ctx.read())
       }
       /** @type {[[[string]]]} */
       const matchersObj = JSON.parse(ctx.read())
@@ -93,7 +96,7 @@ const pql = async (query, wasmCall, getData) => {
     ctx.write(query)
     const res1 = wasmCall(ctx)
     if (res1 !== 0) {
-      throw new Error('pql failed: ', ctx.read())
+      throw new WasmError(ctx.read())
     }
 
     const matchersObj = JSON.parse(ctx.read())
