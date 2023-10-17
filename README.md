@@ -19,7 +19,7 @@
 - **Logs, Metrics and Traces** living happily together. Drop-in compatible with multiple vendors formats.
 - Native [LogQL/PromQL/TempoQL APIs](https://qryn.cloud) support for [querying](https://github.com/lmangani/qryn/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries), [tracing](https://github.com/lmangani/qryn/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/qryn/wiki/Ruler---Alerts) [^2] in [Grafana](http://docs.grafana.org/features/explore/) [^3]
 - Ingestion [APIs](https://qryn.metrico.in/#/support) transparently compatible with [Opentelemetry, Loki, Prometheus, InfluxDB, Elastic](https://qryn.dev) _and [more](https://github.com/metrico/otel-collector)_
-- Dynamically search, filter and extract metrics from _logs, events, spans and traces_. _NO SQL required_.
+- Search, filter and extract metrics from _logs, events, spans and traces_ using familiar languages. _NO SQL required_.
 - Ready to use with popular Agents such as [Promtail, Grafana-Agent, Vector, Logstash, Telegraf](https://qryn.metrico.in/#/ingestion) _and more_
 - Built in [Explore UI](https://github.com/metrico/cloki-view) and [CLI](https://github.com/lmangani/vLogQL) for querying supported datasources
 - Designed for edge _(js/wasm)_ and core/backend deployments _(go/rust)_.
