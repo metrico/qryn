@@ -16,15 +16,15 @@
 
 
 :rocket: **qryn** is a _drop-in Grafana compatible_ **polyglot observability** framework<br/>
-- **Logs, Metrics and Traces** living happily together. Locksmith compatible with multiple vendors formats.
+- **Logs, Metrics and Traces** living happily together. Drop-in compatible with multiple vendors formats.
 - Native [LogQL/PromQL/TempoQL APIs](https://qryn.cloud) support for [querying](https://github.com/lmangani/qryn/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries), [tracing](https://github.com/lmangani/qryn/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/qryn/wiki/Ruler---Alerts) [^2] in [Grafana](http://docs.grafana.org/features/explore/) [^3]
+- Search, filter and extract metrics from _logs, events, spans and traces_ using familiar languages. _SQL Optional_.
 - Ingestion [APIs](https://qryn.metrico.in/#/support) transparently compatible with [Opentelemetry, Loki, Prometheus, InfluxDB, Elastic](https://qryn.dev) _and [more](https://github.com/metrico/otel-collector)_
-- Dynamically search, filter and extract metrics from _logs, events, spans and traces_. _NO SQL required_.
 - Ready to use with popular Agents such as [Promtail, Grafana-Agent, Vector, Logstash, Telegraf](https://qryn.metrico.in/#/ingestion) _and more_
 - Built in [Explore UI](https://github.com/metrico/cloki-view) and [CLI](https://github.com/lmangani/vLogQL) for querying supported datasources
-- Designed for edge _(js/wasm)_ and core/backend deployments _(go/rust)_.
+- Designed for edge _(js/bun/wasm)_ and core/backend deployments _(golang/rust)_.
 - Total data control. Compatible with [ClickHouse](https://clickhouse.com/) or [InfluxDB IOx](https://influxdata.com) with S3 object storage.
-- 
+
 :rocket: **qryn.cloud** is the _supercharged_ **qryn** version developed in _go_ with additional _functionality, speed and features!_<br/>
 
 <br>
@@ -131,14 +131,6 @@ Whether it's code, documentation or grammar, we ❤️ all contributions. Not su
 <img src="https://camo.githubusercontent.com/473b62766b498e4f2b008ada39f1d56fb3183649f24447866e25d958ac3fd79a/68747470733a2f2f7777772e676e752e6f72672f67726170686963732f6167706c76332d3135357835312e706e67">
 
 ©️ QXIP BV, released under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE) for details.
-
-We encourage forking and changing the code, hacking around with it, and experimenting. If you modify the qryn source code, and run that modified code in a way that's accessible over a network, you _must_ make your modifications to the source code available following the guidelines of the license:
-```
-[I]f you modify the Program, your modified version must prominently offer all users interacting with it remotely 
-through a computer network (if your version supports such interaction) an opportunity to receive the Corresponding 
-Source of your version by providing access to the Corresponding Source from a network server at no charge, through 
-some standard or customary means of facilitating copying of software.
-```
 
 
 [^1]: qryn is not affiliated or endorsed by Grafana Labs or ClickHouse Inc. All rights belong to their respective owners.

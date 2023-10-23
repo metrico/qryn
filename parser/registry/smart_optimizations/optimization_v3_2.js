@@ -1,9 +1,12 @@
-const { getDuration, dist, Aliased } = require('../common')
+const { getDuration, Aliased } = require('../common')
 const reg = require('./log_range_agg_reg_v3_2')
 const Sql = require('@cloki/clickhouse-sql')
 const { DATABASE_NAME, checkVersion } = require('../../../lib/utils')
 const streamSelectorReg = require('../stream_selector_operator_registry')
 const aggOpReg = require('../high_level_aggregation_registry')
+const { clusterName } = require('../../../common')
+const logger = require('../../../lib/logger')
+const _dist = clusterName ? '_dist' : ''
 
 /**
  *
@@ -46,14 +49,15 @@ module.exports.apply = (token, fromNS, toNS, stepNS) => {
     : Sql.Gt('samples.timestamp_ns', fromNS)
   let q = (new Sql.Select())
     .select(['samples.fingerprint', 'fingerprint'])
-    .from([`${DATABASE_NAME()}.metrics_15s`, 'samples'])
+    .from([`${DATABASE_NAME()}.metrics_15s${_dist}`, 'samples'])
     .where(tsClause)
-  q.join(new Aliased(`${DATABASE_NAME()}.time_series${dist}`, 'time_series'), 'left any',
+  q.join(new Aliased(`${DATABASE_NAME()}.time_series`, 'time_series'), 'left any',
     Sql.Eq('samples.fingerprint', new Sql.Raw('time_series.fingerprint')))
   q.select([new Sql.Raw('any(JSONExtractKeysAndValues(time_series.labels, \'String\'))'), 'labels'])
 
   q.ctx = {
-    step: stepNS / 1000000000
+    step: stepNS / 1000000000,
+    inline: !!clusterName
   }
 
   for (const streamSelectorRule of token.Children('log_stream_selector_rule')) {
@@ -67,6 +71,8 @@ module.exports.apply = (token, fromNS, toNS, stepNS) => {
   if (aggOp) {
     q = aggOpReg[aggOp.Child('aggregation_operator_fn').value](aggOp, q)
   }
+
+  logger.debug(q.toString())
 
   return q
 }
