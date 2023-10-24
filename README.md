@@ -45,13 +45,17 @@
 ## Features
 
 ### 📚 OpenTelemetry
-qryn is officially integrated with [opentelemetry](https://github.com/metrico/otel-collector) supports _any log, trace or metric format_
+
+⚡ **qryn** is officially integrated with [opentelemetry](https://github.com/metrico/otel-collector) supports _any log, trace or metric format_
+
+<br>
 
 ### 📚 LogQL
 
 > Any Loki compatible client or application can be used with qryn out of the box
 
-qryn implements a full [LogQL API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) to provide transparent compatibility with Loki<br>
+⚡ **qryn** implements the [LogQL API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) for transparent compatibility with **Loki** clients<br>
+
 The Grafana Loki datasource can be used to natively browse and query _logs_ and display extracted _timeseries_<br>
 
 <a href="https://qryn.metrico.in/#/logs/query" target="_blank">
@@ -67,7 +71,8 @@ The Grafana Loki datasource can be used to natively browse and query _logs_ and 
 
 > Any Prometheus compatible client or application can be used with qryn out of the box
 
-qryn is the first platform to deliver full [Prometheus API](https://prometheus.io/docs/prometheus/latest/querying/api/) compatibility using WASM 🏆<br>
+⚡ **qryn** implements the [Prometheus API](https://prometheus.io/docs/prometheus/latest/querying/api/) for transparent **PromQL** compatibility using WASM 🏆<br>
+
 The Grafana Prometheus datasource can be used to natively to query _metrics_ and display _timeseries_<br>
 
 <a href="https://qryn.metrico.in/#/metrics/query" target="_blank">
@@ -81,7 +86,7 @@ The Grafana Prometheus datasource can be used to natively to query _metrics_ and
 
 ### 🕛 Tempo
 
-qryn implements the [Tempo API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) to provide transparent compatibility with Tempo/OTLP clients.<br>
+⚡ **qryn** implements the [Tempo API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) for transparent compatibility with **Tempo/OTLP** clients.<br>
 
 > Any Tempo/Opentelemetry compatible client or application can be used with qryn out of the box
 
