@@ -20,12 +20,12 @@
 
 :rocket: **qryn** is a _lighweight, multi-standard drop-in compatible_ **polyglot observability** framework for _**Logs, Metrics and Traces**_.<br/>
 
-- **Unified Query Language**: Use native **LogQL, PromQL**, and **TempoQL** languages to query, process and alert _with any data_.
-- **Versatile Ingestion**: Ingest any vendor format compatible with **Opentelemetry, Loki, Prometheus, Influx, Datadog, Elastic** _and more_.
-- **Built-in Explorer**: Explore data with qryn's built-in **Explore UI** and **CLI**, or use **Grafana** with _100% native_ compatibility.
-- **Total Data Control**: Take full control of your data, using **ClickHouse** or **InfluxDB IOx** on top of disposable **S3** object storage.
-- **Freedom of Choice**: Unlimited FOSS deployments or **qryn.cloud** service with advanced features and additional performance.
-- **Cost Effective**: Do more with less, achieving the same results as the competition for a fractions of the cost and complexity.
+- **Polyglot**: Use **LogQL, PromQL**, and **TempoQL** languages to query, process and alert _any data_.
+- **Voracious**: Ingest anything compatible with **Opentelemetry, Loki, Prometheus, Influx, Datadog, Elastic** _& more_.
+- **Versatile**: Explore data with qryn's built-in **Explore UI** and **CLI** or _native_ **Grafana** compatibility.
+- **Secure**: Keep control of your data, using **ClickHouse** or **InfluxDB IOx** on top of disposable **S3** storage.
+- **Unmetered**: Unlimited FOSS deployments or **qryn.cloud** service with advanced features and pro performance.
+- **Effective**: Do more with less, replace lock-in competitors for a fractions of the cost and complexity.
 <br>
 
 
