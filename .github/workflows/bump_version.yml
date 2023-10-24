@@ -1,4 +1,4 @@
-name: 'Bump & Publish Multi-Arch'
+name: 'Build Multi-Arch'
 
 on:
   push:
