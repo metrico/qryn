@@ -50,7 +50,7 @@
 
 <br>
 
-### 📚 LogQL
+### 📚 Loki + LogQL
 
 > Any Loki compatible client or application can be used with qryn out of the box
 
@@ -67,7 +67,7 @@ The Grafana Loki datasource can be used to natively browse and query _logs_ and 
 
 <br>
 
-### 📈 Prometheus
+### 📈 Prometheus + PromQL
 
 > Any Prometheus compatible client or application can be used with qryn out of the box
 
@@ -84,7 +84,7 @@ The Grafana Prometheus datasource can be used to natively to query _metrics_ and
 
 <br>
 
-### 🕛 Tempo
+### 🕛 Tempo + TempoQL
 
 ⚡ **qryn** implements the [Tempo API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) for transparent compatibility with **Tempo/OTLP** clients.<br>
 
@@ -100,8 +100,11 @@ The Tempo datasource can be used to natively query _traces_ including _**TraceQL
 
 <br>
 
-### ↔️ Correlation
-Data correlation is simple using qryn's drop-in compatibility with **Grafana** native datasources.
+With **qryn** and **grafana** everything _just works_ right out of the box: 
+
+- Native datasource support without any plugin or extension
+- Advanced Correlation between Logs, Metrics and Traces
+- Service Graphs and Service Status Panels, and all the cool features
 
 <a href="https://qryn.dev" target="_blank">
 <img src="https://user-images.githubusercontent.com/1423657/184538094-13c11500-24ef-4468-9f33-dc9d564238e3.gif" width=700 class=border />
@@ -109,7 +112,9 @@ Data correlation is simple using qryn's drop-in compatibility with **Grafana** n
 
 <br>
 
-### :eye: View
+<br>
+
+### :eye: Explore View
 
 No Grafana? No Problem. **qryn** ships with **view** - it's own lightweight data exploration tool
 
