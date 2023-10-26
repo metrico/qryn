@@ -12,6 +12,10 @@ import (
 	"strings"
 	"time"
 	"unsafe"
+	sql "wasm_parts/sql_select"
+	parser2 "wasm_parts/traceql/parser"
+	traceql_transpiler "wasm_parts/traceql/transpiler"
+	"wasm_parts/types"
 )
 
 type ctx struct {
@@ -56,6 +60,52 @@ func getCtxResponse(id uint32) *byte {
 //export getCtxResponseLen
 func getCtxResponseLen(id uint32) uint32 {
 	return uint32(len(data[id].response))
+}
+
+//export transpileTraceQL
+func transpileTraceQL(id uint32) int {
+	request := types.TraceQLRequest{}
+	err := request.UnmarshalJSON(data[id].request)
+	if err != nil {
+		data[id].response = []byte(err.Error())
+		return 1
+	}
+
+	script, err := parser2.Parse(request.Request)
+	if err != nil {
+		data[id].response = []byte(err.Error())
+		return 1
+	}
+
+	planner, err := traceql_transpiler.Plan(script)
+	if err != nil {
+		data[id].response = []byte(err.Error())
+		return 1
+	}
+	request.Ctx.Ctx = context.Background()
+	request.Ctx.CancelCtx = func() {}
+	request.Ctx.CHSqlCtx = &sql.Ctx{
+		Params: make(map[string]sql.SQLObject),
+		Result: make(map[string]sql.SQLObject),
+	}
+	request.Ctx.From = time.Unix(int64(request.Ctx.FromS), 0)
+	request.Ctx.To = time.Unix(int64(request.Ctx.ToS), 0)
+	sel, err := planner.Process(&request.Ctx)
+	if err != nil {
+		data[id].response = []byte(err.Error())
+		return 1
+	}
+	var options []int
+	if request.Ctx.IsCluster {
+		options = append(options, sql.STRING_OPT_INLINE_WITH)
+	}
+	str, err := sel.String(request.Ctx.CHSqlCtx, options...)
+	if err != nil {
+		data[id].response = []byte(err.Error())
+		return 1
+	}
+	data[id].response = []byte(str)
+	return 0
 }
 
 var eng = promql.NewEngine(promql.EngineOpts{
