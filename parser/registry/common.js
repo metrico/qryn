@@ -1,6 +1,8 @@
 const { hashLabels, parseLabels } = require('../../common')
 const { getPlg } = require('../../plugins/engine')
 const Sql = require('@cloki/clickhouse-sql')
+const clusterName = require('../../common').clusterName
+module.exports.dist = clusterName ? '_dist' : ''
 
 /**
  * @param query {registry_types.Request | string[]}
@@ -118,7 +120,7 @@ const getDuration = module.exports.getDuration
  * @param eof {any}
  * @returns boolean
  */
-module.exports.isEOF = (eof) => eof.EOF
+module.exports.isEOF = (eof) => eof && eof.EOF
 
 /**
  *
@@ -385,3 +387,14 @@ module.exports.sharedParamNames = {
  * @returns {number}
  */
 module.exports.durationToMs = require('../../common').durationToMs
+
+module.exports.Aliased = class {
+  constructor (name, alias) {
+    this.name = name
+    this.alias = alias
+  }
+
+  toString () {
+    return `${Sql.quoteTerm(this.name)} AS ${this.alias}`
+  }
+}

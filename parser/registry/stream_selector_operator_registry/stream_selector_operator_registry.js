@@ -1,4 +1,4 @@
-const { isEOF } = require('../common')
+const { isEOF, sharedParamNames } = require('../common')
 const { labelAndVal } = require('./common')
 const Sql = require('@cloki/clickhouse-sql')
 /**
@@ -40,17 +40,17 @@ function simpleSelectorClauses (regex, eq, label, value) {
  * @returns {With}
  */
 const streamSelectQuery = (query) => {
-  const param = query.getParam('timeSeriesTable') || new Sql.Parameter('timeSeriesTable')
+  const param = query.getParam(sharedParamNames.timeSeriesTable) ||
+      new Sql.Parameter(sharedParamNames.timeSeriesTable)
   query.addParam(param)
   const res = new Sql.With(
     'str_sel',
     (new Sql.Select())
       .select('fingerprint')
       .distinct(true)
-      .from(param)
-  )
+      .from(param), query.ctx.inline)
   if (query.with() && query.with().idx_sel) {
-    res.query = res.query.where(new Sql.Raw('fingerprint IN idx_sel'))
+    res.query = res.query.where(new Sql.In('fingerprint', 'in', new Sql.WithReference(query.with().idx_sel)))
   }
   return res
 }
@@ -118,7 +118,7 @@ module.exports.neqExtraLabels = (token/*, query */) => {
  */
 module.exports.neqStream = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
-  return (e) => e.labels[label] && e.labels[label] !== value
+  return (e) => isEOF(e) || (e && e.labels[label] && e.labels[label] !== value)
 }
 
 /**
@@ -159,7 +159,7 @@ module.exports.nregExtraLabels = (token/*, query */) => {
 module.exports.nregStream = (token/*, query */) => {
   const [label, value] = labelAndVal(token)
   const re = new RegExp(value)
-  return (e) => e.labels[label] && !e.labels[label].match(re)
+  return (e) => isEOF(e) || (e && e.labels[label] && !e.labels[label].match(re))
 }
 
 /**
