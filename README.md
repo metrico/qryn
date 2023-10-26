@@ -12,7 +12,7 @@
 </a>
 
 
-# [qryn](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud)
+# [qryn 3.x](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud)
 > ... it's pronounced /ˈkwɪr..ɪŋ/ or just _querying_
 
 ![image](https://user-images.githubusercontent.com/1423657/232089970-c4536f16-5967-4051-85a5-8ad94fcde67c.png)
@@ -27,6 +27,7 @@
 - **Unmetered**: Unlimited FOSS deployments or **qryn.cloud** service with advanced features and pro performance.
 - **Effective**: Do more with less, replace lock-in competitors for a fractions of the cost and complexity.
 <br>
+
 
 
 ## 🚀 [Get Started](https://qryn.metrico.in/#/installation)
@@ -44,9 +45,15 @@
 
 ## Features
 
+💡 _**qryn** independently implements popular observability standards, protocols and query languages:_
+
+<br>
+
 ### 📚 OpenTelemetry
 
 ⚡ **qryn** is officially integrated with [opentelemetry](https://github.com/metrico/otel-collector) supports _any log, trace or metric format_
+
+Ingested data can be queried using any of the avialable qryn APIs _(LogQL, PromQL, TraceQL)_
 
 <br>
 
@@ -54,7 +61,7 @@
 
 > Any Loki compatible client or application can be used with qryn out of the box
 
-⚡ **qryn** implements the [LogQL API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) for transparent compatibility with **Loki** clients<br>
+⚡ **qryn** implements the [Loki API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) for transparent compatibility with **[LogQL](https://grafana.com/docs/loki/latest/query/)** clients<br>
 
 The Grafana Loki datasource can be used to natively browse and query _logs_ and display extracted _timeseries_<br>
 
@@ -71,7 +78,7 @@ The Grafana Loki datasource can be used to natively browse and query _logs_ and 
 
 > Any Prometheus compatible client or application can be used with qryn out of the box
 
-⚡ **qryn** implements the [Prometheus API](https://prometheus.io/docs/prometheus/latest/querying/api/) for transparent **PromQL** compatibility using WASM 🏆<br>
+⚡ **qryn** implements the [Prometheus API](https://prometheus.io/docs/prometheus/latest/querying/api/) for transparent **[PromQL](https://prometheus.io/docs/prometheus/latest/querying/basics/)** compatibility using WASM 🏆<br>
 
 The Grafana Prometheus datasource can be used to natively to query _metrics_ and display _timeseries_<br>
 
@@ -84,9 +91,9 @@ The Grafana Prometheus datasource can be used to natively to query _metrics_ and
 
 <br>
 
-### 🕛 Tempo + TempoQL
+### 🕛 Tempo + TraceQL
 
-⚡ **qryn** implements the [Tempo API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) for transparent compatibility with **Tempo/OTLP** clients.<br>
+⚡ **qryn** implements the [Tempo API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) for transparent compatibility with **[TraceQL](https://grafana.com/docs/tempo/latest/traceql/)** clients.<br>
 
 > Any Tempo/Opentelemetry compatible client or application can be used with qryn out of the box
 
@@ -97,6 +104,13 @@ The Tempo datasource can be used to natively query _traces_ including _**TraceQL
 </a>
 
 :tada: _No plugins needed_ 
+
+<br>
+
+### 📚 Other Vendors
+
+**qryn** can ingest data using the [InfluxDB, DataDog, Elastic](https://qryn.metrico.in/#/support) and other vendors.
+
 
 <br>
 
