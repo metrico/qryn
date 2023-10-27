@@ -4,9 +4,6 @@
 
 [![Build Status](https://github.com/metrico/qryn/actions/workflows/bump_version.yml/badge.svg)](https://github.com/metrico/qryn/actions/workflows/bump_version.yml)
 ![CodeQL](https://github.com/lmangani/cLoki/workflows/CodeQL/badge.svg)
-<a href="https://qryn.cloud">
-  <img src="https://img.shields.io/badge/Cloud-purple" alt="cloud">
-</a>
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
 
 
@@ -22,7 +19,7 @@
 - **Voracious**: Ingest anything compatible with **Opentelemetry, Loki, Prometheus, Influx, Datadog, Elastic** _& more_.
 - **Versatile**: Explore data with qryn's built-in **Explore UI** and **CLI** or _native_ **Grafana** compatibility.
 - **Secure**: Keep control of your data, using **ClickHouse** or **InfluxDB IOx** on top of disposable **S3** storage.
-- **Unmetered**: Unlimited FOSS deployments or **qryn.cloud** service with advanced features and pro performance.
+- **Unmetered**: Unlimited FOSS deployments or **qryn.cloud** option with advanced features and high performance.
 - **Effective**: Do more with less, replace lock-in competitors for a fractions of the cost and complexity.
 <br>
 
@@ -117,6 +114,8 @@ With **qryn** and **grafana** everything _just works_ right out of the box:
 - Native datasource support without any plugin or extension
 - Advanced Correlation between Logs, Metrics and Traces
 - Service Graphs and Service Status Panels, and all the cool features
+
+<br>
 
 <a href="https://qryn.dev" target="_blank">
 <img src="https://user-images.githubusercontent.com/1423657/184538094-13c11500-24ef-4468-9f33-dc9d564238e3.gif" width=700 class=border />
