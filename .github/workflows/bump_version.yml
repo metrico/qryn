@@ -76,9 +76,9 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}  
+          
       - name: Build and push to Docker Hub
         if: ${{ steps.checkdocker.outputs.secretspresent }}
-        id: docker_build
         uses: docker/build-push-action@v3.0.0
         with:
           platforms: linux/amd64, linux/arm64
@@ -88,6 +88,19 @@ jobs:
             qxip/qryn:${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}
             qxip/cloki:latest
             qxip/cloki:${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}
+            
+      - name: Build and push to Docker Hub (bun)
+        if: ${{ steps.checkdocker.outputs.secretspresent }}
+        uses: docker/build-push-action@v3.0.0
+        with:
+          platforms: linux/amd64, linux/arm64
+          file: ./Dockerfile_bun
+          push: true
+          tags: |
+            qxip/qryn:bun
+            qxip/qryn:${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}-bun
+            qxip/cloki:bun
+            qxip/cloki:${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}-bun
             
       - name: Log in to the GHCR registry
         uses: docker/login-action@v2.0.0
@@ -100,7 +113,18 @@ jobs:
         uses: docker/build-push-action@v3.0.0
         with:
           platforms: linux/amd64, linux/arm64
+          file: ./Dockerfile
           push: true
           tags: |
              ghcr.io/metrico/qryn:latest
              ghcr.io/metrico/qryn:${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}
+
+      - name: Build and push to GHCR (bun)
+        uses: docker/build-push-action@v3.0.0
+        with:
+          platforms: linux/amd64, linux/arm64
+          file: ./Dockerfile_bun
+          push: true
+          tags: |
+             ghcr.io/metrico/qryn:bun
+             ghcr.io/metrico/qryn:${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}-bun
