@@ -11,6 +11,12 @@ let counter = 0
 var go = new Go();
 var wasm
 
+const newId = () => {
+  const id = counter
+  counter = (counter + 1) & 0xFFFFFFFF
+  return id
+}
+
 async function init () {
     const _wasm = await WebAssembly.instantiate(
       gunzipSync(fs.readFileSync(WASM_URL)), go.importObject)
@@ -59,8 +65,7 @@ module.exports.pqlInstantQuery = async (query, timeMs, getData) => {
 
 module.exports.pqlMatchers = (query) => {
   const _wasm = wasm
-  const id = counter
-  counter = (counter + 1) & 0xFFFFFFFF
+  const id = newId()
   const ctx = new Ctx(id, _wasm)
   ctx.create()
   try {
@@ -79,14 +84,54 @@ module.exports.pqlMatchers = (query) => {
 
 /**
  *
+ * @param request {{
+ *   Request: string,
+ *   Ctx: {
+ *       IsCluster: boolean,
+ *       OrgID: string,
+ *       FromS: number,
+ *       ToS: number,
+ *       TimeSeriesGinTableName: string,
+ *       SamplesTableName: string,
+ *       TimeSeriesTableName: string,
+ *       TimeSeriesDistTableName: string,
+ *       Metrics15sTableName: string,
+ *       TracesAttrsTable: string,
+ *       TracesAttrsDistTable: string,
+ *       TracesTable: string,
+ *       TracesDistTable: string
+ * }}}
+ * @returns {String}
+ * @constructor
+ */
+module.exports.TranspileTraceQL = (request) => {
+  let _ctx
+  try {
+    const id = newId()
+    const _wasm = wasm
+    _ctx = new Ctx(id, _wasm)
+    _ctx.create()
+    _ctx.write(JSON.stringify(request))
+    let res = _wasm.exports.transpileTraceQL(id)
+    if (res !== 0) {
+      throw new WasmError(_ctx.read())
+    }
+    res = _ctx.read()
+    return res
+  } finally {
+    _ctx && _ctx.destroy()
+  }
+}
+
+/**
+ *
  * @param query {string}
  * @param wasmCall {function}
  * @param getData {function}
  * @returns {Promise<string>}
  */
 const pql = async (query, wasmCall, getData) => {
-  const reqId = counter
-  counter = (counter + 1) & 0xFFFFFFFF
+  const reqId = newId()
   const _wasm = wasm
   const ctx = new Ctx(reqId, _wasm)
   ctx.create()

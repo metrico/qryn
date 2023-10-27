@@ -269,10 +269,18 @@ let fastify = require('fastify')({
   fastify.get('/api/search/tags', handlerTempoLabel)
   fastify.get('/tempo/api/search/tags', handlerTempoLabel)
 
+  const handlerTempoLabelV2 = require('./lib/handlers/tempo_v2_tags').bind(this)
+  fastify.get('/api/v2/search/tags', handlerTempoLabelV2)
+  fastify.get('/tempo/api/v2/search/tags', handlerTempoLabelV2)
+
   /* Tempo Tag Value Handler */
   const handlerTempoLabelValues = require('./lib/handlers/tempo_values').bind(this)
   fastify.get('/api/search/tag/:name/values', handlerTempoLabelValues)
   fastify.get('/tempo/api/search/tag/:name/values', handlerTempoLabelValues)
+
+  const handlerTempoLabelV2Values = require('./lib/handlers/tempo_v2_values').bind(this)
+  fastify.get('/api/v2/search/tag/:name/values', handlerTempoLabelV2Values)
+  fastify.get('/tempo/api/v2/search/tag/:name/values', handlerTempoLabelV2Values)
 
   /* Tempo Traces Query Handler */
   const handlerTempoSearch = require('./lib/handlers/tempo_search.js').bind(this)
