@@ -2,20 +2,20 @@
   "name": "qryn",
   "version": "2.4.4",
   "description": "Polyglot Observability Stack with ClickHouse storage",
-  "main": "qryn.js",
+  "main": "qryn.mjs",
   "bin": {
-    "cloki": "./qryn.js",
-    "qryn": "./qryn.js"
+    "cloki": "./qryn.mjs",
+    "qryn": "./qryn.mjs"
   },
   "scripts": {
     "test": "jest",
-    "start": "node qryn.js",
-    "pretty": "node qryn.js | pino-pretty",
+    "start": "node qryn.mjs",
+    "pretty": "node qryn.mjs | pino-pretty",
     "postinstall": "patch-package",
     "install-view": "mkdir -p view && curl -L https://github.com/metrico/cloki-view/releases/latest/download/dist.zip | busybox unzip - -d ./view",
     "lint": "npx eslint --fix *.js lib parser plugins test",
     "bun-install": "bun install --platform node",
-    "bun-start": "bun run qryn.js"
+    "bun-start": "bun run qryn.mjs"
   },
   "standard": {
     "env": [
@@ -74,7 +74,8 @@
     "yaml": "^1.10.2",
     "@qxip/promql2logql": "^1.0.30",
     "node-gzip": "^1.1.2",
-    "csv-writer": "^1.6.0"
+    "csv-writer": "^1.6.0",
+    "@stricjs/router": "^4.2.9"
   },
   "devDependencies": {
     "casual": "^1.6.2",
