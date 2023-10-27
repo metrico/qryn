@@ -4,12 +4,10 @@
 
 [![Build Status](https://github.com/metrico/qryn/actions/workflows/bump_version.yml/badge.svg)](https://github.com/metrico/qryn/actions/workflows/bump_version.yml)
 ![CodeQL](https://github.com/lmangani/cLoki/workflows/CodeQL/badge.svg)
-<a href="https://matrix.to/#/#qryn:matrix.org">
-  <img src="https://img.shields.io/badge/Join%20Matrix-Chat-green" alt="Matrix">
-</a>
 <a href="https://qryn.cloud">
-  <img src="https://img.shields.io/badge/Cloud-Service-purple" alt="cloud">
+  <img src="https://img.shields.io/badge/Cloud-purple" alt="cloud">
 </a>
+[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
 
 
 # [qryn 3.x](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud)
@@ -155,9 +153,9 @@ Whether it's code, documentation or grammar, we ❤️ all contributions. Not su
 
 &nbsp;&nbsp;&nbsp;&nbsp;[![Contributors for @metrico/qryn](https://contributors-img.web.app/image?repo=lmangani/cloki)](https://github.com/metrico/qryn/graphs/contributors)
 
-[![Stargazers repo roster for @metrico/qryn](https://reporoster.com/stars/metrico/qryn)](https://github.com/metrico/qryn/stargazers)
+[![Stargazers repo roster for @metrico/qryn](https://bytecrank.com/nastyox/reporoster/php/stargazersSVG.php?user=metrico&repo=qryn)](https://github.com/metrico/qryn/stargazers)
 
-[![Forkers repo roster for @metrico/qryn](https://reporoster.com/forks/metrico/qryn)](https://github.com/metrico/qryn/network/members)
+[![Forkers repo roster for @metrico/qryn](https://bytecrank.com/nastyox/reporoster/php/forkersSVG.php?user=metrico&repo=qryn)](https://github.com/metrico/qryn/network/members)
 
 
 #### License
