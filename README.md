@@ -21,7 +21,7 @@
 - **Secure**: Keep control of your data, using **ClickHouse** or **InfluxDB IOx** on top of disposable **S3** storage.
 - **Unmetered**: Unlimited FOSS deployments or **qryn.cloud** option with advanced features and high performance.
 - **Effective**: Do more with less, replace lock-in competitors for a fractions of the cost and complexity.
-- **Faster**: Powered by **ClickHouse** OLAP + **Bun** the _all-in-one_ JavaScript runtime designed for _speed_.
+- **Lightweight**: Powered by **ClickHouse** OLAP + **Bun** the _all-in-one_ JavaScript runtime designed for _speed_.
 
 <br>
 
