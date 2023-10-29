@@ -16,11 +16,11 @@
 
 - **Polyglot**: Use **LogQL, PromQL**, and **TempoQL** languages to query, process and alert _any data_
 - **Lightweight**: Powered by **ClickHouse** OLAP Engine + **Bun** the _fast, all-in-one_ JavaScript runtime
-- **Voracious**: Ingest anything compatible with **Opentelemetry, Loki, Prometheus, Influx, Datadog, Elastic** _+ more_
+- **Voracious**: Ingestion compatible with **Opentelemetry, Loki, Prometheus, Influx, Datadog, Elastic** _+ more_
 - **Versatile**: Explore data with qryn's built-in **Explore UI** and **CLI** or _native_ **Grafana** compatibility
-- **Secure**: Keep control of your data, using **ClickHouse** or **InfluxDB IOx** on top of disposable **S3** storage
-- **Unmetered**: Unlimited FOSS deployments or **qryn.cloud** option with advanced features and high performance
-- **Effective**: Do more with less, replace lock-in competitors for a fractions of the cost and complexity
+- **Secure**: Retain total control of data, using **ClickHouse** or **InfluxDB IOx** with **S3** object storage
+- **Unmetered**: Unlimited FOSS deployments or **qryn.cloud** option with advanced features and performance
+- **Indepentent**: Designed to be a stand-alone, all-in-one _Loki, Prometheus, Tempo_ drop-in alternative
 
 <br>
 
