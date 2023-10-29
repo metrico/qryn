@@ -13,7 +13,7 @@
 ![image](https://user-images.githubusercontent.com/1423657/232089970-c4536f16-5967-4051-85a5-8ad94fcde67c.png)
 
 
-:rocket: _lighweight, multi-standard drop-in compatible_ **polyglot observability** framework for _**Logs, Metrics and Traces**_.<br/>
+:rocket: _polyglot, lighweight, multi-standard drop-in_ **observability** framework for _**Logs, Metrics and Traces**_.<br/>
 
 - **Polyglot**: Use **LogQL, PromQL**, and **TempoQL** languages to query, process and alert _any data_.
 - **Voracious**: Ingest anything compatible with **Opentelemetry, Loki, Prometheus, Influx, Datadog, Elastic** _& more_.
