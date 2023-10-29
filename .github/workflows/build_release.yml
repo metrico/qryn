@@ -1,4 +1,4 @@
-name: 'Build Multi-Arch 3.x'
+name: 'CI+CD'
 
 on:
   release:
