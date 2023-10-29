@@ -16,12 +16,12 @@
 :rocket: _polyglot, lighweight, multi-standard drop-in_ **observability** framework for _**Logs, Metrics and Traces**_.<br/>
 
 - **Polyglot**: Use **LogQL, PromQL**, and **TempoQL** languages to query, process and alert _any data_.
+- **Lightweight**: Powered by **ClickHouse** OLAP + **Bun** the _all-in-one_ JavaScript runtime designed for _speed_.
 - **Voracious**: Ingest anything compatible with **Opentelemetry, Loki, Prometheus, Influx, Datadog, Elastic** _& more_.
 - **Versatile**: Explore data with qryn's built-in **Explore UI** and **CLI** or _native_ **Grafana** compatibility.
 - **Secure**: Keep control of your data, using **ClickHouse** or **InfluxDB IOx** on top of disposable **S3** storage.
 - **Unmetered**: Unlimited FOSS deployments or **qryn.cloud** option with advanced features and high performance.
 - **Effective**: Do more with less, replace lock-in competitors for a fractions of the cost and complexity.
-- **Lightweight**: Powered by **ClickHouse** OLAP + **Bun** the _all-in-one_ JavaScript runtime designed for _speed_.
 
 <br>
 
