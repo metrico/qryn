@@ -4,7 +4,7 @@
 
 [![Build Status](https://github.com/metrico/qryn/actions/workflows/bump_version.yml/badge.svg)](https://github.com/metrico/qryn/actions/workflows/bump_version.yml)
 ![CodeQL](https://github.com/lmangani/cLoki/workflows/CodeQL/badge.svg)
-[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
+<img src="https://raw.githubusercontent.com/pedromxavier/flag-badges/main/badges/UA.svg" alt="made in Ukraine">
 
 
 # [qryn 3.x](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud)
