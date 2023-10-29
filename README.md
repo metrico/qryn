@@ -6,17 +6,16 @@
 ![CodeQL](https://github.com/lmangani/cLoki/workflows/CodeQL/badge.svg)
 <img src="https://raw.githubusercontent.com/pedromxavier/flag-badges/main/badges/UA.svg" alt="made in Ukraine">
 
-
-# [qryn 3.x](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud)
-> ... it's pronounced /ˈkwɪr..ɪŋ/ or just _querying_
-
 ![image](https://user-images.githubusercontent.com/1423657/232089970-c4536f16-5967-4051-85a5-8ad94fcde67c.png)
 
+# [qryn 3.x](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud)
 
 :rocket: _polyglot, lighweight, multi-standard drop-in_ **observability** framework for _**Logs, Metrics and Traces**_.<br/>
 
+> ... it's pronounced /ˈkwɪr..ɪŋ/ or just _querying_
+
 - **Polyglot**: Use **LogQL, PromQL**, and **TempoQL** languages to query, process and alert _any data_.
-- **Lightweight**: Powered by **ClickHouse** OLAP + **Bun** the _all-in-one_ JavaScript runtime designed for _speed_.
+- **Lightweight**: Powered by **ClickHouse** OLAP Engine + **Bun** the _fast, all-in-one_ JavaScript runtime.
 - **Voracious**: Ingest anything compatible with **Opentelemetry, Loki, Prometheus, Influx, Datadog, Elastic** _& more_.
 - **Versatile**: Explore data with qryn's built-in **Explore UI** and **CLI** or _native_ **Grafana** compatibility.
 - **Secure**: Keep control of your data, using **ClickHouse** or **InfluxDB IOx** on top of disposable **S3** storage.
