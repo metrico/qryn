@@ -10,24 +10,24 @@
 
 # [qryn 3.x](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud)
 
-:rocket: _polyglot, lighweight, multi-standard drop-in_ **observability** framework for _**Logs, Metrics and Traces**_.<br/>
+:rocket: _polyglot, lighweight, multi-standard drop-in_ **observability** framework for _**Logs, Metrics and Traces**_<br/>
 
 > ... it's pronounced /ˈkwɪr..ɪŋ/ or just _querying_
 
-- **Polyglot**: Use **LogQL, PromQL**, and **TempoQL** languages to query, process and alert _any data_.
-- **Lightweight**: Powered by **ClickHouse** OLAP Engine + **Bun** the _fast, all-in-one_ JavaScript runtime.
-- **Voracious**: Ingest anything compatible with **Opentelemetry, Loki, Prometheus, Influx, Datadog, Elastic** _& more_.
-- **Versatile**: Explore data with qryn's built-in **Explore UI** and **CLI** or _native_ **Grafana** compatibility.
-- **Secure**: Keep control of your data, using **ClickHouse** or **InfluxDB IOx** on top of disposable **S3** storage.
-- **Unmetered**: Unlimited FOSS deployments or **qryn.cloud** option with advanced features and high performance.
-- **Effective**: Do more with less, replace lock-in competitors for a fractions of the cost and complexity.
+- **Polyglot**: Use **LogQL, PromQL**, and **TempoQL** languages to query, process and alert _any data_
+- **Lightweight**: Powered by **ClickHouse** OLAP Engine + **Bun** the _fast, all-in-one_ JavaScript runtime
+- **Voracious**: Ingest anything compatible with **Opentelemetry, Loki, Prometheus, Influx, Datadog, Elastic** _+ more_
+- **Versatile**: Explore data with qryn's built-in **Explore UI** and **CLI** or _native_ **Grafana** compatibility
+- **Secure**: Keep control of your data, using **ClickHouse** or **InfluxDB IOx** on top of disposable **S3** storage
+- **Unmetered**: Unlimited FOSS deployments or **qryn.cloud** option with advanced features and high performance
+- **Effective**: Do more with less, replace lock-in competitors for a fractions of the cost and complexity
 
 <br>
 
 ## 🚀 [Get Started](https://qryn.metrico.in/#/installation)
 
-* Deploy qryn OSS using the [documentation](https://qryn.metrico.in/#/installation) or get help in our [Matrix room](https://matrix.to/#/#qryn:matrix.org) :octocat:
-* Create a free account on [qryn.cloud](https://qryn.cloud) and get polyglot without moving a finger ☁️ 
+* Setup & Deploy **qryn** _OSS_ using the [documentation](https://qryn.metrico.in/#/installation) and get help in our [Matrix room](https://matrix.to/#/#qryn:matrix.org) :octocat:
+* No time? Use [qryn.cloud](https://qryn.cloud) and get polyglot in just minutes! Drop-in LGTM alternative ☁️ 
 
 <a href="https://qryn.cloud" target="_blank">
 <img src="https://user-images.githubusercontent.com/1423657/218818279-3efff74f-0191-498a-bdc4-f2650c9d3b49.gif">
