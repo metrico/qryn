@@ -1,11 +1,11 @@
 {
   "name": "qryn",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Polyglot Observability Stack with ClickHouse storage",
   "main": "qryn.mjs",
   "bin": {
-    "cloki": "./qryn.mjs",
-    "qryn": "./qryn.mjs"
+    "qryn": "node ./qryn.mjs",
+    "qryn-bun": "bun ./qryn.mjs"
   },
   "scripts": {
     "test": "jest",
@@ -24,14 +24,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/lmangani/qryn.git"
+    "url": "git+ssh://git@github.com/metrico/qryn.git"
   },
   "author": "lorenzo.mangani@gmail.com",
   "license": "AGPL-3.0",
   "bugs": {
-    "url": "https://github.com/lmangani/qryn/issues"
+    "url": "https://github.com/metrico/qryn/issues"
   },
-  "homepage": "https://github.com/lmangani/qryn#readme",
+  "homepage": "https://github.com/metrico/qryn#readme",
   "dependencies": {
     "@apla/clickhouse": "^1.6.4",
     "@cloki/clickhouse-sql": "1.2.10",
@@ -108,14 +108,14 @@
   },
   "keywords": [
     "logs",
-    "logging",
+    "opentelemetry",
     "logql",
     "promql",
     "grafana",
-    "grafana-loki",
     "clickhouse",
     "clickhouse-server",
-    "grep",
+    "tempoql",
+    "tempo",
     "tail",
     "prometheus"
   ]
