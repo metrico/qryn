@@ -4,30 +4,30 @@
 
 [![Build Status](https://github.com/metrico/qryn/actions/workflows/bump_version.yml/badge.svg)](https://github.com/metrico/qryn/actions/workflows/bump_version.yml)
 ![CodeQL](https://github.com/lmangani/cLoki/workflows/CodeQL/badge.svg)
-<a href="https://matrix.to/#/#qryn:matrix.org">
-  <img src="https://img.shields.io/badge/Join%20Matrix-Chat-green" alt="Matrix">
-</a>
-
-
-# [qryn.dev](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud) :heart:
-> ... it's pronounced /ˈkwɪr..ɪŋ/ or just querying
+<img src="https://raw.githubusercontent.com/pedromxavier/flag-badges/main/badges/UA.svg" alt="made in Ukraine">
 
 ![image](https://user-images.githubusercontent.com/1423657/232089970-c4536f16-5967-4051-85a5-8ad94fcde67c.png)
 
+# [qryn 3.x](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud)
 
-:rocket: **qryn** is a _drop-in Grafana compatible_ **polyglot observability** framework<br/>
-- **Logs, Metrics and Traces** living happily together. Drop-in compatible with multiple vendors formats.
-- Native [LogQL/PromQL/TempoQL APIs](https://qryn.cloud) support for [querying](https://github.com/lmangani/qryn/wiki/LogQL-for-Beginners), [processing](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries), [tracing](https://github.com/lmangani/qryn/wiki/Tempo-Tracing) and [alerting](https://github.com/lmangani/qryn/wiki/Ruler---Alerts) [^2] in [Grafana](http://docs.grafana.org/features/explore/) [^3]
-- Search, filter and extract metrics from _logs, events, spans and traces_ using familiar languages. _SQL Optional_.
-- Ingestion [APIs](https://qryn.metrico.in/#/support) transparently compatible with [Opentelemetry, Loki, Prometheus, InfluxDB, Elastic](https://qryn.dev) _and [more](https://github.com/metrico/otel-collector)_
-- Ready to use with popular Agents such as [Promtail, Grafana-Agent, Vector, Logstash, Telegraf](https://qryn.metrico.in/#/ingestion) _and more_
-- Built in [Explore UI](https://github.com/metrico/cloki-view) and [CLI](https://github.com/lmangani/vLogQL) for querying supported datasources
-- Designed for edge _(js/bun/wasm)_ and core/backend deployments _(golang/rust)_.
-- Total data control. Compatible with [ClickHouse](https://clickhouse.com/) or [InfluxDB IOx](https://influxdata.com) with S3 object storage.
+:rocket: _polyglot, lighweight, multi-standard drop-in_ **observability** framework for _**Logs, Metrics and Traces**_<br/>
 
-:rocket: **qryn.cloud** is the _supercharged_ **qryn** version developed in _go_ with additional _functionality, speed and features!_<br/>
+> ... it's pronounced /ˈkwɪr..ɪŋ/ or just _querying_
+
+- **Polyglot**: Use **LogQL, PromQL**, and **TempoQL** languages to query, process and alert _any data_
+- **Lightweight**: Powered by **ClickHouse** OLAP Engine + **Bun** the _fast, all-in-one_ JavaScript runtime
+- **Voracious**: Ingestion compatible with **Opentelemetry, Loki, Prometheus, Influx, Datadog, Elastic** _+ more_
+- **Versatile**: Explore data with qryn's built-in **Explore UI** and **CLI** or _native_ **Grafana** compatibility
+- **Secure**: Retain total control of data, using **ClickHouse** or **InfluxDB IOx** with **S3** object storage
+- **Unmetered**: Unlimited FOSS deployments or **qryn.cloud** option with advanced features and performance
+- **Indepentent**: Designed to be a stand-alone, all-in-one _Loki, Prometheus, Tempo_ drop-in alternative
 
 <br>
+
+## 🚀 [Get Started](https://qryn.metrico.in/#/installation)
+
+* Setup & Deploy **qryn** _OSS_ using the [documentation](https://qryn.metrico.in/#/installation) and get help in our [Matrix room](https://matrix.to/#/#qryn:matrix.org) :octocat:
+* No time? Use [qryn.cloud](https://qryn.cloud) and get polyglot in just minutes! Drop-in LGTM alternative ☁️ 
 
 <a href="https://qryn.cloud" target="_blank">
 <img src="https://user-images.githubusercontent.com/1423657/218818279-3efff74f-0191-498a-bdc4-f2650c9d3b49.gif">
@@ -35,22 +35,28 @@
 
 <br>
 
-## 🚀 [Get Started](https://qryn.metrico.in/#/installation)
+<br>
 
-:octocat: Get qryn OSS up and running on-prem in no time using the [Documentation](https://qryn.metrico.in/#/installation) or join our [Matrix Room](https://matrix.to/#/#qryn:matrix.org)
+## Features
 
-☁️ Create a free account on [qryn.cloud](https://qryn.cloud) and go straight to production at any scale with **polyglot confidence**.
-
+💡 _**qryn** independently implements popular observability standards, protocols and query languages:_
 
 <br>
 
-## Supported Features
-
 ### 📚 OpenTelemetry
-qryn fully supports opentelemetry and comes with a powerful [otel-collector](https://github.com/metrico/otel-collector) distribution supporting _any log, trace or metric format_ and writing directly to ClickHouse _qryn tables_ ready to be consumed through any query API.
 
-### 📚 LogQL
-qryn implements a complete [LogQL API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) to provide transparent compatibility with Loki clients<br>
+⚡ **qryn** is officially integrated with [opentelemetry](https://github.com/metrico/otel-collector) supports _any log, trace or metric format_
+
+Ingested data can be queried using any of the avialable qryn APIs _(LogQL, PromQL, TraceQL)_
+
+<br>
+
+### 📚 Loki + LogQL
+
+> Any Loki compatible client or application can be used with qryn out of the box
+
+⚡ **qryn** implements the [Loki API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) for transparent compatibility with **[LogQL](https://grafana.com/docs/loki/latest/query/)** clients<br>
+
 The Grafana Loki datasource can be used to natively browse and query _logs_ and display extracted _timeseries_<br>
 
 <a href="https://qryn.metrico.in/#/logs/query" target="_blank">
@@ -59,11 +65,16 @@ The Grafana Loki datasource can be used to natively browse and query _logs_ and 
 
 :tada: _No plugins needed_ 
 
+
 <br>
 
-### 📈 Prometheus
-qryn implements a complete [Prometheus API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) to provide transparent compatibility with Prometheus clients<br>
-The Grafana Prometheus datasource can be used to natively browse and query _metrics_ and display extracted _timeseries_<br>
+### 📈 Prometheus + PromQL
+
+> Any Prometheus compatible client or application can be used with qryn out of the box
+
+⚡ **qryn** implements the [Prometheus API](https://prometheus.io/docs/prometheus/latest/querying/api/) for transparent **[PromQL](https://prometheus.io/docs/prometheus/latest/querying/basics/)** compatibility using WASM 🏆<br>
+
+The Grafana Prometheus datasource can be used to natively to query _metrics_ and display _timeseries_<br>
 
 <a href="https://qryn.metrico.in/#/metrics/query" target="_blank">
 <img src="https://user-images.githubusercontent.com/1423657/196654084-1f1d8a62-3fd2-4420-a2fa-57ac2872938c.gif" width=700 class=border />
@@ -71,11 +82,16 @@ The Grafana Prometheus datasource can be used to natively browse and query _metr
 
 :tada: _No plugins needed_ 
 
+
 <br>
 
-### 🕛 Tempo
-qryn implements the [Tempo API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) to provide transparent compatibility with Tempo/OTLP clients.<br>
-The Tempo datasource can be used to natively query _traces_ including _beta search_ and _service graphs_<br>
+### 🕛 Tempo + TraceQL
+
+⚡ **qryn** implements the [Tempo API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) for transparent compatibility with **[TraceQL](https://grafana.com/docs/tempo/latest/traceql/)** clients.<br>
+
+> Any Tempo/Opentelemetry compatible client or application can be used with qryn out of the box
+
+The Tempo datasource can be used to natively query _traces_ including _**TraceQL**_ and supporting _service graphs_<br>
 
 <a href="https://qryn.metrico.in/#/telemetry/query" target="_blank">
 <img src="https://user-images.githubusercontent.com/1423657/196654097-8a235253-bf5d-4937-9e78-fddf12819d44.gif" width=700 class=border />
@@ -85,8 +101,20 @@ The Tempo datasource can be used to natively query _traces_ including _beta sear
 
 <br>
 
-### ↔️ Correlation
-Data correlation made simple with dynamic **links** between _logs, metrics and traces_
+### 📚 Other Vendors
+
+**qryn** can ingest data using the [InfluxDB, DataDog, Elastic](https://qryn.metrico.in/#/support) and other vendors.
+
+
+<br>
+
+With **qryn** and **grafana** everything _just works_ right out of the box: 
+
+- Native datasource support without any plugin or extension
+- Advanced Correlation between Logs, Metrics and Traces
+- Service Graphs and Service Status Panels, and all the cool features
+
+<br>
 
 <a href="https://qryn.dev" target="_blank">
 <img src="https://user-images.githubusercontent.com/1423657/184538094-13c11500-24ef-4468-9f33-dc9d564238e3.gif" width=700 class=border />
@@ -94,7 +122,9 @@ Data correlation made simple with dynamic **links** between _logs, metrics and t
 
 <br>
 
-### :eye: View
+<br>
+
+### :eye: Explore View
 
 No Grafana? No Problem. **qryn** ships with **view** - it's own lightweight data exploration tool
 
@@ -121,9 +151,9 @@ Whether it's code, documentation or grammar, we ❤️ all contributions. Not su
 
 &nbsp;&nbsp;&nbsp;&nbsp;[![Contributors for @metrico/qryn](https://contributors-img.web.app/image?repo=lmangani/cloki)](https://github.com/metrico/qryn/graphs/contributors)
 
-[![Stargazers repo roster for @metrico/qryn](https://reporoster.com/stars/metrico/qryn)](https://github.com/metrico/qryn/stargazers)
+[![Stargazers repo roster for @metrico/qryn](https://bytecrank.com/nastyox/reporoster/php/stargazersSVG.php?user=metrico&repo=qryn)](https://github.com/metrico/qryn/stargazers)
 
-[![Forkers repo roster for @metrico/qryn](https://reporoster.com/forks/metrico/qryn)](https://github.com/metrico/qryn/network/members)
+[![Forkers repo roster for @metrico/qryn](https://bytecrank.com/nastyox/reporoster/php/forkersSVG.php?user=metrico&repo=qryn)](https://github.com/metrico/qryn/network/members)
 
 
 #### License

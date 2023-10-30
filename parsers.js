@@ -33,11 +33,12 @@ const wwwFormParser = async (req, payload) => {
 const lokiPushJSONParser = async (req, payload) => {
   try {
     const length = getContentLength(req, 1e9)
-    if (length > 5e6) {
+    if (length > 5 * 1024 * 1024) {
       return
     }
     await shaper.register(length)
-    return JSON.parse(await getContentBody(req, payload))
+    const body = await getContentBody(req, payload)
+    return JSON.parse(body)
   } catch (err) {
     err.statusCode = 400
     throw err
@@ -331,9 +332,9 @@ async function getContentBody (req, payload) {
   if (req._rawBody) {
     return req._rawBody
   }
-  let body = ''
+  const body = []
   payload.on('data', data => {
-    body += data.toString()
+    body.push(data)// += data.toString()
   })
   if (payload.isPaused && payload.isPaused()) {
     payload.resume()
@@ -342,8 +343,8 @@ async function getContentBody (req, payload) {
     payload.on('end', resolve)
     payload.on('close', resolve)
   })
-  req._rawBody = body
-  return body
+  req._rawBody = Buffer.concat(body).toString()
+  return Buffer.concat(body).toString()
 }
 
 module.exports = {

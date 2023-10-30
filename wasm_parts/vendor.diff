@@ -1,0 +1,1153 @@
+diff -ura ./github.com/aws/aws-sdk-go/aws/defaults/defaults.go ../_vendor/github.com/aws/aws-sdk-go/aws/defaults/defaults.go
+--- ./github.com/aws/aws-sdk-go/aws/defaults/defaults.go	2023-10-11 20:14:24.401642679 +0300
++++ ../_vendor/github.com/aws/aws-sdk-go/aws/defaults/defaults.go	2023-10-11 19:52:12.295561779 +0300
+@@ -132,7 +132,9 @@
+ 	return ec2RoleProvider(cfg, handlers)
+ }
+ 
+-var lookupHostFn = net.LookupHost
++var lookupHostFn = func (string) ([]string, error) {
++	return nil, nil
++}
+ 
+ func isLoopbackHost(host string) (bool, error) {
+ 	ip := net.ParseIP(host)
+diff -ura ./github.com/aws/aws-sdk-go/aws/request/retryer.go ../_vendor/github.com/aws/aws-sdk-go/aws/request/retryer.go
+--- ./github.com/aws/aws-sdk-go/aws/request/retryer.go	2023-10-11 20:14:24.401642679 +0300
++++ ../_vendor/github.com/aws/aws-sdk-go/aws/request/retryer.go	2023-10-11 19:52:12.295561779 +0300
+@@ -1,7 +1,6 @@
+ package request
+ 
+ import (
+-	"net"
+ 	"net/url"
+ 	"strings"
+ 	"time"
+@@ -200,9 +199,6 @@
+ 		return shouldRetryError(err.Err)
+ 
+ 	case temporary:
+-		if netErr, ok := err.(*net.OpError); ok && netErr.Op == "dial" {
+-			return true
+-		}
+ 		// If the error is temporary, we want to allow continuation of the
+ 		// retry process
+ 		return err.Temporary() || isErrConnectionReset(origErr)
+diff -ura ./github.com/davecgh/go-spew/spew/bypass.go ../_vendor/github.com/davecgh/go-spew/spew/bypass.go
+--- ./github.com/davecgh/go-spew/spew/bypass.go	2023-10-11 20:14:24.409642804 +0300
++++ ../_vendor/github.com/davecgh/go-spew/spew/bypass.go	2023-10-11 19:52:12.299561806 +0300
+@@ -68,13 +68,7 @@
+ 	addr: 1 << 8,
+ }}
+ 
+-var flagValOffset = func() uintptr {
+-	field, ok := reflect.TypeOf(reflect.Value{}).FieldByName("flag")
+-	if !ok {
+-		panic("reflect.Value has no flag field")
+-	}
+-	return field.Offset
+-}()
++var flagValOffset = (uintptr)(0)
+ 
+ // flagField returns a pointer to the flag field of a reflect.Value.
+ func flagField(v *reflect.Value) *flag {
+@@ -102,44 +96,3 @@
+ 
+ // Sanity checks against future reflect package changes
+ // to the type or semantics of the Value.flag field.
+-func init() {
+-	field, ok := reflect.TypeOf(reflect.Value{}).FieldByName("flag")
+-	if !ok {
+-		panic("reflect.Value has no flag field")
+-	}
+-	if field.Type.Kind() != reflect.TypeOf(flag(0)).Kind() {
+-		panic("reflect.Value flag field has changed kind")
+-	}
+-	type t0 int
+-	var t struct {
+-		A t0
+-		// t0 will have flagEmbedRO set.
+-		t0
+-		// a will have flagStickyRO set
+-		a t0
+-	}
+-	vA := reflect.ValueOf(t).FieldByName("A")
+-	va := reflect.ValueOf(t).FieldByName("a")
+-	vt0 := reflect.ValueOf(t).FieldByName("t0")
+-
+-	// Infer flagRO from the difference between the flags
+-	// for the (otherwise identical) fields in t.
+-	flagPublic := *flagField(&vA)
+-	flagWithRO := *flagField(&va) | *flagField(&vt0)
+-	flagRO = flagPublic ^ flagWithRO
+-
+-	// Infer flagAddr from the difference between a value
+-	// taken from a pointer and not.
+-	vPtrA := reflect.ValueOf(&t).Elem().FieldByName("A")
+-	flagNoPtr := *flagField(&vA)
+-	flagPtr := *flagField(&vPtrA)
+-	flagAddr = flagNoPtr ^ flagPtr
+-
+-	// Check that the inferred flags tally with one of the known versions.
+-	for _, f := range okFlags {
+-		if flagRO == f.ro && flagAddr == f.addr {
+-			return
+-		}
+-	}
+-	panic("reflect.Value read-only flag has changed semantics")
+-}
+diff -ura ./github.com/edsrzf/mmap-go/mmap.go ../_vendor/github.com/edsrzf/mmap-go/mmap.go
+--- ./github.com/edsrzf/mmap-go/mmap.go	2023-10-11 20:14:24.409642804 +0300
++++ ../_vendor/github.com/edsrzf/mmap-go/mmap.go	2023-10-11 19:52:12.299561806 +0300
+@@ -15,7 +15,6 @@
+ package mmap
+ 
+ import (
+-	"errors"
+ 	"os"
+ 	"reflect"
+ 	"unsafe"
+@@ -54,27 +53,7 @@
+ // If length < 0, the entire file will be mapped.
+ // If ANON is set in flags, f is ignored.
+ func MapRegion(f *os.File, length int, prot, flags int, offset int64) (MMap, error) {
+-	if offset%int64(os.Getpagesize()) != 0 {
+-		return nil, errors.New("offset parameter must be a multiple of the system's page size")
+-	}
+-
+-	var fd uintptr
+-	if flags&ANON == 0 {
+-		fd = uintptr(f.Fd())
+-		if length < 0 {
+-			fi, err := f.Stat()
+-			if err != nil {
+-				return nil, err
+-			}
+-			length = int(fi.Size())
+-		}
+-	} else {
+-		if length <= 0 {
+-			return nil, errors.New("anonymous mapping requires non-zero length")
+-		}
+-		fd = ^uintptr(0)
+-	}
+-	return mmap(length, uintptr(prot), uintptr(flags), fd, offset)
++	return nil, nil
+ }
+ 
+ func (m *MMap) header() *reflect.SliceHeader {
+@@ -89,19 +68,19 @@
+ // Lock keeps the mapped region in physical memory, ensuring that it will not be
+ // swapped out.
+ func (m MMap) Lock() error {
+-	return m.lock()
++	return nil
+ }
+ 
+ // Unlock reverses the effect of Lock, allowing the mapped region to potentially
+ // be swapped out.
+ // If m is already unlocked, aan error will result.
+ func (m MMap) Unlock() error {
+-	return m.unlock()
++	return nil
+ }
+ 
+ // Flush synchronizes the mapping's contents to the file's contents on disk.
+ func (m MMap) Flush() error {
+-	return m.flush()
++	return nil
+ }
+ 
+ // Unmap deletes the memory mapped region, flushes any remaining changes, and sets
+@@ -111,7 +90,5 @@
+ // Unmap should only be called on the slice value that was originally returned from
+ // a call to Map. Calling Unmap on a derived slice may cause errors.
+ func (m *MMap) Unmap() error {
+-	err := m.unmap()
+-	*m = nil
+-	return err
++	return nil
+ }
+Лише у ../_vendor/github.com: felixge
+Лише у ../_vendor/github.com: gogo
+Лише у ../_vendor/github.com: json-iterator
+Лише у ../_vendor/github.com: julienschmidt
+Лише у ../_vendor/github.com: modern-go
+diff -ura ./github.com/mwitkow/go-conntrack/dialer_reporter.go ../_vendor/github.com/mwitkow/go-conntrack/dialer_reporter.go
+--- ./github.com/mwitkow/go-conntrack/dialer_reporter.go	2023-10-11 20:14:24.413642866 +0300
++++ ../_vendor/github.com/mwitkow/go-conntrack/dialer_reporter.go	2023-10-11 19:52:12.311561887 +0300
+@@ -87,9 +87,6 @@
+ func reportDialerConnFailed(dialerName string, err error) {
+ 	if netErr, ok := err.(*net.OpError); ok {
+ 		switch nestErr := netErr.Err.(type) {
+-		case *net.DNSError:
+-			dialerConnFailedTotal.WithLabelValues(dialerName, string(failedResolution)).Inc()
+-			return
+ 		case *os.SyscallError:
+ 			if nestErr.Err == syscall.ECONNREFUSED {
+ 				dialerConnFailedTotal.WithLabelValues(dialerName, string(failedConnRefused)).Inc()
+@@ -97,9 +94,6 @@
+ 			dialerConnFailedTotal.WithLabelValues(dialerName, string(failedUnknown)).Inc()
+ 			return
+ 		}
+-		if netErr.Timeout() {
+-			dialerConnFailedTotal.WithLabelValues(dialerName, string(failedTimeout)).Inc()
+-		}
+ 	} else if err == context.Canceled || err == context.DeadlineExceeded {
+ 		dialerConnFailedTotal.WithLabelValues(dialerName, string(failedTimeout)).Inc()
+ 		return
+diff -ura ./github.com/mwitkow/go-conntrack/listener_wrapper.go ../_vendor/github.com/mwitkow/go-conntrack/listener_wrapper.go
+--- ./github.com/mwitkow/go-conntrack/listener_wrapper.go	2023-10-11 20:14:24.413642866 +0300
++++ ../_vendor/github.com/mwitkow/go-conntrack/listener_wrapper.go	2023-10-11 19:52:12.311561887 +0300
+@@ -109,10 +109,6 @@
+ 	if err != nil {
+ 		return nil, err
+ 	}
+-	if tcpConn, ok := conn.(*net.TCPConn); ok && ct.opts.tcpKeepAlive > 0 {
+-		tcpConn.SetKeepAlive(true)
+-		tcpConn.SetKeepAlivePeriod(ct.opts.tcpKeepAlive)
+-	}
+ 	return newServerConnTracker(conn, ct.opts), nil
+ }
+ 
+diff -ura ./github.com/prometheus/client_golang/prometheus/go_collector.go ../_vendor/github.com/prometheus/client_golang/prometheus/go_collector.go
+--- ./github.com/prometheus/client_golang/prometheus/go_collector.go	2023-10-11 20:14:24.417642928 +0300
++++ ../_vendor/github.com/prometheus/client_golang/prometheus/go_collector.go	2023-10-11 19:52:12.315561914 +0300
+@@ -15,22 +15,12 @@
+ 
+ import (
+ 	"runtime"
+-	"runtime/debug"
+-	"time"
+ )
+ 
+ func goRuntimeMemStats() memStatsMetrics {
+ 	return memStatsMetrics{
+ 		{
+ 			desc: NewDesc(
+-				memstatNamespace("alloc_bytes"),
+-				"Number of bytes allocated and still in use.",
+-				nil, nil,
+-			),
+-			eval:    func(ms *runtime.MemStats) float64 { return float64(ms.Alloc) },
+-			valType: GaugeValue,
+-		}, {
+-			desc: NewDesc(
+ 				memstatNamespace("alloc_bytes_total"),
+ 				"Total number of bytes allocated, even if freed.",
+ 				nil, nil,
+@@ -47,14 +37,6 @@
+ 			valType: GaugeValue,
+ 		}, {
+ 			desc: NewDesc(
+-				memstatNamespace("lookups_total"),
+-				"Total number of pointer lookups.",
+-				nil, nil,
+-			),
+-			eval:    func(ms *runtime.MemStats) float64 { return float64(ms.Lookups) },
+-			valType: CounterValue,
+-		}, {
+-			desc: NewDesc(
+ 				memstatNamespace("mallocs_total"),
+ 				"Total number of mallocs.",
+ 				nil, nil,
+@@ -71,14 +53,6 @@
+ 			valType: CounterValue,
+ 		}, {
+ 			desc: NewDesc(
+-				memstatNamespace("heap_alloc_bytes"),
+-				"Number of heap bytes allocated and still in use.",
+-				nil, nil,
+-			),
+-			eval:    func(ms *runtime.MemStats) float64 { return float64(ms.HeapAlloc) },
+-			valType: GaugeValue,
+-		}, {
+-			desc: NewDesc(
+ 				memstatNamespace("heap_sys_bytes"),
+ 				"Number of heap bytes obtained from system.",
+ 				nil, nil,
+@@ -111,92 +85,12 @@
+ 			valType: GaugeValue,
+ 		}, {
+ 			desc: NewDesc(
+-				memstatNamespace("heap_objects"),
+-				"Number of allocated objects.",
+-				nil, nil,
+-			),
+-			eval:    func(ms *runtime.MemStats) float64 { return float64(ms.HeapObjects) },
+-			valType: GaugeValue,
+-		}, {
+-			desc: NewDesc(
+-				memstatNamespace("stack_inuse_bytes"),
+-				"Number of bytes in use by the stack allocator.",
+-				nil, nil,
+-			),
+-			eval:    func(ms *runtime.MemStats) float64 { return float64(ms.StackInuse) },
+-			valType: GaugeValue,
+-		}, {
+-			desc: NewDesc(
+-				memstatNamespace("stack_sys_bytes"),
+-				"Number of bytes obtained from system for stack allocator.",
+-				nil, nil,
+-			),
+-			eval:    func(ms *runtime.MemStats) float64 { return float64(ms.StackSys) },
+-			valType: GaugeValue,
+-		}, {
+-			desc: NewDesc(
+-				memstatNamespace("mspan_inuse_bytes"),
+-				"Number of bytes in use by mspan structures.",
+-				nil, nil,
+-			),
+-			eval:    func(ms *runtime.MemStats) float64 { return float64(ms.MSpanInuse) },
+-			valType: GaugeValue,
+-		}, {
+-			desc: NewDesc(
+-				memstatNamespace("mspan_sys_bytes"),
+-				"Number of bytes used for mspan structures obtained from system.",
+-				nil, nil,
+-			),
+-			eval:    func(ms *runtime.MemStats) float64 { return float64(ms.MSpanSys) },
+-			valType: GaugeValue,
+-		}, {
+-			desc: NewDesc(
+-				memstatNamespace("mcache_inuse_bytes"),
+-				"Number of bytes in use by mcache structures.",
+-				nil, nil,
+-			),
+-			eval:    func(ms *runtime.MemStats) float64 { return float64(ms.MCacheInuse) },
+-			valType: GaugeValue,
+-		}, {
+-			desc: NewDesc(
+-				memstatNamespace("mcache_sys_bytes"),
+-				"Number of bytes used for mcache structures obtained from system.",
+-				nil, nil,
+-			),
+-			eval:    func(ms *runtime.MemStats) float64 { return float64(ms.MCacheSys) },
+-			valType: GaugeValue,
+-		}, {
+-			desc: NewDesc(
+-				memstatNamespace("buck_hash_sys_bytes"),
+-				"Number of bytes used by the profiling bucket hash table.",
+-				nil, nil,
+-			),
+-			eval:    func(ms *runtime.MemStats) float64 { return float64(ms.BuckHashSys) },
+-			valType: GaugeValue,
+-		}, {
+-			desc: NewDesc(
+ 				memstatNamespace("gc_sys_bytes"),
+ 				"Number of bytes used for garbage collection system metadata.",
+ 				nil, nil,
+ 			),
+ 			eval:    func(ms *runtime.MemStats) float64 { return float64(ms.GCSys) },
+ 			valType: GaugeValue,
+-		}, {
+-			desc: NewDesc(
+-				memstatNamespace("other_sys_bytes"),
+-				"Number of bytes used for other system allocations.",
+-				nil, nil,
+-			),
+-			eval:    func(ms *runtime.MemStats) float64 { return float64(ms.OtherSys) },
+-			valType: GaugeValue,
+-		}, {
+-			desc: NewDesc(
+-				memstatNamespace("next_gc_bytes"),
+-				"Number of heap bytes when next garbage collection will take place.",
+-				nil, nil,
+-			),
+-			eval:    func(ms *runtime.MemStats) float64 { return float64(ms.NextGC) },
+-			valType: GaugeValue,
+ 		},
+ 	}
+ }
+@@ -245,22 +139,7 @@
+ 
+ // Collect returns the current state of all metrics of the collector.
+ func (c *baseGoCollector) Collect(ch chan<- Metric) {
+-	ch <- MustNewConstMetric(c.goroutinesDesc, GaugeValue, float64(runtime.NumGoroutine()))
+-	n, _ := runtime.ThreadCreateProfile(nil)
+-	ch <- MustNewConstMetric(c.threadsDesc, GaugeValue, float64(n))
+-
+-	var stats debug.GCStats
+-	stats.PauseQuantiles = make([]time.Duration, 5)
+-	debug.ReadGCStats(&stats)
+-
+-	quantiles := make(map[float64]float64)
+-	for idx, pq := range stats.PauseQuantiles[1:] {
+-		quantiles[float64(idx+1)/float64(len(stats.PauseQuantiles)-1)] = pq.Seconds()
+-	}
+-	quantiles[0.0] = stats.PauseQuantiles[0].Seconds()
+-	ch <- MustNewConstSummary(c.gcDesc, uint64(stats.NumGC), stats.PauseTotal.Seconds(), quantiles)
+-	ch <- MustNewConstMetric(c.gcLastTimeDesc, GaugeValue, float64(stats.LastGC.UnixNano())/1e9)
+-	ch <- MustNewConstMetric(c.goInfoDesc, GaugeValue, 1)
++
+ }
+ 
+ func memstatNamespace(s string) string {
+diff -ura ./github.com/prometheus/client_golang/prometheus/go_collector_latest.go ../_vendor/github.com/prometheus/client_golang/prometheus/go_collector_latest.go
+--- ./github.com/prometheus/client_golang/prometheus/go_collector_latest.go	2023-10-11 20:14:24.417642928 +0300
++++ ../_vendor/github.com/prometheus/client_golang/prometheus/go_collector_latest.go	2023-10-11 19:52:12.315561914 +0300
+@@ -20,7 +20,6 @@
+ 	"math"
+ 	"runtime"
+ 	"runtime/metrics"
+-	"strings"
+ 	"sync"
+ 
+ 	//nolint:staticcheck // Ignore SA1019. Need to keep deprecated package for compatibility.
+@@ -78,13 +77,6 @@
+ 
+ func bestEffortLookupRM(lookup []string) []metrics.Description {
+ 	ret := make([]metrics.Description, 0, len(lookup))
+-	for _, rm := range metrics.All() {
+-		for _, m := range lookup {
+-			if m == rm.Name {
+-				ret = append(ret, rm)
+-			}
+-		}
+-	}
+ 	return ret
+ }
+ 
+@@ -156,28 +148,18 @@
+ 	// The API guarantees that the buckets are always fixed for the lifetime
+ 	// of the process.
+ 	var histograms []metrics.Sample
+-	for _, d := range descriptions {
+-		if d.Kind == metrics.KindFloat64Histogram {
+-			histograms = append(histograms, metrics.Sample{Name: d.Name})
+-		}
+-	}
+ 
+ 	if len(histograms) > 0 {
+ 		metrics.Read(histograms)
+ 	}
+ 
+-	bucketsMap := make(map[string][]float64)
+-	for i := range histograms {
+-		bucketsMap[histograms[i].Name] = histograms[i].Value.Float64Histogram().Buckets
+-	}
+-
+ 	// Generate a Desc and ValueType for each runtime/metrics metric.
+ 	metricSet := make([]collectorMetric, 0, len(descriptions))
+ 	sampleBuf := make([]metrics.Sample, 0, len(descriptions))
+ 	sampleMap := make(map[string]*metrics.Sample, len(descriptions))
+ 	for i := range descriptions {
+ 		d := &descriptions[i]
+-		namespace, subsystem, name, ok := internal.RuntimeMetricsToProm(d)
++		_, _, _, ok := internal.RuntimeMetricsToProm(d)
+ 		if !ok {
+ 			// Just ignore this metric; we can't do anything with it here.
+ 			// If a user decides to use the latest version of Go, we don't want
+@@ -187,38 +169,8 @@
+ 
+ 		// Set up sample buffer for reading, and a map
+ 		// for quick lookup of sample values.
+-		sampleBuf = append(sampleBuf, metrics.Sample{Name: d.Name})
+-		sampleMap[d.Name] = &sampleBuf[len(sampleBuf)-1]
+ 
+ 		var m collectorMetric
+-		if d.Kind == metrics.KindFloat64Histogram {
+-			_, hasSum := rmExactSumMap[d.Name]
+-			unit := d.Name[strings.IndexRune(d.Name, ':')+1:]
+-			m = newBatchHistogram(
+-				NewDesc(
+-					BuildFQName(namespace, subsystem, name),
+-					d.Description,
+-					nil,
+-					nil,
+-				),
+-				internal.RuntimeMetricsBucketsForUnit(bucketsMap[d.Name], unit),
+-				hasSum,
+-			)
+-		} else if d.Cumulative {
+-			m = NewCounter(CounterOpts{
+-				Namespace: namespace,
+-				Subsystem: subsystem,
+-				Name:      name,
+-				Help:      d.Description,
+-			})
+-		} else {
+-			m = NewGauge(GaugeOpts{
+-				Namespace: namespace,
+-				Subsystem: subsystem,
+-				Name:      name,
+-				Help:      d.Description,
+-			})
+-		}
+ 		metricSet = append(metricSet, m)
+ 	}
+ 
+@@ -273,31 +225,6 @@
+ 	}
+ 
+ 	if c.opt.isEnabled(goRuntimeMetricsCollection) {
+-		// Collect all our metrics from rmSampleBuf.
+-		for i, sample := range c.rmSampleBuf {
+-			// N.B. switch on concrete type because it's significantly more efficient
+-			// than checking for the Counter and Gauge interface implementations. In
+-			// this case, we control all the types here.
+-			switch m := c.rmMetrics[i].(type) {
+-			case *counter:
+-				// Guard against decreases. This should never happen, but a failure
+-				// to do so will result in a panic, which is a harsh consequence for
+-				// a metrics collection bug.
+-				v0, v1 := m.get(), unwrapScalarRMValue(sample.Value)
+-				if v1 > v0 {
+-					m.Add(unwrapScalarRMValue(sample.Value) - m.get())
+-				}
+-				m.Collect(ch)
+-			case *gauge:
+-				m.Set(unwrapScalarRMValue(sample.Value))
+-				m.Collect(ch)
+-			case *batchHistogram:
+-				m.update(sample.Value.Float64Histogram(), c.exactSumFor(sample.Name))
+-				m.Collect(ch)
+-			default:
+-				panic("unexpected metric type")
+-			}
+-		}
+ 	}
+ 
+ 	// ms is a dummy MemStats that we populate ourselves so that we can
+@@ -315,24 +242,7 @@
+ // to be scalar and returns the equivalent float64 value. Panics if the
+ // value is not scalar.
+ func unwrapScalarRMValue(v metrics.Value) float64 {
+-	switch v.Kind() {
+-	case metrics.KindUint64:
+-		return float64(v.Uint64())
+-	case metrics.KindFloat64:
+-		return v.Float64()
+-	case metrics.KindBad:
+-		// Unsupported metric.
+-		//
+-		// This should never happen because we always populate our metric
+-		// set from the runtime/metrics package.
+-		panic("unexpected unsupported metric")
+-	default:
+-		// Unsupported metric kind.
+-		//
+-		// This should never happen because we check for this during initialization
+-		// and flag and filter metrics whose kinds we don't understand.
+-		panic("unexpected unsupported metric kind")
+-	}
++	return 0
+ }
+ 
+ var rmExactSumMap = map[string]string{
+@@ -351,18 +261,15 @@
+ 	if !ok {
+ 		return 0
+ 	}
+-	s, ok := c.rmSampleMap[sumName]
++	_, ok = c.rmSampleMap[sumName]
+ 	if !ok {
+ 		return 0
+ 	}
+-	return unwrapScalarRMValue(s.Value)
++	return 0
+ }
+ 
+ func memStatsFromRM(ms *runtime.MemStats, rm map[string]*metrics.Sample) {
+ 	lookupOrZero := func(name string) uint64 {
+-		if s, ok := rm[name]; ok {
+-			return s.Value.Uint64()
+-		}
+ 		return 0
+ 	}
+ 
+@@ -378,31 +285,16 @@
+ 
+ 	ms.TotalAlloc = lookupOrZero(goGCHeapAllocsBytes)
+ 	ms.Sys = lookupOrZero(goMemoryClassesTotalBytes)
+-	ms.Lookups = 0 // Already always zero.
+-	ms.HeapAlloc = lookupOrZero(goMemoryClassesHeapObjectsBytes)
+-	ms.Alloc = ms.HeapAlloc
+-	ms.HeapInuse = ms.HeapAlloc + lookupOrZero(goMemoryClassesHeapUnusedBytes)
+ 	ms.HeapReleased = lookupOrZero(goMemoryClassesHeapReleasedBytes)
+ 	ms.HeapIdle = ms.HeapReleased + lookupOrZero(goMemoryClassesHeapFreeBytes)
+ 	ms.HeapSys = ms.HeapInuse + ms.HeapIdle
+-	ms.HeapObjects = lookupOrZero(goGCHeapObjects)
+-	ms.StackInuse = lookupOrZero(goMemoryClassesHeapStacksBytes)
+-	ms.StackSys = ms.StackInuse + lookupOrZero(goMemoryClassesOSStacksBytes)
+-	ms.MSpanInuse = lookupOrZero(goMemoryClassesMetadataMSpanInuseBytes)
+-	ms.MSpanSys = ms.MSpanInuse + lookupOrZero(goMemoryClassesMetadataMSPanFreeBytes)
+-	ms.MCacheInuse = lookupOrZero(goMemoryClassesMetadataMCacheInuseBytes)
+-	ms.MCacheSys = ms.MCacheInuse + lookupOrZero(goMemoryClassesMetadataMCacheFreeBytes)
+-	ms.BuckHashSys = lookupOrZero(goMemoryClassesProfilingBucketsBytes)
+ 	ms.GCSys = lookupOrZero(goMemoryClassesMetadataOtherBytes)
+-	ms.OtherSys = lookupOrZero(goMemoryClassesOtherBytes)
+-	ms.NextGC = lookupOrZero(goGCHeapGoalBytes)
+ 
+ 	// N.B. GCCPUFraction is intentionally omitted. This metric is not useful,
+ 	// and often misleading due to the fact that it's an average over the lifetime
+ 	// of the process.
+ 	// See https://github.com/prometheus/client_golang/issues/842#issuecomment-861812034
+ 	// for more details.
+-	ms.GCCPUFraction = 0
+ }
+ 
+ // batchHistogram is a mutable histogram that is updated
+@@ -454,26 +346,6 @@
+ // sum must be provided if the batchHistogram was created to have an exact sum.
+ // h.buckets must be a strict subset of his.Buckets.
+ func (h *batchHistogram) update(his *metrics.Float64Histogram, sum float64) {
+-	counts, buckets := his.Counts, his.Buckets
+-
+-	h.mu.Lock()
+-	defer h.mu.Unlock()
+-
+-	// Clear buckets.
+-	for i := range h.counts {
+-		h.counts[i] = 0
+-	}
+-	// Copy and reduce buckets.
+-	var j int
+-	for i, count := range counts {
+-		h.counts[j] += count
+-		if buckets[i+1] == h.buckets[j+1] {
+-			j++
+-		}
+-	}
+-	if h.hasSum {
+-		h.sum = sum
+-	}
+ }
+ 
+ func (h *batchHistogram) Desc() *Desc {
+diff -ura ./github.com/prometheus/client_golang/prometheus/internal/go_runtime_metrics.go ../_vendor/github.com/prometheus/client_golang/prometheus/internal/go_runtime_metrics.go
+--- ./github.com/prometheus/client_golang/prometheus/internal/go_runtime_metrics.go	2023-10-11 20:14:24.417642928 +0300
++++ ../_vendor/github.com/prometheus/client_golang/prometheus/internal/go_runtime_metrics.go	2023-10-11 19:52:12.315561914 +0300
+@@ -18,11 +18,7 @@
+ 
+ import (
+ 	"math"
+-	"path"
+ 	"runtime/metrics"
+-	"strings"
+-
+-	"github.com/prometheus/common/model"
+ )
+ 
+ // RuntimeMetricsToProm produces a Prometheus metric name from a runtime/metrics
+@@ -37,44 +33,7 @@
+ // character set. This is theoretically possible, but should never happen in practice.
+ // Still, don't rely on it.
+ func RuntimeMetricsToProm(d *metrics.Description) (string, string, string, bool) {
+-	namespace := "go"
+-
+-	comp := strings.SplitN(d.Name, ":", 2)
+-	key := comp[0]
+-	unit := comp[1]
+-
+-	// The last path element in the key is the name,
+-	// the rest is the subsystem.
+-	subsystem := path.Dir(key[1:] /* remove leading / */)
+-	name := path.Base(key)
+-
+-	// subsystem is translated by replacing all / and - with _.
+-	subsystem = strings.ReplaceAll(subsystem, "/", "_")
+-	subsystem = strings.ReplaceAll(subsystem, "-", "_")
+-
+-	// unit is translated assuming that the unit contains no
+-	// non-ASCII characters.
+-	unit = strings.ReplaceAll(unit, "-", "_")
+-	unit = strings.ReplaceAll(unit, "*", "_")
+-	unit = strings.ReplaceAll(unit, "/", "_per_")
+-
+-	// name has - replaced with _ and is concatenated with the unit and
+-	// other data.
+-	name = strings.ReplaceAll(name, "-", "_")
+-	name = name + "_" + unit
+-	if d.Cumulative && d.Kind != metrics.KindFloat64Histogram {
+-		name = name + "_total"
+-	}
+-
+-	valid := model.IsValidMetricName(model.LabelValue(namespace + "_" + subsystem + "_" + name))
+-	switch d.Kind {
+-	case metrics.KindUint64:
+-	case metrics.KindFloat64:
+-	case metrics.KindFloat64Histogram:
+-	default:
+-		valid = false
+-	}
+-	return namespace, subsystem, name, valid
++	return "fake", "fake", "fake", true
+ }
+ 
+ // RuntimeMetricsBucketsForUnit takes a set of buckets obtained for a runtime/metrics histogram
+Лише у ../_vendor/github.com/prometheus/client_golang/prometheus: promauto
+diff -ura ./github.com/prometheus/client_golang/prometheus/registry.go ../_vendor/github.com/prometheus/client_golang/prometheus/registry.go
+--- ./github.com/prometheus/client_golang/prometheus/registry.go	2023-10-11 20:14:24.417642928 +0300
++++ ../_vendor/github.com/prometheus/client_golang/prometheus/registry.go	2023-10-11 19:52:12.315561914 +0300
+@@ -59,8 +59,8 @@
+ )
+ 
+ func init() {
+-	MustRegister(NewProcessCollector(ProcessCollectorOpts{}))
+-	MustRegister(NewGoCollector())
++	/*MustRegister(NewProcessCollector(ProcessCollectorOpts{}))
++	MustRegister(NewGoCollector())*/
+ }
+ 
+ // NewRegistry creates a new vanilla Registry without any Collectors
+@@ -575,10 +575,7 @@
+ 		return err
+ 	}
+ 
+-	if err := os.Chmod(tmp.Name(), 0644); err != nil {
+-		return err
+-	}
+-	return os.Rename(tmp.Name(), filename)
++	return nil
+ }
+ 
+ // processMetric is an internal helper method only used by the Gather method.
+Лише у ../_vendor/github.com/prometheus/common: route
+Лише у ../_vendor/github.com/prometheus/common: version
+diff -ura ./github.com/prometheus/procfs/proc_stat.go ../_vendor/github.com/prometheus/procfs/proc_stat.go
+--- ./github.com/prometheus/procfs/proc_stat.go	2023-10-11 20:14:24.421642990 +0300
++++ ../_vendor/github.com/prometheus/procfs/proc_stat.go	2023-10-11 19:52:12.319561941 +0300
+@@ -16,7 +16,6 @@
+ import (
+ 	"bytes"
+ 	"fmt"
+-	"os"
+ 
+ 	"github.com/prometheus/procfs/internal/fs"
+ 	"github.com/prometheus/procfs/internal/util"
+@@ -198,7 +197,7 @@
+ 
+ // ResidentMemory returns the resident memory size in bytes.
+ func (s ProcStat) ResidentMemory() int {
+-	return s.RSS * os.Getpagesize()
++	return s.RSS * 65536
+ }
+ 
+ // StartTime returns the unix timestamp of the process in seconds.
+diff -ura ./github.com/prometheus/prometheus/discovery/registry.go ../_vendor/github.com/prometheus/prometheus/discovery/registry.go
+--- ./github.com/prometheus/prometheus/discovery/registry.go	2023-10-11 20:14:24.425643053 +0300
++++ ../_vendor/github.com/prometheus/prometheus/discovery/registry.go	2023-10-11 19:52:12.319561941 +0300
+@@ -17,7 +17,6 @@
+ 	"errors"
+ 	"fmt"
+ 	"reflect"
+-	"sort"
+ 	"strconv"
+ 	"strings"
+ 	"sync"
+@@ -58,7 +57,7 @@
+ }
+ 
+ func registerConfig(yamlKey string, elemType reflect.Type, config Config) {
+-	name := config.Name()
++	/*name := config.Name()
+ 	if _, ok := configNames[name]; ok {
+ 		panic(fmt.Sprintf("discovery: Config named %q is already registered", name))
+ 	}
+@@ -77,7 +76,7 @@
+ 		Name: fieldName,
+ 		Type: reflect.SliceOf(elemType),
+ 		Tag:  reflect.StructTag(`yaml:"` + yamlKey + `,omitempty"`),
+-	}
++	}*/
+ }
+ 
+ func getConfigType(out reflect.Type) reflect.Type {
+Лише у ../_vendor/github.com/prometheus/prometheus/model: rulefmt
+Лише у ../_vendor/github.com/prometheus/prometheus: prompb
+Лише у ../_vendor/github.com/prometheus/prometheus: rules
+Лише у ../_vendor/github.com/prometheus/prometheus: scrape
+Лише у ../_vendor/github.com/prometheus/prometheus/storage: remote
+Лише у ../_vendor/github.com/prometheus/prometheus: template
+diff -ura ./github.com/prometheus/prometheus/tsdb/block.go ../_vendor/github.com/prometheus/prometheus/tsdb/block.go
+--- ./github.com/prometheus/prometheus/tsdb/block.go	2023-10-11 20:14:24.429643115 +0300
++++ ../_vendor/github.com/prometheus/prometheus/tsdb/block.go	2023-10-11 19:52:12.327561995 +0300
+@@ -622,30 +622,9 @@
+ 		return errors.Wrap(err, "create snapshot chunk dir")
+ 	}
+ 
+-	// Hardlink meta, index and tombstones
+-	for _, fname := range []string{
+-		metaFilename,
+-		indexFilename,
+-		tombstones.TombstonesFilename,
+-	} {
+-		if err := os.Link(filepath.Join(pb.dir, fname), filepath.Join(blockDir, fname)); err != nil {
+-			return errors.Wrapf(err, "create snapshot %s", fname)
+-		}
+-	}
+ 
+ 	// Hardlink the chunks
+-	curChunkDir := chunkDir(pb.dir)
+-	files, err := os.ReadDir(curChunkDir)
+-	if err != nil {
+-		return errors.Wrap(err, "ReadDir the current chunk dir")
+-	}
+ 
+-	for _, f := range files {
+-		err := os.Link(filepath.Join(curChunkDir, f.Name()), filepath.Join(chunksDir, f.Name()))
+-		if err != nil {
+-			return errors.Wrap(err, "hardlink a chunk")
+-		}
+-	}
+ 
+ 	return nil
+ }
+diff -ura ./github.com/prometheus/prometheus/tsdb/fileutil/fileutil.go ../_vendor/github.com/prometheus/prometheus/tsdb/fileutil/fileutil.go
+--- ./github.com/prometheus/prometheus/tsdb/fileutil/fileutil.go	2023-10-11 20:14:24.429643115 +0300
++++ ../_vendor/github.com/prometheus/prometheus/tsdb/fileutil/fileutil.go	2023-10-11 19:52:12.327561995 +0300
+@@ -91,21 +91,7 @@
+ 
+ // Rename safely renames a file.
+ func Rename(from, to string) error {
+-	if err := os.Rename(from, to); err != nil {
+-		return err
+-	}
+-
+-	// Directory was renamed; sync parent dir to persist rename.
+-	pdir, err := OpenDir(filepath.Dir(to))
+-	if err != nil {
+-		return err
+-	}
+-
+-	if err = pdir.Sync(); err != nil {
+-		pdir.Close()
+-		return err
+-	}
+-	return pdir.Close()
++	return nil
+ }
+ 
+ // Replace moves a file or directory to a new location and deletes any previous data.
+diff -ura ./github.com/prometheus/prometheus/tsdb/fileutil/flock_unix.go ../_vendor/github.com/prometheus/prometheus/tsdb/fileutil/flock_unix.go
+--- ./github.com/prometheus/prometheus/tsdb/fileutil/flock_unix.go	2023-10-11 20:14:24.429643115 +0300
++++ ../_vendor/github.com/prometheus/prometheus/tsdb/fileutil/flock_unix.go	2023-10-11 19:52:12.327561995 +0300
+@@ -18,7 +18,6 @@
+ 
+ import (
+ 	"os"
+-	"syscall"
+ )
+ 
+ type unixLock struct {
+@@ -26,30 +25,13 @@
+ }
+ 
+ func (l *unixLock) Release() error {
+-	if err := l.set(false); err != nil {
+-		return err
+-	}
+-	return l.f.Close()
++	return nil
+ }
+ 
+ func (l *unixLock) set(lock bool) error {
+-	how := syscall.LOCK_UN
+-	if lock {
+-		how = syscall.LOCK_EX
+-	}
+-	return syscall.Flock(int(l.f.Fd()), how|syscall.LOCK_NB)
++	return nil
+ }
+ 
+ func newLock(fileName string) (Releaser, error) {
+-	f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0o666)
+-	if err != nil {
+-		return nil, err
+-	}
+-	l := &unixLock{f}
+-	err = l.set(true)
+-	if err != nil {
+-		f.Close()
+-		return nil, err
+-	}
+-	return l, nil
++	return &unixLock{nil}, nil
+ }
+diff -ura ./github.com/prometheus/prometheus/tsdb/fileutil/mmap_unix.go ../_vendor/github.com/prometheus/prometheus/tsdb/fileutil/mmap_unix.go
+--- ./github.com/prometheus/prometheus/tsdb/fileutil/mmap_unix.go	2023-10-11 20:14:24.429643115 +0300
++++ ../_vendor/github.com/prometheus/prometheus/tsdb/fileutil/mmap_unix.go	2023-10-11 19:52:12.327561995 +0300
+@@ -19,13 +19,12 @@
+ import (
+ 	"os"
+ 
+-	"golang.org/x/sys/unix"
+ )
+ 
+ func mmap(f *os.File, length int) ([]byte, error) {
+-	return unix.Mmap(int(f.Fd()), 0, length, unix.PROT_READ, unix.MAP_SHARED)
++	return nil, nil
+ }
+ 
+ func munmap(b []byte) (err error) {
+-	return unix.Munmap(b)
++	return nil
+ }
+diff -ura ./github.com/prometheus/prometheus/tsdb/fileutil/preallocate_darwin.go ../_vendor/github.com/prometheus/prometheus/tsdb/fileutil/preallocate_darwin.go
+--- ./github.com/prometheus/prometheus/tsdb/fileutil/preallocate_darwin.go	2023-10-11 20:14:24.429643115 +0300
++++ ../_vendor/github.com/prometheus/prometheus/tsdb/fileutil/preallocate_darwin.go	2023-10-11 19:52:12.327561995 +0300
+@@ -17,25 +17,13 @@
+ import (
+ 	"os"
+ 
+-	"golang.org/x/sys/unix"
+ )
+ 
+ func preallocExtend(f *os.File, sizeInBytes int64) error {
+-	if err := preallocFixed(f, sizeInBytes); err != nil {
+-		return err
+-	}
+-	return preallocExtendTrunc(f, sizeInBytes)
++	return nil
+ }
+ 
+ func preallocFixed(f *os.File, sizeInBytes int64) error {
+-	fstore := &unix.Fstore_t{
+-		Flags:   unix.F_ALLOCATEALL,
+-		Posmode: unix.F_PEOFPOSMODE,
+-		Length:  sizeInBytes,
+-	}
+-	err := unix.FcntlFstore(f.Fd(), unix.F_PREALLOCATE, fstore)
+-	if err == nil || err == unix.ENOTSUP {
+-		return nil
+-	}
+-	return err
++
++	return nil
+ }
+diff -ura ./github.com/prometheus/prometheus/tsdb/fileutil/preallocate_linux.go ../_vendor/github.com/prometheus/prometheus/tsdb/fileutil/preallocate_linux.go
+--- ./github.com/prometheus/prometheus/tsdb/fileutil/preallocate_linux.go	2023-10-11 20:14:24.429643115 +0300
++++ ../_vendor/github.com/prometheus/prometheus/tsdb/fileutil/preallocate_linux.go	2023-10-11 19:52:12.327561995 +0300
+@@ -16,32 +16,13 @@
+ 
+ import (
+ 	"os"
+-	"syscall"
+ )
+ 
+ func preallocExtend(f *os.File, sizeInBytes int64) error {
+-	// use mode = 0 to change size
+-	err := syscall.Fallocate(int(f.Fd()), 0, 0, sizeInBytes)
+-	if err != nil {
+-		errno, ok := err.(syscall.Errno)
+-		// not supported; fallback
+-		// fallocate EINTRs frequently in some environments; fallback
+-		if ok && (errno == syscall.ENOTSUP || errno == syscall.EINTR) {
+-			return preallocExtendTrunc(f, sizeInBytes)
+-		}
+-	}
+-	return err
++	return nil
+ }
+ 
+ func preallocFixed(f *os.File, sizeInBytes int64) error {
+-	// use mode = 1 to keep size; see FALLOC_FL_KEEP_SIZE
+-	err := syscall.Fallocate(int(f.Fd()), 1, 0, sizeInBytes)
+-	if err != nil {
+-		errno, ok := err.(syscall.Errno)
+-		// treat not supported as nil error
+-		if ok && errno == syscall.ENOTSUP {
+-			return nil
+-		}
+-	}
+-	return err
++
++	return nil
+ }
+diff -ura ./github.com/prometheus/prometheus/tsdb/fileutil/sync_linux.go ../_vendor/github.com/prometheus/prometheus/tsdb/fileutil/sync_linux.go
+--- ./github.com/prometheus/prometheus/tsdb/fileutil/sync_linux.go	2023-10-11 20:14:24.429643115 +0300
++++ ../_vendor/github.com/prometheus/prometheus/tsdb/fileutil/sync_linux.go	2023-10-11 19:52:12.327561995 +0300
+@@ -19,12 +19,11 @@
+ 
+ import (
+ 	"os"
+-	"syscall"
+ )
+ 
+ // Fdatasync is similar to fsync(), but does not flush modified metadata
+ // unless that metadata is needed in order to allow a subsequent data retrieval
+ // to be correctly handled.
+ func Fdatasync(f *os.File) error {
+-	return syscall.Fdatasync(int(f.Fd()))
++	return nil
+ }
+Лише у ../_vendor/github.com/prometheus/prometheus/util: gate
+Лише у ../_vendor/github.com/prometheus/prometheus/util: httputil
+Лише у ../_vendor/github.com/prometheus/prometheus/util: logging
+Лише у ../_vendor/github.com/prometheus/prometheus/util: osutil
+Лише у ../_vendor/github.com/prometheus/prometheus/util: pool
+diff -ura ./github.com/prometheus/prometheus/util/stats/query_stats.go ../_vendor/github.com/prometheus/prometheus/util/stats/query_stats.go
+--- ./github.com/prometheus/prometheus/util/stats/query_stats.go	2023-10-11 20:14:24.433643177 +0300
++++ ../_vendor/github.com/prometheus/prometheus/util/stats/query_stats.go	2023-10-11 19:52:12.331562022 +0300
+@@ -19,8 +19,6 @@
+ 	"fmt"
+ 
+ 	"github.com/prometheus/client_golang/prometheus"
+-	"go.opentelemetry.io/otel"
+-	"go.opentelemetry.io/otel/trace"
+ )
+ 
+ // QueryTiming identifies the code area or functionality in which time is spent
+@@ -189,31 +187,16 @@
+ 
+ // SpanTimer unifies tracing and timing, to reduce repetition.
+ type SpanTimer struct {
+-	timer     *Timer
+-	observers []prometheus.Observer
+ 
+-	span trace.Span
+ }
+ 
+ func NewSpanTimer(ctx context.Context, operation string, timer *Timer, observers ...prometheus.Observer) (*SpanTimer, context.Context) {
+-	ctx, span := otel.Tracer("").Start(ctx, operation)
+-	timer.Start()
+ 
+ 	return &SpanTimer{
+-		timer:     timer,
+-		observers: observers,
+-
+-		span: span,
+ 	}, ctx
+ }
+ 
+ func (s *SpanTimer) Finish() {
+-	s.timer.Stop()
+-	s.span.End()
+-
+-	for _, obs := range s.observers {
+-		obs.Observe(s.timer.ElapsedTime().Seconds())
+-	}
+ }
+ 
+ type Statistics struct {
+Лише у ../_vendor/github.com/prometheus/prometheus: web
+Лише у ../_vendor/golang.org/x: time
+Лише у ../_vendor/go.opentelemetry.io: contrib
+Лише у ../_vendor/go.opentelemetry.io/otel: metric
+Лише у ../_vendor/go.opentelemetry.io/otel: semconv
+diff -ura ./modules.txt ../_vendor/modules.txt
+--- ./modules.txt	2023-10-11 20:14:24.473643800 +0300
++++ ../_vendor/modules.txt	2023-10-11 19:52:12.407562537 +0300
+@@ -60,6 +60,7 @@
+ github.com/edsrzf/mmap-go
+ # github.com/felixge/httpsnoop v1.0.3
+ ## explicit; go 1.13
++github.com/felixge/httpsnoop
+ # github.com/go-kit/log v0.2.1
+ ## explicit; go 1.17
+ github.com/go-kit/log
+@@ -76,6 +77,9 @@
+ github.com/go-logr/stdr
+ # github.com/gogo/protobuf v1.3.2
+ ## explicit; go 1.15
++github.com/gogo/protobuf/gogoproto
++github.com/gogo/protobuf/proto
++github.com/gogo/protobuf/protoc-gen-gogo/descriptor
+ # github.com/golang/protobuf v1.5.2
+ ## explicit; go 1.9
+ github.com/golang/protobuf/proto
+@@ -95,8 +99,10 @@
+ github.com/jpillora/backoff
+ # github.com/json-iterator/go v1.1.12 => ./json.iterator
+ ## explicit; go 1.20
++github.com/json-iterator/go
+ # github.com/julienschmidt/httprouter v1.3.0
+ ## explicit; go 1.7
++github.com/julienschmidt/httprouter
+ # github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369
+ ## explicit; go 1.9
+ github.com/matttproud/golang_protobuf_extensions/pbutil
+@@ -120,6 +126,7 @@
+ ## explicit; go 1.13
+ github.com/prometheus/client_golang/prometheus
+ github.com/prometheus/client_golang/prometheus/internal
++github.com/prometheus/client_golang/prometheus/promauto
+ github.com/prometheus/client_golang/prometheus/testutil
+ github.com/prometheus/client_golang/prometheus/testutil/promlint
+ # github.com/prometheus/client_model v0.2.0
+@@ -131,6 +138,8 @@
+ github.com/prometheus/common/expfmt
+ github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
+ github.com/prometheus/common/model
++github.com/prometheus/common/route
++github.com/prometheus/common/version
+ # github.com/prometheus/common/sigv4 v0.1.0
+ ## explicit; go 1.15
+ github.com/prometheus/common/sigv4
+@@ -147,12 +156,18 @@
+ github.com/prometheus/prometheus/model/exemplar
+ github.com/prometheus/prometheus/model/labels
+ github.com/prometheus/prometheus/model/relabel
++github.com/prometheus/prometheus/model/rulefmt
+ github.com/prometheus/prometheus/model/textparse
+ github.com/prometheus/prometheus/model/timestamp
+ github.com/prometheus/prometheus/model/value
++github.com/prometheus/prometheus/prompb
+ github.com/prometheus/prometheus/promql
+ github.com/prometheus/prometheus/promql/parser
++github.com/prometheus/prometheus/rules
++github.com/prometheus/prometheus/scrape
+ github.com/prometheus/prometheus/storage
++github.com/prometheus/prometheus/storage/remote
++github.com/prometheus/prometheus/template
+ github.com/prometheus/prometheus/tsdb
+ github.com/prometheus/prometheus/tsdb/chunkenc
+ github.com/prometheus/prometheus/tsdb/chunks
+@@ -165,16 +180,23 @@
+ github.com/prometheus/prometheus/tsdb/tombstones
+ github.com/prometheus/prometheus/tsdb/tsdbutil
+ github.com/prometheus/prometheus/tsdb/wal
++github.com/prometheus/prometheus/util/gate
++github.com/prometheus/prometheus/util/httputil
++github.com/prometheus/prometheus/util/logging
++github.com/prometheus/prometheus/util/osutil
++github.com/prometheus/prometheus/util/pool
+ github.com/prometheus/prometheus/util/stats
+ github.com/prometheus/prometheus/util/strutil
+ github.com/prometheus/prometheus/util/teststorage
+ github.com/prometheus/prometheus/util/testutil
++github.com/prometheus/prometheus/web/api/v1
+ # github.com/stretchr/testify v1.8.0
+ ## explicit; go 1.13
+ github.com/stretchr/testify/assert
+ github.com/stretchr/testify/require
+ # go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.32.0
+ ## explicit; go 1.16
++go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp
+ # go.opentelemetry.io/otel v1.7.0
+ ## explicit; go 1.16
+ go.opentelemetry.io/otel
+@@ -185,8 +207,19 @@
+ go.opentelemetry.io/otel/internal/baggage
+ go.opentelemetry.io/otel/internal/global
+ go.opentelemetry.io/otel/propagation
++go.opentelemetry.io/otel/semconv/internal
++go.opentelemetry.io/otel/semconv/v1.10.0
+ # go.opentelemetry.io/otel/metric v0.30.0
+ ## explicit; go 1.16
++go.opentelemetry.io/otel/metric
++go.opentelemetry.io/otel/metric/global
++go.opentelemetry.io/otel/metric/instrument
++go.opentelemetry.io/otel/metric/instrument/asyncfloat64
++go.opentelemetry.io/otel/metric/instrument/asyncint64
++go.opentelemetry.io/otel/metric/instrument/syncfloat64
++go.opentelemetry.io/otel/metric/instrument/syncint64
++go.opentelemetry.io/otel/metric/internal/global
++go.opentelemetry.io/otel/metric/unit
+ # go.opentelemetry.io/otel/trace v1.7.0
+ ## explicit; go 1.16
+ go.opentelemetry.io/otel/trace
+@@ -228,6 +261,7 @@
+ golang.org/x/text/unicode/norm
+ # golang.org/x/time v0.0.0-20220609170525-579cf78fd858
+ ## explicit
++golang.org/x/time/rate
+ # google.golang.org/appengine v1.6.7
+ ## explicit; go 1.11
+ google.golang.org/appengine/internal
+@@ -277,4 +311,3 @@
+ # github.com/InfluxCommunity/influxdb3-go v0.2.0 => github.com/akvlad/influxdb3-go v0.0.1
+ # github.com/docker/distribution v2.7.1+incompatible => github.com/docker/distribution v2.8.0+incompatible
+ # k8s.io/client-go v12.0.0+incompatible => k8s.io/client-go v0.22.1
+-# github.com/json-iterator/go v1.1.12 => ./json.iterator
