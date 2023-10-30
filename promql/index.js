@@ -89,7 +89,7 @@ const getMatchersIdxCond = (matchers) => {
         _matcher.push(Sql.Eq(new Sql.Raw(`match(val, ${Sql.quoteVal(matcher[2])})`), 1))
         break
       case '!~':
-        _matcher.push(Sql.Ne(Sql.Raw(`match(val, ${Sql.quoteVal(matcher[2])})`), 1))
+        _matcher.push(Sql.Ne(new Sql.Raw(`match(val, ${Sql.quoteVal(matcher[2])})`), 1))
     }
     matchesCond.push(Sql.And(..._matcher))
   }
