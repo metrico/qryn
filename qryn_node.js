@@ -175,7 +175,7 @@ let fastify = require('fastify')({
       if (username === this.http_user && password === this.http_password) {
         done()
       } else {
-        done(new Error('Unauthorized!: Wrong username/password.'))
+        done(new (require('http-errors').Unauthorized)('Unauthorized!: Wrong username/password.'))
       }
     }
 

@@ -51,6 +51,14 @@ import handlerTail from './lib/handlers/tail.js'
 import { readonly } from './common.js'
 import DATABASE, { init } from './lib/db/clickhouse.js'
 import { startAlerting } from './lib/db/alerting/index.js'
+import fs from 'fs'
+import path from 'path'
+import { file, dir, group, CORS } from '@stricjs/utils';
+import auth from 'basic-auth'
+import * as errors from 'http-errors'
+
+const http_user = process.env.QRYN_LOGIN || process.env.CLOKI_LOGIN || undefined
+const http_password = process.env.QRYN_PASSWORD || process.env.CLOKI_PASSWORD || undefined
 
 export default async() => {
   if (!readonly) {
@@ -60,6 +68,27 @@ export default async() => {
   await DATABASE.checkDB()
 
   const app = new Router()
+
+  const cors = process.env.CORS_ALLOW_ORIGIN || '*'
+
+  app.wrap('/', (resp) => {
+    const _cors = new CORS({allowOrigins: cors})
+    for(const c of Object.entries(_cors.headers)) {
+      resp.headers.append(c[0], c[1])
+    }
+    return resp
+  })
+
+  app.guard("/", (ctx) => {
+    if (http_user) {
+      const creds = auth({ headers: Object.fromEntries(ctx.headers.entries()) })
+      if (!creds || creds.name !== http_user || creds.pass !== http_password) {
+        ctx.error = new errors.Unauthorized('Unauthorized')
+        return null;
+      }
+    }
+    return ctx;
+  });
 
   app.get('/hello', wrapper(handlerHello))
     .get('/ready', wrapper(handlerHello))
@@ -278,10 +307,20 @@ export default async() => {
     '*': otlpPushProtoParser
   })
 
+  const serveView = fs.existsSync(path.join(__dirname, 'view/index.html'))
+  if (serveView) {
+    app.plug(group(path.join(__dirname, 'view')));
+  }
 
-
-
-  app.use(404, wrapper(handle404))
+  app.use(404, (ctx) => {
+    if (ctx.error && ctx.error.name === 'UnauthorizedError') {
+      return new Response(ctx.error.message, {status: 401, headers: { 'www-authenticate': 'Basic' }})
+    }
+    if (serveView) {
+      return file(path.join(__dirname, 'view', 'index.html'))(ctx);
+    }
+    return wrapper(handle404)
+  })
   app.port = process.env.PORT || 3100
   app.hostname = process.env.HOST || '0.0.0.0'
   app.listen()
