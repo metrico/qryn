@@ -53,7 +53,7 @@ import DATABASE, { init } from './lib/db/clickhouse.js'
 import { startAlerting } from './lib/db/alerting/index.js'
 import fs from 'fs'
 import path from 'path'
-import { file, dir, group } from '@stricjs/utils';
+import { file, dir, group, CORS } from '@stricjs/utils';
 import auth from 'basic-auth'
 import * as errors from 'http-errors'
 
@@ -68,6 +68,16 @@ export default async() => {
   await DATABASE.checkDB()
 
   const app = new Router()
+
+  const cors = process.env.CORS_ALLOW_ORIGIN || '*'
+
+  app.wrap('/', (resp) => {
+    const _cors = new CORS({allowOrigins: cors})
+    for(const c of Object.entries(_cors.headers)) {
+      resp.headers.append(c[0], c[1])
+    }
+    return resp
+  })
 
   app.guard("/", (ctx) => {
     if (http_user) {
