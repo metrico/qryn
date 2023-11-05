@@ -2,7 +2,7 @@ name: 'CI+CD'
 
 on:
   release:
-    types: [created]
+    types: [published]
   workflow_dispatch:
     inputs:
       TAG_NAME:
@@ -15,16 +15,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 'Checkout source code'
-        uses: 'actions/checkout@v3'
+      - uses: 'actions/checkout@v3'
         with:
           ref: ${{ github.ref }}
-      - uses: MYXOMOPX/modify-pkg-json@1.0.1
-        id: setcmnver
-        with: 
-          target: ./package.json
-          action: "set_version"
-          argument: "${{  github.event.inputs.TAG_NAME || github.event.release.tag_name }}"
+      - name: Update Package to Release version
+        uses: pocket-apps/action-update-version@v1
+        with:
+          files: 'package.json'
+          version-regexp: '\d+.\d+.\d+'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check NPM secret presence
         id: checksecrets
         shell: bash
