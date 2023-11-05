@@ -1,0 +1,15 @@
+# qryn bun builder
+FROM oven/bun:alpine
+
+# BUILD FORCE
+ENV BUILD 20231027
+ENV PORT 3100
+
+COPY . /app
+WORKDIR /app
+RUN rm -rf package-lock.json
+RUN bun install
+
+# Expose Ports
+EXPOSE 3100
+CMD [ "bun", "qryn.mjs" ]
