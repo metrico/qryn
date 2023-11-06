@@ -41,6 +41,7 @@ jobs:
           node-version: 18
       - name: Publish to NPM
         if: ${{ steps.checksecrets.outputs.secretspresent }}
+        continue-on-error: true
         run: |
           npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
           npm install
