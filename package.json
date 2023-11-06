@@ -5,7 +5,6 @@
   "main": "qryn.mjs",
   "bin": {
     "qryn": "./qryn.mjs",
-    "qryn-bun": "./qryn.mjs"
   },
   "scripts": {
     "test": "jest",
