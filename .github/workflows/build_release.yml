@@ -29,9 +29,9 @@ jobs:
         shell: bash
         run: |
           if [ "$SECRET" == "" ]; then
-            echo ::set-output name=secretspresent::false
+            echo "secretspresent=false" >> $GITHUB_OUTPUT
           else
-            echo ::set-output name=secretspresent::true
+            echo "secretspresent=true" >> $GITHUB_OUTPUT
           fi
         env:
           SECRET: ${{ secrets.NPM_TOKEN }}
@@ -56,7 +56,7 @@ jobs:
           if [ "$SECRET" == "" ]; then
             echo ::set-output name=secretspresent::false
           else
-            echo ::set-output name=secretspresent::true
+            echo "secretspresent=true" >> $GITHUB_OUTPUT
           fi
         env:
           SECRET: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -119,9 +119,9 @@ jobs:
         shell: bash
         run: |
           if [ "$SECRET" == "" ]; then
-            echo ::set-output name=secretspresent::false
+            echo "secretspresent=false" >> $GITHUB_OUTPUT
           else
-            echo ::set-output name=secretspresent::true
+            echo "secretspresent=true" >> $GITHUB_OUTPUT
           fi
         env:
           SECRET: ${{ secrets.DOCKERHUB_TOKEN }}
