@@ -53,18 +53,18 @@
 
 <br>
 
-### ↔️ OpenTelemetry Ingestion
-
-⚡ **qryn** is officially integrated with [opentelemetry](https://github.com/metrico/otel-collector) supports _any log, trace or metric format_
-
+### ↔️ Ingestion
+#### OpenTelemetry
+⚡ **qryn** is officially integrated with [opentelemetry](https://github.com/metrico/otel-collector) supports _any log, trace or metric format_<br>
 Ingested data can be queried using any of the avialable qryn APIs _(LogQL, PromQL, TraceQL)_
 
-<br>
 
-### ↔️ Native Ingestion
+#### Native
 
 **qryn** supports [native ingestion](https://qryn.metrico.in/#/support) for Loki, Prometheus, Tempo/Zipkin and other protocols_<br>
-No opentelemetry or any other proxy required. With qryn users can _push data using any combination of supported protocols_
+With qryn users can _push data using any combination of supported protocols_
+
+💡 _No opentelemetry or any other middlewayre/proxy required!_
 
 <br>
 
