@@ -37,7 +37,13 @@
 
 <br>
 
-### :eye: View Explorer
+## Features
+
+💡 _**qryn** independently implements popular observability standards, protocols and query languages_
+
+<br>
+
+### :eye: Built-In Explorer
 
 **qryn** ships with **view** - our zero dependency, lightweight data explorer for **Logs, Metrics** and **Traces**
 
@@ -45,17 +51,20 @@
 <img src="https://user-images.githubusercontent.com/1423657/200136242-f4133229-ee7c-45e0-8228-8734cf56140a.gif" width=700 class=border />
 </a>
 
-## Features
-
-💡 _**qryn** independently implements popular observability standards, protocols and query languages_
-
 <br>
 
-### 📚 OpenTelemetry
+### ↔️ OpenTelemetry Ingestion
 
 ⚡ **qryn** is officially integrated with [opentelemetry](https://github.com/metrico/otel-collector) supports _any log, trace or metric format_
 
 Ingested data can be queried using any of the avialable qryn APIs _(LogQL, PromQL, TraceQL)_
+
+<br>
+
+### ↔️ Native Ingestion
+
+**qryn** supports [native ingestion](https://qryn.metrico.in/#/support) for Loki, Prometheus, Tempo/Zipkin and other protocols_<br>
+No opentelemetry or any other proxy required. With qryn users can _push data using any combination of supported protocols_
 
 <br>
 
