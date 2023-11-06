@@ -4,7 +4,7 @@
   "description": "Polyglot Observability Stack with ClickHouse storage",
   "main": "qryn.mjs",
   "bin": {
-    "qryn": "./qryn.mjs",
+    "qryn": "./qryn.mjs"
   },
   "scripts": {
     "test": "jest",
