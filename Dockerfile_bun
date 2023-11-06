@@ -1,9 +1,5 @@
 # qryn bun builder
-FROM oven/bun:slim
-
-# BUILD FORCE
-ENV BUILD 20231027
-ENV PORT 3100
+FROM oven/bun:1.0.7-alpine
 
 COPY . /app
 WORKDIR /app
