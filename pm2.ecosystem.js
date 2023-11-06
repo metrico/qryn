@@ -1,7 +1,7 @@
 module.exports = {
   apps: [{
     name: 'qryn',
-    script: './qryn.js',
+    script: './qryn.mjs',
     env: {
       CLICKHOUSE_SERVER: 'localhost',
       CLICKHOUSE_PORT: 8123,
