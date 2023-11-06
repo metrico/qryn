@@ -9,25 +9,34 @@ module.exports.WasmError = WasmError
 
 let counter = 0
 var go = new Go();
-var wasm
+
+const getWasm = (() => {
+  let wasm = null;
+  let cnt = 0;
+  let run = false;
+  async function init () {
+    run = true;
+    const _wasm = await WebAssembly.instantiate(
+        gunzipSync(fs.readFileSync(WASM_URL)), go.importObject)
+    go.run(_wasm.instance)
+    wasm = _wasm.instance
+    cnt = 0
+    run = false;
+  }
+  init();
+  return () => {
+      if (cnt > 5 && !run){
+        init();
+      }
+      return wasm
+    }
+})()
 
 const newId = () => {
   const id = counter
   counter = (counter + 1) & 0xFFFFFFFF
   return id
 }
-
-async function init () {
-    const _wasm = await WebAssembly.instantiate(
-      gunzipSync(fs.readFileSync(WASM_URL)), go.importObject)
-    go.run(_wasm.instance)
-    wasm = _wasm.instance
-}
-
-init()
-setInterval(async () => {
-  init()
-}, 300000)
 
 /**
  *
@@ -39,7 +48,7 @@ setInterval(async () => {
  * @returns {Promise<string>}
  */
 module.exports.pqlRangeQuery = async (query, startMs, endMs, stepMs, getData) => {
-  const _wasm = wasm
+  const _wasm = getWasm()
   const start = startMs || Date.now() - 300000
   const end = endMs || Date.now()
   const step = stepMs || 15000
@@ -57,28 +66,28 @@ module.exports.pqlRangeQuery = async (query, startMs, endMs, stepMs, getData) =>
  */
 module.exports.pqlInstantQuery = async (query, timeMs, getData) => {
   const time = timeMs || Date.now()
-  const _wasm = wasm
+  const _wasm = getWasm()
   return await pql(query,
     (ctx) => _wasm.exports.pqlInstantQuery(ctx.id, time),
     (matchers) => getData(matchers, time - 300000, time))
 }
 
 module.exports.pqlMatchers = (query) => {
-  const _wasm = wasm
+  const _wasm = getWasm()
   const id = newId()
   const ctx = new Ctx(id, _wasm)
   ctx.create()
   try {
-      ctx.write(query)
-      const res1 = _wasm.exports.pqlSeries(id)
-      if (res1 !== 0) {
-        throw new WasmError(ctx.read())
-      }
-      /** @type {[[[string]]]} */
-      const matchersObj = JSON.parse(ctx.read())
-      return matchersObj
+    ctx.write(query)
+    const res1 = _wasm.exports.pqlSeries(id)
+    if (res1 !== 0) {
+      throw new WasmError(ctx.read())
+    }
+    /** @type {[[[string]]]} */
+    const matchersObj = JSON.parse(ctx.read())
+    return matchersObj
   } finally {
-      ctx.destroy()
+    ctx.destroy()
   }
 }
 
@@ -108,7 +117,7 @@ module.exports.TranspileTraceQL = (request) => {
   let _ctx
   try {
     const id = newId()
-    const _wasm = wasm
+    const _wasm = getWasm()
     _ctx = new Ctx(id, _wasm)
     _ctx.create()
     _ctx.write(JSON.stringify(request))
@@ -132,10 +141,10 @@ module.exports.TranspileTraceQL = (request) => {
  */
 const pql = async (query, wasmCall, getData) => {
   const reqId = newId()
-  const _wasm = wasm
+  const _wasm = getWasm()
   const ctx = new Ctx(reqId, _wasm)
-  ctx.create()
   try {
+    ctx.create()
     ctx.write(query)
     const res1 = wasmCall(ctx)
     if (res1 !== 0) {
@@ -155,26 +164,37 @@ const pql = async (query, wasmCall, getData) => {
       writer.writeString(JSON.stringify(matchers))
       writer.writeBytes([data])
     }
-
+    fs.writeFileSync('req.txt', query)
+    fs.writeFileSync('data.bin', writer.buffer())
     ctx.write(writer.buffer())
     _wasm.exports.onDataLoad(reqId)
     return ctx.read()
   } finally {
-    ctx.destroy()
+    ctx && ctx.destroy()
   }
 }
 class Ctx {
   constructor (id, wasm) {
     this.wasm = wasm
     this.id = id
+    this.created = false
   }
 
   create () {
-    this.wasm.exports.createCtx(this.id)
+    try {
+      this.wasm.exports.createCtx(this.id)
+      this.created = true
+    } catch (err) {
+      throw err
+    }
   }
 
   destroy () {
-    this.wasm.exports.dealloc(this.id)
+    try {
+      if (this.created) this.wasm.exports.dealloc(this.id)
+    } catch (err) {
+      throw err
+    }
   }
 
   /**
@@ -186,8 +206,8 @@ class Ctx {
       data = (new TextEncoder()).encode(data)
     }
     this.wasm.exports.alloc(this.id, data.length)
-    const ptr = wasm.exports.alloc(this.id, data.length)
-    new Uint8Array(wasm.exports.memory.buffer).set(data, ptr)
+    const ptr = this.wasm.exports.alloc(this.id, data.length)
+    new Uint8Array(this.wasm.exports.memory.buffer).set(data, ptr)
   }
 
   /**
@@ -198,7 +218,7 @@ class Ctx {
       this.wasm.exports.getCtxResponse(this.id),
       this.wasm.exports.getCtxResponseLen(this.id)
     ]
-    return new TextDecoder().decode(new Uint8Array(wasm.exports.memory.buffer).subarray(resPtr, resPtr + resLen))
+    return new TextDecoder().decode(new Uint8Array(this.wasm.exports.memory.buffer).subarray(resPtr, resPtr + resLen))
   }
 }
 
