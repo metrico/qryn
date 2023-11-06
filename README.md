@@ -53,20 +53,22 @@
 
 <br>
 
-### ↔️ Ingestion
-#### OpenTelemetry
+## ➡️ Ingest
+### 📚 OpenTelemetry
 ⚡ **qryn** is officially integrated with [opentelemetry](https://github.com/metrico/otel-collector) supports _any log, trace or metric format_<br>
 Ingested data can be queried using any of the avialable qryn APIs _(LogQL, PromQL, TraceQL)_
 
+> 💡 _No modifications required to your opentelemetry instrumentation!_
 
-#### Native
-
+### 📚 Native
 **qryn** supports [native ingestion](https://qryn.metrico.in/#/support) for Loki, Prometheus, Tempo/Zipkin and other protocols_<br>
 With qryn users can _push data using any combination of supported protocols_
 
-💡 _No opentelemetry or any other middlewayre/proxy required!_
+> 💡 _No opentelemetry or any other middlewayre/proxy required!_
 
 <br>
+
+## ⬅️ Query
 
 ### 📚 Loki + LogQL
 
@@ -80,8 +82,8 @@ The Grafana Loki datasource can be used to natively browse and query _logs_ and 
 <img src="https://user-images.githubusercontent.com/1423657/196654073-b84a218c-6a70-49bb-a477-e8be5714e0ba.gif" width=700 class=border />
 </a>
 
-:tada: _No plugins needed_ <br>
-:eye: _No Grafana? No problem! Use View_
+> :tada: _No plugins needed_ <br>
+> :eye: _No Grafana? No problem! Use View_
 
 
 <br>
@@ -98,8 +100,8 @@ The Grafana Prometheus datasource can be used to natively to query _metrics_ and
 <img src="https://user-images.githubusercontent.com/1423657/196654084-1f1d8a62-3fd2-4420-a2fa-57ac2872938c.gif" width=700 class=border />
 </a>
 
-:tada: _No plugins needed_ <br>
-:eye: _No Grafana? No problem! Use View_
+> :tada: _No plugins needed_ <br>
+> :eye: _No Grafana? No problem! Use View_
 
 
 
@@ -117,8 +119,8 @@ The Tempo datasource can be used to natively query _traces_ including _**TraceQL
 <img src="https://user-images.githubusercontent.com/1423657/196654097-8a235253-bf5d-4937-9e78-fddf12819d44.gif" width=700 class=border />
 </a>
 
-:tada: _No plugins needed_ <br>
-:eye: _No Grafana? No problem! Use View_
+> :tada: _No plugins needed_ <br>
+> :eye: _No Grafana? No problem! Use View_
 
 
 <br>
