@@ -13,7 +13,6 @@ jobs:
   build:
     name: 'Build & Publish'
     runs-on: ubuntu-latest
-
     steps:
       - uses: 'actions/checkout@v3'
         with:
@@ -48,13 +47,21 @@ jobs:
           npm publish --access public
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      
+
+  node:
+    name: 'Build & Publish Node'
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: 'actions/checkout@v3'
+        with:
+          ref: ${{ github.ref }}
       - name: Check Docker secret presence
         id: checkdocker
         shell: bash
         run: |
           if [ "$SECRET" == "" ]; then
-            echo ::set-output name=secretspresent::false
+            echo "secretspresent=false" >> $GITHUB_OUTPUT
           else
             echo "secretspresent=true" >> $GITHUB_OUTPUT
           fi
@@ -62,23 +69,22 @@ jobs:
           SECRET: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Set up Docker QEMU
         if: ${{ steps.checkdocker.outputs.secretspresent }}
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3.0.0
         with:
            platforms: amd64, arm64
       - name: Set up Docker Buildx
         if: ${{ steps.checkdocker.outputs.secretspresent }}
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3.0.0
         
       - name: Login to DockerHub
         if: ${{ steps.checkdocker.outputs.secretspresent }}
-        uses: docker/login-action@v2.0.0
+        uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}  
-          
       - name: Build and push to Docker Hub
         if: ${{ steps.checkdocker.outputs.secretspresent }}
-        uses: docker/build-push-action@v3.0.0
+        uses: docker/build-push-action@v5.0.0
         with:
           platforms: linux/amd64, linux/arm64
           push: true
@@ -87,16 +93,14 @@ jobs:
             qxip/qryn:${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}
             qxip/cloki:latest
             qxip/cloki:${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}
-            
       - name: Log in to the GHCR registry
-        uses: docker/login-action@v2.0.0
+        uses: docker/login-action@v3.0.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build and push to GHCR
-        uses: docker/build-push-action@v3.0.0
+        uses: docker/build-push-action@v5.0.0
         with:
           platforms: linux/amd64, linux/arm64
           file: ./Dockerfile
@@ -104,7 +108,6 @@ jobs:
           tags: |
              ghcr.io/metrico/qryn:latest
              ghcr.io/metrico/qryn:${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}
-
 
   bun:
     name: 'Build & Publish Bun'
@@ -127,7 +130,7 @@ jobs:
           SECRET: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Set up Docker QEMU
         if: ${{ steps.checkdocker.outputs.secretspresent }}
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3.0.0
         with:
            platforms: amd64, arm64
       - name: Set up Docker Buildx
@@ -150,13 +153,13 @@ jobs:
             qxip/qryn:bun
             qxip/qryn:${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}-bun
       - name: Log in to the GHCR registry
-        uses: docker/login-action@v2.0.0
+        uses: docker/login-action@v3.0.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push to GHCR (bun)
-        uses: docker/build-push-action@v3.0.0
+        uses: docker/build-push-action@v5.0.0
         with:
           platforms: linux/amd64, linux/arm64
           file: ./Dockerfile_bun
