@@ -115,7 +115,6 @@ func getEng() *promql.Engine {
 	if eng == nil || engC >= 5 {
 		eng = promql.NewEngine(promql.EngineOpts{
 			Logger:                   TestLogger{},
-			Reg:                      nil,
 			MaxSamples:               100000,
 			Timeout:                  time.Second * 30,
 			ActiveQueryTracker:       nil,
