@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /*
  * qryn: polyglot observability API
  * (C) 2018-2024 QXIP BV
