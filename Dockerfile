@@ -1,9 +1,5 @@
-# Qryn
-FROM node:16-slim
-
-# BUILD FORCE
-ENV BUILD 703030
-ENV PORT 3100
+# qryn
+FROM node:20-slim
 
 COPY . /app
 WORKDIR /app

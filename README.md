@@ -17,7 +17,7 @@
 - **Polyglot**: Use **LogQL, PromQL**, and **TempoQL** languages to query, process and alert _any data_
 - **Lightweight**: Powered by **ClickHouse** OLAP Engine + **Bun** the _fast, all-in-one_ JavaScript runtime
 - **Voracious**: Ingestion compatible with **Opentelemetry, Loki, Prometheus, Influx, Datadog, Elastic** _+ more_
-- **Versatile**: Explore data with qryn's built-in **Explore UI** and **CLI** or _native_ **Grafana** compatibility
+- **Versatile**: Explore data with qryn's built-in **View Explorer** and **CLI** or _native_ **Grafana** compatibility
 - **Secure**: Retain total control of data, using **ClickHouse** or **InfluxDB IOx** with **S3** object storage
 - **Unmetered**: Unlimited FOSS deployments or **qryn.cloud** option with advanced features and performance
 - **Indepentent**: Designed to be a stand-alone, all-in-one _Loki, Prometheus, Tempo_ drop-in alternative
@@ -39,17 +39,36 @@
 
 ## Features
 
-💡 _**qryn** independently implements popular observability standards, protocols and query languages:_
+💡 _**qryn** independently implements popular observability standards, protocols and query languages_
 
 <br>
 
+### :eye: Built-In Explorer
+
+**qryn** ships with **view** - our zero dependency, lightweight data explorer for **Logs, Metrics** and **Traces**
+
+<a href="https://qryn.dev" target="_blank">
+<img src="https://user-images.githubusercontent.com/1423657/200136242-f4133229-ee7c-45e0-8228-8734cf56140a.gif" width=700 class=border />
+</a>
+
+<br>
+
+## ➡️ Ingest
 ### 📚 OpenTelemetry
-
-⚡ **qryn** is officially integrated with [opentelemetry](https://github.com/metrico/otel-collector) supports _any log, trace or metric format_
-
+⚡ **qryn** is officially integrated with [opentelemetry](https://github.com/metrico/otel-collector) supports _any log, trace or metric format_<br>
 Ingested data can be queried using any of the avialable qryn APIs _(LogQL, PromQL, TraceQL)_
 
+> 💡 _No modifications required to your opentelemetry instrumentation!_
+
+### 📚 Native
+**qryn** supports [native ingestion](https://qryn.metrico.in/#/support) for Loki, Prometheus, Tempo/Zipkin and other protocols_<br>
+With qryn users can _push data using any combination of supported protocols_
+
+> 💡 _No opentelemetry or any other middlewayre/proxy required!_
+
 <br>
+
+## ⬅️ Query
 
 ### 📚 Loki + LogQL
 
@@ -63,7 +82,8 @@ The Grafana Loki datasource can be used to natively browse and query _logs_ and 
 <img src="https://user-images.githubusercontent.com/1423657/196654073-b84a218c-6a70-49bb-a477-e8be5714e0ba.gif" width=700 class=border />
 </a>
 
-:tada: _No plugins needed_ 
+> :tada: _No plugins needed_ <br>
+> :eye: _No Grafana? No problem! Use View_
 
 
 <br>
@@ -80,7 +100,9 @@ The Grafana Prometheus datasource can be used to natively to query _metrics_ and
 <img src="https://user-images.githubusercontent.com/1423657/196654084-1f1d8a62-3fd2-4420-a2fa-57ac2872938c.gif" width=700 class=border />
 </a>
 
-:tada: _No plugins needed_ 
+> :tada: _No plugins needed_ <br>
+> :eye: _No Grafana? No problem! Use View_
+
 
 
 <br>
@@ -97,7 +119,9 @@ The Tempo datasource can be used to natively query _traces_ including _**TraceQL
 <img src="https://user-images.githubusercontent.com/1423657/196654097-8a235253-bf5d-4937-9e78-fddf12819d44.gif" width=700 class=border />
 </a>
 
-:tada: _No plugins needed_ 
+> :tada: _No plugins needed_ <br>
+> :eye: _No Grafana? No problem! Use View_
+
 
 <br>
 
@@ -123,14 +147,6 @@ With **qryn** and **grafana** everything _just works_ right out of the box:
 <br>
 
 <br>
-
-### :eye: Explore View
-
-No Grafana? No Problem. **qryn** ships with **view** - it's own lightweight data exploration tool
-
-<a href="https://qryn.dev" target="_blank">
-<img src="https://user-images.githubusercontent.com/1423657/200136242-f4133229-ee7c-45e0-8228-8734cf56140a.gif" width=700 class=border />
-</a>
 
 ------------
 

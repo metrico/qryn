@@ -1,3 +1,10 @@
+#!/usr/bin/env bun
+
+/*
+ * qryn: polyglot observability API
+ * (C) 2018-2024 QXIP BV
+ */
+
 import { Router } from '@stricjs/router';
 import { wrapper, wsWrapper } from './lib/bun_wrapper.js';
 

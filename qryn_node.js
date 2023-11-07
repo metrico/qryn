@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /*
- * LogQL API to Clickhouse Gateway
- * (C) 2018-2022 QXIP BV
+ * qryn: polyglot observability API
+ * (C) 2018-2024 QXIP BV
  */
 
 this.readonly = process.env.READONLY || false
