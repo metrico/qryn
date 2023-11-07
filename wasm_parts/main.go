@@ -112,7 +112,7 @@ var eng *promql.Engine = nil
 var engC = 0
 
 func getEng() *promql.Engine {
-	if eng == nil || engC >= 5 {
+	if eng == nil || engC > 5 {
 		eng = promql.NewEngine(promql.EngineOpts{
 			Logger:                   TestLogger{},
 			MaxSamples:               100000,
