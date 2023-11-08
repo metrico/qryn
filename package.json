@@ -1,6 +1,6 @@
 {
   "name": "qryn",
-  "version": "3.0.10",
+  "version": "3.0.11",
   "description": "Polyglot Observability Stack with ClickHouse storage",
   "main": "qryn_node.js",
   "bin": {
