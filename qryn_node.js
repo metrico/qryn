@@ -98,7 +98,8 @@ let fastify = require('fastify')({
       '/api/v1/prom/remote/write',
       '/api/prom/remote/write',
       '/prom/remote/write',
-      '/loki/api/v1/push'
+      '/loki/api/v1/push',
+      '/api/v1/write'
     ]
     fastify.addHook('preParsing', (request, reply, payload, done) => {
       if (snappyPaths.indexOf(request.routerPath) !== -1) {
@@ -355,21 +356,20 @@ let fastify = require('fastify')({
 
   /* PROMETHEUS REMOTE WRITE Handlers */
   const promWriteHandler = require('./lib/handlers/prom_push.js').bind(this)
-  fastify.post('/api/v1/prom/remote/write', promWriteHandler, {
-    'application/x-protobuf': prometheusPushProtoParser,
-    'application/json': jsonParser,
-    '*': combinedParser(prometheusPushProtoParser, jsonParser)
-  })
-  fastify.post('/api/prom/remote/write', promWriteHandler, {
-    'application/x-protobuf': prometheusPushProtoParser,
-    'application/json': jsonParser,
-    '*': combinedParser(prometheusPushProtoParser, jsonParser)
-  })
-  fastify.post('/prom/remote/write', promWriteHandler, {
-    'application/x-protobuf': prometheusPushProtoParser,
-    'application/json': jsonParser,
-    '*': combinedParser(prometheusPushProtoParser, jsonParser)
-  })
+  const remoteWritePaths = [
+    '/api/v1/prom/remote/write',
+    '/api/prom/remote/write',
+    '/prom/remote/write',
+    '/api/v1/write'
+  ]
+  for (const path of remoteWritePaths) {
+    fastify.post(path, promWriteHandler, {
+      'application/x-protobuf': prometheusPushProtoParser,
+      'application/json': jsonParser,
+      '*': combinedParser(prometheusPushProtoParser, jsonParser)
+    })
+    fastify.get(path, handlerTempoEcho)
+  }
 
   /* PROMQETHEUS API EMULATION */
   const handlerPromQueryRange = require('./lib/handlers/prom_query_range.js').bind(this)

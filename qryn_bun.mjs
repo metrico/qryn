@@ -240,22 +240,20 @@ export default async() => {
   fastify.get('/prometheus/api/v1/rules', handlerPromGetRules)
 
   /* PROMETHEUS REMOTE WRITE Handlers */
-
-  fastify.post('/api/v1/prom/remote/write', promWriteHandler, {
-    'application/x-protobuf': prometheusPushProtoParser,
-    'application/json': jsonParser,
-    '*': combinedParser(prometheusPushProtoParser, jsonParser)
-  })
-  fastify.post('/api/prom/remote/write', promWriteHandler, {
-    'application/x-protobuf': prometheusPushProtoParser,
-    'application/json': jsonParser,
-    '*': combinedParser(prometheusPushProtoParser, jsonParser)
-  })
-  fastify.post('/prom/remote/write', promWriteHandler, {
-    'application/x-protobuf': prometheusPushProtoParser,
-    'application/json': jsonParser,
-    '*': combinedParser(prometheusPushProtoParser, jsonParser)
-  })
+  const remoteWritePaths = [
+    '/api/v1/prom/remote/write',
+    '/api/prom/remote/write',
+    '/prom/remote/write',
+    '/api/v1/write'
+  ]
+  for (const path of remoteWritePaths) {
+    fastify.post(path, promWriteHandler, {
+      'application/x-protobuf': prometheusPushProtoParser,
+      'application/json': jsonParser,
+      '*': combinedParser(prometheusPushProtoParser, jsonParser)
+    })
+    fastify.get(path, handlerTempoEcho)
+  }
 
   /* PROMQETHEUS API EMULATION */
 
