@@ -1,5 +1,5 @@
 # qryn bun builder
-FROM oven/bun:alpine
+FROM oven/bun:latest
 
 COPY . /app
 WORKDIR /app
