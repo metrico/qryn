@@ -102,7 +102,7 @@ let fastify = require('fastify')({
       '/api/v1/write'
     ]
     fastify.addHook('preParsing', (request, reply, payload, done) => {
-      if (snappyPaths.indexOf(request.routerPath) !== -1) {
+      if (snappyPaths.indexOf(request.routeOptions.url) !== -1) {
         if (request.headers['content-encoding'] === 'snappy') {
           delete request.headers['content-encoding']
         }
@@ -112,7 +112,7 @@ let fastify = require('fastify')({
     done()
   }))
   await fastify.register(require('@fastify/compress'))
-  await fastify.register(require('fastify-url-data'))
+  await fastify.register(require('@fastify/url-data'))
   await fastify.register(require('@fastify/websocket'))
 
   /* Fastify local metrics exporter */
