@@ -257,8 +257,8 @@ const parsers = {
         }
         return obj
       }
-      const parser = find(parsers._parsers, [contentType, req.routerMethod, req.routerPath]) ||
-        find(parsers._parsers, ['*', req.routerMethod, req.routerPath])
+      const parser = find(parsers._parsers, [contentType, req.routeOptions.method, req.routeOptions.url]) ||
+        find(parsers._parsers, ['*', req.routeOptions.method, req.routeOptions.url])
       if (!parser) {
         throw new Error('undefined parser')
       }
