@@ -182,7 +182,7 @@ let fastify = require('fastify')({
 
     const validate = checkAuth.bind(this)
 
-    fastify.register(require('fastify-basic-auth'), {
+    fastify.register(require('@fastify/basic-auth'), {
       validate,
       authenticate: true
     })
