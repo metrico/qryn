@@ -52,4 +52,6 @@ jobs:
         CLICKHOUSE_TSDB: qryn
         INTEGRATION_E2E: 1
         CLOKI_EXT_URL: 127.0.0.1:3100
+        QRYN_LOGIN: a
+        QRYN_PASSWORD: b
       run: node qryn.mjs >/dev/stdout & npm run test --forceExit
