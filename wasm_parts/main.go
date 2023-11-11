@@ -108,17 +108,26 @@ func transpileTraceQL(id uint32) int {
 	return 0
 }
 
-var eng = promql.NewEngine(promql.EngineOpts{
-	Logger:                   TestLogger{},
-	Reg:                      nil,
-	MaxSamples:               100000,
-	Timeout:                  time.Second * 30,
-	ActiveQueryTracker:       nil,
-	LookbackDelta:            0,
-	NoStepSubqueryIntervalFn: nil,
-	EnableAtModifier:         false,
-	EnableNegativeOffset:     false,
-})
+var eng *promql.Engine = nil
+var engC = 0
+
+func getEng() *promql.Engine {
+	if eng == nil || engC > 5 {
+		eng = promql.NewEngine(promql.EngineOpts{
+			Logger:                   TestLogger{},
+			MaxSamples:               100000,
+			Timeout:                  time.Second * 30,
+			ActiveQueryTracker:       nil,
+			LookbackDelta:            0,
+			NoStepSubqueryIntervalFn: nil,
+			EnableAtModifier:         false,
+			EnableNegativeOffset:     false,
+		})
+		engC = 0
+	}
+	engC++
+	return eng
+}
 
 //export stats
 func stats() {
@@ -129,7 +138,7 @@ func stats() {
 func pqlRangeQuery(id uint32, fromMS float64, toMS float64, stepMS float64) uint32 {
 	return pql(data[id], func() (promql.Query, error) {
 		queriable := &TestQueryable{id: id}
-		return eng.NewRangeQuery(
+		return getEng().NewRangeQuery(
 			queriable,
 			nil,
 			string(data[id].request),
@@ -144,7 +153,7 @@ func pqlRangeQuery(id uint32, fromMS float64, toMS float64, stepMS float64) uint
 func pqlInstantQuery(id uint32, timeMS float64) uint32 {
 	return pql(data[id], func() (promql.Query, error) {
 		queriable := &TestQueryable{id: id}
-		return eng.NewInstantQuery(
+		return getEng().NewInstantQuery(
 			queriable,
 			nil,
 			string(data[id].request),
@@ -155,7 +164,7 @@ func pqlInstantQuery(id uint32, timeMS float64) uint32 {
 //export pqlSeries
 func pqlSeries(id uint32) uint32 {
 	queriable := &TestQueryable{id: id}
-	query, err := eng.NewRangeQuery(
+	query, err := getEng().NewRangeQuery(
 		queriable,
 		nil,
 		string(data[id].request),
@@ -388,13 +397,13 @@ func (t *TestSeries) Next() bool {
 }
 
 func (t *TestSeries) Seek(tmMS int64) bool {
-	t.i = 0
-	ms := *(*int64)(unsafe.Pointer(&t.data[t.i*16]))
-	for ms < tmMS && t.i*16 < len(t.data) {
-		t.i++
-		ms = *(*int64)(unsafe.Pointer(&t.data[t.i*16]))
+	for t.i = 0; t.i*16 < len(t.data); t.i++ {
+		ms := *(*int64)(unsafe.Pointer(&t.data[t.i*16]))
+		if ms >= tmMS {
+			return true
+		}
 	}
-	return t.i*16 < len(t.data)
+	return false
 }
 
 func (t *TestSeries) At() (int64, float64) {

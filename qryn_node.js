@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /*
- * LogQL API to Clickhouse Gateway
- * (C) 2018-2022 QXIP BV
+ * qryn: polyglot observability API
+ * (C) 2018-2024 QXIP BV
  */
 
 this.readonly = process.env.READONLY || false
@@ -98,10 +98,11 @@ let fastify = require('fastify')({
       '/api/v1/prom/remote/write',
       '/api/prom/remote/write',
       '/prom/remote/write',
-      '/loki/api/v1/push'
+      '/loki/api/v1/push',
+      '/api/v1/write'
     ]
     fastify.addHook('preParsing', (request, reply, payload, done) => {
-      if (snappyPaths.indexOf(request.routerPath) !== -1) {
+      if (snappyPaths.indexOf(request.routeOptions.url) !== -1) {
         if (request.headers['content-encoding'] === 'snappy') {
           delete request.headers['content-encoding']
         }
@@ -111,7 +112,7 @@ let fastify = require('fastify')({
     done()
   }))
   await fastify.register(require('@fastify/compress'))
-  await fastify.register(require('fastify-url-data'))
+  await fastify.register(require('@fastify/url-data'))
   await fastify.register(require('@fastify/websocket'))
 
   /* Fastify local metrics exporter */
@@ -181,7 +182,7 @@ let fastify = require('fastify')({
 
     const validate = checkAuth.bind(this)
 
-    fastify.register(require('fastify-basic-auth'), {
+    fastify.register(require('@fastify/basic-auth'), {
       validate,
       authenticate: true
     })
@@ -355,21 +356,20 @@ let fastify = require('fastify')({
 
   /* PROMETHEUS REMOTE WRITE Handlers */
   const promWriteHandler = require('./lib/handlers/prom_push.js').bind(this)
-  fastify.post('/api/v1/prom/remote/write', promWriteHandler, {
-    'application/x-protobuf': prometheusPushProtoParser,
-    'application/json': jsonParser,
-    '*': combinedParser(prometheusPushProtoParser, jsonParser)
-  })
-  fastify.post('/api/prom/remote/write', promWriteHandler, {
-    'application/x-protobuf': prometheusPushProtoParser,
-    'application/json': jsonParser,
-    '*': combinedParser(prometheusPushProtoParser, jsonParser)
-  })
-  fastify.post('/prom/remote/write', promWriteHandler, {
-    'application/x-protobuf': prometheusPushProtoParser,
-    'application/json': jsonParser,
-    '*': combinedParser(prometheusPushProtoParser, jsonParser)
-  })
+  const remoteWritePaths = [
+    '/api/v1/prom/remote/write',
+    '/api/prom/remote/write',
+    '/prom/remote/write',
+    '/api/v1/write'
+  ]
+  for (const path of remoteWritePaths) {
+    fastify.post(path, promWriteHandler, {
+      'application/x-protobuf': prometheusPushProtoParser,
+      'application/json': jsonParser,
+      '*': combinedParser(prometheusPushProtoParser, jsonParser)
+    })
+    fastify.get(path, handlerTempoEcho)
+  }
 
   /* PROMQETHEUS API EMULATION */
   const handlerPromQueryRange = require('./lib/handlers/prom_query_range.js').bind(this)
