@@ -28,6 +28,7 @@ const { QrynBadRequest } = require('../lib/handlers/errors')
 const optimizations = require('./registry/smart_optimizations')
 const clusterName = require('../common').clusterName
 const dist = clusterName ? '_dist' : ''
+const wasm = require('../wasm_parts/main')
 
 /**
  * @param joinLabels {boolean}
@@ -156,7 +157,7 @@ module.exports.transpile = (request) => {
     'agg_statement', 'user_macro', 'parser_expression', 'label_filter_pipeline',
     'line_format_expression', 'labels_format_expression'].some(t => token.Child(t))
   let query = module.exports.initQuery(joinLabels)
-  const limit = request.limit ? request.limit : 2000
+  let limit = request.limit ? request.limit : 2000
   const order = request.direction === 'forward' ? 'asc' : 'desc'
   query.orderBy(...query.orderBy().map(o => [o[0], order]))
   const readTable = samplesReadTableName(start)
@@ -181,6 +182,10 @@ module.exports.transpile = (request) => {
       start,
       end
     }
+  }
+  if (token.Child('summary')) {
+    limit = 500000
+    query = module.exports.transpileSummary(token, query, request.limit || 2000)
   }
   switch (matrixOp) {
     case 'aggregation_operator':
@@ -232,6 +237,90 @@ module.exports.transpile = (request) => {
     duration: query.ctx && query.ctx.duration ? query.ctx.duration : 1000,
     stream: getStream(query)
   }
+}
+
+/**
+ *
+ * @param request {{
+ * query: string,
+ * limit: number,
+ * direction: string,
+ * start: string,
+ * end: string,
+ * step: string,
+ * stream?: (function(DataStream): DataStream)[],
+ * rawQuery: boolean
+ * }}
+ * @returns {{query: string, stream: (function (DataStream): DataStream)[], matrix: boolean, duration: number | undefined}}
+ */
+module.exports.transpileSummaryETL = (request) => {
+  const expression = compiler.ParseScript(request.query.trim())
+  const root = expression.rootToken
+  if (!root.Child('summary')) {
+    throw new QrynBadRequest('request should be a summary expression')
+  }
+  const selector = root.Child('log_stream_selector')
+  const _request = {
+    ...request,
+    query: selector.value,
+    rawQuery: true
+  }
+  const byWithout = root.Child('by_without').value
+  const labels = "['" + root.Child('label_list').Children('label').map(l => l.value).join("','") + "']"
+  const exp = byWithout === 'by' ? '== 1' : '!= 1'
+
+  const query = module.exports.transpile(_request)
+  query.query = (new Sql.Select())
+    .select(
+      [new Sql.Raw(`arrayFilter(x -> has(${labels}, x.1) ${exp}, labels)`), 'labels'],
+      [new Sql.Raw('cityHash64(labels)'), 'fingerprint'],
+      'string',
+      'timestamp_ns')
+    .from(query.query)
+  return {
+    ...query,
+    query: query.query.toString()
+  }
+}
+
+module.exports.transpileSummary = (token, query, limit) => {
+  query = module.exports.transpileLogStreamSelector(token.Child('log_stream_selector'), query)
+  query.ctx = query.ctx || {}
+  query.ctx.stream = query.ctx.stream || []
+  const summary = wasm.startSummary()
+  let maxTimestamp = BigInt(0)
+  query.ctx.stream.push(
+    /**
+     *
+     * @param s {DataStream}
+     */
+    (s) => s.remap((emit, e) => {
+      if (!e || e.EOF) {
+        let _summary = summary.getSummary()
+        _summary.sort((a, b) => b.pattern.messages - a.pattern.messages)
+        const messagesCount = _summary.reduce((acc, msg) => acc + msg.pattern.messages, 0)
+        console.log(0, limit)
+        _summary = _summary.slice(0, limit || 2000)
+        console.log(_summary)
+        _summary.forEach(m => emit({
+          labels: { level: m.key.level.toString() },
+          string: `${m.pattern.messages} (${Math.floor(m.pattern.messages / messagesCount * 100)}%) ${m.pattern.sample}`,
+          fingerprint: 0,
+          timestamp_ns: maxTimestamp.toString()
+        }))
+        emit({ EOF: true })
+        summary.destroy()
+        return
+      }
+      if (e.string) {
+        summary.add([e.string])
+        if (maxTimestamp < BigInt(e.timestamp_ns)) {
+          maxTimestamp = BigInt(e.timestamp_ns)
+        }
+      }
+    })
+  )
+  return query
 }
 
 /**

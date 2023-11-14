@@ -1,4 +1,4 @@
-<SYNTAX> ::= <log_stream_selector> | <agg_statement> | <user_macro>
+<SYNTAX> ::= <log_stream_selector> | <agg_statement> | <summary> | <user_macro>
 
 log_stream_fp_selector ::= "{" <OWSP> <log_stream_selector_rule> *(<OWSP> "," <OWSP> <log_stream_selector_rule>) <OWSP> "}"
 log_stream_selector ::= <log_stream_fp_selector> <OWSP> *(<OWSP><log_pipeline>)
@@ -75,3 +75,5 @@ parameterized_unwrapped_expression_fn ::= <parameterized_unwrapped_registry>
 parameterized_expression ::= <parameterized_expression_fn><OWSP>"("<OWSP><parameter_value><OWSP>","<OWSP>(<agg_statement>|<parameterized_unwrapped_expression>)<OWSP>")" [<OWSP> <compared_agg_statement_cmp>]
 parameter_value ::= <NUMBER>
 parameterized_expression_fn ::= <parameterized_aggregation_registry>
+
+summary ::= "summary" [<OWSP> <req_by_without>] <OWSP> "(" <OWSP> <log_stream_selector> <OWSP> ")" [<OWSP> <req_by_without>]

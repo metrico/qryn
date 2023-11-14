@@ -6,8 +6,11 @@ const { gunzipSync } = require('zlib')
 
 class WasmError extends Error {}
 module.exports.WasmError = WasmError
+module.exports.ResetWasm = true
 
 let counter = 0
+
+let Init = null
 
 const getWasm = (() => {
   const _Go = Go
@@ -25,9 +28,10 @@ const getWasm = (() => {
     cnt = 0
     run = false
   }
+  Init = init
   init()
   return () => {
-    if (cnt >= 20 && !run) {
+    if (cnt >= 20 && !run && module.exports.ResetWasm) {
       init()
     }
     cnt++
@@ -39,6 +43,10 @@ const newId = () => {
   const id = counter
   counter = (counter + 1) & 0xFFFFFFFF
   return id
+}
+
+module.exports.reinit = () => {
+  Init()
 }
 
 /**
@@ -136,6 +144,80 @@ module.exports.TranspileTraceQL = (request) => {
 }
 
 /**
+ * @returns {{
+ *   id: number,
+ *   add: (logs: string[]) => void,
+ *   getSummary: () => any,
+ *   destroy: () => void
+ * }}
+ */
+module.exports.startSummary = () => {
+  const id = newId()
+  const _wasm = getWasm()
+  const ctx = new Ctx(id, _wasm)
+  ctx.createSummary()
+  return {
+    id: id,
+    add: (logs) => {
+      logs = logs.filter(l => l && l.length)
+      if (!logs.length) {
+        return
+      }
+      const w = new Uint8ArrayWriter(new Uint8Array(1024))
+      for (const log of logs) {
+        w.writeString(log)
+      }
+      ctx.write(w.buffer())
+      _wasm.exports.onDataLoad(id)
+    },
+    getSummary: () => {
+      const res1 = _wasm.exports.getPatterns(id)
+      if (res1 !== 0) {
+        throw new WasmError(ctx.read())
+      }
+      return JSON.parse(ctx.read())
+    },
+    destroy: () => {
+      ctx.destroy()
+    }
+  }
+}
+
+/**
+ *
+ * @param id {number}
+ * @param logs {string[]}
+ */
+module.exports.summaryLogs = (id, logs) => {
+  logs = logs.filter(l => l && l.length)
+  if (!logs.length) {
+    return
+  }
+  const _wasm = getWasm()
+  const ctx = new Ctx(id, _wasm)
+  const w = new Uint8ArrayWriter(new Uint8Array(1024))
+  for (const log of logs) {
+    w.writeString(log)
+  }
+  ctx.write(w.buffer())
+  _wasm.exports.onDataLoad(id)
+}
+
+/**
+ *
+ * @param id {number}
+ */
+module.exports.getSummary = (id) => {
+  const _wasm = getWasm()
+  const ctx = new Ctx(id, _wasm)
+  const res1 = _wasm.exports.getPatterns(id)
+  if (res1 !== 0) {
+    throw new WasmError(ctx.read())
+  }
+  return JSON.parse(ctx.read())
+}
+
+/**
  *
  * @param query {string}
  * @param wasmCall {function}
@@ -184,20 +266,17 @@ class Ctx {
   }
 
   create () {
-    try {
-      this.wasm.exports.createCtx(this.id)
-      this.created = true
-    } catch (err) {
-      throw err
-    }
+    this.wasm.exports.createCtx(this.id)
+    this.created = true
+  }
+
+  createSummary () {
+    this.wasm.exports.createSummary(this.id)
+    this.created = true
   }
 
   destroy () {
-    try {
-      if (this.created) this.wasm.exports.dealloc(this.id)
-    } catch (err) {
-      throw err
-    }
+    if (this.created) this.wasm.exports.dealloc(this.id)
   }
 
   /**

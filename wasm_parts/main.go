@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"github.com/coroot/logparser"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/promql"
 	"github.com/prometheus/prometheus/promql/parser"
@@ -20,6 +22,7 @@ import (
 
 type ctx struct {
 	onDataLoad func(c *ctx)
+	onClose    func(c *ctx)
 	request    []byte
 	response   []byte
 }
@@ -39,7 +42,13 @@ func alloc(id uint32, size int) *byte {
 
 //export dealloc
 func dealloc(id uint32) {
-	delete(data, id)
+	ctx := data[id]
+	if ctx != nil {
+		if ctx.onClose != nil {
+			ctx.onClose(ctx)
+		}
+		delete(data, id)
+	}
 }
 
 //export getCtxRequest
@@ -108,11 +117,120 @@ func transpileTraceQL(id uint32) int {
 	return 0
 }
 
+//export createSummary
+func createSummary(id uint32) int {
+	_parser := logparser.NewParser(nil, nil)
+	data[id] = &ctx{
+		onDataLoad: func(c *ctx) {
+			if c.request[0] == 0 {
+				switch c.request[1] {
+				case 1:
+					res := bytes.Buffer{}
+					res.WriteString("[")
+					patterns := _parser.GetPatterns()
+					i := 0
+					for key, pattern := range patterns {
+						if pattern.Pattern == nil {
+							continue
+						}
+						if i > 0 {
+							res.WriteString(",")
+						}
+						res.WriteString(fmt.Sprintf(`{"key":{"hash":%s, "level":%d},"pattern":`,
+							strconv.Quote(key.Hash),
+							int(key.Level)))
+						res.WriteString(fmt.Sprintf(`{"sample":%s,"messages":%d,"pattern":`,
+							strconv.Quote(pattern.Sample),
+							pattern.Messages))
+						str := ""
+
+						if pattern.Pattern.Str != nil {
+							str = *pattern.Pattern.Str
+						}
+						res.WriteString(fmt.Sprintf(`{"str":%s,"hash":%s,"words": [`,
+							strconv.Quote(str),
+							strconv.Quote(pattern.Pattern.Hash())))
+						for j, w := range pattern.Pattern.Words {
+							if j > 0 {
+								res.WriteString(",")
+							}
+							res.WriteString(strconv.Quote(w))
+						}
+						res.WriteString(`]}}}`)
+						i++
+					}
+					res.WriteString("]")
+					c.response = res.Bytes()
+				case 2:
+					binReader := BinaryReader{
+						buffer: c.request[2:],
+						i:      0,
+					}
+					for uint32(len(c.request))-binReader.i > 4 {
+						level := binReader.ReadUInt32()
+						hash := binReader.ReadString()
+						sample := binReader.ReadString()
+						messages := binReader.ReadUInt32()
+						words := binReader.ReadStringArray()
+						str := binReader.ReadString()
+						key := logparser.PatternKey{
+							Level: logparser.Level(level),
+							Hash:  hash,
+						}
+						pattern := logparser.Pattern{
+							Words: words,
+							Str:   &str,
+						}
+						patternStat := logparser.PatternStat{
+							Pattern:  &pattern,
+							Sample:   sample,
+							Messages: int(messages),
+						}
+						_parser.Merge(key, patternStat)
+					}
+				}
+				return
+			}
+			binReader := BinaryReader{
+				buffer: c.request,
+				i:      0,
+			}
+			for binReader.i < uint32(len(c.request)) {
+				entry := logparser.LogEntry{
+					Timestamp: time.Now(),
+					Content:   binReader.ReadString(),
+					Level:     logparser.LevelUnknown,
+				}
+				_parser.NewLogEntry(entry)
+			}
+		},
+		onClose: func(c *ctx) {
+		},
+	}
+	return 0
+}
+
+//export getPatterns
+func getPatterns(id uint32) int {
+	ctx := data[id]
+	ctx.request = []byte{0, 1}
+	ctx.onDataLoad(ctx)
+	return 0
+}
+
+//export mergePatterns
+func mergePatterns(id uint32) int {
+	ctx := data[id]
+	ctx.request = append([]byte{0, 2}, ctx.request...)
+	ctx.onDataLoad(ctx)
+	return 0
+}
+
 var eng *promql.Engine = nil
 var engC = 0
 
 func getEng() *promql.Engine {
-	if eng == nil || engC > 5 {
+	/*if eng == nil {
 		eng = promql.NewEngine(promql.EngineOpts{
 			Logger:                   TestLogger{},
 			MaxSamples:               100000,
@@ -125,8 +243,17 @@ func getEng() *promql.Engine {
 		})
 		engC = 0
 	}
-	engC++
-	return eng
+	engC++*/
+	return promql.NewEngine(promql.EngineOpts{
+		Logger:                   TestLogger{},
+		MaxSamples:               100000,
+		Timeout:                  time.Second * 30,
+		ActiveQueryTracker:       nil,
+		LookbackDelta:            0,
+		NoStepSubqueryIntervalFn: nil,
+		EnableAtModifier:         false,
+		EnableNegativeOffset:     false,
+	})
 }
 
 //export stats
@@ -429,6 +556,12 @@ type BinaryReader struct {
 	i      uint32
 }
 
+func (b *BinaryReader) ReadUInt32() uint32 {
+	res := *(*uint32)(unsafe.Pointer(&b.buffer[b.i]))
+	b.i += 4
+	return res
+}
+
 func (b *BinaryReader) ReadULeb32() uint32 {
 	var res uint32
 	i := uint32(0)
@@ -472,6 +605,15 @@ func (b *BinaryReader) ReadByteArray() []byte {
 	ln := b.ReadULeb32()
 	res := b.buffer[b.i : b.i+ln]
 	b.i += ln
+	return res
+}
+
+func (b *BinaryReader) ReadStringArray() []string {
+	ln := b.ReadULeb32()
+	res := make([]string, ln)
+	for i := uint32(0); i < ln; i++ {
+		res[i] = b.ReadString()
+	}
 	return res
 }
 
