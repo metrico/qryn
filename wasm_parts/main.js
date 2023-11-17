@@ -271,6 +271,7 @@ class Uint8ArrayWriter {
   writeString (str) {
     const bStr = (new TextEncoder()).encode(str)
     this.writeULeb(bStr.length)
+    this.maybeGrow(bStr.length)
     this.buf.set(bStr, this.i)
     this.i += bStr.length
     return this
