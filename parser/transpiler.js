@@ -302,18 +302,19 @@ module.exports.transpileSummary = (token, query, limit) => {
   query.ctx = query.ctx || {}
   query.ctx.stream = query.ctx.stream || []
   const withQ = new Sql.With('sum_a', query)
+  const guessLevelCHExp = 'map(\'\', \'unknown\', \'debu\', \'debug\', \'info\', \'info\', \'warn\', \'warning\', \'erro\', \'error\', \'crit\', \'critical\', \'fata\', \'fatal\', \'I\', \'info\', \'W\', \'warning\', \'E\', \'error\', \'F\', \'fatal\')[arrayFirst(x -> notEmpty(x) , [lowerUTF8(regexpExtract(sum_a.string, \'(?i)(^|\\\\s|[\\]);|:,.])([\\[(<\\\']|Level=)?(debu|info|warn|erro|crit|fata)\', 3)), extract(sum_a.string, \'^([IWEF])[0-9]{4}(\\\\s|\\\\p{P})\')])]'
   query = (new Sql.Select()).with(withQ).select(
     [query.getParam(sharedParamNames.to), 'timestamp_ns'],
-    [new Sql.Raw('\'[]\'::Array(Tuple(String,String))'), 'labels'],
+    [new Sql.Raw('[(\'level\', _level)]::Array(Tuple(String,String))'), 'labels'],
     [new Sql.Raw("format('{} ({}%): {}', toString(_c), toString(round(toFloat64(_c) / _overall * 100, 3)), min(sum_a.string))"), 'string'],
     [new Sql.Raw('0'), 'value'],
-    [new Sql.Raw('count()'), '_c'],
+    '_c',
     [new Subquery((new Sql.Select()).select(new Sql.Raw('count()')).from(new Sql.WithReference(withQ))), '_overall']
   ).from(new Sql.WithReference(withQ))
     .groupBy(new Sql.Raw(
-      '(arrayReduce(\'sum\', arrayMap(x -> cityHash64(lowerUTF8(x[2])), extractAllGroupsVertical(sum_a.string, \'(^|\\\\p{P}|\\\\s)([a-zA-Z]+)(\\\\p{P}|$|\\\\s)\')) as a),\n' +
-      '    arrayReduce(\'groupBitXor\', a), toUInt64(arrayProduct(arrayMap(x -> x*2+1, a))))'))
-    .orderBy([new Sql.Raw('count()', 'desc'), 'DESC'])
+      '(arrayReduce(\'sum\', arrayMap(x -> cityHash64(lowerUTF8(x[2])), extractAllGroupsVertical(sum_a.string, \'(^|\\\\p{P}|\\\\s)([a-zA-Z]+)(\\\\p{P}|$|\\\\s)\')) as a),' +
+      '  arrayReduce(\'groupBitXor\', a), toUInt64(arrayProduct(arrayMap(x -> x*2+1, a))), ' + guessLevelCHExp + ' as _level)'))
+    .orderBy([new Sql.Raw('count() as _c'), 'DESC'])
     .limit(limit || 2000)
   return query
 }
