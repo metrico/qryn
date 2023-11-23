@@ -76,4 +76,4 @@ parameterized_expression ::= <parameterized_expression_fn><OWSP>"("<OWSP><parame
 parameter_value ::= <NUMBER>
 parameterized_expression_fn ::= <parameterized_aggregation_registry>
 
-summary ::= "summary" [<OWSP> <req_by_without>] <OWSP> "(" <OWSP> <log_stream_selector> <OWSP> ")" [<OWSP> <req_by_without>]
+summary ::= "summary" <OWSP> "(" <OWSP> <log_stream_selector> <OWSP> ")"

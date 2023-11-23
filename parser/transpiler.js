@@ -155,7 +155,7 @@ module.exports.transpile = (request) => {
   }
   const joinLabels = ['unwrap_function', 'log_range_aggregation', 'aggregation_operator',
     'agg_statement', 'user_macro', 'parser_expression', 'label_filter_pipeline',
-    'line_format_expression', 'labels_format_expression'].some(t => token.Child(t))
+    'line_format_expression', 'labels_format_expression', 'summary'].some(t => token.Child(t))
   let query = module.exports.initQuery(joinLabels)
   let limit = request.limit ? request.limit : 2000
   const order = request.direction === 'forward' ? 'asc' : 'desc'
@@ -168,7 +168,7 @@ module.exports.transpile = (request) => {
     inline: !!clusterName
   }
   let duration = null
-  const matrixOp = [
+  let matrixOp = [
     'aggregation_operator',
     'unwrap_function',
     'log_range_aggregation',
@@ -183,10 +183,7 @@ module.exports.transpile = (request) => {
       end
     }
   }
-  if (token.Child('summary')) {
-    limit = 500000
-    query = module.exports.transpileSummary(token, query, request.limit || 2000)
-  }
+  matrixOp = matrixOp || (token.Child('summary') && 'summary')
   switch (matrixOp) {
     case 'aggregation_operator':
       query = module.exports.transpileAggregationOperator(token, query)
@@ -199,6 +196,11 @@ module.exports.transpile = (request) => {
       break
     case 'parameterized_unwrapped_expression':
       query = module.exports.transpileParameterizedUnwrappedExpression(token, query)
+      break
+    case 'summary':
+      query.ctx.matrix = false
+      query = module.exports.transpileSummary(token, query, request.limit || 2000)
+      setQueryParam(query, sharedParamNames.limit, undefined)
       break
     default:
       // eslint-disable-next-line no-case-declarations
@@ -230,7 +232,7 @@ module.exports.transpile = (request) => {
   setQueryParam(query, sharedParamNames.from, start + '000000')
   setQueryParam(query, sharedParamNames.to, end + '000000')
   setQueryParam(query, 'isMatrix', query.ctx.matrix)
-  logger.debug(query.toString())
+  console.log(query.toString())
   return {
     query: request.rawQuery ? query : query.toString(),
     matrix: !!query.ctx.matrix,
@@ -283,43 +285,36 @@ module.exports.transpileSummaryETL = (request) => {
   }
 }
 
+class Subquery extends Sql.Raw {
+  constructor (sel) {
+    super()
+    this.sel = sel
+  }
+
+  toString () {
+    return '(' + this.sel + ')'
+  }
+}
+
 module.exports.transpileSummary = (token, query, limit) => {
   query = module.exports.transpileLogStreamSelector(token.Child('log_stream_selector'), query)
+  query.limit()
   query.ctx = query.ctx || {}
   query.ctx.stream = query.ctx.stream || []
-  const summary = wasm.startSummary()
-  let maxTimestamp = BigInt(0)
-  query.ctx.stream.push(
-    /**
-     *
-     * @param s {DataStream}
-     */
-    (s) => s.remap((emit, e) => {
-      if (!e || e.EOF) {
-        let _summary = summary.getSummary()
-        _summary.sort((a, b) => b.pattern.messages - a.pattern.messages)
-        const messagesCount = _summary.reduce((acc, msg) => acc + msg.pattern.messages, 0)
-        console.log(0, limit)
-        _summary = _summary.slice(0, limit || 2000)
-        console.log(_summary)
-        _summary.forEach(m => emit({
-          labels: { level: m.key.level.toString() },
-          string: `${m.pattern.messages} (${Math.floor(m.pattern.messages / messagesCount * 100)}%) ${m.pattern.sample}`,
-          fingerprint: 0,
-          timestamp_ns: maxTimestamp.toString()
-        }))
-        emit({ EOF: true })
-        summary.destroy()
-        return
-      }
-      if (e.string) {
-        summary.add([e.string])
-        if (maxTimestamp < BigInt(e.timestamp_ns)) {
-          maxTimestamp = BigInt(e.timestamp_ns)
-        }
-      }
-    })
-  )
+  const withQ = new Sql.With('sum_a', query)
+  query = (new Sql.Select()).with(withQ).select(
+    [query.getParam(sharedParamNames.to), 'timestamp_ns'],
+    [new Sql.Raw('\'[]\'::Array(Tuple(String,String))'), 'labels'],
+    [new Sql.Raw("format('{} ({}%): {}', toString(_c), toString(round(toFloat64(_c) / _overall * 100, 3)), min(sum_a.string))"), 'string'],
+    [new Sql.Raw('0'), 'value'],
+    [new Sql.Raw('count()'), '_c'],
+    [new Subquery((new Sql.Select()).select(new Sql.Raw('count()')).from(new Sql.WithReference(withQ))), '_overall']
+  ).from(new Sql.WithReference(withQ))
+    .groupBy(new Sql.Raw(
+      '(arrayReduce(\'sum\', arrayMap(x -> cityHash64(lowerUTF8(x[2])), extractAllGroupsVertical(sum_a.string, \'(^|\\\\p{P}|\\\\s)([a-zA-Z]+)(\\\\p{P}|$|\\\\s)\')) as a),\n' +
+      '    arrayReduce(\'groupBitXor\', a), toUInt64(arrayProduct(arrayMap(x -> x*2+1, a))))'))
+    .orderBy([new Sql.Raw('count()', 'desc'), 'DESC'])
+    .limit(limit || 2000)
   return query
 }
 
