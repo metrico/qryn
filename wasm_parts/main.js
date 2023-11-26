@@ -167,8 +167,6 @@ const pql = async (query, wasmCall, getData) => {
       writer.writeString(JSON.stringify(matchers))
       writer.writeBytes([data])
     }
-    fs.writeFileSync('req.txt', query)
-    fs.writeFileSync('data.bin', writer.buffer())
     ctx.write(writer.buffer())
     _wasm.exports.onDataLoad(reqId)
     return ctx.read()
@@ -273,7 +271,7 @@ class Uint8ArrayWriter {
   writeString (str) {
     const bStr = (new TextEncoder()).encode(str)
     this.writeULeb(bStr.length)
-    this.maybeGrow(b.length)
+    this.maybeGrow(bStr.length)
     this.buf.set(bStr, this.i)
     this.i += bStr.length
     return this
