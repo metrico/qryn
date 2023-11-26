@@ -381,3 +381,7 @@ it('should transpile series', () => {
   const res = transpiler.transpileSeries(['{test_id="123"}'])
   expect(res).toMatchSnapshot()
 })
+
+it('should transpile summary', () => {
+  console.log(transpiler.transpile({query: 'summary({sender="logtest"})'}).query)
+})
