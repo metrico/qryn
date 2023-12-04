@@ -315,14 +315,16 @@ export default async() => {
   const serveView = fs.existsSync(path.join(__dirname, 'view/index.html'))
   if (serveView) {
     app.plug(group(path.join(__dirname, 'view')));
+    for (const fakePath of ['/plugins', '/users', '/datasources', '/datasources/:ds']) {
+      app.get(fakePath,
+        (ctx) =>
+          file(path.join(__dirname, 'view', 'index.html'))(ctx))
+    }
   }
 
   app.use(404, (ctx) => {
     if (ctx.error && ctx.error.name === 'UnauthorizedError') {
       return new Response(ctx.error.message, {status: 401, headers: { 'www-authenticate': 'Basic' }})
-    }
-    if (serveView) {
-      return file(path.join(__dirname, 'view', 'index.html'))(ctx);
     }
     return wrapper(handle404)
   })
