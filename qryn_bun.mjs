@@ -54,6 +54,8 @@ import handlerDelGroup from './lib/handlers/alerts/del_group.js'
 import handlerDelNS from './lib/handlers/alerts/del_ns.js'
 import handlerPromGetRules from './lib/handlers/alerts/prom_get_rules.js'
 import handlerTail from './lib/handlers/tail.js'
+import handlerTempoLabelV2 from './lib/handlers/tempo_v2_tags'
+import handlerTempoLabelV2Values from './lib/handlers/tempo_v2_values'
 
 import { readonly } from './common.js'
 import DATABASE, { init } from './lib/db/clickhouse.js'
@@ -311,6 +313,11 @@ export default async() => {
   fastify.post('/v1/traces', handlerOTLPPush, {
     '*': otlpPushProtoParser
   })
+
+  fastify.get('/api/v2/search/tags', handlerTempoLabelV2)
+  fastify.get('/tempo/api/v2/search/tags', handlerTempoLabelV2)
+  fastify.get('/api/v2/search/tag/:name/values', handlerTempoLabelV2Values)
+  fastify.get('/tempo/api/v2/search/tag/:name/values', handlerTempoLabelV2Values)
 
   const serveView = fs.existsSync(path.join(__dirname, 'view/index.html'))
   if (serveView) {
