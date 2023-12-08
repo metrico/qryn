@@ -40,6 +40,7 @@ jobs:
     - run: git submodule init
     - run: git submodule update
     - run: docker-compose -f docker/e2e/docker-compose-cluster.yaml up -d
+    - run: sleep 5
     - name: Workflow Telemetry
       uses: runforesight/workflow-telemetry-action@v1.8.7      
     - env:
