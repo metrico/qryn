@@ -18,6 +18,8 @@ import (
 	"wasm_parts/types"
 )
 
+var maxSamples = 5000000
+
 type ctx struct {
 	onDataLoad func(c *ctx)
 	request    []byte
@@ -115,7 +117,7 @@ func getEng() *promql.Engine {
 	if eng == nil || engC > 5 {
 		eng = promql.NewEngine(promql.EngineOpts{
 			Logger:                   TestLogger{},
-			MaxSamples:               100000,
+			MaxSamples:               maxSamples,
 			Timeout:                  time.Second * 30,
 			ActiveQueryTracker:       nil,
 			LookbackDelta:            0,
@@ -127,6 +129,11 @@ func getEng() *promql.Engine {
 	}
 	engC++
 	return eng
+}
+
+//export setMaxSamples
+func setMaxSamples(maxSpl int) {
+	maxSamples = maxSpl
 }
 
 //export stats

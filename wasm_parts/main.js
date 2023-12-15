@@ -22,6 +22,7 @@ const getWasm = (() => {
       gunzipSync(fs.readFileSync(WASM_URL)), go.importObject)
     go.run(_wasm.instance)
     wasm = _wasm.instance
+    wasm.exports.setMaxSamples(process.env.ADVANCED_PROMETHEUS_MAX_SAMPLES || 5000000)
     cnt = 0
     run = false
   }
