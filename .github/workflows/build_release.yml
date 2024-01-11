@@ -18,11 +18,7 @@ jobs:
         with:
           ref: ${{ github.ref }}
       - name: Update Package to Release version
-        uses: QXIP/action-update-version@1.0.1
-        with:
-          files: 'package.json'
-          version-regexp: '\d+.\d+.\d+'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+        uses: technote-space/package-version-check-action@v1.9.3
       - name: Check NPM secret presence
         id: checksecrets
         shell: bash
