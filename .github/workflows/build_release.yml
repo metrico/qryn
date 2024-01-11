@@ -18,7 +18,7 @@ jobs:
         with:
           ref: ${{ github.ref }}
       - name: Update Package to Release version
-        uses: pocket-apps/action-update-version@v1
+        uses: QXIP/action-update-version@1.0.1
         with:
           files: 'package.json'
           version-regexp: '\d+.\d+.\d+'
