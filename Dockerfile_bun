@@ -4,6 +4,11 @@ FROM oven/bun:latest
 COPY . /app
 WORKDIR /app
 RUN rm -rf package-lock.json
+
+RUN groupadd -r qryn && useradd -r -g qryn -m qryn && chown -R qryn:qryn /app
+
+USER qryn
+
 RUN bun install
 
 # Expose Ports

@@ -1,0 +1,7 @@
+[install]
+optional = true
+dev = false
+peer = true
+frozenLockfile = false
+dryRun = false
+concurrentScripts = 1 # (cpu count or GOMAXPROCS) x2
