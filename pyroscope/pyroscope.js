@@ -9,11 +9,13 @@ const compiler = require('../parser/bnf')
 const { createFlameGraph, readULeb32 } = require('./pprof')
 const pprofBin = require('./pprof-bin/pkg/pprof_bin')
 
+const HISTORY_TIMESPAN = 1000 * 60 * 60 * 24 * 7
+
 const profileTypesHandler = async (req, res) => {
   const _res = new messages.ProfileTypesResponse()
   const fromTimeSec = req.body && req.body.getStart
     ? parseInt(req.body.getStart()) / 1000
-    : (Date.now() - 1000 * 60 * 60 * 48) / 1000
+    : (Date.now() - HISTORY_TIMESPAN) / 1000
   const toTimeSec = req.body && req.body.getEnd
     ? parseInt(req.body.getEnd()) / 1000
     : Date.now() / 1000
@@ -38,7 +40,7 @@ WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDa
 const labelNames = async (req, res) => {
   const fromTimeSec = req.body && req.body.getStart
     ? parseInt(req.body.getStart()) / 1000
-    : (Date.now() - 1000 * 60 * 60 * 48) / 1000
+    : (Date.now() - HISTORY_TIMESPAN) / 1000
   const toTimeSec = req.body && req.body.getEnd
     ? parseInt(req.body.getEnd()) / 1000
     : Date.now() / 1000
@@ -57,7 +59,7 @@ const labelValues = async (req, res) => {
     : ''
   const fromTimeSec = req.body && req.body.getStart && req.body.getStart()
     ? parseInt(req.body.getStart()) / 1000
-    : (Date.now() - 1000 * 60 * 60 * 48) / 1000
+    : (Date.now() - HISTORY_TIMESPAN) / 1000
   const toTimeSec = req.body && req.body.getEnd && req.body.getEnd()
     ? parseInt(req.body.getEnd()) / 1000
     : Date.now() / 1000
