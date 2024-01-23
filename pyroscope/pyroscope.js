@@ -8,6 +8,7 @@ const { pyroscopeSelectMergeStacktraces } = require('../wasm_parts/main')
 const compiler = require('../parser/bnf')
 const { createFlameGraph, readULeb32 } = require('./pprof')
 const pprofBin = require('./pprof-bin/pkg/pprof_bin')
+const { QrynBadRequest } = require('../lib/handlers/errors')
 
 const HISTORY_TIMESPAN = 1000 * 60 * 60 * 24 * 7
 
@@ -100,6 +101,48 @@ const parser = (MsgClass) => {
 
 let ctxIdx = 0
 
+/**
+ *
+ * @param {Sql.Select} query
+ * @param {string} labelSelector
+ */
+const labelSelectorQuery = (query, labelSelector) => {
+  if (!labelSelector || !labelSelector.length || labelSelector === '{}') {
+    return query
+  }
+  const labelSelectorScript = compiler.ParseScript(labelSelector).rootToken
+  const labelsConds = []
+  for (const rule of labelSelectorScript.Children('log_stream_selector_rule')) {
+    const val = JSON.parse(rule.Child('quoted_str').value)
+    let valRul = null
+    switch (rule.Child('operator').value) {
+      case '=':
+        valRul = Sql.Eq(new Sql.Raw('val'), Sql.val(val))
+        break
+      case '!=':
+        valRul = Sql.Ne(new Sql.Raw('val'), Sql.val(val))
+        break
+      case '=~':
+        valRul = Sql.Eq(`match(val, ${Sql.quoteVal(val)})`, 1)
+        break
+      case '!~':
+        valRul = Sql.Ne(`match(val, ${Sql.quoteVal(val)})`, 1)
+    }
+    const labelSubCond = Sql.And(
+      Sql.Eq('key', Sql.val(rule.Child('label').value)),
+      valRul
+    )
+    labelsConds.push(labelSubCond)
+  }
+  query.where(Sql.Or(...labelsConds))
+  query.having(Sql.Eq(
+    new Sql.Raw(labelsConds.map((cond, i) => {
+      return `bitShiftLeft(toUInt64(${cond}), ${i})`
+    }).join('+')),
+    new Sql.Raw(`bitShiftLeft(toUInt64(1), ${labelsConds.length})-1`)
+  ))
+}
+
 const selectMergeStacktraces = async (req, res) => {
   const typeRe = req.body.getProfileTypeid().match(/^(.+):([^:]+):([^:]+)$/)
   const sel = req.body.getLabelSelector()
@@ -109,7 +152,6 @@ const selectMergeStacktraces = async (req, res) => {
   const toTimeSec = req.body && req.body.getEnd()
     ? Math.floor(parseInt(req.body.getEnd()) / 1000)
     : Math.floor(Date.now() / 1000)
-  const query = sel ? compiler.ParseScript(sel).rootToken : null
   const idxSelect = (new Sql.Select())
     .select('fingerprint')
     .from('profiles_series_gin')
@@ -121,24 +163,7 @@ const selectMergeStacktraces = async (req, res) => {
         Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`))
       )
     ).groupBy('fingerprint')
-  if (query) {
-    const labelsConds = []
-    for (const rule of query.Children('log_stream_selector_rule')) {
-      const val = JSON.parse(rule.Child('quoted_str').value)
-      const labelSubCond = Sql.And(
-        Sql.Eq('key', Sql.val(rule.Child('label').value)),
-        Sql.Eq('val', Sql.val(val))
-      )
-      labelsConds.push(labelSubCond)
-    }
-    idxSelect.where(Sql.Or(...labelsConds))
-    idxSelect.having(Sql.Eq(
-      new Sql.Raw(labelsConds.map((cond, i) => {
-        return `bitShiftLeft(toUInt64(${cond}), ${i})`
-      }).join('+')),
-      new Sql.Raw(`bitShiftLeft(toUInt64(1), ${labelsConds.length})-1`)
-    ))
-  }
+  labelSelectorQuery(idxSelect, sel)
   const sqlReq = (new Sql.Select())
     .select('payload')
     .from('profiles')
@@ -178,9 +203,128 @@ const selectMergeStacktraces = async (req, res) => {
   return res.code(200).send(Buffer.from(sResp))
 }
 
-const selectSeries = (req, res) => {
+const selectSeries = async (req, res) => {
+  const _req = req.body
+  const fromTimeSec = Math.floor(req.getStart && req.getStart()
+    ? parseInt(req.getStart()) / 1000
+    : Date.now() / 1000 - HISTORY_TIMESPAN)
+  const toTimeSec = Math.floor(req.getEnd && req.getEnd()
+    ? parseInt(req.getEnd()) / 1000
+    : Date.now() / 1000)
+  let typeId = _req.getProfileTypeid && _req.getProfileTypeid()
+  if (!typeId) {
+    throw new QrynBadRequest('No type provided')
+  }
+  typeId = typeId.match(/^(.+):([^:]+):([^:]+)$/)
+  if (!typeId) {
+    throw new QrynBadRequest('Invalid type provided')
+  }
+  const sampleTypeId = typeId[2] + ':' + typeId[3]
+  const labelSelector = _req.getLabelSelector && _req.getLabelSelector()
+  let groupBy = _req.getGroupByList && _req.getGroupByList()
+  groupBy = groupBy && groupBy.length ? groupBy : null
+  const step = _req.getStep && parseInt(_req.getStep())
+  if (!step || isNaN(step)) {
+    throw new QrynBadRequest('No step provided')
+  }
+  const aggregation = _req.getAggregation && _req.getAggregation()
+
+  const idxReq = (new Sql.Select())
+    .select(new Sql.Raw('fingerprint'))
+    .from('profiles_series_gin')
+    .where(
+      Sql.And(
+        Sql.Eq('type_id', Sql.val(typeId[1])),
+        Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
+        Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`)),
+        Sql.Eq(new Sql.Raw(
+          `has(sample_types_units, (${Sql.quoteVal(typeId[2])}, ${Sql.quoteVal(typeId[3])}))`),
+        1)
+      )
+    )
+  labelSelectorQuery(idxReq, labelSelector)
+
+  const withIdxReq = (new Sql.With('idx', idxReq, false))
+
+  let tagsReq = 'arraySort(p.tags)'
+  if (groupBy) {
+    tagsReq = `arraySort(arrayFilter(x -> x in (${groupBy.map(g => Sql.quoteVal(g)).join(',')}), p.tags))`
+  }
+
+  const labelsReq = (new Sql.Select()).with(withIdxReq).select(
+    'fingerprint',
+    [new Sql.Raw(tagsReq), 'tags'],
+    [groupBy ? 'fingerprint' : new Sql.Raw('cityHash64(tags)'), 'new_fingerprint']
+  ).distinct(true).from(['profiles_series', 'p'])
+    .where(Sql.And(
+      new Sql.In('fingerprint', 'IN', new Sql.WithReference(withIdxReq)),
+      Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
+      Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`))
+    ))
+
+  const withLabelsReq = new Sql.With('labels', labelsReq, false)
+
+  let valueCol = new Sql.Raw(
+    `sum(toFloat64(arrayFirst(x -> x.1 == ${Sql.quoteVal(sampleTypeId)}, p.values_agg).2))`)
+  if (aggregation === types.TimeSeriesAggregationType.TIME_SERIES_AGGREGATION_TYPE_AVERAGE) {
+    valueCol = new Sql.Raw(
+      `sum(toFloat64(arrayFirst(x -> x.1 == ${Sql.quoteVal(sampleTypeId)}).2, p.values_agg)) / ` +
+      `sum(toFloat64(arrayFirst(x -> x.1 == ${Sql.quoteVal(sampleTypeId)}).3, p.values_agg))`
+    )
+  }
+
+  const mainReq = (new Sql.Select()).with(withIdxReq, withLabelsReq).select(
+    [new Sql.Raw(`intDiv(p.timestamp_ns, 1000000000 * ${step}) * ${step} * 1000`), 'timestamp_ms'],
+    [new Sql.Raw('labels.new_fingerprint'), 'fingerprint'],
+    [new Sql.Raw('min(labels.tags)'), 'labels'],
+    [valueCol, 'value']
+  ).from(['profiles', 'p']).join(
+    new Sql.WithReference(withLabelsReq),
+    'ANY LEFT',
+    Sql.Eq(new Sql.Raw('p.fingerprint'), new Sql.Raw('labels.fingerprint'))
+  ).where(
+    Sql.And(
+      new Sql.In('p.fingerprint', 'IN', new Sql.WithReference(withIdxReq)),
+      Sql.Gte('p.timestamp_ns', new Sql.Raw(`${fromTimeSec}000000000`)),
+      Sql.Lt('p.timestamp_ns', new Sql.Raw(`${toTimeSec}000000000`))
+    )
+  ).groupBy('timestamp_ns', 'fingerprint')
+    .orderBy(['fingerprint', 'ASC'], ['timestamp_ns', 'ASC'])
+  const strMainReq = mainReq.toString()
+  console.log(strMainReq)
+  const chRes = await clickhouse
+    .rawRequest(strMainReq + ' FORMAT JSON', null, DATABASE_NAME())
+
+  let lastFingerprint = null
+  const seriesList = []
+  let lastSeries = null
+  let lastPoints = []
+  for (let i = 0; i < chRes.data.data.length; i++) {
+    const e = chRes.data.data[i]
+    if (lastFingerprint !== e.fingerprint) {
+      lastFingerprint = e.fingerprint
+      lastSeries && lastSeries.setPointsList(lastPoints)
+      lastSeries && seriesList.push(lastSeries)
+      lastPoints = []
+      lastSeries = new types.Series()
+      lastSeries.setLabelsList(e.labels.map(l => {
+        const lp = new types.LabelPair()
+        lp.setName(l[0])
+        lp.setValue(l[1])
+        return lp
+      }))
+    }
+
+    const p = new types.Point()
+    p.setValue(e.value)
+    p.setTimestamp(e.timestamp_ms)
+    lastPoints.push(p)
+  }
+  lastSeries && lastSeries.setPointsList(lastPoints)
+  lastSeries && seriesList.push(lastSeries)
+
   const resp = new messages.SelectSeriesResponse()
-  resp.setSeriesList([])
+  resp.setSeriesList(seriesList)
   return res.code(200).send(Buffer.from(resp.serializeBinary()))
 }
 
