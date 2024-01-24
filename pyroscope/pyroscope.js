@@ -158,7 +158,7 @@ const selectMergeStacktraces = async (req, res) => {
     : Math.floor(Date.now() / 1000)
   const idxSelect = (new Sql.Select())
     .select('fingerprint')
-    .from('profiles_series_gin')
+    .from(`${DATABASE_NAME()}.profiles_series_gin`)
     .where(
       Sql.And(
         Sql.Eq(new Sql.Raw(`has(sample_types_units, (${Sql.quoteVal(typeRe[2])},${Sql.quoteVal(typeRe[3])}))`), 1),
@@ -170,7 +170,7 @@ const selectMergeStacktraces = async (req, res) => {
   labelSelectorQuery(idxSelect, sel)
   const sqlReq = (new Sql.Select())
     .select('payload')
-    .from(`profiles${dist}`)
+    .from(`${DATABASE_NAME()}.profiles${dist}`)
     .where(
       Sql.And(
         Sql.Gte('timestamp_ns', new Sql.Raw(Math.floor(fromTimeSec) + '000000000')),
@@ -243,7 +243,7 @@ const selectSeries = async (req, res) => {
 
   const idxReq = (new Sql.Select())
     .select(new Sql.Raw('fingerprint'))
-    .from('profiles_series_gin')
+    .from(`${DATABASE_NAME()}.profiles_series_gin`)
     .where(
       Sql.And(
         Sql.Eq('type_id', Sql.val(typeId[1])),
@@ -256,7 +256,7 @@ const selectSeries = async (req, res) => {
     )
   labelSelectorQuery(idxReq, labelSelector)
 
-  const withIdxReq = (new Sql.With('idx', idxReq, false))
+  const withIdxReq = (new Sql.With('idx', idxReq, !!clusterName))
 
   let tagsReq = 'arraySort(p.tags)'
   if (groupBy) {
@@ -267,14 +267,14 @@ const selectSeries = async (req, res) => {
     'fingerprint',
     [new Sql.Raw(tagsReq), 'tags'],
     [groupBy ? 'fingerprint' : new Sql.Raw('cityHash64(tags)'), 'new_fingerprint']
-  ).distinct(true).from(['profiles_series', 'p'])
+  ).distinct(true).from([`${DATABASE_NAME()}.profiles_series`, 'p'])
     .where(Sql.And(
       new Sql.In('fingerprint', 'IN', new Sql.WithReference(withIdxReq)),
       Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
       Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`))
     ))
 
-  const withLabelsReq = new Sql.With('labels', labelsReq, false)
+  const withLabelsReq = new Sql.With('labels', labelsReq, !!clusterName)
 
   let valueCol = new Sql.Raw(
     `sum(toFloat64(arrayFirst(x -> x.1 == ${Sql.quoteVal(sampleTypeId)}, p.values_agg).2))`)
@@ -290,8 +290,8 @@ const selectSeries = async (req, res) => {
     [new Sql.Raw('labels.new_fingerprint'), 'fingerprint'],
     [new Sql.Raw('min(labels.tags)'), 'labels'],
     [valueCol, 'value']
-  ).from([`profiles${dist}`, 'p']).join(
-    new Sql.WithReference(withLabelsReq),
+  ).from([`${DATABASE_NAME()}.profiles${dist}`, 'p']).join(
+    [new Sql.WithReference(withLabelsReq), 'labels'],
     'ANY LEFT',
     Sql.Eq(new Sql.Raw('p.fingerprint'), new Sql.Raw('labels.fingerprint'))
   ).where(
