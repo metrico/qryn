@@ -54,6 +54,7 @@ import handlerDelGroup from './lib/handlers/alerts/del_group.js'
 import handlerDelNS from './lib/handlers/alerts/del_ns.js'
 import handlerPromGetRules from './lib/handlers/alerts/prom_get_rules.js'
 import handlerTail from './lib/handlers/tail.js'
+import {init as pyroscopeInit } from './pyroscope/pyroscope.js'
 
 import { readonly } from './common.js'
 import DATABASE, { init } from './lib/db/clickhouse.js'
@@ -311,6 +312,8 @@ export default async() => {
   fastify.post('/v1/traces', handlerOTLPPush, {
     '*': otlpPushProtoParser
   })
+
+  pyroscopeInit(fastify)
 
   const serveView = fs.existsSync(path.join(__dirname, 'view/index.html'))
   if (serveView) {
