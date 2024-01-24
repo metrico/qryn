@@ -46,7 +46,8 @@ jobs:
     - run: git submodule init
     - run: git submodule update
     - name: Workflow Telemetry
-      uses: runforesight/workflow-telemetry-action@v1.8.7      
+      uses: runforesight/workflow-telemetry-action@v1.8.7
+      if: github.event_name != 'pull_request'
     - env:
         CLICKHOUSE_DB: qryn
         CLICKHOUSE_TSDB: qryn
