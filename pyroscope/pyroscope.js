@@ -8,10 +8,12 @@ const compiler = require('../parser/bnf')
 const { readULeb32 } = require('./pprof')
 const pprofBin = require('./pprof-bin/pkg/pprof_bin')
 const { QrynBadRequest } = require('../lib/handlers/errors')
+const { clusterName} = require('../common')
 
 const HISTORY_TIMESPAN = 1000 * 60 * 60 * 24 * 7
 
 const profileTypesHandler = async (req, res) => {
+  const dist = clusterName ? '_dist' : ''
   const _res = new messages.ProfileTypesResponse()
   const fromTimeSec = req.body && req.body.getStart
     ? parseInt(req.body.getStart()) / 1000
@@ -20,7 +22,7 @@ const profileTypesHandler = async (req, res) => {
     ? parseInt(req.body.getEnd()) / 1000
     : Date.now() / 1000
   const profileTypes = await clickhouse.rawRequest(`SELECT DISTINCT type_id, sample_type_unit 
-FROM profiles_series ARRAY JOIN sample_types_units as sample_type_unit
+FROM profiles_series${dist} ARRAY JOIN sample_types_units as sample_type_unit
 WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)})) FORMAT JSON`,
   null, DATABASE_NAME())
   _res.setProfileTypesList(profileTypes.data.data.map(profileType => {
@@ -38,6 +40,7 @@ WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDa
 }
 
 const labelNames = async (req, res) => {
+  const dist = clusterName ? '_dist' : ''
   const fromTimeSec = req.body && req.body.getStart
     ? parseInt(req.body.getStart()) / 1000
     : (Date.now() - HISTORY_TIMESPAN) / 1000
@@ -45,7 +48,7 @@ const labelNames = async (req, res) => {
     ? parseInt(req.body.getEnd()) / 1000
     : Date.now() / 1000
   const labelNames = await clickhouse.rawRequest(`SELECT DISTINCT key 
-FROM profiles_series_keys
+FROM profiles_series_keys${dist}
 WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)})) FORMAT JSON`,
   null, DATABASE_NAME())
   const resp = new types.LabelNamesResponse()
@@ -54,6 +57,7 @@ WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDa
 }
 
 const labelValues = async (req, res) => {
+  const dist = clusterName ? '_dist' : ''
   const name = req.body && req.body.getName
     ? req.body.getName()
     : ''
@@ -67,7 +71,7 @@ const labelValues = async (req, res) => {
     throw new Error('No name provided')
   }
   const labelValues = await clickhouse.rawRequest(`SELECT DISTINCT val
-FROM profiles_series_gin
+FROM profiles_series_gin${dist}
 WHERE key = ${Sql.quoteVal(name)} AND 
 date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND 
 date <= toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)})) FORMAT JSON`, null, DATABASE_NAME())
@@ -143,6 +147,7 @@ const labelSelectorQuery = (query, labelSelector) => {
 }
 
 const selectMergeStacktraces = async (req, res) => {
+  const dist = clusterName ? '_dist' : ''
   const typeRe = req.body.getProfileTypeid().match(/^(.+):([^:]+):([^:]+)$/)
   const sel = req.body.getLabelSelector()
   const fromTimeSec = req.body && req.body.getStart()
@@ -165,7 +170,7 @@ const selectMergeStacktraces = async (req, res) => {
   labelSelectorQuery(idxSelect, sel)
   const sqlReq = (new Sql.Select())
     .select('payload')
-    .from('profiles')
+    .from(`profiles${dist}`)
     .where(
       Sql.And(
         Sql.Gte('timestamp_ns', new Sql.Raw(Math.floor(fromTimeSec) + '000000000')),
@@ -225,6 +230,7 @@ const selectSeries = async (req, res) => {
   if (!typeId) {
     throw new QrynBadRequest('Invalid type provided')
   }
+  const dist = clusterName ? '_dist' : ''
   const sampleTypeId = typeId[2] + ':' + typeId[3]
   const labelSelector = _req.getLabelSelector && _req.getLabelSelector()
   let groupBy = _req.getGroupByList && _req.getGroupByList()
@@ -284,7 +290,7 @@ const selectSeries = async (req, res) => {
     [new Sql.Raw('labels.new_fingerprint'), 'fingerprint'],
     [new Sql.Raw('min(labels.tags)'), 'labels'],
     [valueCol, 'value']
-  ).from(['profiles', 'p']).join(
+  ).from([`profiles${dist}`, 'p']).join(
     new Sql.WithReference(withLabelsReq),
     'ANY LEFT',
     Sql.Eq(new Sql.Raw('p.fingerprint'), new Sql.Raw('labels.fingerprint'))
