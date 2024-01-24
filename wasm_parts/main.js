@@ -22,6 +22,7 @@ const getWasm = (() => {
       gunzipSync(fs.readFileSync(WASM_URL)), go.importObject)
     go.run(_wasm.instance)
     wasm = _wasm.instance
+    wasm.exports.setMaxSamples(process.env.ADVANCED_PROMETHEUS_MAX_SAMPLES || 5000000)
     cnt = 0
     run = false
   }
@@ -271,7 +272,7 @@ class Uint8ArrayWriter {
   writeString (str) {
     const bStr = (new TextEncoder()).encode(str)
     this.writeULeb(bStr.length)
-    this.maybeGrow(b.length)
+    this.maybeGrow(bStr.length)
     this.buf.set(bStr, this.i)
     this.i += bStr.length
     return this

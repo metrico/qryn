@@ -438,6 +438,12 @@ let fastify = require('fastify')({
       root: path.join(__dirname, 'view'),
       prefix: '/'
     })
+    const idx = fs.readFileSync(path.join(__dirname, 'view/index.html'), 'utf8')
+    for (const fakePath of ['/plugins', '/users', '/datasources', '/datasources/:ds']) {
+      fastify.get(fakePath,
+        (req, reply) =>
+          reply.code(200).header('Content-Type', 'text/html').send(idx))
+    }
   }
 
   require('./pyroscope/pyroscope').init(fastify)

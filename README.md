@@ -127,7 +127,7 @@ The Tempo datasource can be used to natively query _traces_ including _**TraceQL
 
 ### 📚 Other Vendors
 
-**qryn** can ingest data using the [InfluxDB, DataDog, Elastic](https://qryn.metrico.in/#/support) and other vendors.
+**qryn** can ingest data using formats from [InfluxDB, DataDog, Elastic](https://qryn.metrico.in/#/support) and other vendors.
 
 
 <br>
@@ -174,7 +174,7 @@ Whether it's code, documentation or grammar, we ❤️ all contributions. Not su
 
 #### License
 
-<img src="https://camo.githubusercontent.com/473b62766b498e4f2b008ada39f1d56fb3183649f24447866e25d958ac3fd79a/68747470733a2f2f7777772e676e752e6f72672f67726170686963732f6167706c76332d3135357835312e706e67">
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/AGPLv3_Logo.svg/2560px-AGPLv3_Logo.svg.png" width=200>
 
 ©️ QXIP BV, released under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE) for details.
 
