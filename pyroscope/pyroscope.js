@@ -122,10 +122,10 @@ const labelSelectorQuery = (query, labelSelector) => {
         valRul = Sql.Ne(new Sql.Raw('val'), Sql.val(val))
         break
       case '=~':
-        valRul = Sql.Eq(`match(val, ${Sql.quoteVal(val)})`, 1)
+        valRul = Sql.Eq(new Sql.Raw(`match(val, ${Sql.quoteVal(val)})`), 1)
         break
       case '!~':
-        valRul = Sql.Ne(`match(val, ${Sql.quoteVal(val)})`, 1)
+        valRul = Sql.Ne(new Sql.Raw(`match(val, ${Sql.quoteVal(val)})`), 1)
     }
     const labelSubCond = Sql.And(
       Sql.Eq('key', Sql.val(rule.Child('label').value)),
@@ -176,6 +176,7 @@ const selectMergeStacktraces = async (req, res) => {
     responseType: 'arraybuffer'
   })
   const binData = Uint8Array.from(profiles.data)
+  req.log.debug(`profiles: ${binData.length / 1025} kB`)
   require('./pprof-bin/pkg/pprof_bin').init_panic_hook()
   const promises = []
   const _ctxIdx = ++ctxIdx
@@ -247,7 +248,7 @@ const selectSeries = async (req, res) => {
 
   let tagsReq = 'arraySort(p.tags)'
   if (groupBy) {
-    tagsReq = `arraySort(arrayFilter(x -> x in (${groupBy.map(g => Sql.quoteVal(g)).join(',')}), p.tags))`
+    tagsReq = `arraySort(arrayFilter(x -> x.1 in (${groupBy.map(g => Sql.quoteVal(g)).join(',')}), p.tags))`
   }
 
   const labelsReq = (new Sql.Select()).with(withIdxReq).select(
