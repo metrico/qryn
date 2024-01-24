@@ -76,7 +76,9 @@
     "xxhash-wasm": "^0.4.2",
     "yaml": "^1.10.2",
     "@stricjs/utils": "^1.6.1",
-    "basic-auth": "^2.0.1"
+    "basic-auth": "^2.0.1",
+    "google-protobuf": "^3.21.2",
+    "@grpc/grpc-js": "^1.9.14"
   },
   "devDependencies": {
     "@elastic/elasticsearch": "^8.5.0",

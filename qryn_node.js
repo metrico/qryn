@@ -446,6 +446,8 @@ let fastify = require('fastify')({
     }
   }
 
+  require('./pyroscope/pyroscope').init(fastify)
+
   // Run API Service
   fastify.listen(
     {

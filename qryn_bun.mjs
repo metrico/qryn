@@ -56,6 +56,7 @@ import handlerPromGetRules from './lib/handlers/alerts/prom_get_rules.js'
 import handlerTail from './lib/handlers/tail.js'
 import handlerTempoLabelV2 from './lib/handlers/tempo_v2_tags.js'
 import handlerTempoLabelV2Values from './lib/handlers/tempo_v2_values.js'
+import {init as pyroscopeInit } from './pyroscope/pyroscope.js'
 
 import { readonly } from './common.js'
 import DATABASE, { init } from './lib/db/clickhouse.js'
@@ -318,6 +319,8 @@ export default async() => {
   fastify.get('/tempo/api/v2/search/tags', handlerTempoLabelV2)
   fastify.get('/api/v2/search/tag/:name/values', handlerTempoLabelV2Values)
   fastify.get('/tempo/api/v2/search/tag/:name/values', handlerTempoLabelV2Values)
+
+  pyroscopeInit(fastify)
 
   const serveView = fs.existsSync(path.join(__dirname, 'view/index.html'))
   if (serveView) {
