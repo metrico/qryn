@@ -172,7 +172,10 @@ const selectMergeStacktraces = async (req, res) => {
         Sql.Lte('timestamp_ns', new Sql.Raw(Math.floor(toTimeSec) + '000000000')),
         new Sql.In('fingerprint', 'IN', idxSelect)
       ))
-  const profiles = await clickhouse.rawRequest(sqlReq.toString() + 'FORMAT RowBinary', null, DATABASE_NAME(), {
+  if (process.env.ADVANCED_PROFILES_MERGE_LIMIT) {
+    sqlReq.orderBy(['timestamp_ns', 'desc']).limit(parseInt(process.env.ADVANCED_PROFILES_MERGE_LIMIT))
+  }
+  const profiles = await clickhouse.rawRequest(sqlReq.toString() + ' FORMAT RowBinary', null, DATABASE_NAME(), {
     responseType: 'arraybuffer'
   })
   const binData = Uint8Array.from(profiles.data)
