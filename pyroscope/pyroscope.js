@@ -175,9 +175,12 @@ const selectMergeStacktraces = async (req, res) => {
   if (process.env.ADVANCED_PROFILES_MERGE_LIMIT) {
     sqlReq.orderBy(['timestamp_ns', 'desc']).limit(parseInt(process.env.ADVANCED_PROFILES_MERGE_LIMIT))
   }
-  const profiles = await clickhouse.rawRequest(sqlReq.toString() + ' FORMAT RowBinary', null, DATABASE_NAME(), {
-    responseType: 'arraybuffer'
-  })
+  const profiles = await clickhouse.rawRequest(sqlReq.toString() + ' FORMAT RowBinary',
+    null,
+    DATABASE_NAME(),
+    {
+      responseType: 'arraybuffer'
+    })
   const binData = Uint8Array.from(profiles.data)
   req.log.debug(`profiles: ${binData.length / 1025} kB`)
   require('./pprof-bin/pkg/pprof_bin').init_panic_hook()
