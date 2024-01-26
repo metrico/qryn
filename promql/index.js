@@ -2,7 +2,7 @@ const Sql = require('@cloki/clickhouse-sql')
 const prometheus = require('../wasm_parts/main')
 const { rawRequest } = require('../lib/db/clickhouse')
 const { DATABASE_NAME } = require('../lib/utils')
-const { clusterName } = require('../common')
+const { clusterName, metricType, bothType } = require('../common')
 const _dist = clusterName ? '_dist' : ''
 
 class PSQLError extends Error {}
@@ -54,7 +54,8 @@ module.exports.series = async (query, fromMs, toMs) => {
       .where(Sql.And(
         Sql.Gte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${fromS}))`)),
         Sql.Lte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${toS}))`)),
-        new Sql.In('fingerprint', 'in', new Sql.WithReference(withIdx))))
+        new Sql.In('fingerprint', 'in', new Sql.WithReference(withIdx)),
+        new Sql.In('type', 'in', [bothType,metricType])))
       .groupBy(new Sql.Raw('fingerprint'))
     const data = await rawRequest(req.toString() + ' FORMAT JSON',
       null,
@@ -105,7 +106,8 @@ const getIdxSubquery = (conds, fromMs, toMs) => {
     .where(Sql.And(
       Sql.Or(...conds),
       Sql.Gte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${fromS}))`)),
-      Sql.Lte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${toS}))`))))
+      Sql.Lte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${toS}))`)),
+      new Sql.In('type', 'in', [bothType, metricType])))
     .having(
       Sql.Eq(
         new Sql.Raw('groupBitOr(' + conds.map(
@@ -124,7 +126,9 @@ module.exports.getData = async (matchers, fromMs, toMs) => {
       'fingerprint',
       [new Sql.Raw('arraySort(JSONExtractKeysAndValues(labels, \'String\'))'), 'labels']
     ).from(DATABASE_NAME() + '.time_series')
-    .where(new Sql.In('fingerprint', 'in', new Sql.WithReference(withIdx)))
+    .where(Sql.And(
+      new Sql.In('fingerprint', 'in', new Sql.WithReference(withIdx)),
+      new Sql.In('type', 'in', [bothType,metricType])))
   const withTimeSeries = new Sql.With('timeSeries', timeSeries, !!clusterName)
   const raw = (new Sql.Select())
     .with(withIdx)
@@ -137,8 +141,8 @@ module.exports.getData = async (matchers, fromMs, toMs) => {
       new Sql.And(
         new Sql.In('fingerprint', 'in', new Sql.WithReference(withIdx)),
         Sql.Gte('timestamp_ns', new Sql.Raw(`${fromMs}000000`)),
-        Sql.Lte('timestamp_ns', new Sql.Raw(`${toMs}000000`))
-      )
+        Sql.Lte('timestamp_ns', new Sql.Raw(`${toMs}000000`)),
+        new Sql.In('type', 'in', [bothType, metricType]))
     ).groupBy('fingerprint', 'timestamp_ms')
     .orderBy('fingerprint', 'timestamp_ms')
   if (clusterName) {
