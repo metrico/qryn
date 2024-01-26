@@ -1,6 +1,6 @@
 # This workflow will validate qryn using nodejs + clickhouse
 
-name: QRYN CI
+name: QRYN CI CLUSTER
 
 on:
   push:
@@ -48,10 +48,6 @@ jobs:
         CLUSTER_NAME: test_cluster_two_shards
         CLICKHOUSE_DB: qryn
         CLICKHOUSE_TSDB: qryn
-      run: node qryn.mjs >/dev/stdout &
-    - env:
-        CLICKHOUSE_DB: qryn
-        CLICKHOUSE_TSDB: qryn
         INTEGRATION_E2E: 1
         CLOKI_EXT_URL: 127.0.0.1:3100
-      run: npm run test --forceExit
+      run: node qryn.mjs >/dev/stdout & npm run test --forceExit
