@@ -247,7 +247,8 @@ export default async() => {
     '/api/v1/prom/remote/write',
     '/api/prom/remote/write',
     '/prom/remote/write',
-    '/api/v1/write'
+    '/api/v1/write',
+    '/api/prom/push'
   ]
   for (const path of remoteWritePaths) {
     fastify.post(path, promWriteHandler, {
