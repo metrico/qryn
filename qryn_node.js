@@ -99,7 +99,8 @@ let fastify = require('fastify')({
       '/api/prom/remote/write',
       '/prom/remote/write',
       '/loki/api/v1/push',
-      '/api/v1/write'
+      '/api/v1/write',
+      '/api/prom/push'
     ]
     fastify.addHook('preParsing', (request, reply, payload, done) => {
       if (snappyPaths.indexOf(request.routeOptions.url) !== -1) {
