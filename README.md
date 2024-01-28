@@ -14,13 +14,14 @@
 
 > ... it's pronounced /ˈkwɪr..ɪŋ/ or just _querying_
 
-- **Polyglot**: Use **LogQL, PromQL**, and **TempoQL** languages to query, process and alert _any data_
-- **Lightweight**: Powered by **ClickHouse** OLAP Engine + **Bun** the _fast, all-in-one_ JavaScript runtime
-- **Voracious**: Ingestion compatible with **Opentelemetry, Loki, Prometheus, Influx, Datadog, Elastic** _+ more_
-- **Versatile**: Explore data with qryn's built-in **View Explorer** and **CLI** or _native_ **Grafana** compatibility
-- **Secure**: Retain total control of data, using **ClickHouse** or **InfluxDB IOx** with **S3** object storage
-- **Unmetered**: Unlimited FOSS deployments or **qryn.cloud** option with advanced features and performance
-- **Indepentent**: Designed to be a stand-alone, all-in-one _Loki, Prometheus, Tempo_ drop-in alternative
+* **Polyglot**: All-in-one, Drop-in compatible with **Loki**, **Prometheus**, **Tempo**, **Pyroscope** 
+* **Lightweight**: Powered by **Bun** - the fast, all-in-one JavaScript runtime + ClickHouse **OLAP** Engine
+* **Familiar**: Use stable & popular **LogQL**, **PromQL**, **TempoQL** languages to _query and visualize data_
+* **Voracious**: Ingest using **Opentelemetry, Loki, Prometheus, Tempo, Influx, Datadog, Elastic** _& more_
+* **Versatile**: Explore data with qryn's **built-in Explorer** and CLI or native **Grafana** datasource compatibility
+* **Secure**: Retain total control of data, using **ClickHouse**, **DuckDB** or **InfluxDB** IOx with **S3** object storage
+* **Unmetered**: Unlimited **FOSS** deployments or **qryn.cloud** option with advanced features and performance
+* **Indepentent**: Opensource, Community powered, Anti lock-in alternative to Vendor controlled stacks
 
 <br>
 
