@@ -30,7 +30,8 @@
 * No time? Use [qryn.cloud](https://qryn.cloud) and get polyglot in just minutes! Drop-in LGTM alternative ☁️ 
 
 <a href="https://qryn.cloud" target="_blank">
-<img src="https://user-images.githubusercontent.com/1423657/218818279-3efff74f-0191-498a-bdc4-f2650c9d3b49.gif">
+<img src="https://github.com/metrico/qryn/assets/1423657/8b93d7cb-442c-4454-b247-27b00ae78384">
+<!-- <img src="https://user-images.githubusercontent.com/1423657/218818279-3efff74f-0191-498a-bdc4-f2650c9d3b49.gif"> -->
 </a>
 
 <br>
