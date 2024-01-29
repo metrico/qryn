@@ -29,12 +29,15 @@ const optimizations = require('./registry/smart_optimizations')
 const clusterName = require('../common').clusterName
 const dist = clusterName ? '_dist' : ''
 const wasm = require('../wasm_parts/main')
+const { bothType, logType, metricType } = require('../common')
 
 /**
  * @param joinLabels {boolean}
+ * @param types {[number]}
  * @returns {Select}
  */
-module.exports.initQuery = (joinLabels) => {
+module.exports.initQuery = (joinLabels, types) => {
+  types = types || [bothType, logType]
   const samplesTable = new Sql.Parameter(sharedParamNames.samplesTable)
   const timeSeriesTable = new Sql.Parameter(sharedParamNames.timeSeriesTable)
   const from = new Sql.Parameter(sharedParamNames.from)
@@ -62,7 +65,9 @@ module.exports.initQuery = (joinLabels) => {
       ['samples.fingerprint', 'fingerprint'], [tsGetter, 'timestamp_ns'])
     .from([samplesTable, 'samples'])
     .orderBy(['timestamp_ns', 'desc'])
-    .where(tsClause)
+    .where(Sql.And(
+      tsClause,
+      new Sql.In('samples.type', 'in', types)))
     .limit(limit)
     .addParam(samplesTable)
     .addParam(timeSeriesTable)
@@ -80,9 +85,11 @@ module.exports.initQuery = (joinLabels) => {
 
 /**
  * @param joinLabels {boolean}
+ * @param types {[number] || undefined}
  * @returns {Select}
  */
-module.exports.initQueryV3_2 = (joinLabels) => {
+module.exports.initQueryV3_2 = (joinLabels, types) => {
+  types = types || [bothType, logType]
   const from = new Sql.Parameter(sharedParamNames.from)
   const to = new Sql.Parameter(sharedParamNames.to)
   const tsClause = new Sql.Raw('')
@@ -95,7 +102,9 @@ module.exports.initQueryV3_2 = (joinLabels) => {
   const q = (new Sql.Select())
     .select(['samples.fingerprint', 'fingerprint'])
     .from(['metrics_15s', 'samples'])
-    .where(tsClause)
+    .where(Sql.And(
+      tsClause,
+      new Sql.In('samples.type', 'in', types)))
     .addParam(from)
     .addParam(to)
   if (joinLabels) {
@@ -156,7 +165,8 @@ module.exports.transpile = (request) => {
   const joinLabels = ['unwrap_function', 'log_range_aggregation', 'aggregation_operator',
     'agg_statement', 'user_macro', 'parser_expression', 'label_filter_pipeline',
     'line_format_expression', 'labels_format_expression', 'summary'].some(t => token.Child(t))
-  let query = module.exports.initQuery(joinLabels)
+  let query = module.exports.initQuery(joinLabels,
+    token.Child('unwrap_value_statement') ? [bothType, metricType] : undefined)
   let limit = request.limit ? request.limit : 2000
   const order = request.direction === 'forward' ? 'asc' : 'desc'
   query.orderBy(...query.orderBy().map(o => [o[0], order]))

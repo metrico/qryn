@@ -135,3 +135,9 @@ module.exports.bun = () => {
     return false
   }
 }
+
+module.exports.logType = process.env.DISTINGUISH_LOGS_METRICS ? 1 : 0
+
+module.exports.metricType = process.env.DISTINGUISH_LOGS_METRICS ? 2 : 0
+
+module.exports.bothType = 0
