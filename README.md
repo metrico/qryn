@@ -63,8 +63,8 @@ Ingested data can be queried using any of the avialable qryn APIs _(LogQL, PromQ
 > 💡 _No modifications required to your opentelemetry instrumentation!_
 
 ### 📚 Native
-**qryn** supports [native ingestion](https://qryn.metrico.in/#/support) for Loki, Prometheus, Tempo/Zipkin and other protocols_<br>
-With qryn users can _push data using any combination of supported protocols_
+**qryn** supports [native ingestion](https://qryn.metrico.in/#/support) for Loki, Prometheus, Tempo/Zipkin and _[many other protocols](https://qryn.metrico.in/#/support)_<br>
+With qryn users can _push data using any combination of supported APIs and formats_
 
 > 💡 _No opentelemetry or any other middlewayre/proxy required!_
 
