@@ -71,8 +71,8 @@ const http_user = process.env.QRYN_LOGIN || process.env.CLOKI_LOGIN || undefined
 const http_password = process.env.QRYN_PASSWORD || process.env.CLOKI_PASSWORD || undefined
 
 export default async() => {
+  await init(process.env.CLICKHOUSE_DB || 'cloki')
   if (!readonly) {
-    await init(process.env.CLICKHOUSE_DB || 'cloki')
     await startAlerting()
   }
   await DATABASE.checkDB()
