@@ -71,8 +71,8 @@ let fastify = require('fastify')({
 });
 (async () => {
   try {
+    await init(process.env.CLICKHOUSE_DB || 'cloki')
     if (!this.readonly) {
-      await init(process.env.CLICKHOUSE_DB || 'cloki')
       await startAlerting()
     }
     await DATABASE.checkDB()
