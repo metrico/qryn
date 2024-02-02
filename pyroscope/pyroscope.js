@@ -138,10 +138,11 @@ const labelSelectorQuery = (query, labelSelector) => {
     labelsConds.push(labelSubCond)
   }
   query.where(Sql.Or(...labelsConds))
+  query.groupBy(new Sql.Raw('fingerprint'))
   query.having(Sql.Eq(
-    new Sql.Raw(labelsConds.map((cond, i) => {
+    new Sql.Raw(`groupBitOr(${labelsConds.map((cond, i) => {
       return `bitShiftLeft(toUInt64(${cond}), ${i})`
-    }).join('+')),
+    }).join('+')})`),
     new Sql.Raw(`bitShiftLeft(toUInt64(1), ${labelsConds.length})-1`)
   ))
 }
@@ -207,7 +208,7 @@ const selectMergeStacktraces = async (req, res) => {
   let sResp = null
   try {
     await Promise.all(promises)
-    sResp = pprofBin.export_tree(_ctxIdx)
+    sResp = pprofBin.export_tree(_ctxIdx, `${typeRe[2]}:${typeRe[3]}`)
   } finally {
     try { pprofBin.drop_tree(_ctxIdx) } catch (e) { req.log.error(e) }
   }

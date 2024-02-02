@@ -224,13 +224,27 @@ pub unsafe fn merge_tree(id: u32, bytes: &[u8], sample_type: String) {
 }
 
 #[wasm_bindgen]
-pub unsafe fn export_tree(id: u32) -> Vec<u8> {
+pub unsafe fn export_tree(id: u32, sample_type: String) -> Vec<u8> {
     let mut ctx = CTX.lock().unwrap();
     let mut res = SelectMergeStacktracesResponse::default();
-    if !ctx.contains_key(&id) {
-        return res.encode_to_vec();
+    let mut tree = &mut Tree {
+        names: Vec::new(),
+        names_map: HashMap::new(),
+        root: TreeNode {
+            name_idx: 0,
+            _self: 0,
+            children: vec![],
+            prepend: 0,
+            total: 0,
+        },
+        sample_type,
+        max_self: 0,
+    };
+    tree.names.push("total".to_string());
+    tree.names_map.insert("total".to_string(), 0);
+    if ctx.contains_key(&id) {
+        tree = (*ctx).get_mut(&id).unwrap();
     }
-    let tree = (*ctx).get_mut(&id).unwrap();
     let mut fg = FlameGraph::default();
     fg.names = tree.names.clone();
     let mut levels: Vec<&[i64]> = Vec::new();
