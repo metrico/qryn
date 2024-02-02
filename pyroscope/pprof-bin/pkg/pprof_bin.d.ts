@@ -8,9 +8,10 @@
 export function merge_tree(id: number, bytes: Uint8Array, sample_type: string): void;
 /**
 * @param {number} id
+* @param {string} sample_type
 * @returns {Uint8Array}
 */
-export function export_tree(id: number): Uint8Array;
+export function export_tree(id: number, sample_type: string): Uint8Array;
 /**
 * @param {number} id
 */
