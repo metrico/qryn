@@ -9,9 +9,6 @@ on:
         description: 'Release Version Tag (0.0.0)'
         required: true
 
-permissions:
-   contents: write
-
 jobs:
   build:
     name: 'Build & Publish'
