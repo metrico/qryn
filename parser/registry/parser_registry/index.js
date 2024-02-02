@@ -2,6 +2,7 @@ const json = require('./json')
 const re = require('./regexp')
 const { hasExtraLabels, getPlugins, isEOF, hasStream, addStream } = require('../common')
 const logfmt = require('./logfmt')
+const drop = require('./drop')
 const logger = require('../../../lib/logger')
 
 module.exports = {
@@ -46,6 +47,20 @@ module.exports = {
       return re.viaStream(token, query)
     }
   },
+
+  /**
+     *
+     * @param token {Token}
+     * @param query {Select}
+     * @returns {Select}
+  */
+  drop: (token, query) => {
+    if (hasStream(query)) {
+      return drop.viaStream(token, query)
+    }
+    return drop.viaClickhouseQuery(token, query)
+  },
+
   ...getPlugins('parser_registry', (plugin) => {
     if (plugin.map) {
       return (token, query) => {

@@ -398,3 +398,18 @@ module.exports.Aliased = class {
     return `${Sql.quoteTerm(this.name)} AS ${this.alias}`
   }
 }
+
+/**
+ * @param query {Select}
+ * @param name {string}
+ * @param patcher {function(Object): Object}
+ */
+module.exports.patchCol = (query, name, patcher) => {
+  query.select_list = query.select().map(col => {
+    const _name = Array.isArray(col) ? col[1] : col
+    if (_name === name) {
+      return patcher(col[0])
+    }
+    return col
+  })
+}
