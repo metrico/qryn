@@ -57,8 +57,6 @@ jobs:
           ref: ${{ github.ref }}
       - name: Update Package to Release version
         uses: technote-space/package-version-check-action@v1.9.3
-        with:
-          COMMIT_DISABLED: 1
       - name: Check Docker secret presence
         id: checkdocker
         shell: bash
@@ -122,8 +120,6 @@ jobs:
           ref: ${{ github.ref }}
       - name: Update Package to Release version
         uses: technote-space/package-version-check-action@v1.9.3
-        with:
-          COMMIT_DISABLED: 1
       - name: Check Docker secret presence
         id: checkdocker
         shell: bash
