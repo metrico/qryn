@@ -12,6 +12,24 @@ const { clusterName} = require('../common')
 
 const HISTORY_TIMESPAN = 1000 * 60 * 60 * 24 * 7
 
+/**
+ *
+ * @param typeId {string}
+ */
+const parseTypeId = (typeId) => {
+  const typeParts = typeId.match(/^([^:]+):([^:]+):([^:]+):([^:]+):([^:]+)$/)
+  if (!typeParts) {
+    throw new QrynBadRequest('invalid type id')
+  }
+  return {
+    type: typeParts[1],
+    sampleType: typeParts[2],
+    sampleUnit: typeParts[3],
+    periodType: typeParts[4],
+    periodUnit: typeParts[5]
+  }
+}
+
 const profileTypesHandler = async (req, res) => {
   const dist = clusterName ? '_dist' : ''
   const _res = new messages.ProfileTypesResponse()
@@ -28,7 +46,9 @@ WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDa
   _res.setProfileTypesList(profileTypes.data.data.map(profileType => {
     const pt = new types.ProfileType()
     const [name, periodType, periodUnit] = profileType.type_id.split(':')
-    pt.setId(profileType.type_id + ':' + profileType.sample_type_unit[0] + ':' + profileType.sample_type_unit[1])
+    const typeIdParts = profileType.type_id.match(/^([^:]+):(.*)$/)
+    pt.setId(typeIdParts[1] + ':' + profileType.sample_type_unit[0] + ':' + profileType.sample_type_unit[1] +
+      ':' + typeIdParts[2])
     pt.setName(name)
     pt.setSampleType(profileType.sample_type_unit[0])
     pt.setSampleUnit(profileType.sample_type_unit[1])
@@ -149,7 +169,7 @@ const labelSelectorQuery = (query, labelSelector) => {
 
 const selectMergeStacktraces = async (req, res) => {
   const dist = clusterName ? '_dist' : ''
-  const typeRe = req.body.getProfileTypeid().match(/^(.+):([^:]+):([^:]+)$/)
+  const typeRegex = parseTypeId(req.body.getProfileTypeid())
   const sel = req.body.getLabelSelector()
   const fromTimeSec = req.body && req.body.getStart()
     ? Math.floor(parseInt(req.body.getStart()) / 1000)
@@ -162,8 +182,8 @@ const selectMergeStacktraces = async (req, res) => {
     .from(`${DATABASE_NAME()}.profiles_series_gin`)
     .where(
       Sql.And(
-        Sql.Eq(new Sql.Raw(`has(sample_types_units, (${Sql.quoteVal(typeRe[2])},${Sql.quoteVal(typeRe[3])}))`), 1),
-        Sql.Eq('type_id', Sql.val(typeRe[1])),
+        Sql.Eq(new Sql.Raw(`has(sample_types_units, (${Sql.quoteVal(typeRegex.sampleType)},${Sql.quoteVal(typeRegex.sampleUnit)}))`), 1),
+        Sql.Eq('type_id', Sql.val(`${typeRegex.type}:${typeRegex.periodType}:${typeRegex.periodUnit}`)),
         Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
         Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`))
       )
@@ -198,7 +218,7 @@ const selectMergeStacktraces = async (req, res) => {
     i += size + shift
     promises.push(new Promise((resolve, reject) => setTimeout(() => {
       try {
-        pprofBin.merge_tree(_ctxIdx, uarray, `${typeRe[2]}:${typeRe[3]}`)
+        pprofBin.merge_tree(_ctxIdx, uarray, `${typeRegex.sampleType}:${typeRegex.sampleUnit}`)
         resolve()
       } catch (e) {
         reject(e)
@@ -208,7 +228,7 @@ const selectMergeStacktraces = async (req, res) => {
   let sResp = null
   try {
     await Promise.all(promises)
-    sResp = pprofBin.export_tree(_ctxIdx, `${typeRe[2]}:${typeRe[3]}`)
+    sResp = pprofBin.export_tree(_ctxIdx, `${typeRegex.sampleType}:${typeRegex.sampleUnit}`)
   } finally {
     try { pprofBin.drop_tree(_ctxIdx) } catch (e) { req.log.error(e) }
   }
@@ -223,16 +243,16 @@ const selectSeries = async (req, res) => {
   const toTimeSec = Math.floor(req.getEnd && req.getEnd()
     ? parseInt(req.getEnd()) / 1000
     : Date.now() / 1000)
-  let typeId = _req.getProfileTypeid && _req.getProfileTypeid()
-  if (!typeId) {
+  let typeID = _req.getProfileTypeid && _req.getProfileTypeid()
+  if (!typeID) {
     throw new QrynBadRequest('No type provided')
   }
-  typeId = typeId.match(/^(.+):([^:]+):([^:]+)$/)
-  if (!typeId) {
+  typeID = parseTypeId(typeID)
+  if (!typeID) {
     throw new QrynBadRequest('Invalid type provided')
   }
   const dist = clusterName ? '_dist' : ''
-  const sampleTypeId = typeId[2] + ':' + typeId[3]
+  const sampleTypeId = typeID.sampleType + ':' + typeID.sampleUnit
   const labelSelector = _req.getLabelSelector && _req.getLabelSelector()
   let groupBy = _req.getGroupByList && _req.getGroupByList()
   groupBy = groupBy && groupBy.length ? groupBy : null
@@ -247,11 +267,11 @@ const selectSeries = async (req, res) => {
     .from(`${DATABASE_NAME()}.profiles_series_gin`)
     .where(
       Sql.And(
-        Sql.Eq('type_id', Sql.val(typeId[1])),
+        Sql.Eq('type_id', Sql.val(`${typeID.type}:${typeID.periodType}:${typeID.periodUnit}`)),
         Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
         Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`)),
         Sql.Eq(new Sql.Raw(
-          `has(sample_types_units, (${Sql.quoteVal(typeId[2])}, ${Sql.quoteVal(typeId[3])}))`),
+          `has(sample_types_units, (${Sql.quoteVal(typeID.sampleType)}, ${Sql.quoteVal(typeID.sampleUnit)}))`),
         1)
       )
     )
