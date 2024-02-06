@@ -49,4 +49,4 @@ jobs:
         CLICKHOUSE_TSDB: qryn
         INTEGRATION_E2E: 1
         CLOKI_EXT_URL: 127.0.0.1:3100
-      run: CLUSTER_NAME=test_cluster_two_shards node qryn.mjs >/dev/stdout & npm run test --forceExit
+      run: CLUSTER_NAME=test_cluster_two_shards node qryn.mjs >/dev/stdout & sleep 10 && npm run test --forceExit
