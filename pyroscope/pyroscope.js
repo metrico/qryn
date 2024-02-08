@@ -8,7 +8,7 @@ const compiler = require('../parser/bnf')
 const { readULeb32 } = require('./pprof')
 const pprofBin = require('./pprof-bin/pkg/pprof_bin')
 const { QrynBadRequest } = require('../lib/handlers/errors')
-const { clusterName} = require('../common')
+const { clusterName } = require('../common')
 
 const HISTORY_TIMESPAN = 1000 * 60 * 60 * 24 * 7
 
@@ -209,7 +209,7 @@ const selectMergeStacktraces = async (req, res) => {
       responseType: 'arraybuffer'
     })
   const binData = Uint8Array.from(profiles.data)
-  req.log.debug(`selectMergeStacktraces: profiles downloaded: ${binData.length / 1025} kB ${Date.now() - start} ms`)
+  req.log.debug(`selectMergeStacktraces: profiles downloaded: ${binData.length / 1025}kB in ${Date.now() - start}ms`)
   start = Date.now()
   require('./pprof-bin/pkg/pprof_bin').init_panic_hook()
   const promises = []
@@ -238,9 +238,9 @@ const selectMergeStacktraces = async (req, res) => {
     sResp = pprofBin.export_tree(_ctxIdx, `${typeRegex.sampleType}:${typeRegex.sampleUnit}`)
     exportTreeLat += (process.hrtime?.bigint ? process.hrtime.bigint() : 0) - start
   } finally {
-    req.log.debug(`selectMergeStacktraces: profiles processed: ${promises.length}  ${Date.now() - start} ms`)
-    req.log.debug(`selectMergeStacktraces: mergeTree: ${mergeTreeLat / BigInt(1000000)} ms`)
-    req.log.debug(`selectMergeStacktraces: export_tree: ${exportTreeLat / BigInt(1000000)} ms`)
+    req.log.debug(`selectMergeStacktraces: profiles processed: ${promises.length} in ${Date.now() - start}ms`)
+    req.log.debug(`selectMergeStacktraces: mergeTree: ${mergeTreeLat / BigInt(1000000)}ms`)
+    req.log.debug(`selectMergeStacktraces: export_tree: ${exportTreeLat / BigInt(1000000)}ms`)
     try { pprofBin.drop_tree(_ctxIdx) } catch (e) { req.log.error(e) }
   }
   return res.code(200).send(Buffer.from(sResp))
