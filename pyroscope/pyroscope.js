@@ -201,6 +201,7 @@ const selectMergeStacktraces = async (req, res) => {
   if (process.env.ADVANCED_PROFILES_MERGE_LIMIT) {
     sqlReq.orderBy(['timestamp_ns', 'desc']).limit(parseInt(process.env.ADVANCED_PROFILES_MERGE_LIMIT))
   }
+  let start = Date.now()
   const profiles = await clickhouse.rawRequest(sqlReq.toString() + ' FORMAT RowBinary',
     null,
     DATABASE_NAME(),
@@ -208,17 +209,22 @@ const selectMergeStacktraces = async (req, res) => {
       responseType: 'arraybuffer'
     })
   const binData = Uint8Array.from(profiles.data)
-  req.log.debug(`profiles: ${binData.length / 1025} kB`)
+  req.log.debug(`selectMergeStacktraces: profiles downloaded: ${binData.length / 1025} kB ${Date.now() - start} ms`)
+  start = Date.now()
   require('./pprof-bin/pkg/pprof_bin').init_panic_hook()
   const promises = []
   const _ctxIdx = ++ctxIdx
+  let mergeTreeLat = BigInt(0)
+  let exportTreeLat = BigInt(0)
   for (let i = 0; i < binData.length;) {
     const [size, shift] = readULeb32(binData, i)
     const uarray = Uint8Array.from(profiles.data.slice(i + shift, i + size + shift))
     i += size + shift
     promises.push(new Promise((resolve, reject) => setTimeout(() => {
       try {
+        const start = process.hrtime?.bigint ? process.hrtime.bigint() : 0
         pprofBin.merge_tree(_ctxIdx, uarray, `${typeRegex.sampleType}:${typeRegex.sampleUnit}`)
+        mergeTreeLat += (process.hrtime?.bigint ? process.hrtime.bigint() : 0) - start
         resolve()
       } catch (e) {
         reject(e)
@@ -228,8 +234,13 @@ const selectMergeStacktraces = async (req, res) => {
   let sResp = null
   try {
     await Promise.all(promises)
+    const start = process.hrtime?.bigint ? process.hrtime.bigint() : 0
     sResp = pprofBin.export_tree(_ctxIdx, `${typeRegex.sampleType}:${typeRegex.sampleUnit}`)
+    exportTreeLat += (process.hrtime?.bigint ? process.hrtime.bigint() : 0) - start
   } finally {
+    req.log.debug(`selectMergeStacktraces: profiles processed: ${promises.length}  ${Date.now() - start} ms`)
+    req.log.debug(`selectMergeStacktraces: mergeTree: ${mergeTreeLat / BigInt(1000000)} ms`)
+    req.log.debug(`selectMergeStacktraces: export_tree: ${exportTreeLat / BigInt(1000000)} ms`)
     try { pprofBin.drop_tree(_ctxIdx) } catch (e) { req.log.error(e) }
   }
   return res.code(200).send(Buffer.from(sResp))
