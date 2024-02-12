@@ -168,6 +168,7 @@ const labelSelectorQuery = (query, labelSelector) => {
 }
 
 const selectMergeStacktraces = async (req, res) => {
+  return await selectMergeStacktracesV2(req, res)
   const dist = clusterName ? '_dist' : ''
   const typeRegex = parseTypeId(req.body.getProfileTypeid())
   const sel = req.body.getLabelSelector()
@@ -244,6 +245,122 @@ const selectMergeStacktraces = async (req, res) => {
     try { pprofBin.drop_tree(_ctxIdx) } catch (e) { req.log.error(e) }
   }
   return res.code(200).send(Buffer.from(sResp))
+}
+
+const selectMergeStacktracesV2 = async (req, res) => {
+
+  const dist = clusterName ? '_dist' : ''
+  const typeRegex = parseTypeId(req.body.getProfileTypeid())
+  const sel = req.body.getLabelSelector()
+  const fromTimeSec = req.body && req.body.getStart()
+    ? Math.floor(parseInt(req.body.getStart()) / 1000)
+    : Math.floor((Date.now() - 1000 * 60 * 60 * 48) / 1000)
+  const toTimeSec = req.body && req.body.getEnd()
+    ? Math.floor(parseInt(req.body.getEnd()) / 1000)
+    : Math.floor(Date.now() / 1000)
+  const idxSelect = (new Sql.Select())
+    .select('fingerprint')
+    .from(`${DATABASE_NAME()}.profiles_series_gin`)
+    .where(
+      Sql.And(
+        Sql.Eq(new Sql.Raw(`has(sample_types_units, (${Sql.quoteVal(typeRegex.sampleType)},${Sql.quoteVal(typeRegex.sampleUnit)}))`), 1),
+        Sql.Eq('type_id', Sql.val(`${typeRegex.type}:${typeRegex.periodType}:${typeRegex.periodUnit}`)),
+        Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
+        Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`))
+      )
+    ).groupBy('fingerprint')
+  labelSelectorQuery(idxSelect, sel)
+  const rawReq = (new Sql.Select())
+    .select([
+      new Sql.Raw(`arrayMap(x -> (x.1, x.2, x.3, (arrayFirst(y -> y.1 == ${Sql.quoteVal(`${typeRegex.sampleType}:${typeRegex.sampleUnit}`)}, x.4) as af).2, af.3), tree)`),
+      'tree'
+    ], 'functions')
+    .from(`${DATABASE_NAME()}.profiles${dist}`)
+    .where(
+      Sql.And(
+        Sql.Gte('timestamp_ns', new Sql.Raw(Math.floor(fromTimeSec) + '000000000')),
+        Sql.Lte('timestamp_ns', new Sql.Raw(Math.floor(toTimeSec) + '000000000')),
+        new Sql.In('fingerprint', 'IN', idxSelect)
+      ))
+  if (process.env.ADVANCED_PROFILES_MERGE_LIMIT) {
+    rawReq.orderBy(['timestamp_ns', 'desc']).limit(parseInt(process.env.ADVANCED_PROFILES_MERGE_LIMIT))
+  }
+  const withRawReq = new Sql.With('raw', rawReq, !!clusterName)
+  const joinedReq = (new Sql.Select()).with(withRawReq).select([
+    new Sql.Raw('(raw.tree.1, raw.tree.2, raw.tree.3, sum(raw.tree.4), sum(raw.tree.5))'),
+    'tree2'
+  ]).from(new Sql.WithReference(withRawReq))
+    .join('raw.tree', 'array')
+    .groupBy(new Sql.Raw('raw.tree.1'), new Sql.Raw('raw.tree.2'), new Sql.Raw('raw.tree.3'))
+  const withJoinedReq = new Sql.With('joined', joinedReq, !!clusterName)
+  const joinedAggregatedReq = (new Sql.Select()).select(
+    [new Sql.Raw('groupArray(tree2)'), 'tree']).from(new Sql.WithReference(withJoinedReq))
+  //const withJoinedAggregatedReq = new Sql.With('joinedAggregated', joinedAggregatedReq, !!clusterName)
+  const functionsReq = (new Sql.Select()).select(
+    [new Sql.Raw('groupUniqArray(raw.functions)'), 'functions2']
+  ).from(new Sql.WithReference(withRawReq)).join('raw.functions', 'array')
+  //const withFunctionsReq = new Sql.With('functions', functionsReq, !!clusterName)
+
+  const brack1 = new Sql.Raw(`(${joinedAggregatedReq.toString()})`)
+  const brack2 = new Sql.Raw(`(${functionsReq.toString()})`)
+
+  const sqlReq = (new Sql.Select())
+    .with(withJoinedReq, withRawReq)
+    .select(
+      [brack2, 'functions'],
+      [brack1, 'tree']
+    )
+
+  let start = Date.now()
+  console.log(sqlReq.toString())
+  const profiles = await clickhouse.rawRequest(sqlReq.toString() + ' FORMAT RowBinary',
+    null,
+    DATABASE_NAME(),
+    {
+      responseType: 'arraybuffer'
+    })
+  const binData = Uint8Array.from(profiles.data)
+  require('fs').writeFileSync('test.dat', binData)
+  req.log.debug(`selectMergeStacktraces: profiles downloaded: ${binData.length / 1025}kB in ${Date.now() - start}ms`)
+  //start = Date.now()
+  require('./pprof-bin/pkg/pprof_bin').init_panic_hook()
+  start = process.hrtime?.bigint ? process.hrtime.bigint() : 0
+  const resp = pprofBin.tree2Bin(binData)
+  const exportTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : 0) - start
+  req.log.debug(`export_tree: ${exportTreeLat / BigInt(1000000)}ms`)
+  return res.code(200).send(Buffer.from(resp))
+  /*const promises = []
+  const _ctxIdx = ++ctxIdx
+  let mergeTreeLat = BigInt(0)
+  let exportTreeLat = BigInt(0)
+  for (let i = 0; i < binData.length;) {
+    const [size, shift] = readULeb32(binData, i)
+    const uarray = Uint8Array.from(profiles.data.slice(i + shift, i + size + shift))
+    i += size + shift
+    promises.push(new Promise((resolve, reject) => setTimeout(() => {
+      try {
+        const start = process.hrtime?.bigint ? process.hrtime.bigint() : 0
+        pprofBin.merge_tree(_ctxIdx, uarray, `${typeRegex.sampleType}:${typeRegex.sampleUnit}`)
+        mergeTreeLat += (process.hrtime?.bigint ? process.hrtime.bigint() : 0) - start
+        resolve()
+      } catch (e) {
+        reject(e)
+      }
+    }, 0)))
+  }
+  let sResp = null
+  try {
+    await Promise.all(promises)
+    const start = process.hrtime?.bigint ? process.hrtime.bigint() : 0
+    sResp = pprofBin.export_tree(_ctxIdx, `${typeRegex.sampleType}:${typeRegex.sampleUnit}`)
+    exportTreeLat += (process.hrtime?.bigint ? process.hrtime.bigint() : 0) - start
+  } finally {
+    req.log.debug(`selectMergeStacktraces: profiles processed: ${promises.length} in ${Date.now() - start}ms`)
+    req.log.debug(`selectMergeStacktraces: mergeTree: ${mergeTreeLat / BigInt(1000000)}ms`)
+    req.log.debug(`selectMergeStacktraces: export_tree: ${exportTreeLat / BigInt(1000000)}ms`)
+    try { pprofBin.drop_tree(_ctxIdx) } catch (e) { req.log.error(e) }
+  }
+  return res.code(200).send(Buffer.from(sResp))*/
 }
 
 const selectSeries = async (req, res) => {

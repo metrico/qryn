@@ -130,7 +130,7 @@ unsafe fn merge(tree: &mut Tree, p: &Profile) {
     }
 }
 
-/*fn read_uleb128(bytes: &[u8]) -> (usize, usize) {
+fn read_uleb128(bytes: &[u8]) -> (usize, usize) {
     let mut result = 0;
     let mut shift = 0;
     loop {
@@ -142,7 +142,15 @@ unsafe fn merge(tree: &mut Tree, p: &Profile) {
         }
     }
     (result, shift)
-}*/
+}
+
+fn read_uint64(bytes: &[u8]) -> (u64) {
+    let mut res: u64 = 0;
+    for i in 0..8 {
+        res |= (bytes[i] as u64) << (i * 8);
+    }
+    res
+}
 
 static mut INTS: [i64; 4000000] = [0; 4000000];
 
@@ -262,6 +270,138 @@ pub unsafe fn export_tree(id: u32, sample_type: String) -> Vec<u8> {
     res.encode_to_vec()
 }
 
+struct TreeNodeV2 {
+    parent_id: u64,
+    fn_id: u64,
+    node_id: u64,
+    slf: u64,
+    total: u64
+}
+
+#[wasm_bindgen]
+pub fn tree2Bin(bytes: &[u8]) -> Vec<u8> {
+    let mut funcs: HashMap<u64, usize> = HashMap::new();
+    let mut funcsArr: Vec<String> = vec!["total".to_string()];
+    let mut size = 0;
+    let mut offs = 0;
+    let mut max_self: u64 = 0;
+    (size, offs) = read_uleb128(bytes);
+    for i in 0..size {
+        let id = read_uint64(&bytes[offs..]);
+        offs += 8;
+        let mut _offs: usize = 0;
+        let mut _size: usize = 0;
+        (_size, _offs) = read_uleb128(&bytes[offs..]);
+        offs += _offs;
+        funcsArr.push(String::from_utf8_lossy(&bytes[offs..offs + _size]).to_string());
+        funcs.insert(id, funcsArr.len() - 1);
+        offs += _size;
+    }
+
+    let mut trie: HashMap<u64, Vec<TreeNodeV2>> = HashMap::new();
+    let mut _offs: usize = 0;
+    (size, _offs) = read_uleb128(&bytes[offs..]);
+    offs += _offs;
+    for _i in 0..size {
+        let parent_id = read_uint64(&bytes[offs..]);
+        offs += 8;
+        let fn_id = read_uint64(&bytes[offs..]);
+        offs += 8;
+        let node_id = read_uint64(&bytes[offs..]);
+        offs += 8;
+        let slf = read_uint64(&bytes[offs..]);
+        offs += 8;
+        let total = read_uint64(&bytes[offs..]);
+        if max_self < slf {
+            max_self = slf;
+        }
+        offs += 8;
+        if trie.contains_key(&parent_id) {
+            trie.get_mut(&parent_id).unwrap().push(TreeNodeV2 {
+                fn_id,
+                parent_id,
+                node_id,
+                slf,
+                total
+            })
+        } else {
+            trie.insert(parent_id, Vec::new());
+            trie.get_mut(&parent_id).unwrap().push(TreeNodeV2 {
+                fn_id,
+                parent_id,
+                node_id,
+                slf,
+                total
+            });
+        }
+    }
+
+    let mut total: u64 = 0;
+    for i in trie.get(&(0u64)).unwrap().iter() {
+        total += i.total;
+    }
+
+    let mut res = SelectMergeStacktracesResponse::default();
+    let mut fg = FlameGraph::default();
+    fg.names = funcsArr.clone();
+    let mut lvl = Level::default();
+    lvl.values.extend([0, total as i64, 0, 0]);
+    fg.levels.push(lvl);
+
+    let totalNode: TreeNodeV2 = TreeNodeV2 {
+        slf: 0,
+        total: total,
+        node_id: 0,
+        fn_id: 0,
+        parent_id: 0
+    };
+
+    let mut prepend_map: HashMap<u64, u64> = HashMap::new();
+
+    let mut refs: Vec<&TreeNodeV2> = vec![&totalNode];
+    let mut refLen: usize = 1;
+    while refLen > 0 {
+        let mut prepend: u64 = 0;
+        let _refs = refs.clone();
+        refs.clear();
+        lvl = Level::default();
+        for parent in _refs.iter() {
+            prepend += prepend_map.get(&parent.node_id).unwrap_or(&0);
+                let opt = trie.get(&parent.node_id);
+
+                if opt.is_none() {
+                    prepend += parent.total;
+                    continue;
+                }
+            let mut totalSum: u64 = 0;
+                for n in opt.unwrap().iter() {
+                    let current_prepend = (prepend_map.get(&n.node_id).unwrap_or(&0u64) + prepend);
+                    prepend = 0;
+                    prepend_map.insert(n.node_id, current_prepend);
+                    refs.push(n);
+                    totalSum += n.total;
+                    lvl.values.extend(
+                        [
+                            current_prepend as i64,
+                            n.total as i64,
+                            n.slf as i64,
+                            funcs[&n.fn_id] as i64
+                        ]
+                    );
+
+                }
+            prepend = parent.slf;
+
+        }
+        fg.levels.push(lvl.clone());
+        refLen = refs.len();
+    }
+    fg.total = totalNode.total as i64;
+    fg.max_self = max_self as i64;
+    res.flamegraph = Some(fg);
+    res.encode_to_vec()
+}
+
 #[wasm_bindgen]
 pub unsafe fn drop_tree(id: u32) {
     let mut ctx = CTX.lock().unwrap();
@@ -273,4 +413,21 @@ pub unsafe fn drop_tree(id: u32) {
 #[wasm_bindgen]
 pub fn init_panic_hook() {
     console_error_panic_hook::set_once();
+}
+
+
+#[cfg(test)]
+mod tests {
+    use std::fs::File;
+    use std::io::Read;
+    use web_sys::console::assert;
+    use crate::tree2Bin;
+
+    #[test]
+    fn it_works() {
+        let mut file = File::open("/home/hromozeka/QXIP/qryn/test.dat");
+        let mut contents = Vec::new();
+        file.unwrap().read_to_end(&mut contents);
+        tree2Bin(contents.as_slice());
+    }
 }

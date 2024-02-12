@@ -13,6 +13,11 @@ export function merge_tree(id: number, bytes: Uint8Array, sample_type: string): 
 */
 export function export_tree(id: number, sample_type: string): Uint8Array;
 /**
+* @param {Uint8Array} bytes
+* @returns {Uint8Array}
+*/
+export function tree2Bin(bytes: Uint8Array): Uint8Array;
+/**
 * @param {number} id
 */
 export function drop_tree(id: number): void;
