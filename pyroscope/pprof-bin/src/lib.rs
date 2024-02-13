@@ -414,20 +414,3 @@ pub unsafe fn drop_tree(id: u32) {
 pub fn init_panic_hook() {
     console_error_panic_hook::set_once();
 }
-
-
-#[cfg(test)]
-mod tests {
-    use std::fs::File;
-    use std::io::Read;
-    use web_sys::console::assert;
-    use crate::tree2Bin;
-
-    #[test]
-    fn it_works() {
-        let mut file = File::open("/home/hromozeka/QXIP/qryn/test.dat");
-        let mut contents = Vec::new();
-        file.unwrap().read_to_end(&mut contents);
-        tree2Bin(contents.as_slice());
-    }
-}
