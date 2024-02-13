@@ -321,10 +321,16 @@ const selectMergeStacktracesV2 = async (req, res) => {
   req.log.debug(`selectMergeStacktraces: profiles downloaded: ${binData.length / 1025}kB in ${Date.now() - start}ms`)
   require('./pprof-bin/pkg/pprof_bin').init_panic_hook()
   start = process.hrtime?.bigint ? process.hrtime.bigint() : 0
-  const resp = pprofBin.tree2Bin(binData)
-  const exportTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : 0) - start
-  req.log.debug(`export_tree: ${exportTreeLat / BigInt(1000000)}ms`)
-  return res.code(200).send(Buffer.from(resp))
+  const _ctxIdx = ++ctxIdx
+  try {
+    pprofBin.merge_tree(_ctxIdx, binData)
+    const resp = pprofBin.export_tree(_ctxIdx)
+    const exportTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : 0) - start
+    req.log.debug(`export_tree: ${exportTreeLat / BigInt(1000000)}ms`)
+    return res.code(200).send(Buffer.from(resp))
+  } finally {
+    try { pprofBin.drop_tree(_ctxIdx) } catch (e) {}
+  }
 }
 
 const selectSeries = async (req, res) => {

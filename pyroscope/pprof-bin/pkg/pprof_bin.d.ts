@@ -5,18 +5,17 @@
 * @param {Uint8Array} bytes
 * @param {string} sample_type
 */
-export function merge_tree(id: number, bytes: Uint8Array, sample_type: string): void;
+export function merge_prof(id: number, bytes: Uint8Array, sample_type: string): void;
 /**
 * @param {number} id
-* @param {string} sample_type
-* @returns {Uint8Array}
-*/
-export function export_tree(id: number, sample_type: string): Uint8Array;
-/**
 * @param {Uint8Array} bytes
+*/
+export function merge_tree(id: number, bytes: Uint8Array): void;
+/**
+* @param {number} id
 * @returns {Uint8Array}
 */
-export function tree2Bin(bytes: Uint8Array): Uint8Array;
+export function export_tree(id: number): Uint8Array;
 /**
 * @param {number} id
 */
