@@ -17,6 +17,7 @@ bytes = "1.5.0"
 prost = "0.12.3"
 json = "0.12.4"
 lazy_static = "1.4.0"
+cityhash = "0.1.0"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
