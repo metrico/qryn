@@ -353,32 +353,3 @@ pub fn drop_tree(id: u32) {
 pub fn init_panic_hook() {
     console_error_panic_hook::set_once();
 }
-
-#[cfg(test)]
-mod tests {
-    use std::fs;
-    use wasm_bindgen::exports;
-    use crate::read_uleb128;
-    use crate::merge_prof;
-    use crate::merge_tree;
-    use crate::export_tree;
-
-    #[test]
-    fn it_works() {
-        let _contents = fs::read("/home/hromozeka/QXIP/qryn/test.dat")
-            .expect("Failed to read file");
-        let contents = _contents.as_slice();
-        let (legSize, shift) = read_uleb128(&contents);
-        let mut ofs = shift;
-        print!("{}", legSize);
-        for i in 0..legSize {
-            let (size, shift) = read_uleb128(&contents[ofs..]);
-            ofs += shift;
-            merge_prof(0, &contents[ofs..ofs + size], "cpu:nanoseconds".to_string());
-            ofs += size;
-        }
-        //export_tree(0);
-        merge_tree(0, &contents[ofs..]);
-        export_tree(0);
-    }
-}
