@@ -2,7 +2,7 @@ const messages = require('./querier_pb')
 const types = require('./types/v1/types_pb')
 const services = require('./querier_grpc_pb')
 const clickhouse = require('../lib/db/clickhouse')
-const { DATABASE_NAME } = require('../lib/utils')
+const { DATABASE_NAME, checkVersion } = require('../lib/utils')
 const Sql = require('@cloki/clickhouse-sql')
 const compiler = require('../parser/bnf')
 const { readULeb32 } = require('./pprof')
@@ -248,7 +248,6 @@ const selectMergeStacktraces = async (req, res) => {
 }
 
 const selectMergeStacktracesV2 = async (req, res) => {
-
   const dist = clusterName ? '_dist' : ''
   const typeRegex = parseTypeId(req.body.getProfileTypeid())
   const sel = req.body.getLabelSelector()
@@ -258,6 +257,7 @@ const selectMergeStacktracesV2 = async (req, res) => {
   const toTimeSec = req.body && req.body.getEnd()
     ? Math.floor(parseInt(req.body.getEnd()) / 1000)
     : Math.floor(Date.now() / 1000)
+  const v2 = checkVersion('profiles_v2', (fromTimeSec - 3600) * 1000)
   const idxSelect = (new Sql.Select())
     .select('fingerprint')
     .from(`${DATABASE_NAME()}.profiles_series_gin`)
@@ -270,7 +270,8 @@ const selectMergeStacktracesV2 = async (req, res) => {
       )
     ).groupBy('fingerprint')
   labelSelectorQuery(idxSelect, sel)
-  const rawReq = (new Sql.Select())
+  const withIdxSelect = new Sql.With('idx', idxSelect, !!clusterName)
+  const rawReq = (new Sql.Select()).with(withIdxSelect)
     .select([
       new Sql.Raw(`arrayMap(x -> (x.1, x.2, x.3, (arrayFirst(y -> y.1 == ${Sql.quoteVal(`${typeRegex.sampleType}:${typeRegex.sampleUnit}`)}, x.4) as af).2, af.3), tree)`),
       'tree'
@@ -280,7 +281,7 @@ const selectMergeStacktracesV2 = async (req, res) => {
       Sql.And(
         Sql.Gte('timestamp_ns', new Sql.Raw(Math.floor(fromTimeSec) + '000000000')),
         Sql.Lte('timestamp_ns', new Sql.Raw(Math.floor(toTimeSec) + '000000000')),
-        new Sql.In('fingerprint', 'IN', idxSelect)
+        new Sql.In('fingerprint', 'IN', new Sql.WithReference(withIdxSelect))
       ))
   if (process.env.ADVANCED_PROFILES_MERGE_LIMIT) {
     rawReq.orderBy(['timestamp_ns', 'desc']).limit(parseInt(process.env.ADVANCED_PROFILES_MERGE_LIMIT))
@@ -299,15 +300,44 @@ const selectMergeStacktracesV2 = async (req, res) => {
     [new Sql.Raw('groupUniqArray(raw.functions)'), 'functions2']
   ).from(new Sql.WithReference(withRawReq)).join('raw.functions', 'array')
 
+  let brackLegacy = (new Sql.Select()).select(
+    [new Sql.Raw('[]::Array(String)'), 'legacy']
+  )
+  let withLegacy = null
+  if (!v2) {
+    const legacy = (new Sql.Select()).with(withIdxSelect)
+      .select('payload')
+      .from(`${DATABASE_NAME()}.profiles${dist}`)
+      .where(
+        Sql.And(
+          Sql.Gte('timestamp_ns', new Sql.Raw(Math.floor(fromTimeSec) + '000000000')),
+          Sql.Lte('timestamp_ns', new Sql.Raw(Math.floor(toTimeSec) + '000000000')),
+          new Sql.In('fingerprint', 'IN', new Sql.WithReference(withIdxSelect)),
+          Sql.Eq(new Sql.Raw('empty(tree)'), 1)
+        ))
+    if (process.env.ADVANCED_PROFILES_MERGE_LIMIT) {
+      legacy.orderBy(['timestamp_ns', 'desc']).limit(parseInt(process.env.ADVANCED_PROFILES_MERGE_LIMIT))
+    }
+    withLegacy = new Sql.With('legacy', legacy, !!clusterName)
+    brackLegacy = (new Sql.Select())
+      .select([new Sql.Raw('groupArray(payload)'), 'payloads'])
+      .from(new Sql.WithReference(withLegacy))
+  }
+  brackLegacy = new Sql.Raw(`(${brackLegacy.toString()})`)
   const brack1 = new Sql.Raw(`(${joinedAggregatedReq.toString()})`)
   const brack2 = new Sql.Raw(`(${functionsReq.toString()})`)
 
   const sqlReq = (new Sql.Select())
-    .with(withJoinedReq, withRawReq)
     .select(
+      [brackLegacy, 'legacy'],
       [brack2, 'functions'],
       [brack1, 'tree']
     )
+  if (v2) {
+    sqlReq.with(withJoinedReq, withRawReq)
+  } else {
+    sqlReq.with(withJoinedReq, withRawReq, withLegacy)
+  }
 
   let start = Date.now()
   console.log(sqlReq.toString())
@@ -320,12 +350,29 @@ const selectMergeStacktracesV2 = async (req, res) => {
   const binData = Uint8Array.from(profiles.data)
   req.log.debug(`selectMergeStacktraces: profiles downloaded: ${binData.length / 1025}kB in ${Date.now() - start}ms`)
   require('./pprof-bin/pkg/pprof_bin').init_panic_hook()
-  start = process.hrtime?.bigint ? process.hrtime.bigint() : 0
   const _ctxIdx = ++ctxIdx
+  const [legacyLen, shift] = readULeb32(binData, 0)
+  let ofs = shift
   try {
-    pprofBin.merge_tree(_ctxIdx, binData)
+    let mergePprofLat = BigInt(0);
+    for (let i = 0; i < legacyLen; i++) {
+      const [profLen, shift] = readULeb32(binData, ofs)
+      ofs += shift
+      start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
+      pprofBin.merge_prof(_ctxIdx,
+        Uint8Array.from(profiles.data.slice(ofs, ofs + profLen)),
+        `${typeRegex.sampleType}:${typeRegex.sampleUnit}`)
+      mergePprofLat += (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
+      ofs += profLen
+    }
+    start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
+    pprofBin.merge_tree(_ctxIdx, Uint8Array.from(profiles.data.slice(ofs)))
+    const mergeTreeLat = (process.hrtime?.bigint? process.hrtime.bigint() : BigInt(0)) - start
+    start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
     const resp = pprofBin.export_tree(_ctxIdx)
-    const exportTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : 0) - start
+    const exportTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
+    req.log.debug(`merge_pprof: ${mergePprofLat / BigInt(1000000)}ms`)
+    req.log.debug(`merge_tree: ${mergeTreeLat / BigInt(1000000)}ms`)
     req.log.debug(`export_tree: ${exportTreeLat / BigInt(1000000)}ms`)
     return res.code(200).send(Buffer.from(resp))
   } finally {

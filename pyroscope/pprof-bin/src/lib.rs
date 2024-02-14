@@ -10,7 +10,8 @@ use pprof_pb::querier::v1::FlameGraph;
 use pprof_pb::querier::v1::Level;
 use pprof_pb::querier::v1::SelectMergeStacktracesResponse;
 use prost::Message;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::slice::SliceIndex;
 use std::sync::Mutex;
 use std::vec::Vec;
 use wasm_bindgen::prelude::*;
@@ -53,7 +54,17 @@ struct Tree {
     max_self: i64,
 }
 
-
+fn find_node(id: u64, nodes: &Vec<TreeNodeV2>) -> i32 {
+    let mut n: i32 = -1;
+    for c in 0..nodes.len() {
+        let _c = &nodes[c];
+        if _c.node_id == id {
+            n = c as i32;
+            break;
+        }
+    }
+    n
+}
 
 fn merge(tree: &mut Tree, p: &Profile) {
     let mut functions: HashMap<u64, &Function> = HashMap::new();
@@ -96,9 +107,8 @@ fn merge(tree: &mut Tree, p: &Profile) {
         let mut parent_id: u64 = 0;
         for i in (0..s.location_id.len()).rev() {
             let location = locations[&s.location_id[i]];
-            let name_hash = city_hash_64(
-                p.string_table[functions[&location.line[0].function_id].name as usize].as_bytes()
-            );
+            let name = &p.string_table[functions[&location.line[0].function_id].name as usize];
+            let name_hash = city_hash_64(name.as_bytes());
             let node_id = hash_128_to_64(parent_id, name_hash);
             if !tree.nodes.contains_key(&parent_id) {
                 tree.nodes.insert(parent_id, Vec::new());
@@ -110,13 +120,21 @@ fn merge(tree: &mut Tree, p: &Profile) {
             if tree.max_self < slf as i64 {
                 tree.max_self = slf as i64;
             }
-            tree.nodes.get_mut(&parent_id).unwrap().push(TreeNodeV2 {
-                parent_id,
-                fn_id: name_hash,
-                node_id,
-                slf,
-                total: s.value[u_value_idx] as u64
-            });
+            let mut children = tree.nodes.get_mut(&parent_id).unwrap();
+            let n = find_node(node_id, children);
+            if n == -1 {
+                children.push(TreeNodeV2 {
+                    parent_id,
+                    fn_id: name_hash,
+                    node_id,
+                    slf,
+                    total: s.value[u_value_idx] as u64
+                });
+            } else {
+                children.get_mut(n as usize).unwrap().total += s.value[u_value_idx] as u64;
+                children.get_mut(n as usize).unwrap().slf += slf;
+            }
+
             parent_id = node_id;
         }
     }
@@ -138,7 +156,6 @@ fn read_uleb128(bytes: &[u8]) -> (usize, usize) {
 
 
 
-
 fn bfs(t: &Tree, res: &mut Vec<Level>) {
     let mut total: u64 = 0;
     for i in t.nodes.get(&(0u64)).unwrap().iter() {
@@ -157,9 +174,13 @@ fn bfs(t: &Tree, res: &mut Vec<Level>) {
     };
     let mut prepend_map: HashMap<u64, u64> = HashMap::new();
 
+    let mut reviewed: HashSet<u64> = HashSet::new();
+
     let mut refs: Vec<&TreeNodeV2> = vec![&totalNode];
     let mut refLen: usize = 1;
+    let mut i = 0;
     while refLen > 0 {
+        i+=1;
         let mut prepend: u64 = 0;
         let _refs = refs.clone();
         refs.clear();
@@ -174,6 +195,12 @@ fn bfs(t: &Tree, res: &mut Vec<Level>) {
             }
             let mut totalSum: u64 = 0;
             for n in opt.unwrap().iter() {
+                if reviewed.contains(&n.node_id) {
+                    // PANIC!!! WE FOUND A LOOP
+                    return;
+                } else {
+                    reviewed.insert(n.node_id);
+                }
                 prepend_map.insert(n.node_id, prepend);
                 refs.push(n);
                 totalSum += n.total;
@@ -182,7 +209,7 @@ fn bfs(t: &Tree, res: &mut Vec<Level>) {
                         prepend as i64,
                         n.total as i64,
                         n.slf as i64,
-                        t.names_map[&n.fn_id] as i64
+                        *t.names_map.get(&n.fn_id).unwrap_or(&1) as i64
                     ]
                 );
                 prepend = 0;
@@ -203,7 +230,7 @@ fn upsert_tree(ctx: &mut HashMap<u32,Tree>, id: u32) {
         ctx.insert(
             id,
             Tree {
-                names: vec!["total".to_string()],
+                names: vec!["total".to_string(), "n/a".to_string()],
                 names_map: HashMap::new(),
                 nodes: HashMap::new(),
                 sample_type: "".to_string(),
@@ -264,13 +291,20 @@ pub fn merge_tree(id: u32, bytes: &[u8]) {
         }
         offs += 8;
         if tree.nodes.contains_key(&parent_id) {
-            tree.nodes.get_mut(&parent_id).unwrap().push(TreeNodeV2 {
-                fn_id,
-                parent_id,
-                node_id,
-                slf,
-                total
-            })
+            let n = find_node(node_id, tree.nodes.get(&parent_id).unwrap());
+            if n != -1 {
+                tree.nodes.get_mut(&parent_id).unwrap().get_mut(n as usize).unwrap().total += total;
+                tree.nodes.get_mut(&parent_id).unwrap().get_mut(n as usize).unwrap().slf += slf;
+            } else {
+                tree.nodes.get_mut(&parent_id).unwrap().push(TreeNodeV2 {
+                    fn_id,
+                    parent_id,
+                    node_id,
+                    slf,
+                    total
+                })
+            }
+
         } else {
             tree.nodes.insert(parent_id, Vec::new());
             tree.nodes.get_mut(&parent_id).unwrap().push(TreeNodeV2 {
@@ -292,6 +326,9 @@ pub fn export_tree(id: u32) -> Vec<u8> {
         return res.encode_to_vec();
     }
     let tree = ctx.get(&id).unwrap();
+    if tree.nodes.len() == 0 {
+        return res.encode_to_vec();
+    }
     let mut fg = FlameGraph::default();
     fg.names = tree.names.clone();
     fg.max_self = tree.max_self;
@@ -315,4 +352,33 @@ pub fn drop_tree(id: u32) {
 #[wasm_bindgen]
 pub fn init_panic_hook() {
     console_error_panic_hook::set_once();
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use wasm_bindgen::exports;
+    use crate::read_uleb128;
+    use crate::merge_prof;
+    use crate::merge_tree;
+    use crate::export_tree;
+
+    #[test]
+    fn it_works() {
+        let _contents = fs::read("/home/hromozeka/QXIP/qryn/test.dat")
+            .expect("Failed to read file");
+        let contents = _contents.as_slice();
+        let (legSize, shift) = read_uleb128(&contents);
+        let mut ofs = shift;
+        print!("{}", legSize);
+        for i in 0..legSize {
+            let (size, shift) = read_uleb128(&contents[ofs..]);
+            ofs += shift;
+            merge_prof(0, &contents[ofs..ofs + size], "cpu:nanoseconds".to_string());
+            ofs += size;
+        }
+        //export_tree(0);
+        merge_tree(0, &contents[ofs..]);
+        export_tree(0);
+    }
 }
