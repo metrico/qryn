@@ -4,7 +4,8 @@
 
 [![CI+CD](https://github.com/metrico/qryn/actions/workflows/build_release.yml/badge.svg)](https://github.com/metrico/qryn/actions/workflows/build_release.yml)
 ![CodeQL](https://github.com/lmangani/cLoki/workflows/CodeQL/badge.svg)
-<img src="https://raw.githubusercontent.com/pedromxavier/flag-badges/main/badges/UA.svg" alt="made in Ukraine">
+![GitHub Repo stars](https://img.shields.io/github/stars/metrico/qryn)
+
 
 ![image](https://user-images.githubusercontent.com/1423657/232089970-c4536f16-5967-4051-85a5-8ad94fcde67c.png)
 
