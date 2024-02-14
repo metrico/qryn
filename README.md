@@ -7,7 +7,7 @@
 ![GitHub Repo stars](https://img.shields.io/github/stars/metrico/qryn)
 
 
-![image](https://user-images.githubusercontent.com/1423657/232089970-c4536f16-5967-4051-85a5-8ad94fcde67c.png)
+<img src="https://user-images.githubusercontent.com/1423657/232089970-c4536f16-5967-4051-85a5-8ad94fcde67c.png" height=50>&nbsp; <img src="https://github.com/metrico/qryn/assets/1423657/546faddb-fbc6-4af5-9e32-4db6da10915d" height=49>
 
 # [qryn 3.x](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud)
 
