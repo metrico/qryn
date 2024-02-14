@@ -30,7 +30,7 @@ const viaClickhouseQuery = (token, query) => {
 const viaStream = (token, query) => {
   const labelsToDrop = token.Children('label').map(l => l.value)
   addStream(query, (s) => s.map(e => {
-    if (!e.labels) {
+    if (!e || !e.labels) {
       return e
     }
     for (const l of labelsToDrop) {
