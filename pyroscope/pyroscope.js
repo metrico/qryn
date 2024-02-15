@@ -432,7 +432,7 @@ const selectSeries = async (req, res) => {
   const labelsReq = (new Sql.Select()).with(withIdxReq).select(
     'fingerprint',
     [new Sql.Raw(tagsReq), 'tags'],
-    [groupBy ? 'fingerprint' : new Sql.Raw('cityHash64(tags)'), 'new_fingerprint']
+    [groupBy ? new Sql.Raw('cityHash64(tags)') : 'fingerprint', 'new_fingerprint']
   ).distinct(true).from([`${DATABASE_NAME()}.profiles_series`, 'p'])
     .where(Sql.And(
       new Sql.In('fingerprint', 'IN', new Sql.WithReference(withIdxReq)),
