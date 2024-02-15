@@ -11,6 +11,7 @@ use pprof_pb::querier::v1::Level;
 use pprof_pb::querier::v1::SelectMergeStacktracesResponse;
 use prost::Message;
 use std::collections::{HashMap, HashSet};
+use std::io::stderr;
 use std::slice::SliceIndex;
 use std::sync::Mutex;
 use std::vec::Vec;
@@ -18,6 +19,7 @@ use wasm_bindgen::prelude::*;
 use ch64::city_hash_64;
 use ch64::read_uint64_le;
 use ch64::hash_128_to_64;
+use std::panic;
 
 pub mod pprof_pb {
 
@@ -240,22 +242,7 @@ fn upsert_tree(ctx: &mut HashMap<u32,Tree>, id: u32) {
     }
 }
 
-#[wasm_bindgen]
-pub fn merge_prof(id: u32, bytes: &[u8], sample_type: String) {
-    let mut ctx = CTX.lock().unwrap();
-    upsert_tree(&mut ctx, id);
-    let mut tree = ctx.get_mut(&id).unwrap();
-    tree.sample_type = sample_type;
-
-    let prof = Profile::decode(bytes).unwrap();
-    merge(&mut tree, &prof);
-}
-
-#[wasm_bindgen]
-pub fn merge_tree(id: u32, bytes: &[u8]) {
-    let mut ctx = CTX.lock().unwrap();
-    upsert_tree(&mut ctx, id);
-    let mut tree = ctx.get_mut(&id).unwrap();
+fn merge_trie(tree: &mut Tree, bytes: &[u8]) {
     let mut size = 0;
     let mut offs = 0;
     (size, offs) = read_uleb128(bytes);
@@ -319,26 +306,65 @@ pub fn merge_tree(id: u32, bytes: &[u8]) {
 }
 
 #[wasm_bindgen]
+pub fn merge_prof(id: u32, bytes: &[u8], sample_type: String) {
+    let p = panic::catch_unwind(|| {
+        let mut ctx = CTX.lock().unwrap();
+        upsert_tree(&mut ctx, id);
+        let mut tree = ctx.get_mut(&id).unwrap();
+        tree.sample_type = sample_type;
+
+        let prof = Profile::decode(bytes).unwrap();
+        merge(&mut tree, &prof);
+    });
+    match p {
+        Ok(res) => {}
+        Err(err) => panic!(err)
+
+    }
+}
+
+#[wasm_bindgen]
+pub fn merge_tree(id: u32, bytes: &[u8]) {
+    let result = panic::catch_unwind(|| {
+        let mut ctx = CTX.lock().unwrap();
+        upsert_tree(&mut ctx, id);
+        let mut tree = ctx.get_mut(&id).unwrap();
+        merge_trie(&mut tree, bytes);
+        0
+    });
+    match result {
+        Ok(res) => {}
+        Err(err) => panic!(err)
+    }
+}
+
+#[wasm_bindgen]
 pub fn export_tree(id: u32) -> Vec<u8> {
-    let mut ctx = CTX.lock().unwrap();
-    let mut res = SelectMergeStacktracesResponse::default();
-    if !ctx.contains_key(&id) {
-        return res.encode_to_vec();
+    let p = panic::catch_unwind(|| {
+        let mut ctx = CTX.lock().unwrap();
+        let mut res = SelectMergeStacktracesResponse::default();
+        if !ctx.contains_key(&id) {
+            return res.encode_to_vec();
+        }
+        let tree = ctx.get(&id).unwrap();
+        if tree.nodes.len() == 0 {
+            return res.encode_to_vec();
+        }
+        let mut fg = FlameGraph::default();
+        fg.names = tree.names.clone();
+        fg.max_self = tree.max_self;
+        fg.total = 0;
+        for n in tree.nodes.get(&(0u64)).unwrap().iter() {
+            fg.total += n.total as i64;
+        }
+        bfs(tree, &mut fg.levels);
+        res.flamegraph = Some(fg);
+        return  res.encode_to_vec();
+    });
+    match p {
+        Ok(res) => return res,
+        Err(err) => panic!(err)
     }
-    let tree = ctx.get(&id).unwrap();
-    if tree.nodes.len() == 0 {
-        return res.encode_to_vec();
-    }
-    let mut fg = FlameGraph::default();
-    fg.names = tree.names.clone();
-    fg.max_self = tree.max_self;
-    fg.total = 0;
-    for n in tree.nodes.get(&(0u64)).unwrap().iter() {
-        fg.total += n.total as i64;
-    }
-    bfs(tree, &mut fg.levels);
-    res.flamegraph = Some(fg);
-    res.encode_to_vec()
 }
 
 #[wasm_bindgen]
