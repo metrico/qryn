@@ -54,6 +54,7 @@ struct Tree {
     nodes: HashMap<u64,Vec<TreeNodeV2>>,
     sample_type: String,
     max_self: i64,
+    nodes_num: i32
 }
 
 fn find_node(id: u64, nodes: &Vec<TreeNodeV2>) -> i32 {
@@ -112,7 +113,7 @@ fn merge(tree: &mut Tree, p: &Profile) {
             let name = &p.string_table[functions[&location.line[0].function_id].name as usize];
             let name_hash = city_hash_64(name.as_bytes());
             let node_id = hash_128_to_64(parent_id, name_hash);
-            if !tree.nodes.contains_key(&parent_id) {
+            if !tree.nodes.contains_key(&parent_id) && tree.nodes_num < 2000000{
                 tree.nodes.insert(parent_id, Vec::new());
             }
             let mut slf: u64 = 0;
@@ -122,7 +123,10 @@ fn merge(tree: &mut Tree, p: &Profile) {
             if tree.max_self < slf as i64 {
                 tree.max_self = slf as i64;
             }
-            let mut children = tree.nodes.get_mut(&parent_id).unwrap();
+            let mut fake_children: Vec<TreeNodeV2> = Vec::new();
+            let mut children = tree.nodes
+                .get_mut(&parent_id)
+                .unwrap_or(&mut fake_children);
             let n = find_node(node_id, children);
             if n == -1 {
                 children.push(TreeNodeV2 {
@@ -132,9 +136,10 @@ fn merge(tree: &mut Tree, p: &Profile) {
                     slf,
                     total: s.value[u_value_idx] as u64
                 });
-            } else {
+            } else if tree.nodes_num < 2000000 {
                 children.get_mut(n as usize).unwrap().total += s.value[u_value_idx] as u64;
                 children.get_mut(n as usize).unwrap().slf += slf;
+                tree.nodes_num += 1;
             }
 
             parent_id = node_id;
@@ -237,6 +242,7 @@ fn upsert_tree(ctx: &mut HashMap<u32,Tree>, id: u32) {
                 nodes: HashMap::new(),
                 sample_type: "".to_string(),
                 max_self: 0,
+                nodes_num: 1
             },
         );
     }
@@ -253,7 +259,7 @@ fn merge_trie(tree: &mut Tree, bytes: &[u8]) {
         let mut _size: usize = 0;
         (_size, _offs) = read_uleb128(&bytes[offs..]);
         offs += _offs;
-        if !tree.names_map.contains_key(&id) {
+        if !tree.names_map.contains_key(&id) && tree.names.len() < 2000000 {
             tree.names.push(String::from_utf8_lossy(&bytes[offs..offs + _size]).to_string());
             tree.names_map.insert(id, tree.names.len() - 1);
         }
@@ -282,17 +288,18 @@ fn merge_trie(tree: &mut Tree, bytes: &[u8]) {
             if n != -1 {
                 tree.nodes.get_mut(&parent_id).unwrap().get_mut(n as usize).unwrap().total += total;
                 tree.nodes.get_mut(&parent_id).unwrap().get_mut(n as usize).unwrap().slf += slf;
-            } else {
+            } else if tree.nodes_num < 2000000 {
                 tree.nodes.get_mut(&parent_id).unwrap().push(TreeNodeV2 {
                     fn_id,
                     parent_id,
                     node_id,
                     slf,
                     total
-                })
+                });
+                tree.nodes_num+=1;
             }
 
-        } else {
+        } else if tree.nodes_num < 2000000 {
             tree.nodes.insert(parent_id, Vec::new());
             tree.nodes.get_mut(&parent_id).unwrap().push(TreeNodeV2 {
                 fn_id,
@@ -301,6 +308,7 @@ fn merge_trie(tree: &mut Tree, bytes: &[u8]) {
                 slf,
                 total
             });
+            tree.nodes_num+=1;
         }
     }
 }
