@@ -6,20 +6,18 @@ use lazy_static::lazy_static;
 use pprof_pb::google::v1::Function;
 use pprof_pb::google::v1::Location;
 use pprof_pb::google::v1::Profile;
-use pprof_pb::querier::v1::FlameGraph;
 use pprof_pb::querier::v1::Level;
+use pprof_pb::querier::v1::FlameGraph;
 use pprof_pb::querier::v1::SelectMergeStacktracesResponse;
+use std::panic;
 use prost::Message;
 use std::collections::{HashMap, HashSet};
-use std::io::stderr;
 use std::slice::SliceIndex;
 use std::sync::Mutex;
 use std::vec::Vec;
 use wasm_bindgen::prelude::*;
 use ch64::city_hash_64;
 use ch64::read_uint64_le;
-use ch64::hash_128_to_64;
-use std::panic;
 
 pub mod pprof_pb {
 
@@ -69,6 +67,21 @@ fn find_node(id: u64, nodes: &Vec<TreeNodeV2>) -> i32 {
     n
 }
 
+fn get_node_id(parent_id: u64, name_hash: u64, level: u16) -> u64 {
+    let mut node_bytes: [u8; 16] = [0; 16];
+    for i in 0..8 {
+        node_bytes[i] = ((parent_id >> (i * 8)) & 0xFF) as u8;
+    }
+    for i in 0..8 {
+        node_bytes[i+8] = ((name_hash >> (i * 8)) & 0xFF) as u8;
+    }
+    let mut _level = level;
+    if _level > 511 {
+        _level = 511;
+    }
+    (city_hash_64(&node_bytes[0..]) >> 9) | ((_level as u64) << 55)
+}
+
 fn merge(tree: &mut Tree, p: &Profile) {
     let mut functions: HashMap<u64, &Function> = HashMap::new();
     for f in p.function.iter() {
@@ -112,7 +125,9 @@ fn merge(tree: &mut Tree, p: &Profile) {
             let location = locations[&s.location_id[i]];
             let name = &p.string_table[functions[&location.line[0].function_id].name as usize];
             let name_hash = city_hash_64(name.as_bytes());
-            let node_id = hash_128_to_64(parent_id, name_hash);
+            let node_id = get_node_id(
+                parent_id, name_hash,(s.location_id.len() - i) as u16
+            );
             if !tree.nodes.contains_key(&parent_id) && tree.nodes_num < 2000000{
                 tree.nodes.insert(parent_id, Vec::new());
             }
