@@ -5,6 +5,7 @@ authors = ["akvlad90@gmail.com"]
 edition = "2018"
 build = "build.rs"
 
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 
@@ -30,6 +31,11 @@ wasm-bindgen-test = "0.3.34"
 [profile.release]
 # Tell `rustc` to optimize for small code size.
 opt-level = "s"
+overflow-checks = false
+
+[profile.dev]
+overflow-checks = false
+
 
 [build-dependencies]
 prost-build = { version = "0.12.3" }
