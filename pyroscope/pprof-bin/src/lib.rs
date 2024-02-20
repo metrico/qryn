@@ -180,7 +180,11 @@ fn read_uleb128(bytes: &[u8]) -> (usize, usize) {
 
 fn bfs(t: &Tree, res: &mut Vec<Level>) {
     let mut total: u64 = 0;
-    for i in t.nodes.get(&(0u64)).unwrap().iter() {
+    let mut root_children: &Vec<TreeNodeV2> = &Vec::new();
+    if t.nodes.contains_key(&(0u64)) {
+        root_children = t.nodes.get(&(0u64)).unwrap();
+    }
+    for i in root_children.iter() {
         total += i.total;
     }
     let mut lvl = Level::default();
@@ -335,7 +339,6 @@ pub fn merge_prof(id: u32, bytes: &[u8], sample_type: String) {
         upsert_tree(&mut ctx, id);
         let mut tree = ctx.get_mut(&id).unwrap();
         tree.sample_type = sample_type;
-
         let prof = Profile::decode(bytes).unwrap();
         merge(&mut tree, &prof);
     });
@@ -366,18 +369,17 @@ pub fn export_tree(id: u32) -> Vec<u8> {
     let p = panic::catch_unwind(|| {
         let mut ctx = CTX.lock().unwrap();
         let mut res = SelectMergeStacktracesResponse::default();
-        if !ctx.contains_key(&id) {
-            return res.encode_to_vec();
-        }
-        let tree = ctx.get(&id).unwrap();
-        if tree.nodes.len() == 0 {
-            return res.encode_to_vec();
-        }
+        upsert_tree(&mut ctx, id);
+        let mut tree = ctx.get_mut(&id).unwrap();
         let mut fg = FlameGraph::default();
         fg.names = tree.names.clone();
         fg.max_self = tree.max_self;
         fg.total = 0;
-        for n in tree.nodes.get(&(0u64)).unwrap().iter() {
+        let mut root_children: &Vec<TreeNodeV2> = &vec![];
+        if tree.nodes.contains_key(&(0u64)) {
+            root_children = tree.nodes.get(&(0u64)).unwrap();
+        }
+        for n in root_children.iter() {
             fg.total += n.total as i64;
         }
         bfs(tree, &mut fg.levels);
