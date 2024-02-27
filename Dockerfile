@@ -12,4 +12,4 @@ RUN npm install --omit=dev
 # Expose Ports
 EXPOSE 3100
 
-CMD [ "npm", "start" ]
+CMD [ "npm", "--offline", "--logs-max=0", "start" ]
