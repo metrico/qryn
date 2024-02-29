@@ -10,6 +10,7 @@ replace (
 
 require (
 	github.com/alecthomas/participle/v2 v2.1.0
+	github.com/metrico/micro-gc v0.0.0-20240229134304-977775afb420
 	github.com/pquerna/ffjson v0.0.0-20190930134022-aa0246cd15f7
 	github.com/prometheus/prometheus v1.8.2-0.20220714142409-b41e0750abf5
 )

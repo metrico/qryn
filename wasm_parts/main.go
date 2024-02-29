@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	gcContext "github.com/metrico/micro-gc/context"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/promql"
 	"github.com/prometheus/prometheus/promql/parser"
@@ -35,13 +36,17 @@ func createCtx(id uint32) {
 
 //export alloc
 func alloc(id uint32, size int) *byte {
+	ctxId := gcContext.GetContext()
+	gcContext.SetContext(id)
 	data[id].request = make([]byte, size)
+	gcContext.SetContext(ctxId)
 	return &data[id].request[0]
 }
 
 //export dealloc
 func dealloc(id uint32) {
 	delete(data, id)
+	gcContext.ReleaseContext(id)
 }
 
 //export getCtxRequest
@@ -66,6 +71,10 @@ func getCtxResponseLen(id uint32) uint32 {
 
 //export transpileTraceQL
 func transpileTraceQL(id uint32) int {
+	ctxId := gcContext.GetContext()
+	gcContext.SetContext(id)
+	defer gcContext.SetContext(ctxId)
+
 	request := types.TraceQLRequest{}
 	err := request.UnmarshalJSON(data[id].request)
 	if err != nil {
@@ -143,7 +152,11 @@ func stats() {
 
 //export pqlRangeQuery
 func pqlRangeQuery(id uint32, fromMS float64, toMS float64, stepMS float64) uint32 {
-	return pql(data[id], func() (promql.Query, error) {
+	ctxId := gcContext.GetContext()
+	gcContext.SetContext(id)
+	defer gcContext.SetContext(ctxId)
+
+	return pql(id, data[id], func() (promql.Query, error) {
 		queriable := &TestQueryable{id: id, stepMs: int64(stepMS)}
 		return getEng().NewRangeQuery(
 			queriable,
@@ -158,7 +171,11 @@ func pqlRangeQuery(id uint32, fromMS float64, toMS float64, stepMS float64) uint
 
 //export pqlInstantQuery
 func pqlInstantQuery(id uint32, timeMS float64) uint32 {
-	return pql(data[id], func() (promql.Query, error) {
+	ctxId := gcContext.GetContext()
+	gcContext.SetContext(id)
+	defer gcContext.SetContext(ctxId)
+
+	return pql(id, data[id], func() (promql.Query, error) {
 		queriable := &TestQueryable{id: id, stepMs: 15000}
 		return getEng().NewInstantQuery(
 			queriable,
@@ -170,6 +187,10 @@ func pqlInstantQuery(id uint32, timeMS float64) uint32 {
 
 //export pqlSeries
 func pqlSeries(id uint32) uint32 {
+	ctxId := gcContext.GetContext()
+	gcContext.SetContext(id)
+	defer gcContext.SetContext(ctxId)
+
 	queriable := &TestQueryable{id: id, stepMs: 15000}
 	query, err := getEng().NewRangeQuery(
 		queriable,
@@ -220,7 +241,7 @@ func wrapErrorStr(err error) string {
 	return err.Error()
 }
 
-func pql(c *ctx, query func() (promql.Query, error)) uint32 {
+func pql(id uint32, c *ctx, query func() (promql.Query, error)) uint32 {
 	rq, err := query()
 
 	if err != nil {
@@ -238,6 +259,10 @@ func pql(c *ctx, query func() (promql.Query, error)) uint32 {
 
 	c.response = []byte(matchersJSON)
 	c.onDataLoad = func(c *ctx) {
+		ctxId := gcContext.GetContext()
+		gcContext.SetContext(id)
+		defer gcContext.SetContext(ctxId)
+
 		res := rq.Exec(context.Background())
 		c.response = []byte(writeResponse(res))
 		return
