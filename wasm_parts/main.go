@@ -36,7 +36,7 @@ func createCtx(id uint32) {
 
 //export alloc
 func alloc(id uint32, size int) *byte {
-	ctxId := gcContext.GetContext()
+	ctxId := gcContext.GetContextID()
 	gcContext.SetContext(id)
 	data[id].request = make([]byte, size)
 	gcContext.SetContext(ctxId)
@@ -71,7 +71,7 @@ func getCtxResponseLen(id uint32) uint32 {
 
 //export transpileTraceQL
 func transpileTraceQL(id uint32) int {
-	ctxId := gcContext.GetContext()
+	ctxId := gcContext.GetContextID()
 	gcContext.SetContext(id)
 	defer gcContext.SetContext(ctxId)
 
@@ -152,7 +152,7 @@ func stats() {
 
 //export pqlRangeQuery
 func pqlRangeQuery(id uint32, fromMS float64, toMS float64, stepMS float64) uint32 {
-	ctxId := gcContext.GetContext()
+	ctxId := gcContext.GetContextID()
 	gcContext.SetContext(id)
 	defer gcContext.SetContext(ctxId)
 
@@ -171,7 +171,7 @@ func pqlRangeQuery(id uint32, fromMS float64, toMS float64, stepMS float64) uint
 
 //export pqlInstantQuery
 func pqlInstantQuery(id uint32, timeMS float64) uint32 {
-	ctxId := gcContext.GetContext()
+	ctxId := gcContext.GetContextID()
 	gcContext.SetContext(id)
 	defer gcContext.SetContext(ctxId)
 
@@ -187,7 +187,7 @@ func pqlInstantQuery(id uint32, timeMS float64) uint32 {
 
 //export pqlSeries
 func pqlSeries(id uint32) uint32 {
-	ctxId := gcContext.GetContext()
+	ctxId := gcContext.GetContextID()
 	gcContext.SetContext(id)
 	defer gcContext.SetContext(ctxId)
 
@@ -259,7 +259,7 @@ func pql(id uint32, c *ctx, query func() (promql.Query, error)) uint32 {
 
 	c.response = []byte(matchersJSON)
 	c.onDataLoad = func(c *ctx) {
-		ctxId := gcContext.GetContext()
+		ctxId := gcContext.GetContextID()
 		gcContext.SetContext(id)
 		defer gcContext.SetContext(ctxId)
 
