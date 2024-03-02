@@ -9,7 +9,7 @@
 
 <img src="https://user-images.githubusercontent.com/1423657/232089970-c4536f16-5967-4051-85a5-8ad94fcde67c.png" height=50>&nbsp; <img src="https://github.com/metrico/qryn/assets/1423657/546faddb-fbc6-4af5-9e32-4db6da10915d" height=49>
 
-# [qryn 3.x](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud)
+# [qryn 3.x](https://qryn.dev) 
 
 :rocket: _polyglot, lighweight, multi-standard drop-in_ **observability** framework for _**Logs, Metrics and Traces**_<br/>
 
