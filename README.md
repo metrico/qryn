@@ -11,7 +11,7 @@
 
 # [qryn 3.x](https://qryn.dev) 
 
-:rocket: _polyglot, lighweight, multi-standard drop-in_ **observability** framework for _**Logs, Metrics and Traces**_<br/>
+:rocket: _polyglot, lighweight, multi-standard drop-in_ **observability** framework for _**Logs, Metrics** and **Traces**_<br/>
 
 > ... it's pronounced /ˈkwɪr..ɪŋ/ or just _querying_
 
