@@ -29,7 +29,6 @@
 ## 🚀 [Get Started](https://qryn.metrico.in/#/installation)
 
 * Setup & Deploy **qryn** _OSS_ using the [documentation](https://qryn.metrico.in/#/installation) and get help in our [Matrix room](https://matrix.to/#/#qryn:matrix.org) :octocat:
-* No time? Use [qryn.cloud](https://qryn.cloud) and get polyglot in just minutes! Drop-in LGTM alternative ☁️ 
 
 <a href="https://qryn.cloud" target="_blank">
 <img src="https://github.com/metrico/qryn/assets/1423657/8b93d7cb-442c-4454-b247-27b00ae78384">
