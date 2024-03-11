@@ -1,5 +1,9 @@
 module wasm_parts
 
+go 1.21
+
+toolchain go1.21.3
+
 replace (
 	cloud.google.com/go v0.65.0 => cloud.google.com/go v0.102.1
 	github.com/InfluxCommunity/influxdb3-go v0.2.0 => github.com/akvlad/influxdb3-go v0.0.1
@@ -10,7 +14,7 @@ replace (
 
 require (
 	github.com/alecthomas/participle/v2 v2.1.0
-	github.com/metrico/micro-gc v0.0.0-20240229134304-977775afb420
+	github.com/metrico/micro-gc v0.0.4
 	github.com/pquerna/ffjson v0.0.0-20190930134022-aa0246cd15f7
 	github.com/prometheus/prometheus v1.8.2-0.20220714142409-b41e0750abf5
 )
@@ -57,5 +61,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-go 1.20

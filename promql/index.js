@@ -16,8 +16,9 @@ module.exports.PSQLError = PSQLError
  * @param stepMs {number}
  */
 module.exports.rangeQuery = async (query, startMs, endMs, stepMs) => {
+  let resp
   try {
-    const resp = await prometheus.pqlRangeQuery(query, startMs, endMs, stepMs, module.exports.getData)
+    resp = await prometheus.pqlRangeQuery(query, startMs, endMs, stepMs, module.exports.getData)
     return JSON.parse(resp)
   } catch (e) {
     if (e instanceof prometheus.WasmError) {

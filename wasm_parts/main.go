@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	gcContext "github.com/metrico/micro-gc/context"
+	"sync"
+
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/promql"
 	"github.com/prometheus/prometheus/promql/parser"
@@ -18,6 +20,11 @@ import (
 	traceql_transpiler "wasm_parts/traceql/transpiler"
 	"wasm_parts/types"
 )
+
+//go:linkname get sync.(*Pool).Get
+func get(p *sync.Pool) any {
+	panic("GET POOL")
+}
 
 var maxSamples = 5000000
 
@@ -111,6 +118,8 @@ func transpileTraceQL(id uint32) int {
 		options = append(options, sql.STRING_OPT_INLINE_WITH)
 	}
 	str, err := sel.String(request.Ctx.CHSqlCtx, options...)
+	print(str)
+	print("\n")
 	if err != nil {
 		data[id].response = []byte(err.Error())
 		return 1
@@ -119,24 +128,30 @@ func transpileTraceQL(id uint32) int {
 	return 0
 }
 
-var eng *promql.Engine = nil
-var engC = 0
+var eng *promql.Engine = promql.NewEngine(promql.EngineOpts{
+	Logger:                   TestLogger{},
+	MaxSamples:               maxSamples,
+	Timeout:                  time.Second * 30,
+	ActiveQueryTracker:       nil,
+	LookbackDelta:            0,
+	NoStepSubqueryIntervalFn: nil,
+	EnableAtModifier:         false,
+	EnableNegativeOffset:     false,
+})
+var engC = func() *promql.Engine {
+	return promql.NewEngine(promql.EngineOpts{
+		Logger:                   TestLogger{},
+		MaxSamples:               maxSamples,
+		Timeout:                  time.Second * 30,
+		ActiveQueryTracker:       nil,
+		LookbackDelta:            0,
+		NoStepSubqueryIntervalFn: nil,
+		EnableAtModifier:         false,
+		EnableNegativeOffset:     false,
+	})
+}()
 
 func getEng() *promql.Engine {
-	if eng == nil || engC > 5 {
-		eng = promql.NewEngine(promql.EngineOpts{
-			Logger:                   TestLogger{},
-			MaxSamples:               maxSamples,
-			Timeout:                  time.Second * 30,
-			ActiveQueryTracker:       nil,
-			LookbackDelta:            0,
-			NoStepSubqueryIntervalFn: nil,
-			EnableAtModifier:         false,
-			EnableNegativeOffset:     false,
-		})
-		engC = 0
-	}
-	engC++
 	return eng
 }
 
@@ -343,7 +358,11 @@ func writeVector(v promql.Vector) string {
 	return jsonBuilder.String()
 }
 
-func main() {}
+func main() {
+	p := sync.Pool{}
+	a := p.Get()
+	_ = a
+}
 
 type TestLogger struct{}
 
