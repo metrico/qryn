@@ -7,7 +7,7 @@ const { gunzipSync } = require('zlib')
 class WasmError extends Error {}
 module.exports.WasmError = WasmError
 
-let counter = 0
+let counter = 1
 
 const getWasm = (() => {
   const _Go = Go
@@ -20,6 +20,9 @@ const getWasm = (() => {
     run = true
     const _wasm = await WebAssembly.instantiate(
       gunzipSync(fs.readFileSync(WASM_URL)), go.importObject)
+    setInterval(() => {
+      console.log(`WASM SIZE: ${Math.floor(wasm.exports.memory.buffer.byteLength / 1024 / 1024)} MB`)
+    }, 5000)
     go.run(_wasm.instance)
     wasm = _wasm.instance
     wasm.exports.setMaxSamples(process.env.ADVANCED_PROMETHEUS_MAX_SAMPLES || 5000000)
@@ -28,10 +31,6 @@ const getWasm = (() => {
   }
   init()
   return () => {
-    if (cnt >= 20 && !run) {
-      init()
-    }
-    cnt++
     return wasm
   }
 })()

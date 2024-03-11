@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	gcContext "github.com/metrico/micro-gc/context"
+	"sync"
+
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/promql"
 	"github.com/prometheus/prometheus/promql/parser"
@@ -17,6 +20,11 @@ import (
 	traceql_transpiler "wasm_parts/traceql/transpiler"
 	"wasm_parts/types"
 )
+
+//go:linkname get sync.(*Pool).Get
+func get(p *sync.Pool) any {
+	panic("GET POOL")
+}
 
 var maxSamples = 5000000
 
@@ -35,13 +43,17 @@ func createCtx(id uint32) {
 
 //export alloc
 func alloc(id uint32, size int) *byte {
+	ctxId := gcContext.GetContextID()
+	gcContext.SetContext(id)
 	data[id].request = make([]byte, size)
+	gcContext.SetContext(ctxId)
 	return &data[id].request[0]
 }
 
 //export dealloc
 func dealloc(id uint32) {
 	delete(data, id)
+	gcContext.ReleaseContext(id)
 }
 
 //export getCtxRequest
@@ -66,6 +78,10 @@ func getCtxResponseLen(id uint32) uint32 {
 
 //export transpileTraceQL
 func transpileTraceQL(id uint32) int {
+	ctxId := gcContext.GetContextID()
+	gcContext.SetContext(id)
+	defer gcContext.SetContext(ctxId)
+
 	request := types.TraceQLRequest{}
 	err := request.UnmarshalJSON(data[id].request)
 	if err != nil {
@@ -102,6 +118,8 @@ func transpileTraceQL(id uint32) int {
 		options = append(options, sql.STRING_OPT_INLINE_WITH)
 	}
 	str, err := sel.String(request.Ctx.CHSqlCtx, options...)
+	print(str)
+	print("\n")
 	if err != nil {
 		data[id].response = []byte(err.Error())
 		return 1
@@ -110,24 +128,30 @@ func transpileTraceQL(id uint32) int {
 	return 0
 }
 
-var eng *promql.Engine = nil
-var engC = 0
+var eng *promql.Engine = promql.NewEngine(promql.EngineOpts{
+	Logger:                   TestLogger{},
+	MaxSamples:               maxSamples,
+	Timeout:                  time.Second * 30,
+	ActiveQueryTracker:       nil,
+	LookbackDelta:            0,
+	NoStepSubqueryIntervalFn: nil,
+	EnableAtModifier:         false,
+	EnableNegativeOffset:     false,
+})
+var engC = func() *promql.Engine {
+	return promql.NewEngine(promql.EngineOpts{
+		Logger:                   TestLogger{},
+		MaxSamples:               maxSamples,
+		Timeout:                  time.Second * 30,
+		ActiveQueryTracker:       nil,
+		LookbackDelta:            0,
+		NoStepSubqueryIntervalFn: nil,
+		EnableAtModifier:         false,
+		EnableNegativeOffset:     false,
+	})
+}()
 
 func getEng() *promql.Engine {
-	if eng == nil || engC > 5 {
-		eng = promql.NewEngine(promql.EngineOpts{
-			Logger:                   TestLogger{},
-			MaxSamples:               maxSamples,
-			Timeout:                  time.Second * 30,
-			ActiveQueryTracker:       nil,
-			LookbackDelta:            0,
-			NoStepSubqueryIntervalFn: nil,
-			EnableAtModifier:         false,
-			EnableNegativeOffset:     false,
-		})
-		engC = 0
-	}
-	engC++
 	return eng
 }
 
@@ -143,7 +167,11 @@ func stats() {
 
 //export pqlRangeQuery
 func pqlRangeQuery(id uint32, fromMS float64, toMS float64, stepMS float64) uint32 {
-	return pql(data[id], func() (promql.Query, error) {
+	ctxId := gcContext.GetContextID()
+	gcContext.SetContext(id)
+	defer gcContext.SetContext(ctxId)
+
+	return pql(id, data[id], func() (promql.Query, error) {
 		queriable := &TestQueryable{id: id, stepMs: int64(stepMS)}
 		return getEng().NewRangeQuery(
 			queriable,
@@ -158,7 +186,11 @@ func pqlRangeQuery(id uint32, fromMS float64, toMS float64, stepMS float64) uint
 
 //export pqlInstantQuery
 func pqlInstantQuery(id uint32, timeMS float64) uint32 {
-	return pql(data[id], func() (promql.Query, error) {
+	ctxId := gcContext.GetContextID()
+	gcContext.SetContext(id)
+	defer gcContext.SetContext(ctxId)
+
+	return pql(id, data[id], func() (promql.Query, error) {
 		queriable := &TestQueryable{id: id, stepMs: 15000}
 		return getEng().NewInstantQuery(
 			queriable,
@@ -170,6 +202,10 @@ func pqlInstantQuery(id uint32, timeMS float64) uint32 {
 
 //export pqlSeries
 func pqlSeries(id uint32) uint32 {
+	ctxId := gcContext.GetContextID()
+	gcContext.SetContext(id)
+	defer gcContext.SetContext(ctxId)
+
 	queriable := &TestQueryable{id: id, stepMs: 15000}
 	query, err := getEng().NewRangeQuery(
 		queriable,
@@ -220,7 +256,7 @@ func wrapErrorStr(err error) string {
 	return err.Error()
 }
 
-func pql(c *ctx, query func() (promql.Query, error)) uint32 {
+func pql(id uint32, c *ctx, query func() (promql.Query, error)) uint32 {
 	rq, err := query()
 
 	if err != nil {
@@ -238,6 +274,10 @@ func pql(c *ctx, query func() (promql.Query, error)) uint32 {
 
 	c.response = []byte(matchersJSON)
 	c.onDataLoad = func(c *ctx) {
+		ctxId := gcContext.GetContextID()
+		gcContext.SetContext(id)
+		defer gcContext.SetContext(ctxId)
+
 		res := rq.Exec(context.Background())
 		c.response = []byte(writeResponse(res))
 		return
@@ -318,7 +358,11 @@ func writeVector(v promql.Vector) string {
 	return jsonBuilder.String()
 }
 
-func main() {}
+func main() {
+	p := sync.Pool{}
+	a := p.Get()
+	_ = a
+}
 
 type TestLogger struct{}
 

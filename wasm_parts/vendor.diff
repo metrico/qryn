@@ -134,7 +134,7 @@ exit
 #### Patch data follows ####
 diff -c 'vendor/github.com/alecthomas/participle/v2/validate.go' '_vendor/github.com/alecthomas/participle/v2/validate.go'
 Index: ./github.com/alecthomas/participle/v2/validate.go
-*** ./github.com/alecthomas/participle/v2/validate.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/alecthomas/participle/v2/validate.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/alecthomas/participle/v2/validate.go	Thu Oct 26 15:52:53 2023
 ***************
 *** 42,48 ****
@@ -155,7 +155,7 @@ Index: ./github.com/alecthomas/participle/v2/validate.go
   		if seen[n] {
 diff -c 'vendor/github.com/aws/aws-sdk-go/aws/defaults/defaults.go' '_vendor/github.com/aws/aws-sdk-go/aws/defaults/defaults.go'
 Index: ./github.com/aws/aws-sdk-go/aws/defaults/defaults.go
-*** ./github.com/aws/aws-sdk-go/aws/defaults/defaults.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/aws/aws-sdk-go/aws/defaults/defaults.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/aws/aws-sdk-go/aws/defaults/defaults.go	Thu Oct 26 15:21:07 2023
 ***************
 *** 132,138 ****
@@ -178,7 +178,7 @@ Index: ./github.com/aws/aws-sdk-go/aws/defaults/defaults.go
   	ip := net.ParseIP(host)
 diff -c 'vendor/github.com/aws/aws-sdk-go/aws/request/retryer.go' '_vendor/github.com/aws/aws-sdk-go/aws/request/retryer.go'
 Index: ./github.com/aws/aws-sdk-go/aws/request/retryer.go
-*** ./github.com/aws/aws-sdk-go/aws/request/retryer.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/aws/aws-sdk-go/aws/request/retryer.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/aws/aws-sdk-go/aws/request/retryer.go	Thu Oct 26 15:21:07 2023
 ***************
 *** 1,7 ****
@@ -204,7 +204,7 @@ Index: ./github.com/aws/aws-sdk-go/aws/request/retryer.go
 --- 199,204 ----
 diff -c 'vendor/github.com/davecgh/go-spew/spew/bypass.go' '_vendor/github.com/davecgh/go-spew/spew/bypass.go'
 Index: ./github.com/davecgh/go-spew/spew/bypass.go
-*** ./github.com/davecgh/go-spew/spew/bypass.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/davecgh/go-spew/spew/bypass.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/davecgh/go-spew/spew/bypass.go	Thu Oct 26 15:21:07 2023
 ***************
 *** 68,80 ****
@@ -278,7 +278,7 @@ Index: ./github.com/davecgh/go-spew/spew/bypass.go
 --- 96,98 ----
 diff -c 'vendor/github.com/edsrzf/mmap-go/mmap.go' '_vendor/github.com/edsrzf/mmap-go/mmap.go'
 Index: ./github.com/edsrzf/mmap-go/mmap.go
-*** ./github.com/edsrzf/mmap-go/mmap.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/edsrzf/mmap-go/mmap.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/edsrzf/mmap-go/mmap.go	Thu Oct 26 15:21:07 2023
 ***************
 *** 15,21 ****
@@ -383,9 +383,107 @@ Index: ./github.com/edsrzf/mmap-go/mmap.go
   func (m *MMap) Unmap() error {
 ! 	return nil
   }
+diff -c 'vendor/github.com/grafana/regexp/backtrack.go' '_vendor/github.com/grafana/regexp/backtrack.go'
+Index: ./github.com/grafana/regexp/backtrack.go
+*** ./github.com/grafana/regexp/backtrack.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/grafana/regexp/backtrack.go	Mon Mar 11 11:17:18 2024
+***************
+*** 16,22 ****
+  
+  import (
+  	"regexp/syntax"
+- 	"sync"
+  )
+  
+  // A job is an entry on the backtracker's job stack. It holds
+--- 16,21 ----
+***************
+*** 44,50 ****
+  	inputs inputs
+  }
+  
+! var bitStatePool sync.Pool
+  
+  func newBitState() *bitState {
+  	b, ok := bitStatePool.Get().(*bitState)
+--- 43,53 ----
+  	inputs inputs
+  }
+  
+! type fakePool[T any] struct {}
+! func (f fakePool[T]) Get() interface{} { return new(T) }
+! func (f fakePool[T]) Put(x any) { }
+! 
+! var bitStatePool fakePool[bitState]
+  
+  func newBitState() *bitState {
+  	b, ok := bitStatePool.Get().(*bitState)
+diff -c 'vendor/github.com/grafana/regexp/exec.go' '_vendor/github.com/grafana/regexp/exec.go'
+Index: ./github.com/grafana/regexp/exec.go
+*** ./github.com/grafana/regexp/exec.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/grafana/regexp/exec.go	Mon Mar 11 11:17:07 2024
+***************
+*** 7,13 ****
+  import (
+  	"io"
+  	"regexp/syntax"
+- 	"sync"
+  )
+  
+  // A queue is a 'sparse array' holding pending threads of execution.
+--- 7,12 ----
+***************
+*** 377,384 ****
+  	inputs   inputs
+  	matchcap []int
+  }
+! 
+! var onePassPool sync.Pool
+  
+  func newOnePassMachine() *onePassMachine {
+  	m, ok := onePassPool.Get().(*onePassMachine)
+--- 376,382 ----
+  	inputs   inputs
+  	matchcap []int
+  }
+! var onePassPool fakePool[onePassMachine]
+  
+  func newOnePassMachine() *onePassMachine {
+  	m, ok := onePassPool.Get().(*onePassMachine)
+diff -c 'vendor/github.com/grafana/regexp/regexp.go' '_vendor/github.com/grafana/regexp/regexp.go'
+Index: ./github.com/grafana/regexp/regexp.go
+*** ./github.com/grafana/regexp/regexp.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/grafana/regexp/regexp.go	Mon Mar 11 18:14:29 2024
+***************
+*** 71,77 ****
+  	"regexp/syntax"
+  	"strconv"
+  	"strings"
+- 	"sync"
+  	"unicode"
+  	"unicode/utf8"
+  )
+--- 71,76 ----
+***************
+*** 225,231 ****
+  // The final matchPool is a catch-all for very large queues.
+  var (
+  	matchSize = [...]int{128, 512, 2048, 16384, 0}
+! 	matchPool [len(matchSize)]sync.Pool
+  )
+  
+  // get returns a machine to use for matching re.
+--- 224,230 ----
+  // The final matchPool is a catch-all for very large queues.
+  var (
+  	matchSize = [...]int{128, 512, 2048, 16384, 0}
+! 	matchPool [len(matchSize)]fakePool[machine]
+  )
+  
+  // get returns a machine to use for matching re.
 diff -c 'vendor/github.com/mwitkow/go-conntrack/dialer_reporter.go' '_vendor/github.com/mwitkow/go-conntrack/dialer_reporter.go'
 Index: ./github.com/mwitkow/go-conntrack/dialer_reporter.go
-*** ./github.com/mwitkow/go-conntrack/dialer_reporter.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/mwitkow/go-conntrack/dialer_reporter.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/mwitkow/go-conntrack/dialer_reporter.go	Thu Oct 26 15:21:07 2023
 ***************
 *** 87,95 ****
@@ -413,7 +511,7 @@ Index: ./github.com/mwitkow/go-conntrack/dialer_reporter.go
 --- 94,99 ----
 diff -c 'vendor/github.com/mwitkow/go-conntrack/listener_wrapper.go' '_vendor/github.com/mwitkow/go-conntrack/listener_wrapper.go'
 Index: ./github.com/mwitkow/go-conntrack/listener_wrapper.go
-*** ./github.com/mwitkow/go-conntrack/listener_wrapper.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/mwitkow/go-conntrack/listener_wrapper.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/mwitkow/go-conntrack/listener_wrapper.go	Thu Oct 26 15:21:07 2023
 ***************
 *** 109,118 ****
@@ -428,6 +526,38 @@ Index: ./github.com/mwitkow/go-conntrack/listener_wrapper.go
   }
   
 --- 109,114 ----
+diff -c 'vendor/github.com/pquerna/ffjson/fflib/v1/buffer_pool.go' '_vendor/github.com/pquerna/ffjson/fflib/v1/buffer_pool.go'
+Index: ./github.com/pquerna/ffjson/fflib/v1/buffer_pool.go
+*** ./github.com/pquerna/ffjson/fflib/v1/buffer_pool.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/pquerna/ffjson/fflib/v1/buffer_pool.go	Mon Mar 11 18:36:36 2024
+***************
+*** 8,17 ****
+  
+  // Allocation pools for Buffers.
+  
+! import "sync"
+  
+! var pools [14]sync.Pool
+! var pool64 *sync.Pool
+  
+  func init() {
+  	var i uint
+--- 8,22 ----
+  
+  // Allocation pools for Buffers.
+  
+! type fakePool struct {
+! 	New func() any
+! }
+  
+! func (f *fakePool) Get() any { return f.New() }
+! func (f *fakePool) Put(x any) {}
+! 
+! var pools [14]fakePool
+! var pool64 *fakePool
+  
+  func init() {
+  	var i uint
 diff -c /dev/null '_vendor/github.com/pquerna/ffjson/inception/decoder.go'
 Index: ./github.com/pquerna/ffjson/inception/decoder.go
 *** ./github.com/pquerna/ffjson/inception/decoder.go	Thu Jan  1 03:00:00 1970
@@ -2918,7 +3048,7 @@ Index: ./github.com/pquerna/ffjson/shared/options.go
 + }
 diff -c 'vendor/github.com/prometheus/client_golang/prometheus/go_collector.go' '_vendor/github.com/prometheus/client_golang/prometheus/go_collector.go'
 Index: ./github.com/prometheus/client_golang/prometheus/go_collector.go
-*** ./github.com/prometheus/client_golang/prometheus/go_collector.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/prometheus/client_golang/prometheus/go_collector.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/prometheus/client_golang/prometheus/go_collector.go	Thu Oct 26 15:21:07 2023
 ***************
 *** 15,36 ****
@@ -3108,7 +3238,7 @@ Index: ./github.com/prometheus/client_golang/prometheus/go_collector.go
   func memstatNamespace(s string) string {
 diff -c 'vendor/github.com/prometheus/client_golang/prometheus/go_collector_latest.go' '_vendor/github.com/prometheus/client_golang/prometheus/go_collector_latest.go'
 Index: ./github.com/prometheus/client_golang/prometheus/go_collector_latest.go
-*** ./github.com/prometheus/client_golang/prometheus/go_collector_latest.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/prometheus/client_golang/prometheus/go_collector_latest.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/prometheus/client_golang/prometheus/go_collector_latest.go	Thu Oct 26 15:21:07 2023
 ***************
 *** 20,26 ****
@@ -3395,7 +3525,7 @@ Index: ./github.com/prometheus/client_golang/prometheus/go_collector_latest.go
 --- 346,351 ----
 diff -c 'vendor/github.com/prometheus/client_golang/prometheus/internal/go_runtime_metrics.go' '_vendor/github.com/prometheus/client_golang/prometheus/internal/go_runtime_metrics.go'
 Index: ./github.com/prometheus/client_golang/prometheus/internal/go_runtime_metrics.go
-*** ./github.com/prometheus/client_golang/prometheus/internal/go_runtime_metrics.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/prometheus/client_golang/prometheus/internal/go_runtime_metrics.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/prometheus/client_golang/prometheus/internal/go_runtime_metrics.go	Thu Oct 26 15:21:07 2023
 ***************
 *** 18,28 ****
@@ -3467,7 +3597,7 @@ Index: ./github.com/prometheus/client_golang/prometheus/internal/go_runtime_metr
   // RuntimeMetricsBucketsForUnit takes a set of buckets obtained for a runtime/metrics histogram
 diff -c 'vendor/github.com/prometheus/client_golang/prometheus/registry.go' '_vendor/github.com/prometheus/client_golang/prometheus/registry.go'
 Index: ./github.com/prometheus/client_golang/prometheus/registry.go
-*** ./github.com/prometheus/client_golang/prometheus/registry.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/prometheus/client_golang/prometheus/registry.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/prometheus/client_golang/prometheus/registry.go	Thu Oct 26 15:21:07 2023
 ***************
 *** 59,66 ****
@@ -3508,9 +3638,279 @@ Index: ./github.com/prometheus/client_golang/prometheus/registry.go
   }
   
   // processMetric is an internal helper method only used by the Gather method.
+diff -c 'vendor/github.com/prometheus/client_golang/prometheus/testutil/promlint/promlint.go' '_vendor/github.com/prometheus/client_golang/prometheus/testutil/promlint/promlint.go'
+Index: ./github.com/prometheus/client_golang/prometheus/testutil/promlint/promlint.go
+*** ./github.com/prometheus/client_golang/prometheus/testutil/promlint/promlint.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/client_golang/prometheus/testutil/promlint/promlint.go	Mon Mar 11 17:47:29 2024
+***************
+*** 17,23 ****
+  import (
+  	"fmt"
+  	"io"
+! 	"regexp"
+  	"sort"
+  	"strings"
+  
+--- 17,23 ----
+  import (
+  	"fmt"
+  	"io"
+! 	"wasm_parts/regexp"
+  	"sort"
+  	"strings"
+  
+diff -c 'vendor/github.com/prometheus/common/model/labels.go' '_vendor/github.com/prometheus/common/model/labels.go'
+Index: ./github.com/prometheus/common/model/labels.go
+*** ./github.com/prometheus/common/model/labels.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/common/model/labels.go	Mon Mar 11 17:56:25 2024
+***************
+*** 16,22 ****
+  import (
+  	"encoding/json"
+  	"fmt"
+! 	"regexp"
+  	"strings"
+  	"unicode/utf8"
+  )
+--- 16,22 ----
+  import (
+  	"encoding/json"
+  	"fmt"
+! 	"wasm_parts/regexp"
+  	"strings"
+  	"unicode/utf8"
+  )
+***************
+*** 91,97 ****
+  // LabelNameRE is a regular expression matching valid label names. Note that the
+  // IsValid method of LabelName performs the same check but faster than a match
+  // with this regular expression.
+! var LabelNameRE = regexp.MustCompile("^[a-zA-Z_][a-zA-Z0-9_]*$")
+  
+  // A LabelName is a key for a LabelSet or Metric.  It has a value associated
+  // therewith.
+--- 91,97 ----
+  // LabelNameRE is a regular expression matching valid label names. Note that the
+  // IsValid method of LabelName performs the same check but faster than a match
+  // with this regular expression.
+! var LabelNameRE = func() *regexp.Regexp { return regexp.MustCompile("^[a-zA-Z_][a-zA-Z0-9_]*$") }
+  
+  // A LabelName is a key for a LabelSet or Metric.  It has a value associated
+  // therewith.
+diff -c 'vendor/github.com/prometheus/common/model/metric.go' '_vendor/github.com/prometheus/common/model/metric.go'
+Index: ./github.com/prometheus/common/model/metric.go
+*** ./github.com/prometheus/common/model/metric.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/common/model/metric.go	Mon Mar 11 17:57:53 2024
+***************
+*** 15,21 ****
+  
+  import (
+  	"fmt"
+! 	"regexp"
+  	"sort"
+  	"strings"
+  )
+--- 15,21 ----
+  
+  import (
+  	"fmt"
+! 	"wasm_parts/regexp"
+  	"sort"
+  	"strings"
+  )
+***************
+*** 24,30 ****
+  	// MetricNameRE is a regular expression matching valid metric
+  	// names. Note that the IsValidMetricName function performs the same
+  	// check but faster than a match with this regular expression.
+! 	MetricNameRE = regexp.MustCompile(`^[a-zA-Z_:][a-zA-Z0-9_:]*$`)
+  )
+  
+  // A Metric is similar to a LabelSet, but the key difference is that a Metric is
+--- 24,30 ----
+  	// MetricNameRE is a regular expression matching valid metric
+  	// names. Note that the IsValidMetricName function performs the same
+  	// check but faster than a match with this regular expression.
+! 	MetricNameRE = func() *regexp.Regexp { return regexp.MustCompile(`^[a-zA-Z_:][a-zA-Z0-9_:]*$`) }
+  )
+  
+  // A Metric is similar to a LabelSet, but the key difference is that a Metric is
+diff -c 'vendor/github.com/prometheus/common/model/silence.go' '_vendor/github.com/prometheus/common/model/silence.go'
+Index: ./github.com/prometheus/common/model/silence.go
+*** ./github.com/prometheus/common/model/silence.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/common/model/silence.go	Mon Mar 11 17:47:29 2024
+***************
+*** 16,22 ****
+  import (
+  	"encoding/json"
+  	"fmt"
+! 	"regexp"
+  	"time"
+  )
+  
+--- 16,22 ----
+  import (
+  	"encoding/json"
+  	"fmt"
+! 	"wasm_parts/regexp"
+  	"time"
+  )
+  
+diff -c 'vendor/github.com/prometheus/common/model/time.go' '_vendor/github.com/prometheus/common/model/time.go'
+Index: ./github.com/prometheus/common/model/time.go
+*** ./github.com/prometheus/common/model/time.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/common/model/time.go	Mon Mar 11 17:52:45 2024
+***************
+*** 18,24 ****
+  	"errors"
+  	"fmt"
+  	"math"
+! 	"regexp"
+  	"strconv"
+  	"strings"
+  	"time"
+--- 18,24 ----
+  	"errors"
+  	"fmt"
+  	"math"
+! 	"wasm_parts/regexp"
+  	"strconv"
+  	"strings"
+  	"time"
+***************
+*** 183,193 ****
+  	return "duration"
+  }
+  
+! var durationRE = regexp.MustCompile("^(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?$")
+  
+  // ParseDuration parses a string into a time.Duration, assuming that a year
+  // always has 365d, a week always has 7d, and a day always has 24h.
+  func ParseDuration(durationStr string) (Duration, error) {
+  	switch durationStr {
+  	case "0":
+  		// Allow 0 without a unit.
+--- 183,194 ----
+  	return "duration"
+  }
+  
+! 
+  
+  // ParseDuration parses a string into a time.Duration, assuming that a year
+  // always has 365d, a week always has 7d, and a day always has 24h.
+  func ParseDuration(durationStr string) (Duration, error) {
++ 	var durationRE = regexp.MustCompile("^(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?$")
+  	switch durationStr {
+  	case "0":
+  		// Allow 0 without a unit.
+diff -c 'vendor/github.com/prometheus/procfs/cpuinfo.go' '_vendor/github.com/prometheus/procfs/cpuinfo.go'
+Index: ./github.com/prometheus/procfs/cpuinfo.go
+*** ./github.com/prometheus/procfs/cpuinfo.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/procfs/cpuinfo.go	Mon Mar 11 17:47:29 2024
+***************
+*** 20,26 ****
+  	"bytes"
+  	"errors"
+  	"fmt"
+! 	"regexp"
+  	"strconv"
+  	"strings"
+  
+--- 20,26 ----
+  	"bytes"
+  	"errors"
+  	"fmt"
+! 	"wasm_parts/regexp"
+  	"strconv"
+  	"strings"
+  
+diff -c 'vendor/github.com/prometheus/procfs/mdstat.go' '_vendor/github.com/prometheus/procfs/mdstat.go'
+Index: ./github.com/prometheus/procfs/mdstat.go
+*** ./github.com/prometheus/procfs/mdstat.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/procfs/mdstat.go	Mon Mar 11 17:47:29 2024
+***************
+*** 16,22 ****
+  import (
+  	"fmt"
+  	"io/ioutil"
+! 	"regexp"
+  	"strconv"
+  	"strings"
+  )
+--- 16,22 ----
+  import (
+  	"fmt"
+  	"io/ioutil"
+! 	"wasm_parts/regexp"
+  	"strconv"
+  	"strings"
+  )
+diff -c 'vendor/github.com/prometheus/procfs/proc_fdinfo.go' '_vendor/github.com/prometheus/procfs/proc_fdinfo.go'
+Index: ./github.com/prometheus/procfs/proc_fdinfo.go
+*** ./github.com/prometheus/procfs/proc_fdinfo.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/procfs/proc_fdinfo.go	Mon Mar 11 17:47:29 2024
+***************
+*** 17,23 ****
+  	"bufio"
+  	"bytes"
+  	"fmt"
+! 	"regexp"
+  
+  	"github.com/prometheus/procfs/internal/util"
+  )
+--- 17,23 ----
+  	"bufio"
+  	"bytes"
+  	"fmt"
+! 	"wasm_parts/regexp"
+  
+  	"github.com/prometheus/procfs/internal/util"
+  )
+diff -c 'vendor/github.com/prometheus/procfs/proc_limits.go' '_vendor/github.com/prometheus/procfs/proc_limits.go'
+Index: ./github.com/prometheus/procfs/proc_limits.go
+*** ./github.com/prometheus/procfs/proc_limits.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/procfs/proc_limits.go	Mon Mar 11 17:47:20 2024
+***************
+*** 17,23 ****
+  	"bufio"
+  	"fmt"
+  	"os"
+! 	"regexp"
+  	"strconv"
+  )
+  
+--- 17,23 ----
+  	"bufio"
+  	"fmt"
+  	"os"
+! 	"wasm_parts/regexp"
+  	"strconv"
+  )
+  
+diff -c 'vendor/github.com/prometheus/procfs/proc_smaps.go' '_vendor/github.com/prometheus/procfs/proc_smaps.go'
+Index: ./github.com/prometheus/procfs/proc_smaps.go
+*** ./github.com/prometheus/procfs/proc_smaps.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/procfs/proc_smaps.go	Mon Mar 11 17:47:29 2024
+***************
+*** 20,26 ****
+  	"errors"
+  	"fmt"
+  	"os"
+! 	"regexp"
+  	"strconv"
+  	"strings"
+  
+--- 20,26 ----
+  	"errors"
+  	"fmt"
+  	"os"
+! 	"wasm_parts/regexp"
+  	"strconv"
+  	"strings"
+  
 diff -c 'vendor/github.com/prometheus/procfs/proc_stat.go' '_vendor/github.com/prometheus/procfs/proc_stat.go'
 Index: ./github.com/prometheus/procfs/proc_stat.go
-*** ./github.com/prometheus/procfs/proc_stat.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/prometheus/procfs/proc_stat.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/prometheus/procfs/proc_stat.go	Thu Oct 26 15:21:07 2023
 ***************
 *** 16,22 ****
@@ -3539,9 +3939,72 @@ Index: ./github.com/prometheus/procfs/proc_stat.go
   }
   
   // StartTime returns the unix timestamp of the process in seconds.
+diff -c 'vendor/github.com/prometheus/procfs/schedstat.go' '_vendor/github.com/prometheus/procfs/schedstat.go'
+Index: ./github.com/prometheus/procfs/schedstat.go
+*** ./github.com/prometheus/procfs/schedstat.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/procfs/schedstat.go	Mon Mar 11 17:47:29 2024
+***************
+*** 17,23 ****
+  	"bufio"
+  	"errors"
+  	"os"
+! 	"regexp"
+  	"strconv"
+  )
+  
+--- 17,23 ----
+  	"bufio"
+  	"errors"
+  	"os"
+! 	"wasm_parts/regexp"
+  	"strconv"
+  )
+  
+diff -c 'vendor/github.com/prometheus/procfs/slab.go' '_vendor/github.com/prometheus/procfs/slab.go'
+Index: ./github.com/prometheus/procfs/slab.go
+*** ./github.com/prometheus/procfs/slab.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/procfs/slab.go	Mon Mar 11 17:47:29 2024
+***************
+*** 17,23 ****
+  	"bufio"
+  	"bytes"
+  	"fmt"
+! 	"regexp"
+  	"strconv"
+  	"strings"
+  
+--- 17,23 ----
+  	"bufio"
+  	"bytes"
+  	"fmt"
+! 	"wasm_parts/regexp"
+  	"strconv"
+  	"strings"
+  
+diff -c 'vendor/github.com/prometheus/procfs/zoneinfo.go' '_vendor/github.com/prometheus/procfs/zoneinfo.go'
+Index: ./github.com/prometheus/procfs/zoneinfo.go
+*** ./github.com/prometheus/procfs/zoneinfo.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/procfs/zoneinfo.go	Mon Mar 11 17:47:29 2024
+***************
+*** 19,25 ****
+  	"bytes"
+  	"fmt"
+  	"io/ioutil"
+! 	"regexp"
+  	"strings"
+  
+  	"github.com/prometheus/procfs/internal/util"
+--- 19,25 ----
+  	"bytes"
+  	"fmt"
+  	"io/ioutil"
+! 	"wasm_parts/regexp"
+  	"strings"
+  
+  	"github.com/prometheus/procfs/internal/util"
 diff -c 'vendor/github.com/prometheus/prometheus/discovery/registry.go' '_vendor/github.com/prometheus/prometheus/discovery/registry.go'
 Index: ./github.com/prometheus/prometheus/discovery/registry.go
-*** ./github.com/prometheus/prometheus/discovery/registry.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/prometheus/prometheus/discovery/registry.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/prometheus/prometheus/discovery/registry.go	Thu Oct 26 15:21:07 2023
 ***************
 *** 17,23 ****
@@ -3589,8 +4052,8 @@ Index: ./github.com/prometheus/prometheus/discovery/registry.go
   func getConfigType(out reflect.Type) reflect.Type {
 diff -c 'vendor/github.com/prometheus/prometheus/promql/engine.go' '_vendor/github.com/prometheus/prometheus/promql/engine.go'
 Index: ./github.com/prometheus/prometheus/promql/engine.go
-*** ./github.com/prometheus/prometheus/promql/engine.go	Tue Nov  7 16:23:15 2023
---- ./github.com/prometheus/prometheus/promql/engine.go	Tue Nov  7 14:35:56 2023
+*** ./github.com/prometheus/prometheus/promql/engine.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/prometheus/promql/engine.go	Mon Mar 11 11:26:55 2024
 ***************
 *** 20,26 ****
   	"errors"
@@ -4182,6 +4645,27 @@ Index: ./github.com/prometheus/prometheus/promql/engine.go
   
 --- 1547,1558 ----
 ***************
+*** 1740,1746 ****
+  	return t, v, true
+  }
+  
+! var pointPool = sync.Pool{}
+  
+  func getPointSlice(sz int) []Point {
+  	p := pointPool.Get()
+--- 1585,1595 ----
+  	return t, v, true
+  }
+  
+! type fakePointPool struct {}
+! func (f fakePointPool) Get() interface{} { return nil }
+! func (f fakePointPool) Put(x any) { }
+! 
+! var pointPool = fakePointPool{}
+  
+  func getPointSlice(sz int) []Point {
+  	p := pointPool.Get()
+***************
 *** 1783,1789 ****
   		}
   
@@ -4190,7 +4674,7 @@ Index: ./github.com/prometheus/prometheus/promql/engine.go
   
   		if len(ss.Points) > 0 {
   			matrix = append(matrix, ss)
---- 1628,1633 ----
+--- 1632,1637 ----
 ***************
 *** 1855,1861 ****
   			ev.currentSamples++
@@ -4200,10 +4684,70 @@ Index: ./github.com/prometheus/prometheus/promql/engine.go
   	return out
   }
   
---- 1699,1704 ----
+--- 1703,1708 ----
+diff -c 'vendor/github.com/prometheus/prometheus/promql/functions.go' '_vendor/github.com/prometheus/prometheus/promql/functions.go'
+Index: ./github.com/prometheus/prometheus/promql/functions.go
+*** ./github.com/prometheus/prometheus/promql/functions.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/prometheus/promql/functions.go	Mon Mar 11 17:57:07 2024
+***************
+*** 887,893 ****
+  		if err != nil {
+  			panic(fmt.Errorf("invalid regular expression in label_replace(): %s", regexStr))
+  		}
+! 		if !model.LabelNameRE.MatchString(dst) {
+  			panic(fmt.Errorf("invalid destination label name in label_replace(): %s", dst))
+  		}
+  		enh.Dmn = make(map[uint64]labels.Labels, len(enh.Out))
+--- 887,893 ----
+  		if err != nil {
+  			panic(fmt.Errorf("invalid regular expression in label_replace(): %s", regexStr))
+  		}
+! 		if !model.LabelNameRE().MatchString(dst) {
+  			panic(fmt.Errorf("invalid destination label name in label_replace(): %s", dst))
+  		}
+  		enh.Dmn = make(map[uint64]labels.Labels, len(enh.Out))
+diff -c 'vendor/github.com/prometheus/prometheus/promql/parser/parse.go' '_vendor/github.com/prometheus/prometheus/promql/parser/parse.go'
+Index: ./github.com/prometheus/prometheus/promql/parser/parse.go
+*** ./github.com/prometheus/prometheus/promql/parser/parse.go	Mon Mar 11 19:34:50 2024
+--- ./github.com/prometheus/prometheus/promql/parser/parse.go	Mon Mar 11 11:21:23 2024
+***************
+*** 21,27 ****
+  	"runtime"
+  	"strconv"
+  	"strings"
+- 	"sync"
+  	"time"
+  
+  	"github.com/prometheus/common/model"
+--- 21,26 ----
+***************
+*** 31,41 ****
+  	"github.com/prometheus/prometheus/util/strutil"
+  )
+  
+! var parserPool = sync.Pool{
+! 	New: func() interface{} {
+! 		return &parser{}
+! 	},
+! }
+  
+  type parser struct {
+  	lex Lexer
+--- 30,40 ----
+  	"github.com/prometheus/prometheus/util/strutil"
+  )
+  
+! type fakePool[T any] struct {}
+! func (f fakePool[T]) Get() interface{} { return new(T) }
+! func (f fakePool[T]) Put(x any) { }
+! 
+! var parserPool = fakePool[parser]{}
+  
+  type parser struct {
+  	lex Lexer
 diff -c 'vendor/github.com/prometheus/prometheus/storage/generic.go' '_vendor/github.com/prometheus/prometheus/storage/generic.go'
 Index: ./github.com/prometheus/prometheus/storage/generic.go
-*** ./github.com/prometheus/prometheus/storage/generic.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/prometheus/prometheus/storage/generic.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/prometheus/prometheus/storage/generic.go	Tue Nov  7 15:29:20 2023
 ***************
 *** 105,134 ****
@@ -4240,7 +4784,7 @@ Index: ./github.com/prometheus/prometheus/storage/generic.go
 --- 105,110 ----
 diff -c 'vendor/github.com/prometheus/prometheus/tsdb/chunks/chunks.go' '_vendor/github.com/prometheus/prometheus/tsdb/chunks/chunks.go'
 Index: ./github.com/prometheus/prometheus/tsdb/chunks/chunks.go
-*** ./github.com/prometheus/prometheus/tsdb/chunks/chunks.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/prometheus/prometheus/tsdb/chunks/chunks.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/prometheus/prometheus/tsdb/chunks/chunks.go	Tue Nov  7 15:39:45 2023
 ***************
 *** 14,55 ****
@@ -4858,7 +5402,7 @@ Index: ./github.com/prometheus/prometheus/tsdb/chunks/chunks.go
 --- 45,47 ----
 diff -c 'vendor/github.com/prometheus/prometheus/util/stats/query_stats.go' '_vendor/github.com/prometheus/prometheus/util/stats/query_stats.go'
 Index: ./github.com/prometheus/prometheus/util/stats/query_stats.go
-*** ./github.com/prometheus/prometheus/util/stats/query_stats.go	Tue Nov  7 16:23:15 2023
+*** ./github.com/prometheus/prometheus/util/stats/query_stats.go	Mon Mar 11 19:34:50 2024
 --- ./github.com/prometheus/prometheus/util/stats/query_stats.go	Thu Oct 26 15:21:07 2023
 ***************
 *** 19,26 ****
@@ -4905,63 +5449,11 @@ Index: ./github.com/prometheus/prometheus/util/stats/query_stats.go
   
   type Statistics struct {
 --- 187,202 ----
-diff -c 'vendor/modules.txt' '_vendor/modules.txt'
-Index: ./modules.txt
-*** ./modules.txt	Tue Nov  7 16:23:15 2023
---- ./modules.txt	Thu Oct 26 15:21:07 2023
-***************
-*** 112,121 ****
---- 112,124 ----
-  ## explicit
-  github.com/pquerna/ffjson/fflib/v1
-  github.com/pquerna/ffjson/fflib/v1/internal
-+ github.com/pquerna/ffjson/inception
-+ github.com/pquerna/ffjson/shared
-  # github.com/prometheus/client_golang v1.12.2
-  ## explicit; go 1.13
-  github.com/prometheus/client_golang/prometheus
-  github.com/prometheus/client_golang/prometheus/internal
-+ github.com/prometheus/client_golang/prometheus/promauto
-  github.com/prometheus/client_golang/prometheus/testutil
-  github.com/prometheus/client_golang/prometheus/testutil/promlint
-  # github.com/prometheus/client_model v0.2.0
-***************
-*** 127,132 ****
---- 130,137 ----
-  github.com/prometheus/common/expfmt
-  github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
-  github.com/prometheus/common/model
-+ github.com/prometheus/common/route
-+ github.com/prometheus/common/version
-  # github.com/prometheus/common/sigv4 v0.1.0
-  ## explicit; go 1.15
-  github.com/prometheus/common/sigv4
-***************
-*** 143,154 ****
---- 148,165 ----
-  github.com/prometheus/prometheus/model/exemplar
-  github.com/prometheus/prometheus/model/labels
-  github.com/prometheus/prometheus/model/relabel
-+ github.com/prometheus/prometheus/model/rulefmt
-  github.com/prometheus/prometheus/model/textparse
-  github.com/prometheus/prometheus/model/timestamp
-  github.com/prometheus/prometheus/model/value
-+ github.com/prometheus/prometheus/prompb
-  github.com/prometheus/prometheus/promql
-  github.com/prometheus/prometheus/promql/parser
-+ github.com/prometheus/prometheus/rules
-+ github.com/prometheus/prometheus/scrape
-  github.com/prometheus/prometheus/storage
-+ github.com/prometheus/prometheus/storage/remote
-+ github.com/prometheus/prometheus/template
-  github.com/prometheus/prometheus/tsdb
-  github.com/prometheus/prometheus/tsdb/chunkenc
-  github.com/prometheus/prometheus/tsdb/chunks
 #### End of Patch data ####
 
 #### ApplyPatch data follows ####
 # Data version        : 1.0
-# Date generated      : Tue Nov  7 16:24:34 2023
+# Date generated      : Mon Mar 11 19:35:07 2024
 # Generated by        : makepatch 2.03
 # Recurse directories : Yes
 # Excluded files      : (\A|/).*\~\Z
@@ -5063,8 +5555,12 @@ Index: ./modules.txt
 # p 'github.com/aws/aws-sdk-go/aws/request/retryer.go' 8830 1698322867 0100664
 # p 'github.com/davecgh/go-spew/spew/bypass.go' 4715 1698322867 0100664
 # p 'github.com/edsrzf/mmap-go/mmap.go' 3653 1698322867 0100664
+# p 'github.com/grafana/regexp/backtrack.go' 8998 1710148638 0100664
+# p 'github.com/grafana/regexp/exec.go' 12568 1710148627 0100664
+# p 'github.com/grafana/regexp/regexp.go' 38456 1710173669 0100664
 # p 'github.com/mwitkow/go-conntrack/dialer_reporter.go' 3458 1698322867 0100664
 # p 'github.com/mwitkow/go-conntrack/listener_wrapper.go' 3833 1698322867 0100664
+# p 'github.com/pquerna/ffjson/fflib/v1/buffer_pool.go' 2368 1710174996 0100664
 # c 'github.com/pquerna/ffjson/inception/decoder.go' 0 1698319061 0100664
 # c 'github.com/pquerna/ffjson/inception/decoder_tpl.go' 0 1698319061 0100664
 # c 'github.com/pquerna/ffjson/inception/encoder.go' 0 1698319061 0100664
@@ -5079,13 +5575,27 @@ Index: ./modules.txt
 # p 'github.com/prometheus/client_golang/prometheus/go_collector_latest.go' 17751 1698322867 0100664
 # p 'github.com/prometheus/client_golang/prometheus/internal/go_runtime_metrics.go' 4867 1698322867 0100664
 # p 'github.com/prometheus/client_golang/prometheus/registry.go' 31929 1698322867 0100664
+# p 'github.com/prometheus/client_golang/prometheus/testutil/promlint/promlint.go' 10339 1710172049 0100664
+# p 'github.com/prometheus/common/model/labels.go' 6074 1710172585 0100664
+# p 'github.com/prometheus/common/model/metric.go' 2873 1710172673 0100664
+# p 'github.com/prometheus/common/model/silence.go' 2836 1710172049 0100664
+# p 'github.com/prometheus/common/model/time.go' 8095 1710172365 0100664
+# p 'github.com/prometheus/procfs/cpuinfo.go' 12479 1710172049 0100664
+# p 'github.com/prometheus/procfs/mdstat.go' 8590 1710172049 0100664
+# p 'github.com/prometheus/procfs/proc_fdinfo.go' 3523 1710172049 0100664
+# p 'github.com/prometheus/procfs/proc_limits.go' 4890 1710172040 0100664
+# p 'github.com/prometheus/procfs/proc_smaps.go' 3931 1710172049 0100664
 # p 'github.com/prometheus/procfs/proc_stat.go' 6165 1698322867 0100664
+# p 'github.com/prometheus/procfs/schedstat.go' 3083 1710172049 0100664
+# p 'github.com/prometheus/procfs/slab.go' 3584 1710172049 0100664
+# p 'github.com/prometheus/procfs/zoneinfo.go' 6375 1710172049 0100664
 # p 'github.com/prometheus/prometheus/discovery/registry.go' 7921 1698322867 0100664
-# p 'github.com/prometheus/prometheus/promql/engine.go' 83665 1699360556 0100664
+# p 'github.com/prometheus/prometheus/promql/engine.go' 83665 1710149215 0100664
+# p 'github.com/prometheus/prometheus/promql/functions.go' 38686 1710172627 0100664
+# p 'github.com/prometheus/prometheus/promql/parser/parse.go' 22682 1710148883 0100664
 # p 'github.com/prometheus/prometheus/storage/generic.go' 3707 1699363760 0100664
 # p 'github.com/prometheus/prometheus/tsdb/chunks/chunks.go' 18283 1699364385 0100664
 # p 'github.com/prometheus/prometheus/util/stats/query_stats.go' 8691 1698322867 0100664
-# p 'modules.txt' 10143 1698322867 0100664
 # R 'github.com/prometheus/prometheus/util/teststorage'
 # R 'github.com/prometheus/prometheus/tsdb/wal'
 # R 'github.com/prometheus/prometheus/tsdb/tsdbutil'
@@ -5100,6 +5610,6 @@ Index: ./modules.txt
 # C 'github.com/pquerna/ffjson/shared' 0 1698319061 040775
 #### End of ApplyPatch data ####
 
-#### End of Patch kit [created: Tue Nov  7 16:24:34 2023] ####
-#### Patch checksum: 4970 151755 60065 ####
-#### Checksum: 5104 159321 45077 ####
+#### End of Patch kit [created: Mon Mar 11 19:35:07 2024] ####
+#### Patch checksum: 5480 166486 19883 ####
+#### Checksum: 5614 174052 4911 ####
