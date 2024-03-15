@@ -21,11 +21,6 @@ import (
 	"wasm_parts/types"
 )
 
-//go:linkname get sync.(*Pool).Get
-func get(p *sync.Pool) any {
-	panic("GET POOL")
-}
-
 var maxSamples = 5000000
 
 type ctx struct {

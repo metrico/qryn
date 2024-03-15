@@ -13,18 +13,10 @@ const getWasm = (() => {
   const _Go = Go
   var go = new _Go();
   let wasm = null
-  let cnt = 0
-  let run = false
-  let int
   async function init () {
     go = new _Go();
-    run = true
     const _wasm = await WebAssembly.instantiate(
       gunzipSync(fs.readFileSync(WASM_URL)), go.importObject)
-    int && clearInterval(int)
-    int = setInterval(() => {
-      console.log(`WASM SIZE: ${Math.floor(wasm.exports.memory.buffer.byteLength / 1024 / 1024)} MB`)
-    }, 5000)
     go.run(_wasm.instance)
     wasm = _wasm.instance
     wasm.exports.setMaxSamples(process.env.ADVANCED_PROMETHEUS_MAX_SAMPLES || 5000000)
@@ -41,8 +33,6 @@ const getWasm = (() => {
         }]
       })
     )
-    cnt = 0
-    run = false
   }
   init()
   return () => {
