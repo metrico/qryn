@@ -440,11 +440,12 @@ type TestSeries struct {
 	data   []byte
 	stepMs int64
 
-	labels      labels.Labels
-	tsMs        int64
-	generatedMs int64
-	val         float64
-	i           int
+	labels labels.Labels
+	tsMs   int64
+	val    float64
+	i      int
+
+	state int
 }
 
 func (t *TestSeries) reset() {
@@ -457,23 +458,21 @@ func (t *TestSeries) reset() {
 
 func (t *TestSeries) Next() bool {
 	if t.i*16 >= len(t.data) {
-		if t.generatedMs == 0 {
-			t.tsMs += t.stepMs
-			t.generatedMs += t.stepMs
-			return true
-		}
 		return false
 	}
 	ts := *(*int64)(unsafe.Pointer(&t.data[t.i*16]))
-	if ts-t.tsMs > t.stepMs && t.generatedMs < 300000 {
+	if t.state == 1 {
 		t.tsMs += t.stepMs
-		t.generatedMs += t.stepMs
-		return true
+		if t.tsMs >= ts {
+			t.state = 0
+		}
 	}
-	t.tsMs = ts
-	t.generatedMs = 0
-	t.val = *(*float64)(unsafe.Pointer(&t.data[t.i*16+8]))
-	t.i++
+	if t.state == 0 {
+		t.tsMs = ts
+		t.val = *(*float64)(unsafe.Pointer(&t.data[t.i*16+8]))
+		t.i++
+		t.state = 1
+	}
 	return true
 }
 
@@ -491,7 +490,7 @@ func (t *TestSeries) Seek(tmMS int64) bool {
 			if t.i < 0 {
 				t.i = 0
 			}
-			t.tsMs = tmMS
+			t.tsMs = ms
 			t.val = *(*float64)(unsafe.Pointer(&t.data[t.i*16+8]))
 			t.i++
 			return true
