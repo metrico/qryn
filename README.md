@@ -9,16 +9,16 @@
 
 <img src="https://user-images.githubusercontent.com/1423657/232089970-c4536f16-5967-4051-85a5-8ad94fcde67c.png" height=50>&nbsp; <img src="https://github.com/metrico/qryn/assets/1423657/546faddb-fbc6-4af5-9e32-4db6da10915d" height=49>
 
-# [qryn 3.x](https://qryn.dev) 
+# [qryn: polyglot observability](https://qryn.dev)
 
-:rocket: _polyglot, lighweight, multi-standard drop-in_ **observability** framework for _**Logs, Metrics** and **Traces**_<br/>
+:rocket: _lighweight, multi-standard, polyglot, drop-in_ **observability** stack for _**Logs, Metrics** and **Traces**_<br/>
 
 > ... it's pronounced /ˈkwɪr..ɪŋ/ or just _querying_
 
 * **Polyglot**: All-in-one, Drop-in compatible with **Loki**, **Prometheus**, **Tempo**, **Pyroscope** 
 * **Lightweight**: Powered by **Bun** - the fast, all-in-one JavaScript runtime + ClickHouse **OLAP** Engine
 * **Familiar**: Use stable & popular **LogQL**, **PromQL**, **TempoQL** languages to _query and visualize data_
-* **Voracious**: Ingest using **Opentelemetry, Loki, Prometheus, Tempo, Influx, Datadog, Elastic** _& more_
+* **Voracious**: Ingest using **Opentelemetry, Loki, Prometheus, Tempo, Influx, Datadog, Elastic** _+ more_
 * **Versatile**: Explore data with qryn's **built-in Explorer** and CLI or native **Grafana** datasource compatibility
 * **Secure**: Retain total control of data, using **ClickHouse**, **DuckDB** or **InfluxDB** IOx with **S3** object storage
 * **Unmetered**: Unlimited **FOSS** deployments or **qryn.cloud** option with advanced features and performance
@@ -29,6 +29,7 @@
 ## 🚀 [Get Started](https://qryn.metrico.in/#/installation)
 
 * Setup & Deploy **qryn** _OSS_ using the [documentation](https://qryn.metrico.in/#/installation) and get help in our [Matrix room](https://matrix.to/#/#qryn:matrix.org) :octocat:
+* Looking for a minimal setup for a quick test? Start with [qryn-minimal](https://github.com/metrico/qryn-minimal)
 
 <a href="https://qryn.cloud" target="_blank">
 <img src="https://github.com/metrico/qryn/assets/1423657/8b93d7cb-442c-4454-b247-27b00ae78384">
