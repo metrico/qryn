@@ -38,4 +38,4 @@ var TraceQLLexerRulesV2 = []lexer.SimpleRule{
 	{"space", `\s+`},
 }
 
-var TraceQLLexerDefinition lexer.Definition = lexer.MustSimple(TraceQLLexerRulesV2)
+var TraceQLLexerDefinition = func() lexer.Definition { return lexer.MustSimple(TraceQLLexerRulesV2) }

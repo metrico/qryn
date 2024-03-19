@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	gcContext "github.com/metrico/micro-gc/context"
+	"sync"
+
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/promql"
 	"github.com/prometheus/prometheus/promql/parser"
@@ -17,6 +20,8 @@ import (
 	traceql_transpiler "wasm_parts/traceql/transpiler"
 	"wasm_parts/types"
 )
+
+var maxSamples = 5000000
 
 type ctx struct {
 	onDataLoad func(c *ctx)
@@ -33,13 +38,17 @@ func createCtx(id uint32) {
 
 //export alloc
 func alloc(id uint32, size int) *byte {
+	ctxId := gcContext.GetContextID()
+	gcContext.SetContext(id)
 	data[id].request = make([]byte, size)
+	gcContext.SetContext(ctxId)
 	return &data[id].request[0]
 }
 
 //export dealloc
 func dealloc(id uint32) {
 	delete(data, id)
+	gcContext.ReleaseContext(id)
 }
 
 //export getCtxRequest
@@ -64,6 +73,10 @@ func getCtxResponseLen(id uint32) uint32 {
 
 //export transpileTraceQL
 func transpileTraceQL(id uint32) int {
+	ctxId := gcContext.GetContextID()
+	gcContext.SetContext(id)
+	defer gcContext.SetContext(ctxId)
+
 	request := types.TraceQLRequest{}
 	err := request.UnmarshalJSON(data[id].request)
 	if err != nil {
@@ -100,6 +113,8 @@ func transpileTraceQL(id uint32) int {
 		options = append(options, sql.STRING_OPT_INLINE_WITH)
 	}
 	str, err := sel.String(request.Ctx.CHSqlCtx, options...)
+	print(str)
+	print("\n")
 	if err != nil {
 		data[id].response = []byte(err.Error())
 		return 1
@@ -108,25 +123,36 @@ func transpileTraceQL(id uint32) int {
 	return 0
 }
 
-var eng *promql.Engine = nil
-var engC = 0
+var eng *promql.Engine = promql.NewEngine(promql.EngineOpts{
+	Logger:                   TestLogger{},
+	MaxSamples:               maxSamples,
+	Timeout:                  time.Second * 30,
+	ActiveQueryTracker:       nil,
+	LookbackDelta:            0,
+	NoStepSubqueryIntervalFn: nil,
+	EnableAtModifier:         false,
+	EnableNegativeOffset:     false,
+})
+var engC = func() *promql.Engine {
+	return promql.NewEngine(promql.EngineOpts{
+		Logger:                   TestLogger{},
+		MaxSamples:               maxSamples,
+		Timeout:                  time.Second * 30,
+		ActiveQueryTracker:       nil,
+		LookbackDelta:            0,
+		NoStepSubqueryIntervalFn: nil,
+		EnableAtModifier:         false,
+		EnableNegativeOffset:     false,
+	})
+}()
 
 func getEng() *promql.Engine {
-	if eng == nil || engC > 5 {
-		eng = promql.NewEngine(promql.EngineOpts{
-			Logger:                   TestLogger{},
-			MaxSamples:               100000,
-			Timeout:                  time.Second * 30,
-			ActiveQueryTracker:       nil,
-			LookbackDelta:            0,
-			NoStepSubqueryIntervalFn: nil,
-			EnableAtModifier:         false,
-			EnableNegativeOffset:     false,
-		})
-		engC = 0
-	}
-	engC++
 	return eng
+}
+
+//export setMaxSamples
+func setMaxSamples(maxSpl int) {
+	maxSamples = maxSpl
 }
 
 //export stats
@@ -136,8 +162,12 @@ func stats() {
 
 //export pqlRangeQuery
 func pqlRangeQuery(id uint32, fromMS float64, toMS float64, stepMS float64) uint32 {
-	return pql(data[id], func() (promql.Query, error) {
-		queriable := &TestQueryable{id: id}
+	ctxId := gcContext.GetContextID()
+	gcContext.SetContext(id)
+	defer gcContext.SetContext(ctxId)
+
+	return pql(id, data[id], func() (promql.Query, error) {
+		queriable := &TestQueryable{id: id, stepMs: int64(stepMS)}
 		return getEng().NewRangeQuery(
 			queriable,
 			nil,
@@ -151,8 +181,12 @@ func pqlRangeQuery(id uint32, fromMS float64, toMS float64, stepMS float64) uint
 
 //export pqlInstantQuery
 func pqlInstantQuery(id uint32, timeMS float64) uint32 {
-	return pql(data[id], func() (promql.Query, error) {
-		queriable := &TestQueryable{id: id}
+	ctxId := gcContext.GetContextID()
+	gcContext.SetContext(id)
+	defer gcContext.SetContext(ctxId)
+
+	return pql(id, data[id], func() (promql.Query, error) {
+		queriable := &TestQueryable{id: id, stepMs: 15000}
 		return getEng().NewInstantQuery(
 			queriable,
 			nil,
@@ -163,7 +197,11 @@ func pqlInstantQuery(id uint32, timeMS float64) uint32 {
 
 //export pqlSeries
 func pqlSeries(id uint32) uint32 {
-	queriable := &TestQueryable{id: id}
+	ctxId := gcContext.GetContextID()
+	gcContext.SetContext(id)
+	defer gcContext.SetContext(ctxId)
+
+	queriable := &TestQueryable{id: id, stepMs: 15000}
 	query, err := getEng().NewRangeQuery(
 		queriable,
 		nil,
@@ -213,7 +251,7 @@ func wrapErrorStr(err error) string {
 	return err.Error()
 }
 
-func pql(c *ctx, query func() (promql.Query, error)) uint32 {
+func pql(id uint32, c *ctx, query func() (promql.Query, error)) uint32 {
 	rq, err := query()
 
 	if err != nil {
@@ -231,6 +269,10 @@ func pql(c *ctx, query func() (promql.Query, error)) uint32 {
 
 	c.response = []byte(matchersJSON)
 	c.onDataLoad = func(c *ctx) {
+		ctxId := gcContext.GetContextID()
+		gcContext.SetContext(id)
+		defer gcContext.SetContext(ctxId)
+
 		res := rq.Exec(context.Background())
 		c.response = []byte(writeResponse(res))
 		return
@@ -311,7 +353,11 @@ func writeVector(v promql.Vector) string {
 	return jsonBuilder.String()
 }
 
-func main() {}
+func main() {
+	p := sync.Pool{}
+	a := p.Get()
+	_ = a
+}
 
 type TestLogger struct{}
 
@@ -322,7 +368,8 @@ func (t TestLogger) Log(keyvals ...interface{}) error {
 }
 
 type TestQueryable struct {
-	id uint32
+	id     uint32
+	stepMs int64
 }
 
 func (t TestQueryable) Querier(ctx context.Context, mint, maxt int64) (storage.Querier, error) {
@@ -331,11 +378,12 @@ func (t TestQueryable) Querier(ctx context.Context, mint, maxt int64) (storage.Q
 	for r.i < uint32(len(data[t.id].request)) {
 		sets[r.ReadString()] = r.ReadByteArray()
 	}
-	return &TestQuerier{sets: sets}, nil
+	return &TestQuerier{sets: sets, stepMs: t.stepMs}, nil
 }
 
 type TestQuerier struct {
-	sets map[string][]byte
+	sets   map[string][]byte
+	stepMs int64
 }
 
 func (t TestQuerier) LabelValues(name string, matchers ...*labels.Matcher) ([]string, storage.Warnings, error) {
@@ -355,12 +403,14 @@ func (t TestQuerier) Select(sortSeries bool, hints *storage.SelectHints, matcher
 	return &TestSeriesSet{
 		data:   t.sets[strMatchers],
 		reader: BinaryReader{buffer: t.sets[strMatchers]},
+		stepMs: t.stepMs,
 	}
 }
 
 type TestSeriesSet struct {
 	data   []byte
 	reader BinaryReader
+	stepMs int64
 }
 
 func (t *TestSeriesSet) Next() bool {
@@ -369,10 +419,12 @@ func (t *TestSeriesSet) Next() bool {
 
 func (t *TestSeriesSet) At() storage.Series {
 	res := &TestSeries{
-		i: -1,
+		i:      0,
+		stepMs: t.stepMs,
 	}
 	res.labels = t.reader.ReadLabelsTuple()
 	res.data = t.reader.ReadPointsArrayRaw()
+	res.reset()
 	return res
 }
 
@@ -385,21 +437,62 @@ func (t *TestSeriesSet) Warnings() storage.Warnings {
 }
 
 type TestSeries struct {
-	data []byte
+	data   []byte
+	stepMs int64
 
 	labels labels.Labels
+	tsMs   int64
+	val    float64
 	i      int
+
+	state int
+}
+
+func (t *TestSeries) reset() {
+	if len(t.data) == 0 {
+		return
+	}
+	t.tsMs = *(*int64)(unsafe.Pointer(&t.data[0]))
+	t.val = *(*float64)(unsafe.Pointer(&t.data[t.i*16+8]))
 }
 
 func (t *TestSeries) Next() bool {
-	t.i++
-	return t.i*16 < len(t.data)
+	if t.i*16 >= len(t.data) {
+		return false
+	}
+	ts := *(*int64)(unsafe.Pointer(&t.data[t.i*16]))
+	if t.state == 1 {
+		t.tsMs += t.stepMs
+		if t.tsMs >= ts {
+			t.state = 0
+		}
+	}
+	if t.state == 0 {
+		t.tsMs = ts
+		t.val = *(*float64)(unsafe.Pointer(&t.data[t.i*16+8]))
+		t.i++
+		t.state = 1
+	}
+	return true
 }
 
 func (t *TestSeries) Seek(tmMS int64) bool {
 	for t.i = 0; t.i*16 < len(t.data); t.i++ {
 		ms := *(*int64)(unsafe.Pointer(&t.data[t.i*16]))
-		if ms >= tmMS {
+		if ms == tmMS {
+			t.tsMs = ms
+			t.val = *(*float64)(unsafe.Pointer(&t.data[t.i*16+8]))
+			t.i++
+			return true
+		}
+		if ms > tmMS {
+			t.i--
+			if t.i < 0 {
+				t.i = 0
+			}
+			t.tsMs = ms
+			t.val = *(*float64)(unsafe.Pointer(&t.data[t.i*16+8]))
+			t.i++
 			return true
 		}
 	}
@@ -407,9 +500,7 @@ func (t *TestSeries) Seek(tmMS int64) bool {
 }
 
 func (t *TestSeries) At() (int64, float64) {
-	ts := *(*int64)(unsafe.Pointer(&t.data[t.i*16]))
-	val := *(*float64)(unsafe.Pointer(&t.data[t.i*16+8]))
-	return ts, val
+	return t.tsMs, t.val
 }
 
 func (t *TestSeries) Err() error {

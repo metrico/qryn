@@ -3,6 +3,7 @@ const { clusterName } = require('../common')
 const { DATABASE_NAME } = require('../lib/utils')
 const dist = clusterName ? '_dist' : ''
 const { rawRequest } = require('../lib/db/clickhouse')
+const logger = require('../lib/logger')
 
 /**
  *
@@ -13,6 +14,7 @@ const { rawRequest } = require('../lib/db/clickhouse')
  * @returns {Promise<[]>}
  */
 const search = async (query, limit, from, to) => {
+  const _dbname = '`' + DATABASE_NAME() + '`'
   const request = {
     Request: query,
     Ctx: {
@@ -22,19 +24,19 @@ const search = async (query, limit, from, to) => {
       ToS: Math.floor(to.getTime() / 1000),
       Limit: parseInt(limit),
 
-      TimeSeriesGinTableName: 'time_series_gin',
-      SamplesTableName: `samples_v3${dist}`,
-      TimeSeriesTableName: 'time_series',
-      TimeSeriesDistTableName: 'time_series_dist',
-      Metrics15sTableName: `metrics_15s${dist}`,
+      TimeSeriesGinTableName: `${_dbname}.time_series_gin`,
+      SamplesTableName: `${_dbname}.samples_v3${dist}`,
+      TimeSeriesTableName: `${_dbname}.time_series`,
+      TimeSeriesDistTableName: `${_dbname}.time_series_dist`,
+      Metrics15sTableName: `${_dbname}.metrics_15s${dist}`,
 
-      TracesAttrsTable: 'tempo_traces_attrs_gin',
-      TracesAttrsDistTable: 'tempo_traces_attrs_gin_dist',
-      TracesTable: 'tempo_traces',
-      TracesDistTable: 'tempo_traces_dist'
+      TracesAttrsTable: `${_dbname}.tempo_traces_attrs_gin`,
+      TracesAttrsDistTable: `${_dbname}.tempo_traces_attrs_gin_dist`,
+      TracesTable: `${_dbname}.tempo_traces`,
+      TracesDistTable: `${_dbname}.tempo_traces_dist`
     }
   }
-  console.log(JSON.stringify(request))
+  logger.debug(JSON.stringify(request))
   const sql = TranspileTraceQL(request)
   const response = await rawRequest(sql + ' FORMAT JSON', null, DATABASE_NAME())
   const traces = response.data.data.map(row => ({

@@ -6,7 +6,7 @@ import (
 
 func Parse(str string) (*TraceQLScript, error) {
 	res := &TraceQLScript{}
-	parser, err := participle.Build[TraceQLScript](participle.Lexer(TraceQLLexerDefinition), participle.UseLookahead(2))
+	parser, err := participle.Build[TraceQLScript](participle.Lexer(TraceQLLexerDefinition()), participle.UseLookahead(2))
 	if err != nil {
 		return nil, err
 	}

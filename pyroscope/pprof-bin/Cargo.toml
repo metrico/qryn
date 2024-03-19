@@ -1,0 +1,46 @@
+[package]
+name = "pprof-bin"
+version = "0.1.0"
+authors = ["akvlad90@gmail.com"]
+edition = "2018"
+build = "build.rs"
+
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["console_error_panic_hook"]
+
+[dependencies]
+wasm-bindgen = "0.2.84"
+bytes = "1.5.0"
+prost = "0.12.3"
+json = "0.12.4"
+lazy_static = "1.4.0"
+
+# The `console_error_panic_hook` crate provides better debugging of panics by
+# logging them with `console.error`. This is great for development, but requires
+# all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
+# code size when deploying.
+console_error_panic_hook = { version = "0.1.7", optional = true }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.34"
+
+[profile.release]
+# Tell `rustc` to optimize for small code size.
+opt-level = "s"
+overflow-checks = false
+
+[profile.dev]
+overflow-checks = false
+
+
+[build-dependencies]
+prost-build = { version = "0.12.3" }
+
+[dependencies.web-sys]
+version = "0.3.67"
+features = ["console"]
+

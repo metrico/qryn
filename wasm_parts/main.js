@@ -7,30 +7,35 @@ const { gunzipSync } = require('zlib')
 class WasmError extends Error {}
 module.exports.WasmError = WasmError
 
-let counter = 0
+let counter = 1
 
 const getWasm = (() => {
   const _Go = Go
   var go = new _Go();
   let wasm = null
-  let cnt = 0
-  let run = false
   async function init () {
     go = new _Go();
-    run = true
     const _wasm = await WebAssembly.instantiate(
       gunzipSync(fs.readFileSync(WASM_URL)), go.importObject)
     go.run(_wasm.instance)
     wasm = _wasm.instance
-    cnt = 0
-    run = false
+    wasm.exports.setMaxSamples(process.env.ADVANCED_PROMETHEUS_MAX_SAMPLES || 5000000)
+    wasm.exportsWrap = Object.fromEntries(
+      Object.entries(wasm.exports).map(([_k, _v]) => {
+        return [_k, (...args) => {
+          const _wasm = wasm
+          try {
+            return _wasm.exports[_k].bind(_wasm)(...args)
+          } catch (e) {
+            _wasm === wasm && init()
+            throw e
+          }
+        }]
+      })
+    )
   }
   init()
   return () => {
-    if (cnt >= 20 && !run) {
-      init()
-    }
-    cnt++
     return wasm
   }
 })()
@@ -56,7 +61,7 @@ module.exports.pqlRangeQuery = async (query, startMs, endMs, stepMs, getData) =>
   const end = endMs || Date.now()
   const step = stepMs || 15000
   return await pql(query,
-    (ctx) => _wasm.exports.pqlRangeQuery(ctx.id, start, end, step),
+    (ctx) => _wasm.exportsWrap.pqlRangeQuery(ctx.id, start, end, step),
     (matchers) => getData(matchers, start, end))
 }
 
@@ -71,7 +76,7 @@ module.exports.pqlInstantQuery = async (query, timeMs, getData) => {
   const time = timeMs || Date.now()
   const _wasm = getWasm()
   return await pql(query,
-    (ctx) => _wasm.exports.pqlInstantQuery(ctx.id, time),
+    (ctx) => _wasm.exportsWrap.pqlInstantQuery(ctx.id, time),
     (matchers) => getData(matchers, time - 300000, time))
 }
 
@@ -82,7 +87,7 @@ module.exports.pqlMatchers = (query) => {
   ctx.create()
   try {
     ctx.write(query)
-    const res1 = _wasm.exports.pqlSeries(id)
+    const res1 = _wasm.exportsWrap.pqlSeries(id)
     if (res1 !== 0) {
       throw new WasmError(ctx.read())
     }
@@ -124,7 +129,7 @@ module.exports.TranspileTraceQL = (request) => {
     _ctx = new Ctx(id, _wasm)
     _ctx.create()
     _ctx.write(JSON.stringify(request))
-    let res = _wasm.exports.transpileTraceQL(id)
+    let res = _wasm.exportsWrap.transpileTraceQL(id)
     if (res !== 0) {
       throw new WasmError(_ctx.read())
     }
@@ -168,7 +173,7 @@ const pql = async (query, wasmCall, getData) => {
       writer.writeBytes([data])
     }
     ctx.write(writer.buffer())
-    _wasm.exports.onDataLoad(reqId)
+    _wasm.exportsWrap.onDataLoad(reqId)
     return ctx.read()
   } finally {
     ctx && ctx.destroy()
@@ -183,7 +188,7 @@ class Ctx {
 
   create () {
     try {
-      this.wasm.exports.createCtx(this.id)
+      this.wasm.exportsWrap.createCtx(this.id)
       this.created = true
     } catch (err) {
       throw err
@@ -192,7 +197,7 @@ class Ctx {
 
   destroy () {
     try {
-      if (this.created) this.wasm.exports.dealloc(this.id)
+      if (this.created) this.wasm.exportsWrap.dealloc(this.id)
     } catch (err) {
       throw err
     }
@@ -206,8 +211,8 @@ class Ctx {
     if (typeof data === 'string') {
       data = (new TextEncoder()).encode(data)
     }
-    this.wasm.exports.alloc(this.id, data.length)
-    const ptr = this.wasm.exports.alloc(this.id, data.length)
+    this.wasm.exportsWrap.alloc(this.id, data.length)
+    const ptr = this.wasm.exportsWrap.alloc(this.id, data.length)
     new Uint8Array(this.wasm.exports.memory.buffer).set(data, ptr)
   }
 
@@ -216,8 +221,8 @@ class Ctx {
    */
   read() {
     const [resPtr, resLen] = [
-      this.wasm.exports.getCtxResponse(this.id),
-      this.wasm.exports.getCtxResponseLen(this.id)
+      this.wasm.exportsWrap.getCtxResponse(this.id),
+      this.wasm.exportsWrap.getCtxResponseLen(this.id)
     ]
     return new TextDecoder().decode(new Uint8Array(this.wasm.exports.memory.buffer).subarray(resPtr, resPtr + resLen))
   }
@@ -271,6 +276,7 @@ class Uint8ArrayWriter {
   writeString (str) {
     const bStr = (new TextEncoder()).encode(str)
     this.writeULeb(bStr.length)
+    this.maybeGrow(bStr.length)
     this.buf.set(bStr, this.i)
     this.i += bStr.length
     return this

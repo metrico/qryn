@@ -54,6 +54,9 @@ import handlerDelGroup from './lib/handlers/alerts/del_group.js'
 import handlerDelNS from './lib/handlers/alerts/del_ns.js'
 import handlerPromGetRules from './lib/handlers/alerts/prom_get_rules.js'
 import handlerTail from './lib/handlers/tail.js'
+import handlerTempoLabelV2 from './lib/handlers/tempo_v2_tags.js'
+import handlerTempoLabelV2Values from './lib/handlers/tempo_v2_values.js'
+import {init as pyroscopeInit } from './pyroscope/pyroscope.js'
 
 import { readonly } from './common.js'
 import DATABASE, { init } from './lib/db/clickhouse.js'
@@ -68,8 +71,8 @@ const http_user = process.env.QRYN_LOGIN || process.env.CLOKI_LOGIN || undefined
 const http_password = process.env.QRYN_PASSWORD || process.env.CLOKI_PASSWORD || undefined
 
 export default async() => {
+  await init(process.env.CLICKHOUSE_DB || 'cloki')
   if (!readonly) {
-    await init(process.env.CLICKHOUSE_DB || 'cloki')
     await startAlerting()
   }
   await DATABASE.checkDB()
@@ -244,7 +247,8 @@ export default async() => {
     '/api/v1/prom/remote/write',
     '/api/prom/remote/write',
     '/prom/remote/write',
-    '/api/v1/write'
+    '/api/v1/write',
+    '/api/prom/push'
   ]
   for (const path of remoteWritePaths) {
     fastify.post(path, promWriteHandler, {
@@ -312,17 +316,26 @@ export default async() => {
     '*': otlpPushProtoParser
   })
 
+  fastify.get('/api/v2/search/tags', handlerTempoLabelV2)
+  fastify.get('/tempo/api/v2/search/tags', handlerTempoLabelV2)
+  fastify.get('/api/v2/search/tag/:name/values', handlerTempoLabelV2Values)
+  fastify.get('/tempo/api/v2/search/tag/:name/values', handlerTempoLabelV2Values)
+
+  pyroscopeInit(fastify)
+
   const serveView = fs.existsSync(path.join(__dirname, 'view/index.html'))
   if (serveView) {
     app.plug(group(path.join(__dirname, 'view')));
+    for (const fakePath of ['/plugins', '/users', '/datasources', '/datasources/:ds']) {
+      app.get(fakePath,
+        (ctx) =>
+          file(path.join(__dirname, 'view', 'index.html'))(ctx))
+    }
   }
 
   app.use(404, (ctx) => {
     if (ctx.error && ctx.error.name === 'UnauthorizedError') {
       return new Response(ctx.error.message, {status: 401, headers: { 'www-authenticate': 'Basic' }})
-    }
-    if (serveView) {
-      return file(path.join(__dirname, 'view', 'index.html'))(ctx);
     }
     return wrapper(handle404)
   })

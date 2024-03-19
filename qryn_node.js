@@ -71,8 +71,8 @@ let fastify = require('fastify')({
 });
 (async () => {
   try {
+    await init(process.env.CLICKHOUSE_DB || 'cloki')
     if (!this.readonly) {
-      await init(process.env.CLICKHOUSE_DB || 'cloki')
       await startAlerting()
     }
     await DATABASE.checkDB()
@@ -99,7 +99,8 @@ let fastify = require('fastify')({
       '/api/prom/remote/write',
       '/prom/remote/write',
       '/loki/api/v1/push',
-      '/api/v1/write'
+      '/api/v1/write',
+      '/api/prom/push'
     ]
     fastify.addHook('preParsing', (request, reply, payload, done) => {
       if (snappyPaths.indexOf(request.routeOptions.url) !== -1) {
@@ -438,7 +439,15 @@ let fastify = require('fastify')({
       root: path.join(__dirname, 'view'),
       prefix: '/'
     })
+    const idx = fs.readFileSync(path.join(__dirname, 'view/index.html'), 'utf8')
+    for (const fakePath of ['/plugins', '/users', '/datasources', '/datasources/:ds']) {
+      fastify.get(fakePath,
+        (req, reply) =>
+          reply.code(200).header('Content-Type', 'text/html').send(idx))
+    }
   }
+
+  require('./pyroscope/pyroscope').init(fastify)
 
   // Run API Service
   fastify.listen(

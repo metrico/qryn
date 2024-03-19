@@ -4,33 +4,35 @@
 
 [![CI+CD](https://github.com/metrico/qryn/actions/workflows/build_release.yml/badge.svg)](https://github.com/metrico/qryn/actions/workflows/build_release.yml)
 ![CodeQL](https://github.com/lmangani/cLoki/workflows/CodeQL/badge.svg)
-<img src="https://raw.githubusercontent.com/pedromxavier/flag-badges/main/badges/UA.svg" alt="made in Ukraine">
+![GitHub Repo stars](https://img.shields.io/github/stars/metrico/qryn)
 
-![image](https://user-images.githubusercontent.com/1423657/232089970-c4536f16-5967-4051-85a5-8ad94fcde67c.png)
 
-# [qryn 3.x](https://qryn.dev) :cloud: [qryn.cloud](https://qryn.cloud)
+<img src="https://user-images.githubusercontent.com/1423657/232089970-c4536f16-5967-4051-85a5-8ad94fcde67c.png" height=50>&nbsp; <img src="https://github.com/metrico/qryn/assets/1423657/546faddb-fbc6-4af5-9e32-4db6da10915d" height=49>
 
-:rocket: _polyglot, lighweight, multi-standard drop-in_ **observability** framework for _**Logs, Metrics and Traces**_<br/>
+# [qryn 3.x](https://qryn.dev) 
+
+:rocket: _polyglot, lighweight, multi-standard drop-in_ **observability** framework for _**Logs, Metrics** and **Traces**_<br/>
 
 > ... it's pronounced /ˈkwɪr..ɪŋ/ or just _querying_
 
-- **Polyglot**: Use **LogQL, PromQL**, and **TempoQL** languages to query, process and alert _any data_
-- **Lightweight**: Powered by **ClickHouse** OLAP Engine + **Bun** the _fast, all-in-one_ JavaScript runtime
-- **Voracious**: Ingestion compatible with **Opentelemetry, Loki, Prometheus, Influx, Datadog, Elastic** _+ more_
-- **Versatile**: Explore data with qryn's built-in **View Explorer** and **CLI** or _native_ **Grafana** compatibility
-- **Secure**: Retain total control of data, using **ClickHouse** or **InfluxDB IOx** with **S3** object storage
-- **Unmetered**: Unlimited FOSS deployments or **qryn.cloud** option with advanced features and performance
-- **Indepentent**: Designed to be a stand-alone, all-in-one _Loki, Prometheus, Tempo_ drop-in alternative
+* **Polyglot**: All-in-one, Drop-in compatible with **Loki**, **Prometheus**, **Tempo**, **Pyroscope** 
+* **Lightweight**: Powered by **Bun** - the fast, all-in-one JavaScript runtime + ClickHouse **OLAP** Engine
+* **Familiar**: Use stable & popular **LogQL**, **PromQL**, **TempoQL** languages to _query and visualize data_
+* **Voracious**: Ingest using **Opentelemetry, Loki, Prometheus, Tempo, Influx, Datadog, Elastic** _& more_
+* **Versatile**: Explore data with qryn's **built-in Explorer** and CLI or native **Grafana** datasource compatibility
+* **Secure**: Retain total control of data, using **ClickHouse**, **DuckDB** or **InfluxDB** IOx with **S3** object storage
+* **Unmetered**: Unlimited **FOSS** deployments or **qryn.cloud** option with advanced features and performance
+* **Indepentent**: Opensource, Community powered, Anti lock-in alternative to Vendor controlled stacks
 
 <br>
 
 ## 🚀 [Get Started](https://qryn.metrico.in/#/installation)
 
 * Setup & Deploy **qryn** _OSS_ using the [documentation](https://qryn.metrico.in/#/installation) and get help in our [Matrix room](https://matrix.to/#/#qryn:matrix.org) :octocat:
-* No time? Use [qryn.cloud](https://qryn.cloud) and get polyglot in just minutes! Drop-in LGTM alternative ☁️ 
 
 <a href="https://qryn.cloud" target="_blank">
-<img src="https://user-images.githubusercontent.com/1423657/218818279-3efff74f-0191-498a-bdc4-f2650c9d3b49.gif">
+<img src="https://github.com/metrico/qryn/assets/1423657/8b93d7cb-442c-4454-b247-27b00ae78384">
+<!-- <img src="https://user-images.githubusercontent.com/1423657/218818279-3efff74f-0191-498a-bdc4-f2650c9d3b49.gif"> -->
 </a>
 
 <br>
@@ -61,8 +63,8 @@ Ingested data can be queried using any of the avialable qryn APIs _(LogQL, PromQ
 > 💡 _No modifications required to your opentelemetry instrumentation!_
 
 ### 📚 Native
-**qryn** supports [native ingestion](https://qryn.metrico.in/#/support) for Loki, Prometheus, Tempo/Zipkin and other protocols_<br>
-With qryn users can _push data using any combination of supported protocols_
+**qryn** supports [native ingestion](https://qryn.metrico.in/#/support) for Loki, Prometheus, Tempo/Zipkin and _[many other protocols](https://qryn.metrico.in/#/support)_<br>
+With qryn users can _push data using any combination of supported APIs and formats_
 
 > 💡 _No opentelemetry or any other middlewayre/proxy required!_
 
@@ -127,7 +129,7 @@ The Tempo datasource can be used to natively query _traces_ including _**TraceQL
 
 ### 📚 Other Vendors
 
-**qryn** can ingest data using the [InfluxDB, DataDog, Elastic](https://qryn.metrico.in/#/support) and other vendors.
+**qryn** can ingest data using formats from [InfluxDB, DataDog, Elastic](https://qryn.metrico.in/#/support) and other vendors.
 
 
 <br>
@@ -174,7 +176,7 @@ Whether it's code, documentation or grammar, we ❤️ all contributions. Not su
 
 #### License
 
-<img src="https://camo.githubusercontent.com/473b62766b498e4f2b008ada39f1d56fb3183649f24447866e25d958ac3fd79a/68747470733a2f2f7777772e676e752e6f72672f67726170686963732f6167706c76332d3135357835312e706e67">
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/AGPLv3_Logo.svg/2560px-AGPLv3_Logo.svg.png" width=200>
 
 ©️ QXIP BV, released under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE) for details.
 

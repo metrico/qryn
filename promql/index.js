@@ -2,7 +2,7 @@ const Sql = require('@cloki/clickhouse-sql')
 const prometheus = require('../wasm_parts/main')
 const { rawRequest } = require('../lib/db/clickhouse')
 const { DATABASE_NAME } = require('../lib/utils')
-const { clusterName } = require('../common')
+const { clusterName, metricType, bothType } = require('../common')
 const _dist = clusterName ? '_dist' : ''
 
 class PSQLError extends Error {}
@@ -16,8 +16,9 @@ module.exports.PSQLError = PSQLError
  * @param stepMs {number}
  */
 module.exports.rangeQuery = async (query, startMs, endMs, stepMs) => {
+  let resp
   try {
-    const resp = await prometheus.pqlRangeQuery(query, startMs, endMs, stepMs, module.exports.getData)
+    resp = await prometheus.pqlRangeQuery(query, startMs, endMs, stepMs, module.exports.getData)
     return JSON.parse(resp)
   } catch (e) {
     if (e instanceof prometheus.WasmError) {
@@ -54,7 +55,8 @@ module.exports.series = async (query, fromMs, toMs) => {
       .where(Sql.And(
         Sql.Gte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${fromS}))`)),
         Sql.Lte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${toS}))`)),
-        new Sql.In('fingerprint', 'in', new Sql.WithReference(withIdx))))
+        new Sql.In('fingerprint', 'in', new Sql.WithReference(withIdx)),
+        new Sql.In('type', 'in', [bothType,metricType])))
       .groupBy(new Sql.Raw('fingerprint'))
     const data = await rawRequest(req.toString() + ' FORMAT JSON',
       null,
@@ -89,7 +91,7 @@ const getMatchersIdxCond = (matchers) => {
         _matcher.push(Sql.Eq(new Sql.Raw(`match(val, ${Sql.quoteVal(matcher[2])})`), 1))
         break
       case '!~':
-        _matcher.push(Sql.Ne(Sql.Raw(`match(val, ${Sql.quoteVal(matcher[2])})`), 1))
+        _matcher.push(Sql.Ne(new Sql.Raw(`match(val, ${Sql.quoteVal(matcher[2])})`), 1))
     }
     matchesCond.push(Sql.And(..._matcher))
   }
@@ -101,11 +103,12 @@ const getIdxSubquery = (conds, fromMs, toMs) => {
   const toS = Math.floor(toMs / 1000)
   return (new Sql.Select())
     .select('fingerprint')
-    .from('time_series_gin')
+    .from([DATABASE_NAME() + '.time_series_gin', 'time_series_gin'])
     .where(Sql.And(
       Sql.Or(...conds),
       Sql.Gte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${fromS}))`)),
-      Sql.Lte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${toS}))`))))
+      Sql.Lte('date', new Sql.Raw(`toDate(fromUnixTimestamp(${toS}))`)),
+      new Sql.In('type', 'in', [bothType, metricType])))
     .having(
       Sql.Eq(
         new Sql.Raw('groupBitOr(' + conds.map(
@@ -118,44 +121,56 @@ module.exports.getData = async (matchers, fromMs, toMs) => {
   const db = DATABASE_NAME()
   const matches = getMatchersIdxCond(matchers)
   const idx = getIdxSubquery(matches, fromMs, toMs)
-
   const withIdx = new Sql.With('idx', idx, !!clusterName)
+  const timeSeries = (new Sql.Select())
+    .select(
+      'fingerprint',
+      [new Sql.Raw('arraySort(JSONExtractKeysAndValues(labels, \'String\'))'), 'labels']
+    ).from(DATABASE_NAME() + '.time_series')
+    .where(Sql.And(
+      new Sql.In('fingerprint', 'in', new Sql.WithReference(withIdx)),
+      new Sql.In('type', 'in', [bothType,metricType])))
+  const withTimeSeries = new Sql.With('timeSeries', timeSeries, !!clusterName)
   const raw = (new Sql.Select())
     .with(withIdx)
     .select(
       [new Sql.Raw('argMaxMerge(last)'), 'value'],
       'fingerprint',
       [new Sql.Raw('intDiv(timestamp_ns, 15000000000) * 15000'), 'timestamp_ms'])
-    .from(`metrics_15s${_dist}`)
+    .from([`metrics_15s${_dist}`, 'metrics_15s'])
     .where(
       new Sql.And(
         new Sql.In('fingerprint', 'in', new Sql.WithReference(withIdx)),
         Sql.Gte('timestamp_ns', new Sql.Raw(`${fromMs}000000`)),
-        Sql.Lte('timestamp_ns', new Sql.Raw(`${toMs}000000`))
-      )
+        Sql.Lte('timestamp_ns', new Sql.Raw(`${toMs}000000`)),
+        new Sql.In('type', 'in', [bothType, metricType]))
     ).groupBy('fingerprint', 'timestamp_ms')
     .orderBy('fingerprint', 'timestamp_ms')
-  const timeSeries = (new Sql.Select())
-    .select(
-      'fingerprint',
-      [new Sql.Raw('arraySort(JSONExtractKeysAndValues(labels, \'String\'))'), 'labels']
-    ).from('time_series')
-    .where(new Sql.In('fingerprint', 'in', new Sql.WithReference(withIdx)))
-  const withRaw = new Sql.With('raw', raw, false)
-  const withTimeSeries = new Sql.With('timeSeries', timeSeries, false)
+  if (clusterName) {
+    raw.select([new Sql.Raw('min(time_series.labels)'), 'labels']).join(
+      [new Sql.WithReference(withTimeSeries), 'time_series'],
+      'any left',
+      Sql.Eq('time_series.fingerprint', new Sql.Raw('metrics_15s.fingerprint'))
+    )
+  }
+  const withRaw = new Sql.With('raw', raw, !!clusterName)
   const res = (new Sql.Select())
-    .with(withRaw, withTimeSeries)
+    .with(withRaw)
     .select(
       [new Sql.Raw('any(labels)'), 'stream'],
       [new Sql.Raw('arraySort(groupArray((raw.timestamp_ms, raw.value)))'), 'values']
     ).from([new Sql.WithReference(withRaw), 'raw'])
-    .join(
-      [new Sql.WithReference(withTimeSeries), 'time_series'],
-      'any left',
-      Sql.Eq('time_series.fingerprint', new Sql.Raw('raw.fingerprint'))
-    ).groupBy('raw.fingerprint')
+    .groupBy('raw.fingerprint')
     .orderBy('raw.fingerprint')
-
+  if (!clusterName) {
+    res.with(withTimeSeries)
+      .join(
+        [new Sql.WithReference(withTimeSeries), 'time_series'],
+        'any left',
+        Sql.Eq('time_series.fingerprint', new Sql.Raw('raw.fingerprint'))
+      )
+  }
+  console.log(res.toString())
   const data = await rawRequest(res.toString() + ' FORMAT RowBinary',
     null, db, { responseType: 'arraybuffer' })
   return new Uint8Array(data.data)
