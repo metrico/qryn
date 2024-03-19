@@ -33,7 +33,11 @@ var data = map[uint32]*ctx{}
 
 //export createCtx
 func createCtx(id uint32) {
-	data[id] = &ctx{}
+	ctxId := gcContext.GetContextID()
+	gcContext.SetContext(id)
+	c := &ctx{}
+	gcContext.SetContext(ctxId)
+	data[id] = c
 }
 
 //export alloc
