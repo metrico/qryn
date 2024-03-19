@@ -9,7 +9,7 @@
 
 <img src="https://user-images.githubusercontent.com/1423657/232089970-c4536f16-5967-4051-85a5-8ad94fcde67c.png" height=50>&nbsp; <img src="https://github.com/metrico/qryn/assets/1423657/546faddb-fbc6-4af5-9e32-4db6da10915d" height=49>
 
-# [qryn: polyglot observability](https://qryn.dev)
+# <img src='https://user-images.githubusercontent.com/1423657/218816262-e0e8d7ad-44d0-4a7d-9497-0d383ed78b83.png' style="margin-left:-10px" width=28 /> [qryn: polyglot observability](https://qryn.dev)
 
 :rocket: _lighweight, multi-standard, polyglot, drop-in_ **observability** stack for _**Logs, Metrics** and **Traces**_<br/>
 
