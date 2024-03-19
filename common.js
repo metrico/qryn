@@ -35,6 +35,24 @@ module.exports.hashLabels = (labels) => {
 
 /**
  *
+ * @param name {string}
+ * @returns {boolean}
+ */
+function boolEnv (name) {
+  const boolVal = process.env[name]
+  if (typeof boolVal === 'undefined' || ['no', 'n', 'false', '0'].indexOf(`${boolVal}`.toLowerCase()) !== -1) {
+    return false
+  }
+  if (['yes', 'y', 'true', '1'].indexOf(`${boolVal}`.toLowerCase()) !== -1) {
+    return true
+  }
+  throw new Error(`${name} value must be one of [no, n, false, 0, yes, y, true, 1]`)
+}
+
+module.exports.boolEnv = boolEnv
+
+/**
+ *
  * @param durationStr {string}
  * @returns {number}
  */
@@ -101,7 +119,7 @@ module.exports.asyncLogError = async (err, logger) => {
   }
 }
 
-module.exports.isOmitTablesCreation = () => process.env.OMIT_CREATE_TABLES === '1'
+module.exports.isOmitTablesCreation = () => boolEnv('OMIT_CREATE_TABLES')
 
 module.exports.LineFmtOption = () => process.env.LINE_FMT || 'handlebars'
 
@@ -126,7 +144,7 @@ module.exports.CORS = process.env.CORS_ALLOW_ORIGIN || '*'
 
 module.exports.clusterName = process.env.CLUSTER_NAME
 
-module.exports.readonly = process.env.READONLY || false
+module.exports.readonly = boolEnv('READONLY')
 
 module.exports.bun = () => {
   try {
@@ -136,8 +154,8 @@ module.exports.bun = () => {
   }
 }
 
-module.exports.logType = process.env.DISTINGUISH_LOGS_METRICS ? 1 : 0
+module.exports.logType = boolEnv('DISTINGUISH_LOGS_METRICS') ? 1 : 0
 
-module.exports.metricType = process.env.DISTINGUISH_LOGS_METRICS ? 2 : 0
+module.exports.metricType = boolEnv('DISTINGUISH_LOGS_METRICS') ? 2 : 0
 
 module.exports.bothType = 0

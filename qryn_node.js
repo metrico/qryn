@@ -4,8 +4,9 @@
  * qryn: polyglot observability API
  * (C) 2018-2024 QXIP BV
  */
+const { boolEnv } = require('./common')
 
-this.readonly = process.env.READONLY || false
+this.readonly = boolEnv('READONLY')
 this.http_user = process.env.QRYN_LOGIN || process.env.CLOKI_LOGIN || undefined
 this.http_password = process.env.QRYN_PASSWORD || process.env.CLOKI_PASSWORD || undefined
 
@@ -117,7 +118,7 @@ let fastify = require('fastify')({
   await fastify.register(require('@fastify/websocket'))
 
   /* Fastify local metrics exporter */
-  if (process.env.FASTIFY_METRICS) {
+  if (boolEnv('FASTIFY_METRICS')) {
     const metricsPlugin = require('fastify-metrics')
     fastify.register(metricsPlugin, { endpoint: '/metrics' })
   } else {
@@ -239,7 +240,7 @@ let fastify = require('fastify')({
   })
 
   /* Tempo Write Handler */
-  this.tempo_tagtrace = process.env.TEMPO_TAGTRACE || false
+  this.tempo_tagtrace = boolEnv('TEMPO_TAGTRACE')
   const handlerTempoPush = require('./lib/handlers/tempo_push.js').bind(this)
   fastify.post('/tempo/api/push', handlerTempoPush, {
     'application/json': tempoPushParser,
