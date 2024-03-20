@@ -1,0 +1,20 @@
+<SYNTAX> ::= <selector> *(<OWSP> <and_or> <OWSP> <SYNTAX>)
+
+selector ::= "{" <OWSP> <attr_selector_exp> <OWSP> "}" [<OWSP> <aggregator>]
+attr_selector_exp ::= (<attr_selector> | "(" <OWSP> <attr_selector_exp> <OWSP> ")") [ <OWSP> <and_or> <OWSP> <attr_selector_exp>]
+and_or ::= "&&" | "||"
+
+aggregator ::= "|" <OWSP> <fn> <OWSP> <attr> <OWSP> <cmp> <OWSP> <number> [<measurement>]
+fn ::= "count"|"sum"|"min"|"max"|"avg"
+attr ::= "(" <OWSP> [<label_name>] <OWSP> ")"
+cmp ::= "="|"!="|"<"|"<="|">"|">="
+measurement ::= "ns"|"us"|"ms"|"s"|"m"|"h"|"d"
+
+label_name ::= ("." | <ALPHA> | "_") *("." | <ALPHA> | "_" | <DIGITS>)
+number ::= ["-"] <DIGITS> ["." <DIGITS>]
+
+attr_selector ::= <label_name> <OWSP> <op> <OWSP> <value>
+op ::= ">="|"<="|"=~"|"="|"!="|"<"|">"|"!~"
+value ::= <time_val> | <number> | <quoted_str>
+time_val ::= (<DIGITS> ["." <DIGITS>]) <measurement>
+quoted_str ::= (<QUOTE><QUOTE>) | (<AQUOTE><AQUOTE>) | <QLITERAL> | <AQLITERAL>
