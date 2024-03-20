@@ -1,5 +1,5 @@
 const Sql = require('@cloki/clickhouse-sql')
-const {getCompareFn} = require('./shared')
+const { getCompareFn, durationToNs } = require('./shared')
 
 module.exports = class Builder {
   constructor () {
@@ -64,22 +64,9 @@ module.exports = class Builder {
     return res
   }
 
-  cmpVal() {
+  cmpVal () {
     if (this.attr === 'duration') {
-      const measurements = {
-        ns: 1,
-        us: 1000,
-        ms: 1000000,
-        s: 1000000000,
-        m: 1000000000 * 60,
-        h: 1000000000 * 3600,
-        d: 1000000000 * 3600 * 24
-      }
-      const durationRe = this.compareVal.match(/(\d+\.?\d*)(ns|us|ms|s|m|h|d)?/)
-      if (!durationRe) {
-        throw new Error('Invalid duration compare value')
-      }
-      return parseFloat(durationRe[1]) * measurements[durationRe[2].toLowerCase()]
+      return durationToNs(this.compareVal)
     }
     return parseFloat(this.compareVal)
   }
