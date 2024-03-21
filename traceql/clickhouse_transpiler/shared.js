@@ -1,5 +1,4 @@
 const Sql = require('@cloki/clickhouse-sql')
-const { json } = require('../../parser/registry/parser_registry')
 /**
  *
  * @param op {string}
@@ -41,10 +40,41 @@ module.exports.durationToNs = (duration) => {
 
 module.exports.unquote = (val) => {
   if (val[0] === '"') {
-    return json.parse(val)
+    return JSON.parse(val)
   }
   if (val[0] === '`') {
     return val.substr(1, val.length - 2)
   }
   throw new Error('unquote not supported')
+}
+
+/**
+ * @typedef {function(Context): Select} BuiltProcessFn
+ */
+/**
+ * @param fn {ProcessFn}
+ * @returns {{
+ *   new(): {
+ *     withMain(BuiltProcessFn): this,
+ *     build(): BuiltProcessFn
+ *   },
+ *   prototype: {
+ *     withMain(BuiltProcessFn): this,
+ *     build(): BuiltProcessFn
+ *   }}}
+ */
+module.exports.standardBuilder = (fn) => {
+  return class {
+    withMain (main) {
+      this.main = main
+      return this
+    }
+
+    build () {
+      return (ctx) => {
+        const sel = this.main ? this.main(ctx) : null
+        return fn(sel, ctx)
+      }
+    }
+  }
 }

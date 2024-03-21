@@ -3,10 +3,21 @@ const { getCompareFn, durationToNs } = require('./shared')
 
 module.exports = class Builder {
   constructor () {
+    this.main = null
     this.fn = ''
     this.attr = ''
     this.compareFn = ''
     this.compareVal = ''
+  }
+
+  /**
+   *
+   * @param main {BuiltProcessFn}
+   * @returns {Builder}
+   */
+  withMain (main) {
+    this.main = main
+    return this
   }
 
   /**
@@ -54,12 +65,16 @@ module.exports = class Builder {
    */
   build () {
     const self = this
-    /** @type {ProcessFn} */
-    const res = (sel, ctx) => {
+    /** @type {BuiltProcessFn} */
+    const res = (ctx) => {
+      const sel = this.main(ctx)
       const fCmpVal = self.cmpVal()
       const agg = self.aggregator()
       const compareFn = getCompareFn(self.compareFn)
-      return sel.having(compareFn(agg, Sql.val(fCmpVal)))
+      const comparreExp = compareFn(agg, Sql.val(fCmpVal))
+      // .having is broken
+      sel.having_conditions = Sql.And([...sel.having_conditions.args, comparreExp])
+      return sel
     }
     return res
   }

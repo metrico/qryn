@@ -1,13 +1,16 @@
 <SYNTAX> ::= <selector> *(<OWSP> <and_or> <OWSP> <SYNTAX>)
 
 selector ::= "{" <OWSP> <attr_selector_exp> <OWSP> "}" [<OWSP> <aggregator>]
-attr_selector_exp ::= (<attr_selector> | "(" <OWSP> <attr_selector_exp> <OWSP> ")") [ <OWSP> <and_or> <OWSP> <attr_selector_exp>]
+attr_selector_exp ::= (<attr_selector> | <complex_head> ) [ <OWSP> <and_or> <OWSP> <tail> ]
+complex_head ::= "(" <OWSP> <attr_selector_exp> <OWSP> ")"
+tail ::= <attr_selector_exp>
 and_or ::= "&&" | "||"
 
-aggregator ::= "|" <OWSP> <fn> <OWSP> <attr> <OWSP> <cmp> <OWSP> <number> [<measurement>]
+aggregator ::= "|" <OWSP> <fn> <OWSP> <attr> <OWSP> <cmp> <OWSP> <cmp_val>
 fn ::= "count"|"sum"|"min"|"max"|"avg"
-attr ::= "(" <OWSP> [<label_name>] <OWSP> ")"
+attr ::= "(" <OWSP> [ <label_name> ] <OWSP> ")"
 cmp ::= "="|"!="|"<"|"<="|">"|">="
+cmp_val ::= <number> [<measurement>]
 measurement ::= "ns"|"us"|"ms"|"s"|"m"|"h"|"d"
 
 label_name ::= ("." | <ALPHA> | "_") *("." | <ALPHA> | "_" | <DIGITS>)

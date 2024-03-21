@@ -2,6 +2,7 @@ const { getCompareFn, durationToNs, unquote } = require('./shared')
 const Sql = require('@cloki/clickhouse-sql')
 module.exports = class Builder {
   constructor () {
+    this.main = null
     this.terms = []
     this.conds = null
     this.aggregatedAttr = ''
@@ -10,6 +11,16 @@ module.exports = class Builder {
     this.isAliased = false
     this.alias = ''
     this.where = []
+  }
+
+  /**
+   *
+   * @param main {BuiltProcessFn}
+   * @returns {Builder}
+   */
+  withMain (main) {
+    this.main = main
+    return this
   }
 
   /**
@@ -45,8 +56,9 @@ module.exports = class Builder {
    */
   build () {
     const self = this
-    /** @type {ProcessFn} */
-    const res = (sel, ctx) => {
+    /** @type {BuiltProcessFn} */
+    const res = (ctx) => {
+      const sel = this.main(ctx)
       self.alias = 'bsCond'
       for (const term of self.terms) {
         const sqlTerm = self.getTerm(term)
@@ -59,14 +71,14 @@ module.exports = class Builder {
       const having = self.getCond(self.conds)
       self.aggregator(sel)
       sel.conditions = Sql.And(sel.conditions, Sql.Or(...self.where))
-      sel.having_conditions = Sql.And(sel.having_conditions, having)
+      sel.having(having)
       return sel
     }
     return res
   }
 
   /**
-   * @typedef {{simpleIdx: number, op: string, comlex: [Condition]}} Condition
+   * @typedef {{simpleIdx: number, op: string, complex: [Condition]}} Condition
    */
   /**
    * @param c {Condition}
@@ -74,7 +86,7 @@ module.exports = class Builder {
   getCond (c) {
     if (c.simpleIdx === -1) {
       const subs = []
-      for (const s of c.comlex) {
+      for (const s of c.complex) {
         subs.push(this.getCond(s))
       }
       switch (c.op) {
@@ -89,7 +101,7 @@ module.exports = class Builder {
     if (!this.isAliased) {
       left = groupBitOr(bitSet(this.sqlConditions), this.alias)
     }
-    return Sql.Ne(bitAnd(left, Sql.val(c.simpleIdx)), Sql.val(0))
+    return Sql.Ne(bitAnd(left, new Sql.Raw((BigInt(1) << BigInt(c.simpleIdx)).toString())), Sql.val(0))
   }
 
   /**
@@ -100,10 +112,8 @@ module.exports = class Builder {
       return
     }
 
-    const s = sel.select()
     if (this.aggregatedAttr === 'duration') {
-      s.push([new Sql.Raw('toFloat64(duration)'), 'agg_val'])
-      sel.select(...s)
+      sel.select([new Sql.Raw('toFloat64(any(traces_idx.duration))'), 'agg_val'])
       return
     }
 
@@ -113,11 +123,10 @@ module.exports = class Builder {
     if (this.aggregatedAttr.match(/^resource\./)) {
       this.aggregatedAttr = this.aggregatedAttr.substr(9)
     }
-    if (this.aggregatedAttr.match(/^\.*/)) {
+    if (this.aggregatedAttr.match(/^\./)) {
       this.aggregatedAttr = this.aggregatedAttr.substr(1)
     }
-    s.push([sqlAttrValue(this.aggregatedAttr), 'agg_val'])
-    sel.select(...s)
+    sel.select([sqlAttrValue(this.aggregatedAttr), 'agg_val'])
     this.where.push(Sql.Eq(new Sql.Raw('key'), Sql.val(this.aggregatedAttr)))
   }
 
@@ -127,7 +136,7 @@ module.exports = class Builder {
       key = key.substr(5)
     } else if (key.match(/^resource\./)) {
       key = key.substr(9)
-    } else if (key.match(/^.*/)) {
+    } else if (key.match(/^\./)) {
       key = key.substr(1)
     } else {
       switch (key) {
@@ -150,7 +159,7 @@ module.exports = class Builder {
 
   getDurationCondition (key, term) {
     const fVal = durationToNs(term.Child('value').value)
-    const fn = getCompareFn(term.Child('op'))
+    const fn = getCompareFn(term.Child('op').value)
     return fn(new Sql.Raw('traces_idx.duration'), Math.floor(fVal))
   }
 
@@ -182,7 +191,7 @@ module.exports = class Builder {
   }
 
   getNumberCondition (key, term) {
-    const fn = getCompareFn(term.Child('op'))
+    const fn = getCompareFn(term.Child('op').value)
     if (!term.Child('value').value.match(/^\d+.?\d*$/)) {
       throw new Error(`invalid value in ${term.value}`)
     }
@@ -248,7 +257,7 @@ function bitSet (terms) {
   const res = new Sql.Raw('')
   res.terms = terms
   res.toString = () => {
-    return terms.map((t, i) => `bitShiftLeft(toUint64(${t.toString()}), ${i})`).join('+')
+    return res.terms.map((t, i) => `bitShiftLeft(toUInt64(${t.toString()}), ${i})`).join('+')
   }
   return res
 }
