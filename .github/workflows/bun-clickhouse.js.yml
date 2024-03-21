@@ -38,6 +38,7 @@ jobs:
     - uses: oven-sh/setup-bun@v1
       with:
         bun-version: ${{ matrix.bun-version }}
+    - run: rm -rf package-lock.json
     - run: bun install
     - run: bun run postinstall
     - run: git submodule init
