@@ -11,7 +11,7 @@
 
 # <img src='https://user-images.githubusercontent.com/1423657/218816262-e0e8d7ad-44d0-4a7d-9497-0d383ed78b83.png' style="margin-left:-10px" width=28 /> [qryn: polyglot observability](https://qryn.dev)
 
-:rocket: _lighweight, multi-standard, polyglot, drop-in_ **observability** stack for _**Logs, Metrics** and **Traces**_<br/>
+:rocket: _lighweight, multi-standard, polyglot _**observability** stack for _**Logs, Metrics**, **Traces** and **Profiling**_<br/>
 
 > ... it's pronounced /ˈkwɪr..ɪŋ/ or just _querying_
 
