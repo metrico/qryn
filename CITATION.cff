@@ -1,0 +1,18 @@
+---
+cff-version: 1.2.0
+version: 3.2.0
+title: "qryn: polyglot, lightweight observability stack, drop-in LGTM alternative"
+license: AGPLv3
+abstract: >
+   All-in-one Polyglot Observability API compatible with Loki, Prometheus, Tempo, Pyroscope, Opentelemetry and more!
+   Drop-in Grafana LGTM replacement with LogQL, PromQL, TempoQL and Phlare. ClickHouse OLAP Storage. 
+   Ready to use Splunk/Datadog/Elastic alternative! WASM powered 
+date-released: "2024-04-01"
+keywords:
+  - observability
+  - opentelemetry
+  - bun
+  - wasm
+repository-code: "https://github.com/metrico/qryn"
+type: software
+message: "Available at https://github.com/metrico/qryn"
