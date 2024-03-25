@@ -70,6 +70,10 @@ module.exports.standardBuilder = (fn) => {
       return this
     }
 
+    /**
+     *
+     * @returns {BuiltProcessFn}
+     */
     build () {
       return (ctx) => {
         const sel = this.main ? this.main(ctx) : null

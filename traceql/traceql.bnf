@@ -9,7 +9,7 @@ and_or ::= "&&" | "||"
 aggregator ::= "|" <OWSP> <fn> <OWSP> <attr> <OWSP> <cmp> <OWSP> <cmp_val>
 fn ::= "count"|"sum"|"min"|"max"|"avg"
 attr ::= "(" <OWSP> [ <label_name> ] <OWSP> ")"
-cmp ::= "="|"!="|"<"|"<="|">"|">="
+cmp ::= "="|"!="|"<="|">="|"<"|">"
 cmp_val ::= <number> [<measurement>]
 measurement ::= "ns"|"us"|"ms"|"s"|"m"|"h"|"d"
 
