@@ -128,7 +128,7 @@ The Tempo datasource can be used to natively query _traces_ including _**TraceQL
 
 <br>
 
-### 📚 Other Vendors
+### 📚 Vendors Compatibility
 
 **qryn** can ingest data using formats from [Grafana, InfluxDB, DataDog, Elastic](https://qryn.metrico.in/#/support) and other vendors.
 
