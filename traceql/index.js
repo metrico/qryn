@@ -1,9 +1,9 @@
-const { TranspileTraceQL } = require('../wasm_parts/main')
-const { clusterName } = require('../common')
-const { DATABASE_NAME } = require('../lib/utils')
-const dist = clusterName ? '_dist' : ''
-const { rawRequest } = require('../lib/db/clickhouse')
+const parser = require('./parser')
+const transpiler = require('./clickhouse_transpiler')
 const logger = require('../lib/logger')
+const { DATABASE_NAME } = require('../lib/utils')
+const { clusterName } = require('../common')
+const { rawRequest } = require('../lib/db/clickhouse')
 
 /**
  *
@@ -14,30 +14,20 @@ const logger = require('../lib/logger')
  * @returns {Promise<[]>}
  */
 const search = async (query, limit, from, to) => {
-  const _dbname = '`' + DATABASE_NAME() + '`'
-  const request = {
-    Request: query,
-    Ctx: {
-      IsCluster: !!clusterName,
-      OrgID: '0',
-      FromS: Math.floor(from.getTime() / 1000) - 600,
-      ToS: Math.floor(to.getTime() / 1000),
-      Limit: parseInt(limit),
-
-      TimeSeriesGinTableName: `${_dbname}.time_series_gin`,
-      SamplesTableName: `${_dbname}.samples_v3${dist}`,
-      TimeSeriesTableName: `${_dbname}.time_series`,
-      TimeSeriesDistTableName: `${_dbname}.time_series_dist`,
-      Metrics15sTableName: `${_dbname}.metrics_15s${dist}`,
-
-      TracesAttrsTable: `${_dbname}.tempo_traces_attrs_gin`,
-      TracesAttrsDistTable: `${_dbname}.tempo_traces_attrs_gin_dist`,
-      TracesTable: `${_dbname}.tempo_traces`,
-      TracesDistTable: `${_dbname}.tempo_traces_dist`
-    }
+  const _dbname = DATABASE_NAME()
+  /** @type {Context} */
+  const ctx = {
+    tracesDistTable: `${_dbname}.tempo_traces_dist`,
+    tracesTable: `${_dbname}.tempo_traces`,
+    isCluster: !!clusterName,
+    tracesAttrsTable: `${_dbname}.tempo_traces_attrs_gin`,
+    from: from,
+    to: to,
+    limit: limit
   }
-  logger.debug(JSON.stringify(request))
-  const sql = TranspileTraceQL(request)
+  const scrpit = parser.ParseScript(query)
+  const planner = transpiler(scrpit.rootToken)
+  const sql = planner(ctx)
   const response = await rawRequest(sql + ' FORMAT JSON', null, DATABASE_NAME())
   const traces = response.data.data.map(row => ({
     traceID: row.trace_id,
@@ -49,7 +39,7 @@ const search = async (query, limit, from, to) => {
       {
         spans: row.span_id.map((spanId, i) => ({
           spanID: spanId,
-          startTimeUnixNano: row.timestamps_ns[i],
+          startTimeUnixNano: row.timestamp_ns[i],
           durationNanos: row.duration[i],
           attributes: []
         })),
