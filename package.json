@@ -44,7 +44,7 @@
     "@qxip/influx-line-protocol-parser": "^0.2.1",
     "@qxip/plugnplay": "^3.3.1",
     "@stricjs/router": "^5.0.6",
-    "axios": "^0.21.4",
+    "axios": "^0.28.0",
     "bnf": "^1.0.1",
     "csv-writer": "^1.6.0",
     "date-fns": "^2.27.0",
