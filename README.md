@@ -129,9 +129,9 @@ The Tempo datasource can be used to natively query _traces_ including _**TraceQL
 <br>
 
 ### 🔥 Pyroscope + Phlare
-⚡ **qryn** implements the [Pyroscope API](https://qryn.dev) for transparent compatibility with **[Phlare](https://grafana.com/docs/pyroscope/latest/)** clients.<br>
+⚡ **qryn** implements the [Pyroscope/Phlare API](https://qryn.metrico.in/#/profiling/ingestion) for transparent compatibility with **Pyroscope SDK** clients.<br>
 
-> Any Pyroscope SDK client or application can be used with qryn out of the box for **continuous profiling**
+> Any Pyroscope SDK client or Pyroscope compatible agent can be used with qryn out of the box for **continuous profiling**
 
 <img src="https://github.com/metrico/qryn/assets/1423657/0bd11ca9-a2b4-41ee-9ea1-6f21fa4077b2" width=700>
 
