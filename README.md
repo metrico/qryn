@@ -135,6 +135,7 @@ The Tempo datasource can be used to natively query _traces_ including _**TraceQL
 
 <img src="https://github.com/metrico/qryn/assets/1423657/0bd11ca9-a2b4-41ee-9ea1-6f21fa4077b2" width=700>
 
+<br>
 
 <br>
 
