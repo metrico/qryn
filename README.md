@@ -21,7 +21,6 @@
 * **Voracious**: Ingest using **Opentelemetry, Loki, Prometheus, Tempo, Influx, Datadog, Elastic** _+ more_
 * **Versatile**: Explore data with qryn's **built-in Explorer** and CLI or native **Grafana** datasource compatibility
 * **Secure**: Retain total control of data, using **ClickHouse**, **DuckDB** or **InfluxDB** IOx with **S3** object storage
-* **Unmetered**: Unlimited **FOSS** deployments or **qryn.cloud** option with advanced features and performance
 * **Indepentent**: Opensource, Community powered, Anti lock-in alternative to Vendor controlled stacks
 
 <br>
