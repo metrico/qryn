@@ -11,7 +11,7 @@
 
 # <img src='https://user-images.githubusercontent.com/1423657/218816262-e0e8d7ad-44d0-4a7d-9497-0d383ed78b83.png' style="margin-left:-10px" width=28 /> [qryn: polyglot observability](https://qryn.dev)
 
-:rocket: _lighweight, multi-standard, polyglot _**observability** stack for _**Logs, Metrics**, **Traces** and **Profiling**_<br/>
+:rocket: _lighweight, multi-standard, polyglot **observability** stack for **Logs, Metrics**, **Traces** and **Profiling**_<br/>
 
 > ... it's pronounced /ˈkwɪr..ɪŋ/ or just _querying_
 
@@ -21,7 +21,6 @@
 * **Voracious**: Ingest using **Opentelemetry, Loki, Prometheus, Tempo, Influx, Datadog, Elastic** _+ more_
 * **Versatile**: Explore data with qryn's **built-in Explorer** and CLI or native **Grafana** datasource compatibility
 * **Secure**: Retain total control of data, using **ClickHouse**, **DuckDB** or **InfluxDB** IOx with **S3** object storage
-* **Unmetered**: Unlimited **FOSS** deployments or **qryn.cloud** option with advanced features and performance
 * **Indepentent**: Opensource, Community powered, Anti lock-in alternative to Vendor controlled stacks
 
 <br>
@@ -125,6 +124,17 @@ The Tempo datasource can be used to natively query _traces_ including _**TraceQL
 > :tada: _No plugins needed_ <br>
 > :eye: _No Grafana? No problem! Use View_
 
+
+<br>
+
+### 🔥 Pyroscope + Phlare
+⚡ **qryn** implements the [Pyroscope/Phlare API](https://qryn.metrico.in/#/profiling/ingestion) for transparent compatibility with **Pyroscope SDK** clients.<br>
+
+> Any Pyroscope SDK client or Pyroscope compatible agent can be used with qryn out of the box for **continuous profiling**
+
+<img src="https://github.com/metrico/qryn/assets/1423657/0bd11ca9-a2b4-41ee-9ea1-6f21fa4077b2" width=700>
+
+<br>
 
 <br>
 
