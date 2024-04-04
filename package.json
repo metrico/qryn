@@ -63,7 +63,7 @@
     "patch-package": "^6.4.7",
     "pino": "^7.6.5",
     "plugnplay": "npm:@qxip/plugnplay@^3.3.1",
-    "protobufjs": "7.2.5",
+    "protobufjs": "7.2.6",
     "protocol-buffers": "^4.2.0",
     "protocol-buffers-encodings": "^1.1.1",
     "record-cache": "^1.1.1",
