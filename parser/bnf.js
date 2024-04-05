@@ -85,9 +85,12 @@ compiler.ParseScript = function (script) {
   })
   const aQuotedStrings = quotedStrings.replaceAll(/`([^`\\]|\\.)+`/g, (str) => {
     aqLiterals.push(str)
-    return `\`AL_${qLiterals.length - 1}\``
+    return `\`AL_${aqLiterals.length - 1}\``
   })
   const parsedScript = this._ParseScript(aQuotedStrings)
+  if (!parsedScript) {
+    return parsedScript
+  }
   for (const t of parsedScript.rootToken.Children('QLITERAL')) {
     t._value = qLiterals[parseInt(t.value.slice(4, t.value.length - 1))]
     t.tokens = []
