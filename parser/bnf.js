@@ -70,4 +70,33 @@ for (const [name, rule] of Object.entries(compiler.languages.logql.rules)) {
   }
 }
 
+compiler._ParseScript = compiler.ParseScript
+/**
+ * hack to avoid ridiculously long strings
+ * @param script {string}
+ * @constructor
+ */
+compiler.ParseScript = function (script) {
+  const qLiterals = []
+  const aqLiterals = []
+  const quotedStrings = script.replaceAll(/"([^"\\]|\\.)+"/g, (str) => {
+    qLiterals.push(str)
+    return `"QL_${qLiterals.length - 1}"`
+  })
+  const aQuotedStrings = quotedStrings.replaceAll(/`([^`\\]|\\.)+`/g, (str) => {
+    aqLiterals.push(str)
+    return `\`AL_${qLiterals.length - 1}\``
+  })
+  const parsedScript = this._ParseScript(aQuotedStrings)
+  for (const t of parsedScript.rootToken.Children('QLITERAL')) {
+    t._value = qLiterals[parseInt(t.value.slice(4, t.value.length - 1))]
+    t.tokens = []
+  }
+  for (const t of parsedScript.rootToken.Children('AQLITERAL')) {
+    t._value = aqLiterals[parseInt(t.value.slice(4, t.value.length - 1))]
+    t.tokens = []
+  }
+  return parsedScript
+}
+
 module.exports = compiler
