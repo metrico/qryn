@@ -39,9 +39,9 @@ jobs:
       with:
         bun-version: ${{ matrix.bun-version }}
     - run: rm -rf package-lock.json
-    - run: bun install
     - run: git submodule init
     - run: git submodule update
+    - run: bun install
     - name: Workflow Telemetry
       uses: runforesight/workflow-telemetry-action@v1.8.7
       if: github.event_name != 'pull_request'
