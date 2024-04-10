@@ -54,7 +54,7 @@
     "fastify-plugin": "^4.5.1",
     "glob": "^7.1.2",
     "handlebars": "^4.7.7",
-    "handlebars-helpers": "^0.9.8",
+    "handlebars-helpers": "^0.10.0",
     "http-errors": "^2.0.0",
     "json-stable-stringify": "^1.0.1",
     "jsonic": "^0.3.1",
