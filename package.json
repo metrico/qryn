@@ -78,13 +78,14 @@
     "@stricjs/utils": "^1.6.1",
     "basic-auth": "^2.0.1",
     "google-protobuf": "^3.21.2",
-    "@grpc/grpc-js": "^1.9.14"
+    "@grpc/grpc-js": "^1.10.6",
+    "@grpc/proto-loader": "^0.7.12"
   },
   "devDependencies": {
     "@elastic/elasticsearch": "^8.5.0",
     "@influxdata/influxdb-client": "^1.33.2",
     "@opentelemetry/api": "^1.0.2",
-    "@opentelemetry/exporter-trace-otlp-proto": "^0.33.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.50.0",
     "@opentelemetry/instrumentation": "^0.25.0",
     "@opentelemetry/instrumentation-connect": "^0.30.0",
     "@opentelemetry/instrumentation-http": "^0.25.0",
