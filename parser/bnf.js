@@ -79,11 +79,17 @@ compiler._ParseScript = compiler.ParseScript
 compiler.ParseScript = function (script) {
   const qLiterals = []
   const aqLiterals = []
-  const quotedStrings = script.replaceAll(/"([^"\\]|\\.)+"/g, (str) => {
+  const quotedStrings = script.replaceAll(/"([^"\\]|\\.)*"/g, (str) => {
+    if (str.length < 512) {
+      return str
+    }
     qLiterals.push(str)
     return `"QL_${qLiterals.length - 1}"`
   })
-  const aQuotedStrings = quotedStrings.replaceAll(/`([^`\\]|\\.)+`/g, (str) => {
+  const aQuotedStrings = quotedStrings.replaceAll(/`([^`\\]|\\.)*`/g, (str) => {
+    if (str.length < 512) {
+      return str
+    }
     aqLiterals.push(str)
     return `\`AL_${aqLiterals.length - 1}\``
   })
@@ -92,10 +98,16 @@ compiler.ParseScript = function (script) {
     return parsedScript
   }
   for (const t of parsedScript.rootToken.Children('QLITERAL')) {
+    if (!t.value.match(/^"QL_\d+"$/)) {
+      continue
+    }
     t._value = qLiterals[parseInt(t.value.slice(4, t.value.length - 1))]
     t.tokens = []
   }
   for (const t of parsedScript.rootToken.Children('AQLITERAL')) {
+    if (!t.value.match(/^`AL_\d+`$/)) {
+      continue
+    }
     t._value = aqLiterals[parseInt(t.value.slice(4, t.value.length - 1))]
     t.tokens = []
   }
