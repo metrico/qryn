@@ -58,8 +58,9 @@ async function processComplexResult (ctx, script, complexity) {
   let traces = []
   for (let i = 0; i < maxFilter; i++) {
     ctx.randomFilter = [maxFilter, i]
-    let sql = planner(ctx)
-    let response = await rawRequest(sql + ' FORMAT JSON', null, DATABASE_NAME())
+    const sql = planner(ctx)
+    console.log(sql.toString())
+    const response = await rawRequest(sql + ' FORMAT JSON', null, DATABASE_NAME())
     if (response.data.data.length === parseInt(ctx.limit)) {
       const minStart = response.data.data.reduce((acc, row) =>
         acc === 0 ? row.start_time_unix_nano : Math.min(acc, row.start_time_unix_nano), 0
@@ -73,8 +74,6 @@ async function processComplexResult (ctx, script, complexity) {
       ctx.randomFilter = [maxFilter, i]
     }
     ctx.cachedTraceIds = response.data.data.map(row => row.trace_id)
-    sql = planner(ctx)
-    response = await rawRequest(sql + ' FORMAT JSON', null, DATABASE_NAME())
     traces = response.data.data.map(row => ({
       traceID: row.trace_id,
       rootServiceName: row.root_service_name,

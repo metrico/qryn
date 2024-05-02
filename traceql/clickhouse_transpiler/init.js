@@ -23,7 +23,7 @@ const { standardBuilder } = require('./shared')
  */
 module.exports = standardBuilder((sel, ctx) => {
   return (new Sql.Select()).select(['trace_id', 'trace_id'],
-    [new Sql.Raw('lower(hex(span_id))'), 'span_id'],
+    [new Sql.Raw('span_id'), 'span_id'],
     [new Sql.Raw('any(duration)'), 'duration'],
     [new Sql.Raw('any(timestamp_ns)'), 'timestamp_ns'])
     .from([ctx.tracesAttrsTable, 'traces_idx'])
