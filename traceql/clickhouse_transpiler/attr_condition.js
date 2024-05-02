@@ -1,4 +1,4 @@
-const { getCompareFn, durationToNs, unquote } = require('./shared')
+const { getCompareFn, durationToNs, unquote, bitSet } = require('./shared')
 const Sql = require('@cloki/clickhouse-sql')
 module.exports = class Builder {
   constructor () {
@@ -71,6 +71,18 @@ module.exports = class Builder {
       const having = self.getCond(self.conds)
       self.aggregator(sel)
       sel.conditions = Sql.And(sel.conditions, Sql.Or(...self.where))
+      if (Array.isArray(ctx.randomFilter) && Array.isArray(ctx.cachedTraceIds)) {
+        sel.conditions = Sql.And(
+          sel.conditions,
+          Sql.Or(
+            Sql.Eq(new Sql.Raw(`cityHash64(trace_id) % ${ctx.randomFilter[0]}`), Sql.val(ctx.randomFilter[1])),
+            new Sql.In('trace_id', 'in', ctx.cachedTraceIds.map(traceId => new Sql.Raw(`unhex('${traceId}')`)))
+          ))
+      } else if (Array.isArray(ctx.randomFilter)) {
+        sel.conditions = Sql.And(
+          sel.conditions,
+          Sql.Eq(new Sql.Raw(`cityHash64(trace_id) % ${ctx.randomFilter[0]}`), Sql.val(ctx.randomFilter[1])))
+      }
       sel.having(having)
       return sel
     }
@@ -244,20 +256,6 @@ function groupBitOr (left, alias) {
       return `groupBitOr(${strLeft}) as ${alias}`
     }
     return `groupBitOr(${strLeft})`
-  }
-  return res
-}
-
-/**
- *
- * @param terms
- * @returns {SQLObject}
- */
-function bitSet (terms) {
-  const res = new Sql.Raw('')
-  res.terms = terms
-  res.toString = () => {
-    return res.terms.map((t, i) => `bitShiftLeft(toUInt64(${t.toString()}), ${i})`).join('+')
   }
   return res
 }

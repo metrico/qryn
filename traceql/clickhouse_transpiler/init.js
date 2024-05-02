@@ -9,7 +9,9 @@ const { standardBuilder } = require('./shared')
  *   limit: number,
  *   isCluster: boolean,
  *   tracesTable: string,
- *   tracesDistTable: string
+ *   tracesDistTable: string,
+ *   randomFilter: number[]|undefined,
+ *   cachedTraceIds: string[]|undefined,
  * }} Context
  */
 /**

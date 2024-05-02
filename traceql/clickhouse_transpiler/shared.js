@@ -82,3 +82,17 @@ module.exports.standardBuilder = (fn) => {
     }
   }
 }
+
+/**
+ *
+ * @param terms {SQLObject[]}
+ * @returns {SQLObject}
+ */
+module.exports.bitSet = (terms) => {
+  const res = new Sql.Raw('')
+  res.terms = terms
+  res.toString = () => {
+    return res.terms.map((t, i) => `bitShiftLeft(toUInt64(${t.toString()}), ${i})`).join('+')
+  }
+  return res
+}
