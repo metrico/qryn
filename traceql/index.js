@@ -28,10 +28,19 @@ const search = async (query, limit, from, to) => {
   }
   const scrpit = parser.ParseScript(query)
   const complexity = await evaluateComplexity(ctx, scrpit.rootToken)
+  let res = []
   if (complexity > 10000000) {
-    return await processComplexResult(ctx, scrpit.rootToken, complexity)
+    res = await processComplexResult(ctx, scrpit.rootToken, complexity)
+  } else {
+    res = await processSmallResult(ctx, scrpit.rootToken)
   }
-  return await processSmallResult(ctx, scrpit.rootToken)
+  res.forEach(t =>
+    t.spanSets.forEach(
+      ss => ss.spans.sort(
+        (a, b) => b.startTimeUnixNano.localeCompare(a.startTimeUnixNano))
+    )
+  )
+  return res
 }
 
 /**
@@ -59,7 +68,6 @@ async function processComplexResult (ctx, script, complexity) {
   for (let i = 0; i < maxFilter; i++) {
     ctx.randomFilter = [maxFilter, i]
     const sql = planner(ctx)
-    console.log(sql.toString())
     const response = await rawRequest(sql + ' FORMAT JSON', null, DATABASE_NAME())
     if (response.data.data.length === parseInt(ctx.limit)) {
       const minStart = response.data.data.reduce((acc, row) =>
