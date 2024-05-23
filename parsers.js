@@ -260,7 +260,7 @@ const parsers = {
       const parser = find(parsers._parsers, [contentType, req.routeOptions.method, req.routeOptions.url]) ||
         find(parsers._parsers, ['*', req.routeOptions.method, req.routeOptions.url])
       if (!parser) {
-        throw new Error('undefined parser')
+        throw new Error(`undefined parser for ${contentType} ${req.routeOptions.method} ${req.routeOptions.url}`)
       }
       return await parser(req, payload)
     },
