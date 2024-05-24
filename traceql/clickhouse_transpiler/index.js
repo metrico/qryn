@@ -1,4 +1,5 @@
 const AttrConditionPlanner = require('./attr_condition')
+const AttrConditionEvalPlanner = require('./attr_condition_eval')
 const InitIndexPlanner = require('./init')
 const IndexGroupByPlanner = require('./group_by')
 const AggregatorPlanner = require('./aggregator')
@@ -8,8 +9,15 @@ const TracesDataPlanner = require('./traces_data')
 /**
  * @param script {Token}
  */
-module.exports = (script) => {
+module.exports.transpile = (script) => {
   return new Planner(script).plan()
+}
+
+/**
+ * @param script {Token}
+ */
+module.exports.evaluateCmpl = (script) => {
+  return new Planner(script).planEval()
 }
 
 class Planner {
@@ -49,6 +57,19 @@ class Planner {
     res = (new IndexLimitPlanner()).withMain(res).build()
     res = (new TracesDataPlanner()).withMain(res).build()
     res = (new IndexLimitPlanner()).withMain(res).build()
+
+    return res
+  }
+
+  planEval () {
+    this.check()
+    this.analyze()
+    const res = (new AttrConditionEvalPlanner())
+      .withTerms(this.termIdx)
+      .withConditions(this.cond)
+      .withAggregatedAttr(this.aggregatedAttr)
+      .withMain((new InitIndexPlanner()).build())
+      .build()
 
     return res
   }
