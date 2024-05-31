@@ -71,7 +71,7 @@ module.exports = class Builder {
       const having = self.getCond(self.conds)
       self.aggregator(sel)
       sel.conditions = Sql.And(sel.conditions, Sql.Or(...self.where))
-      if (Array.isArray(ctx.randomFilter) && Array.isArray(ctx.cachedTraceIds)) {
+      if (Array.isArray(ctx.randomFilter) && Array.isArray(ctx.cachedTraceIds) && ctx.cachedTraceIds.length > 0) {
         sel.conditions = Sql.And(
           sel.conditions,
           Sql.Or(
