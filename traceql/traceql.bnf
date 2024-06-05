@@ -13,7 +13,7 @@ cmp ::= "="|"!="|"<="|">="|"<"|">"
 cmp_val ::= <number> [<measurement>]
 measurement ::= "ns"|"us"|"ms"|"s"|"m"|"h"|"d"
 
-label_name ::= ("." | <ALPHA> | "_") *("." | <ALPHA> | "_" | <DIGITS>)
+label_name ::= ("." | <ALPHA> | "-" | "_") *("." | <ALPHA> | "_" | "-" | <DIGITS>)
 number ::= ["-"] <DIGITS> ["." <DIGITS>]
 
 attr_selector ::= <label_name> <OWSP> <op> <OWSP> <value>
