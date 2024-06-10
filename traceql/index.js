@@ -140,7 +140,6 @@ async function processSmallResult (ctx, script) {
         spans: row.span_id.map((spanId, i) => ({
           spanID: spanId,
           startTimeUnixNano: row.timestamp_ns[i],
-          spanStartTime: row.timestamp_ns[i],
           durationNanos: row.duration[i],
           attributes: []
         })),
