@@ -12,6 +12,7 @@ const { standardBuilder } = require('./shared')
  *   tracesDistTable: string,
  *   randomFilter: number[]|undefined,
  *   cachedTraceIds: string[]|undefined,
+ *   planner: Planner
  * }} Context
  */
 /**

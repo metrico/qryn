@@ -3,6 +3,7 @@ const Sql = require('@cloki/clickhouse-sql')
 module.exports = class Builder {
   constructor () {
     this.main = null
+    this.precondition = null
     this.terms = []
     this.conds = null
     this.aggregatedAttr = ''
@@ -51,6 +52,11 @@ module.exports = class Builder {
     return this
   }
 
+  withPrecondition (precondition) {
+    this.precondition = precondition
+    return this
+  }
+
   /**
    * @returns {ProcessFn}
    */
@@ -58,7 +64,10 @@ module.exports = class Builder {
     const self = this
     /** @type {BuiltProcessFn} */
     const res = (ctx) => {
-      const sel = this.main(ctx)
+      const sel = self.main(ctx)
+      const withPreconditionSel = self.precondition
+        ? new Sql.With('precond', self.buildPrecondition(ctx))
+        : null
       self.alias = 'bsCond'
       for (const term of self.terms) {
         const sqlTerm = self.getTerm(term)
@@ -83,37 +92,52 @@ module.exports = class Builder {
           sel.conditions,
           Sql.Eq(new Sql.Raw(`cityHash64(trace_id) % ${ctx.randomFilter[0]}`), Sql.val(ctx.randomFilter[1])))
       }
+      if (withPreconditionSel) {
+        sel.with(withPreconditionSel)
+        sel.conditions = Sql.And(
+          sel.conditions,
+          new Sql.In(new Sql.Raw('(trace_id, span_id)'), 'in', new Sql.WithReference(withPreconditionSel)))
+      }
       sel.having(having)
       return sel
     }
     return res
   }
 
+  buildPrecondition (ctx) {
+    if (!this.precondition) {
+      return null
+    }
+    const sel = this.precondition(ctx)
+    sel.select_list = sel.select_list.filter(x => Array.isArray(x) && (x[1] === 'trace_id' || x[1] === 'span_id'))
+    sel.order_expressions = []
+    return sel
+  }
+
   /**
    * @typedef {{simpleIdx: number, op: string, complex: [Condition]}} Condition
    */
   /**
-   * @param c {Condition}
+   * @param c {Token || [any]}
    */
   getCond (c) {
-    if (c.simpleIdx === -1) {
-      const subs = []
-      for (const s of c.complex) {
-        subs.push(this.getCond(s))
+    if (c.name) {
+      let left = new Sql.Raw(this.alias)
+      if (!this.isAliased) {
+        left = groupBitOr(bitSet(this.sqlConditions), this.alias)
       }
-      switch (c.op) {
-        case '&&':
-          return Sql.And(...subs)
-        case '||':
-          return Sql.Or(...subs)
-      }
-      throw new Error(`unsupported condition operator ${c.op}`)
+      const termIdx = this.terms.findIndex(x => x.value === c.value)
+      return Sql.Ne(bitAnd(left, new Sql.Raw((BigInt(1) << BigInt(termIdx)).toString())), Sql.val(0))
     }
-    let left = new Sql.Raw(this.alias)
-    if (!this.isAliased) {
-      left = groupBitOr(bitSet(this.sqlConditions), this.alias)
+    const op = c[0]
+    const subs = c.slice(1).map(x => this.getCond(x))
+    switch (op) {
+      case '&&':
+        return Sql.And(...subs)
+      case '||':
+        return Sql.Or(...subs)
     }
-    return Sql.Ne(bitAnd(left, new Sql.Raw((BigInt(1) << BigInt(c.simpleIdx)).toString())), Sql.val(0))
+    throw new Error(`unsupported condition operator ${c.op}`)
   }
 
   /**

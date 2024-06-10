@@ -1,5 +1,5 @@
 const attrCondition = require('./attr_condition')
-const {bitSet} = require('./shared')
+const { bitSet } = require('./shared')
 const Sql = require('@cloki/clickhouse-sql')
 module.exports = class Builder extends attrCondition {
   build () {
@@ -10,7 +10,7 @@ module.exports = class Builder extends attrCondition {
       const sel = superBuild(ctx)
       sel.having_conditions = []
       sel.aggregations = [bitSet(self.sqlConditions)]
-      sel.select_list = [[new Sql.Raw('count()'), 'count']]
+      sel.select_list = [[bitSet(self.sqlConditions), 'cond'], [new Sql.Raw('count()'), 'count']]
       sel.order_expressions = []
       return sel
     }
