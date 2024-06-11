@@ -73,6 +73,14 @@ let fastify = require('fastify')({
 (async () => {
   try {
     await init(process.env.CLICKHOUSE_DB || 'cloki')
+    if (process.env.MODE === 'init_only') {
+      process.exit(0)
+    }
+  } catch (err) {
+    logger.error(err, 'Error starting qryn')
+    process.exit(1)
+  }
+  try {
     if (!this.readonly) {
       await startAlerting()
     }

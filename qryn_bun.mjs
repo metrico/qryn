@@ -58,7 +58,7 @@ import handlerTempoLabelV2 from './lib/handlers/tempo_v2_tags.js'
 import handlerTempoLabelV2Values from './lib/handlers/tempo_v2_values.js'
 import {init as pyroscopeInit } from './pyroscope/pyroscope.js'
 
-import { readonly } from './common.js'
+import { boolEnv, readonly } from './common.js'
 import DATABASE, { init } from './lib/db/clickhouse.js'
 import { startAlerting } from './lib/db/alerting/index.js'
 import fs from 'fs'
@@ -66,12 +66,21 @@ import path from 'path'
 import { file, dir, group, CORS } from '@stricjs/utils';
 import auth from 'basic-auth'
 import * as errors from 'http-errors'
+import logger from './lib/logger.js'
 
 const http_user = process.env.QRYN_LOGIN || process.env.CLOKI_LOGIN || undefined
 const http_password = process.env.QRYN_PASSWORD || process.env.CLOKI_PASSWORD || undefined
 
 export default async() => {
-  await init(process.env.CLICKHOUSE_DB || 'cloki')
+  try {
+    await init(process.env.CLICKHOUSE_DB || 'cloki')
+    if (process.env.MODE === 'init_only') {
+      process.exit(0)
+    }
+  } catch (err) {
+    logger.error(err, 'Error starting qryn')
+    process.exit(1)
+  }
   if (!readonly) {
     await startAlerting()
   }
