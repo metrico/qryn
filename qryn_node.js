@@ -4,7 +4,7 @@
  * qryn: polyglot observability API
  * (C) 2018-2024 QXIP BV
  */
-const { boolEnv } = require('./common')
+const { boolEnv, readerMode, writerMode } = require('./common')
 
 this.readonly = boolEnv('READONLY')
 this.http_user = process.env.QRYN_LOGIN || process.env.CLOKI_LOGIN || undefined
@@ -63,6 +63,8 @@ const {
 } = require('./parsers')
 
 const fastifyPlugin = require('fastify-plugin')
+
+
 
 let fastify = require('fastify')({
   logger,
@@ -213,7 +215,7 @@ let fastify = require('fastify')({
 
   /* Write Handler */
   const handlerPush = require('./lib/handlers/push.js').bind(this)
-  fastify.post('/loki/api/v1/push', handlerPush, {
+  writerMode && fastify.post('/loki/api/v1/push', handlerPush, {
     'application/json': lokiPushJSONParser,
     'application/x-protobuf': lokiPushProtoParser,
     '*': lokiPushJSONParser
@@ -221,28 +223,28 @@ let fastify = require('fastify')({
 
   /* Elastic Write Handler */
   const handlerElasticPush = require('./lib/handlers/elastic_index.js').bind(this)
-  fastify.post('/:target/_doc', handlerElasticPush, {
+  writerMode && fastify.post('/:target/_doc', handlerElasticPush, {
     'application/json': jsonParser,
     '*': rawStringParser
   })
-  fastify.post('/:target/_create/:id', handlerElasticPush, {
+  writerMode && fastify.post('/:target/_create/:id', handlerElasticPush, {
     'application/json': jsonParser,
     '*': rawStringParser
   })
-  fastify.put('/:target/_doc/:id', handlerElasticPush, {
+  writerMode && fastify.put('/:target/_doc/:id', handlerElasticPush, {
     'application/json': jsonParser,
     '*': rawStringParser
   })
-  fastify.put('/:target/_create/:id', handlerElasticPush, {
+  writerMode && fastify.put('/:target/_create/:id', handlerElasticPush, {
     'application/json': jsonParser,
     '*': rawStringParser
   })
   const handlerElasticBulk = require('./lib/handlers/elastic_bulk.js').bind(this)
-  fastify.post('/_bulk', handlerElasticBulk, {
+  writerMode && fastify.post('/_bulk', handlerElasticBulk, {
     'application/json': jsonParser,
     '*': rawStringParser
   })
-  fastify.post('/:target/_bulk', handlerElasticBulk, {
+  writerMode && fastify.post('/:target/_bulk', handlerElasticBulk, {
     'application/json': jsonParser,
     '*': rawStringParser
   })
@@ -250,17 +252,17 @@ let fastify = require('fastify')({
   /* Tempo Write Handler */
   this.tempo_tagtrace = boolEnv('TEMPO_TAGTRACE')
   const handlerTempoPush = require('./lib/handlers/tempo_push.js').bind(this)
-  fastify.post('/tempo/api/push', handlerTempoPush, {
+  writerMode && fastify.post('/tempo/api/push', handlerTempoPush, {
     'application/json': tempoPushParser,
     'application/x-ndjson': tempoPushNDJSONParser,
     '*': tempoPushParser
   })
-  fastify.post('/tempo/spans', handlerTempoPush, {
+  writerMode && fastify.post('/tempo/spans', handlerTempoPush, {
     'application/json': tempoPushParser,
     'application/x-ndjson': tempoPushNDJSONParser,
     '*': tempoPushParser
   })
-  fastify.post('/api/v2/spans', handlerTempoPush, {
+  writerMode && fastify.post('/api/v2/spans', handlerTempoPush, {
     'application/json': tempoPushParser,
     'application/x-ndjson': tempoPushNDJSONParser,
     '*': tempoPushParser
@@ -269,34 +271,34 @@ let fastify = require('fastify')({
   /* Tempo Traces Query Handler */
   this.tempo_span = process.env.TEMPO_SPAN || 24
   const handlerTempoTraces = require('./lib/handlers/tempo_traces.js').bind(this)
-  fastify.get('/api/traces/:traceId', handlerTempoTraces)
-  fastify.get('/api/traces/:traceId/:json', handlerTempoTraces)
-  fastify.get('/tempo/api/traces/:traceId', handlerTempoTraces)
-  fastify.get('/tempo/api/traces/:traceId/:json', handlerTempoTraces)
+  readerMode && fastify.get('/api/traces/:traceId', handlerTempoTraces)
+  readerMode && fastify.get('/api/traces/:traceId/:json', handlerTempoTraces)
+  readerMode && fastify.get('/tempo/api/traces/:traceId', handlerTempoTraces)
+  readerMode && fastify.get('/tempo/api/traces/:traceId/:json', handlerTempoTraces)
 
   /* Tempo Tag Handlers */
 
   const handlerTempoLabel = require('./lib/handlers/tempo_tags').bind(this)
-  fastify.get('/api/search/tags', handlerTempoLabel)
-  fastify.get('/tempo/api/search/tags', handlerTempoLabel)
+  readerMode && fastify.get('/api/search/tags', handlerTempoLabel)
+  readerMode && fastify.get('/tempo/api/search/tags', handlerTempoLabel)
 
   const handlerTempoLabelV2 = require('./lib/handlers/tempo_v2_tags').bind(this)
-  fastify.get('/api/v2/search/tags', handlerTempoLabelV2)
-  fastify.get('/tempo/api/v2/search/tags', handlerTempoLabelV2)
+  readerMode && fastify.get('/api/v2/search/tags', handlerTempoLabelV2)
+  readerMode && fastify.get('/tempo/api/v2/search/tags', handlerTempoLabelV2)
 
   /* Tempo Tag Value Handler */
   const handlerTempoLabelValues = require('./lib/handlers/tempo_values').bind(this)
-  fastify.get('/api/search/tag/:name/values', handlerTempoLabelValues)
-  fastify.get('/tempo/api/search/tag/:name/values', handlerTempoLabelValues)
+  readerMode && fastify.get('/api/search/tag/:name/values', handlerTempoLabelValues)
+  readerMode && fastify.get('/tempo/api/search/tag/:name/values', handlerTempoLabelValues)
 
   const handlerTempoLabelV2Values = require('./lib/handlers/tempo_v2_values').bind(this)
-  fastify.get('/api/v2/search/tag/:name/values', handlerTempoLabelV2Values)
-  fastify.get('/tempo/api/v2/search/tag/:name/values', handlerTempoLabelV2Values)
+  readerMode && fastify.get('/api/v2/search/tag/:name/values', handlerTempoLabelV2Values)
+  readerMode && fastify.get('/tempo/api/v2/search/tag/:name/values', handlerTempoLabelV2Values)
 
   /* Tempo Traces Query Handler */
   const handlerTempoSearch = require('./lib/handlers/tempo_search.js').bind(this)
-  fastify.get('/api/search', handlerTempoSearch)
-  fastify.get('/tempo/api/search', handlerTempoSearch)
+  readerMode && fastify.get('/api/search', handlerTempoSearch)
+  readerMode && fastify.get('/tempo/api/search', handlerTempoSearch)
 
   /* Tempo Echo Handler */
   const handlerTempoEcho = require('./lib/handlers/echo.js').bind(this)
@@ -305,64 +307,64 @@ let fastify = require('fastify')({
 
   /* Telegraf HTTP Bulk handler */
   const handlerTelegraf = require('./lib/handlers/telegraf.js').bind(this)
-  fastify.post('/telegraf', handlerTelegraf, {
+  writerMode && fastify.post('/telegraf', handlerTelegraf, {
     '*': jsonParser
   })
 
   /* Datadog Log Push Handler */
   const handlerDatadogLogPush = require('./lib/handlers/datadog_log_push.js').bind(this)
-  fastify.post('/api/v2/logs', handlerDatadogLogPush, {
+  writerMode && fastify.post('/api/v2/logs', handlerDatadogLogPush, {
     'application/json': jsonParser,
     '*': rawStringParser
   })
 
   /* Datadog Series Push Handler */
   const handlerDatadogSeriesPush = require('./lib/handlers/datadog_series_push.js').bind(this)
-  fastify.post('/api/v2/series', handlerDatadogSeriesPush, {
+  writerMode && fastify.post('/api/v2/series', handlerDatadogSeriesPush, {
     'application/json': jsonParser,
     '*': rawStringParser
   })
 
   /* Query Handler */
   const handlerQueryRange = require('./lib/handlers/query_range.js').bind(this)
-  fastify.get('/loki/api/v1/query_range', handlerQueryRange)
+  readerMode && fastify.get('/loki/api/v1/query_range', handlerQueryRange)
 
   /* Label Handlers */
   /* Label Value Handler via query (test) */
   const handlerQuery = require('./lib/handlers/query.js').bind(this)
-  fastify.get('/loki/api/v1/query', handlerQuery)
+  readerMode && fastify.get('/loki/api/v1/query', handlerQuery)
 
   /* Label Handlers */
   const handlerLabel = require('./lib/handlers/label.js').bind(this)
-  fastify.get('/loki/api/v1/label', handlerLabel)
-  fastify.get('/loki/api/v1/labels', handlerLabel)
+  readerMode && fastify.get('/loki/api/v1/label', handlerLabel)
+  readerMode && fastify.get('/loki/api/v1/labels', handlerLabel)
 
   /* Label Value Handler */
   const handlerLabelValues = require('./lib/handlers/label_values.js').bind(this)
-  fastify.get('/loki/api/v1/label/:name/values', handlerLabelValues)
+  readerMode && fastify.get('/loki/api/v1/label/:name/values', handlerLabelValues)
 
   /* Series Handler - experimental support for both Loki and Prometheus */
   const handlerSeries = require('./lib/handlers/series.js').bind(this)
-  fastify.get('/loki/api/v1/series', handlerSeries)
+  readerMode && fastify.get('/loki/api/v1/series', handlerSeries)
   const handlerPromSeries = require('./lib/handlers/prom_series.js').bind(this)
-  fastify.get('/api/v1/series', handlerPromSeries)
-  fastify.post('/api/v1/series', handlerPromSeries, {
+  readerMode && fastify.get('/api/v1/series', handlerPromSeries)
+  readerMode && fastify.post('/api/v1/series', handlerPromSeries, {
     'application/x-www-form-urlencoded': wwwFormParser
   })
 
-  fastify.register(async (fastify) => {
+  readerMode && fastify.register(async (fastify) => {
     fastify.get('/loki/api/v1/tail', { websocket: true }, require('./lib/handlers/tail').bind(this))
   })
 
   /* ALERT MANAGER Handlers    */
-  fastify.get('/api/prom/rules', require('./lib/handlers/alerts/get_rules').bind(this))
-  fastify.get('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/get_group').bind(this))
-  fastify.post('/api/prom/rules/:ns', require('./lib/handlers/alerts/post_group').bind(this), {
+  readerMode && fastify.get('/api/prom/rules', require('./lib/handlers/alerts/get_rules').bind(this))
+  readerMode && fastify.get('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/get_group').bind(this))
+  readerMode && fastify.post('/api/prom/rules/:ns', require('./lib/handlers/alerts/post_group').bind(this), {
     '*': yamlParser
   })
-  fastify.delete('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/del_group').bind(this))
-  fastify.delete('/api/prom/rules/:ns', require('./lib/handlers/alerts/del_ns').bind(this))
-  fastify.get('/prometheus/api/v1/rules', require('./lib/handlers/alerts/prom_get_rules').bind(this))
+  readerMode && fastify.delete('/api/prom/rules/:ns/:group', require('./lib/handlers/alerts/del_group').bind(this))
+  readerMode && fastify.delete('/api/prom/rules/:ns', require('./lib/handlers/alerts/del_ns').bind(this))
+  readerMode && fastify.get('/prometheus/api/v1/rules', require('./lib/handlers/alerts/prom_get_rules').bind(this))
 
   /* PROMETHEUS REMOTE WRITE Handlers */
   const promWriteHandler = require('./lib/handlers/prom_push.js').bind(this)
@@ -373,61 +375,61 @@ let fastify = require('fastify')({
     '/api/v1/write'
   ]
   for (const path of remoteWritePaths) {
-    fastify.post(path, promWriteHandler, {
+    writerMode && fastify.post(path, promWriteHandler, {
       'application/x-protobuf': prometheusPushProtoParser,
       'application/json': jsonParser,
       '*': combinedParser(prometheusPushProtoParser, jsonParser)
     })
-    fastify.get(path, handlerTempoEcho)
+    writerMode && fastify.get(path, handlerTempoEcho)
   }
 
   /* PROMQETHEUS API EMULATION */
   const handlerPromQueryRange = require('./lib/handlers/prom_query_range.js').bind(this)
-  fastify.post('/api/v1/query_range', handlerPromQueryRange, {
+  readerMode && fastify.post('/api/v1/query_range', handlerPromQueryRange, {
     'application/x-www-form-urlencoded': wwwFormParser
   })
-  fastify.get('/api/v1/query_range', handlerPromQueryRange)
+  readerMode && fastify.get('/api/v1/query_range', handlerPromQueryRange)
   const handlerPromQuery = require('./lib/handlers/prom_query.js').bind(this)
-  fastify.post('/api/v1/query', handlerPromQuery, {
+  readerMode && fastify.post('/api/v1/query', handlerPromQuery, {
     'application/x-www-form-urlencoded': wwwFormParser
   })
-  fastify.get('/api/v1/query', handlerPromQuery)
+  readerMode && fastify.get('/api/v1/query', handlerPromQuery)
   const handlerPromLabel = require('./lib/handlers/promlabel.js').bind(this)
   const handlerPromLabelValues = require('./lib/handlers/promlabel_values.js').bind(this)
-  fastify.get('/api/v1/labels', handlerPromLabel) // piggyback on qryn labels
-  fastify.get('/api/v1/label/:name/values', handlerPromLabelValues) // piggyback on qryn values
-  fastify.post('/api/v1/labels', handlerPromLabel, {
+  readerMode && fastify.get('/api/v1/labels', handlerPromLabel) // piggyback on qryn labels
+  readerMode && fastify.get('/api/v1/label/:name/values', handlerPromLabelValues) // piggyback on qryn values
+  readerMode && fastify.post('/api/v1/labels', handlerPromLabel, {
     '*': rawStringParser
   }) // piggyback on qryn labels
-  fastify.post('/api/v1/label/:name/values', handlerPromLabelValues, {
+  readerMode && fastify.post('/api/v1/label/:name/values', handlerPromLabelValues, {
     '*': rawStringParser
   }) // piggyback on qryn values
   const handlerPromDefault = require('./lib/handlers/prom_default.js')
-  fastify.get('/api/v1/metadata', handlerPromDefault.misc.bind(this)) // default handler TBD
-  fastify.get('/api/v1/rules', handlerPromDefault.rules.bind(this)) // default handler TBD
-  fastify.get('/api/v1/query_exemplars', handlerPromDefault.misc.bind(this)) // default handler TBD
-  fastify.post('/api/v1/query_exemplars', handlerPromDefault.misc.bind(this), {
+  readerMode && fastify.get('/api/v1/metadata', handlerPromDefault.misc.bind(this)) // default handler TBD
+  readerMode && fastify.get('/api/v1/rules', handlerPromDefault.rules.bind(this)) // default handler TBD
+  readerMode && fastify.get('/api/v1/query_exemplars', handlerPromDefault.misc.bind(this)) // default handler TBD
+  readerMode && fastify.post('/api/v1/query_exemplars', handlerPromDefault.misc.bind(this), {
     'application/x-www-form-urlencoded': wwwFormParser
   }) // default handler TBD
-  fastify.get('/api/v1/format_query', handlerPromDefault.misc.bind(this)) // default handler TBD
-  fastify.post('/api/v1/format_query', handlerPromDefault.misc.bind(this), {
+  readerMode && fastify.get('/api/v1/format_query', handlerPromDefault.misc.bind(this)) // default handler TBD
+  readerMode && fastify.post('/api/v1/format_query', handlerPromDefault.misc.bind(this), {
     'application/x-www-form-urlencoded': wwwFormParser
   }) // default handler TBD
   fastify.get('/api/v1/status/buildinfo', handlerPromDefault.buildinfo.bind(this)) // default handler TBD
 
   /* NewRelic Log Handler */
   const handlerNewrelicLogPush = require('./lib/handlers/newrelic_log_push.js').bind(this)
-  fastify.post('/log/v1', handlerNewrelicLogPush, {
+  writerMode && fastify.post('/log/v1', handlerNewrelicLogPush, {
     'text/plain': jsonParser,
     '*': jsonParser
   })
 
   /* INFLUX WRITE Handlers */
   const handlerInfluxWrite = require('./lib/handlers/influx_write.js').bind(this)
-  fastify.post('/write', handlerInfluxWrite, {
+  writerMode && fastify.post('/write', handlerInfluxWrite, {
     '*': rawStringParser
   })
-  fastify.post('/influx/api/v2/write', handlerInfluxWrite, {
+  writerMode && fastify.post('/influx/api/v2/write', handlerInfluxWrite, {
     '*': rawStringParser
   })
   /* INFLUX HEALTH Handlers */
@@ -436,7 +438,7 @@ let fastify = require('fastify')({
   fastify.get('/influx/health', handlerInfluxHealth)
 
   const handlerOTLPPush = require('./lib/handlers/otlp_push').bind(this)
-  fastify.post('/v1/traces', handlerOTLPPush, {
+  writerMode && fastify.post('/v1/traces', handlerOTLPPush, {
     '*': otlpPushProtoParser
   })
 
@@ -456,7 +458,7 @@ let fastify = require('fastify')({
     }
   }
 
-  require('./pyroscope/pyroscope').init(fastify)
+  readerMode && require('./pyroscope/pyroscope').init(fastify)
 
   // Run API Service
   fastify.listen(
