@@ -159,3 +159,6 @@ module.exports.logType = boolEnv('DISTINGUISH_LOGS_METRICS') ? 1 : 0
 module.exports.metricType = boolEnv('DISTINGUISH_LOGS_METRICS') ? 2 : 0
 
 module.exports.bothType = 0
+
+module.exports.writerMode = (process.env.MODE === 'writer' || !process.env.MODE) && !boolEnv('READONLY')
+module.exports.readerMode = process.env.MODE === 'reader' || boolEnv('READONLY') || !process.env.MODE
