@@ -1,5 +1,5 @@
 const parser = require('./parser')
-const { transpile, evaluateCmpl } = require('./clickhouse_transpiler')
+const { Planner } = require('./clickhouse_transpiler')
 const logger = require('../lib/logger')
 const { DATABASE_NAME } = require('../lib/utils')
 const { clusterName } = require('../common')
@@ -15,6 +15,7 @@ const { rawRequest } = require('../lib/db/clickhouse')
  */
 const search = async (query, limit, from, to) => {
   const _dbname = DATABASE_NAME()
+  const scrpit = parser.ParseScript(query)
   /** @type {Context} */
   const ctx = {
     tracesDistTable: `${_dbname}.tempo_traces_dist`,
@@ -24,11 +25,15 @@ const search = async (query, limit, from, to) => {
     from: from,
     to: to,
     limit: limit,
-    randomFilter: null
+    randomFilter: null,
+    planner: new Planner(scrpit.rootToken)
   }
-  const scrpit = parser.ParseScript(query)
-  const complexity = await evaluateComplexity(ctx, scrpit.rootToken)
+
+  let complexity = await evaluateComplexity(ctx, scrpit.rootToken)
   let res = []
+  if (complexity > 10000000) {
+    complexity = ctx.planner.minify()
+  }
   if (complexity > 10000000) {
     res = await processComplexResult(ctx, scrpit.rootToken, complexity)
   } else {
@@ -49,9 +54,10 @@ const search = async (query, limit, from, to) => {
  * @param script {Token}
  */
 const evaluateComplexity = async (ctx, script) => {
-  const evaluator = evaluateCmpl(script)
+  const evaluator = ctx.planner.planEval()
   const sql = evaluator(ctx)
   const response = await rawRequest(sql + ' FORMAT JSON', null, DATABASE_NAME())
+  ctx.planner.setEvaluationResult(response.data.data)
   return response.data.data.reduce((acc, row) => Math.max(acc, row.count), 0)
 }
 
@@ -62,7 +68,7 @@ const evaluateComplexity = async (ctx, script) => {
  * @param complexity {number}
  */
 async function processComplexResult (ctx, script, complexity) {
-  const planner = transpile(script)
+  const planner = ctx.planner.plan()
   const maxFilter = Math.floor(complexity / 10000000)
   let traces = []
   for (let i = 0; i < maxFilter; i++) {
@@ -110,7 +116,7 @@ async function processComplexResult (ctx, script, complexity) {
  * @param script {Token}
  */
 async function processSmallResult (ctx, script) {
-  const planner = transpile(script)
+  const planner = ctx.planner.plan()
   const sql = planner(ctx)
   const response = await rawRequest(sql + ' FORMAT JSON', null, DATABASE_NAME())
   const traces = response.data.data.map(row => ({
@@ -119,6 +125,16 @@ async function processSmallResult (ctx, script) {
     rootTraceName: row.root_trace_name,
     startTimeUnixNano: row.start_time_unix_nano,
     durationMs: row.duration_ms,
+    spanSet: {
+      spans: row.span_id.map((spanId, i) => ({
+        spanID: spanId,
+        startTimeUnixNano: row.timestamp_ns[i],
+        spanStartTime: row.timestamp_ns[i],
+        durationNanos: row.duration[i],
+        attributes: []
+      })),
+      matched: row.span_id.length
+    },
     spanSets: [
       {
         spans: row.span_id.map((spanId, i) => ({
