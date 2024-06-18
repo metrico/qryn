@@ -292,6 +292,9 @@ module.exports.Planner = class Planner {
     if (!agg) {
       return
     }
+    if (['count', 'sum', 'min', 'max', 'avg'].indexOf(agg.Child('fn').value) < 0) {
+      return
+    }
     this.aggFn = agg.Child('fn').value
     const labelName = agg.Child('attr').Child('label_name')
     this.aggregatedAttr = labelName ? labelName.value : ''
