@@ -4,6 +4,7 @@ const logger = require('../lib/logger')
 const { DATABASE_NAME } = require('../lib/utils')
 const { clusterName } = require('../common')
 const { rawRequest } = require('../lib/db/clickhouse')
+const { postProcess } = require('./post_processor')
 
 /**
  *
@@ -39,12 +40,14 @@ const search = async (query, limit, from, to) => {
   } else {
     res = await processSmallResult(ctx, scrpit.rootToken)
   }
+  res = postProcess(res, scrpit.rootToken)
   res.forEach(t =>
     t.spanSets.forEach(
       ss => ss.spans.sort(
         (a, b) => b.startTimeUnixNano.localeCompare(a.startTimeUnixNano))
     )
   )
+  console.log(JSON.stringify(res, 2))
   return res
 }
 
@@ -70,11 +73,12 @@ const evaluateComplexity = async (ctx, script) => {
 async function processComplexResult (ctx, script, complexity) {
   const planner = ctx.planner.plan()
   const maxFilter = Math.floor(complexity / 10000000)
-  let traces = []
+  //let traces = []
+  let response = null
   for (let i = 0; i < maxFilter; i++) {
     ctx.randomFilter = [maxFilter, i]
     const sql = planner(ctx)
-    const response = await rawRequest(sql + ' FORMAT JSON', null, DATABASE_NAME())
+    response = await rawRequest(sql + ' FORMAT JSON', null, DATABASE_NAME())
     if (response.data.data.length === parseInt(ctx.limit)) {
       const minStart = response.data.data.reduce((acc, row) =>
         acc === 0 ? row.start_time_unix_nano : Math.min(acc, row.start_time_unix_nano), 0
@@ -88,7 +92,7 @@ async function processComplexResult (ctx, script, complexity) {
       ctx.randomFilter = [maxFilter, i]
     }
     ctx.cachedTraceIds = response.data.data.map(row => row.trace_id)
-    traces = response.data.data.map(row => ({
+    /*traces = response.data.data.map(row => ({
       traceID: row.trace_id,
       rootServiceName: row.root_service_name,
       rootTraceName: row.root_trace_name,
@@ -105,9 +109,9 @@ async function processComplexResult (ctx, script, complexity) {
           matched: row.span_id.length
         }
       ]
-    }))
+    }))*/
   }
-  return traces
+  return response.data.data
 }
 
 /**
@@ -119,7 +123,7 @@ async function processSmallResult (ctx, script) {
   const planner = ctx.planner.plan()
   const sql = planner(ctx)
   const response = await rawRequest(sql + ' FORMAT JSON', null, DATABASE_NAME())
-  const traces = response.data.data.map(row => ({
+  /*const traces = response.data.data.map(row => ({
     traceID: row.trace_id,
     rootServiceName: row.root_service_name,
     rootTraceName: row.root_trace_name,
@@ -146,8 +150,8 @@ async function processSmallResult (ctx, script) {
         matched: row.span_id.length
       }
     ]
-  }))
-  return traces
+  }))*/
+  return response.data.data
 }
 
 module.exports = {

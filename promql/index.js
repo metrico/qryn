@@ -117,8 +117,15 @@ const getIdxSubquery = (conds, fromMs, toMs) => {
     ).groupBy('fingerprint')
 }
 
-module.exports.getData = async (matchers, fromMs, toMs) => {
+module.exports.getData = async (matchers, fromMs, toMs, subqueries) => {
   const db = DATABASE_NAME()
+  const subq = (subqueries || {})[getMetricName(matchers)]
+  if (subq) {
+    console.log(subq)
+    const data = await rawRequest(subq + ' FORMAT RowBinary',
+      null, db, { responseType: 'arraybuffer' })
+    return new Uint8Array(data.data)
+  }
   const matches = getMatchersIdxCond(matchers)
   const idx = getIdxSubquery(matches, fromMs, toMs)
   const withIdx = new Sql.With('idx', idx, !!clusterName)
@@ -174,6 +181,14 @@ module.exports.getData = async (matchers, fromMs, toMs) => {
   const data = await rawRequest(res.toString() + ' FORMAT RowBinary',
     null, db, { responseType: 'arraybuffer' })
   return new Uint8Array(data.data)
+}
+
+function getMetricName(matchers) {
+  for (const matcher of matchers) {
+    if (matcher[0] === '__name__' && matcher[1] === '=') {
+      return matcher[2]
+    }
+  }
 }
 
 prometheus.getData = module.exports.getData

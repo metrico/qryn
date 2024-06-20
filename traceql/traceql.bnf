@@ -6,14 +6,15 @@ complex_head ::= "(" <OWSP> <attr_selector_exp> <OWSP> ")"
 tail ::= <attr_selector_exp>
 and_or ::= "&&" | "||"
 
-aggregator ::= "|" <OWSP> <fn> <OWSP> <attr> <OWSP> <cmp> <OWSP> <cmp_val>
-fn ::= "count"|"sum"|"min"|"max"|"avg"
-attr ::= "(" <OWSP> [ <label_name> ] <OWSP> ")"
+aggregator ::= "|" <OWSP> <fn> <OWSP> <attr> <OWSP> [ <cmp> <OWSP> <cmp_val> ]
+fn ::= "count"|"sum"|"min"|"max"|"avg"|"select"
+attr ::= "(" <OWSP> [ <label_names> ] <OWSP> ")"
 cmp ::= "="|"!="|"<="|">="|"<"|">"
 cmp_val ::= <number> [<measurement>]
 measurement ::= "ns"|"us"|"ms"|"s"|"m"|"h"|"d"
 
 label_name ::= ("." | <ALPHA> | "-" | "_") *("." | <ALPHA> | "_" | "-" | <DIGITS>)
+label_names ::= <label_name> *(<OWSP> "," <OWSP> <label_name>)
 number ::= ["-"] <DIGITS> ["." <DIGITS>]
 
 attr_selector ::= <label_name> <OWSP> <op> <OWSP> <value>

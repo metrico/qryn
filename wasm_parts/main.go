@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	gcContext "github.com/metrico/micro-gc/context"
-	"sync"
-
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/promql"
 	"github.com/prometheus/prometheus/promql/parser"
@@ -15,6 +13,8 @@ import (
 	"strings"
 	"time"
 	"unsafe"
+	promql2 "wasm_parts/promql"
+	shared2 "wasm_parts/promql/shared"
 	sql "wasm_parts/sql_select"
 	parser2 "wasm_parts/traceql/parser"
 	traceql_transpiler "wasm_parts/traceql/transpiler"
@@ -165,12 +165,12 @@ func stats() {
 }
 
 //export pqlRangeQuery
-func pqlRangeQuery(id uint32, fromMS float64, toMS float64, stepMS float64) uint32 {
+func pqlRangeQuery(id uint32, fromMS float64, toMS float64, stepMS float64, optimizable uint32) uint32 {
 	ctxId := gcContext.GetContextID()
 	gcContext.SetContext(id)
 	defer gcContext.SetContext(ctxId)
 
-	return pql(id, data[id], func() (promql.Query, error) {
+	return pql(id, data[id], optimizable != 0, int64(fromMS), int64(toMS), int64(stepMS), func() (promql.Query, error) {
 		queriable := &TestQueryable{id: id, stepMs: int64(stepMS)}
 		return getEng().NewRangeQuery(
 			queriable,
@@ -184,19 +184,20 @@ func pqlRangeQuery(id uint32, fromMS float64, toMS float64, stepMS float64) uint
 }
 
 //export pqlInstantQuery
-func pqlInstantQuery(id uint32, timeMS float64) uint32 {
+func pqlInstantQuery(id uint32, timeMS float64, optimizable uint32) uint32 {
 	ctxId := gcContext.GetContextID()
 	gcContext.SetContext(id)
 	defer gcContext.SetContext(ctxId)
 
-	return pql(id, data[id], func() (promql.Query, error) {
-		queriable := &TestQueryable{id: id, stepMs: 15000}
-		return getEng().NewInstantQuery(
-			queriable,
-			nil,
-			string(data[id].request),
-			time.Unix(0, int64(timeMS)*1000000))
-	})
+	return pql(id, data[id], optimizable != 0, int64(timeMS-300000), int64(timeMS), 15000,
+		func() (promql.Query, error) {
+			queriable := &TestQueryable{id: id, stepMs: 15000}
+			return getEng().NewInstantQuery(
+				queriable,
+				nil,
+				string(data[id].request),
+				time.Unix(0, int64(timeMS)*1000000))
+		})
 }
 
 //export pqlSeries
@@ -255,13 +256,16 @@ func wrapErrorStr(err error) string {
 	return err.Error()
 }
 
-func pql(id uint32, c *ctx, query func() (promql.Query, error)) uint32 {
+func pql(id uint32, c *ctx, optimizable bool,
+	fromMs int64, toMs int64, stepMs int64,
+	query func() (promql.Query, error)) uint32 {
 	rq, err := query()
 
 	if err != nil {
 		c.response = wrapError(err)
 		return 1
 	}
+
 	var walk func(node parser.Node, i func(node parser.Node))
 	walk = func(node parser.Node, i func(node parser.Node)) {
 		i(node)
@@ -269,9 +273,39 @@ func pql(id uint32, c *ctx, query func() (promql.Query, error)) uint32 {
 			walk(n, i)
 		}
 	}
+
+	maxDurationMs := getMaxDurationMs(rq.Statement())
+	fromMs -= maxDurationMs
+
+	subsels := strings.Builder{}
+	subsels.WriteString("{")
+	if optimizable {
+		var (
+			subselsMap map[string]string
+			err        error
+		)
+		subselsMap, rq, err = optimizeQuery(rq, fromMs, toMs, stepMs)
+		if err != nil {
+			c.response = wrapError(err)
+			return 1
+		}
+		i := 0
+		for k, v := range subselsMap {
+			if i != 0 {
+				subsels.WriteString(",")
+			}
+			subsels.WriteString(fmt.Sprintf(`%s:%s`, strconv.Quote(k), strconv.Quote(v)))
+			i++
+		}
+	}
+	subsels.WriteString("}")
+
 	matchersJSON := getmatchersJSON(rq)
 
-	c.response = []byte(matchersJSON)
+	c.response = []byte(fmt.Sprintf(`{"subqueries": %s, "matchers": %s, "fromMs": %d}`,
+		subsels.String(),
+		matchersJSON,
+		fromMs))
 	c.onDataLoad = func(c *ctx) {
 		ctxId := gcContext.GetContextID()
 		gcContext.SetContext(id)
@@ -282,6 +316,83 @@ func pql(id uint32, c *ctx, query func() (promql.Query, error)) uint32 {
 		return
 	}
 	return 0
+}
+
+func getMaxDurationMs(q parser.Node) int64 {
+	maxDurationMs := int64(0)
+	for _, c := range parser.Children(q) {
+		_m := getMaxDurationMs(c)
+		if _m > maxDurationMs {
+			maxDurationMs = _m
+		}
+	}
+	ms, _ := q.(*parser.MatrixSelector)
+	if ms != nil && maxDurationMs < ms.Range.Milliseconds() {
+		return ms.Range.Milliseconds()
+	}
+	return maxDurationMs
+}
+
+func optimizeQuery(q promql.Query, fromMs int64, toMs int64, stepMs int64) (map[string]string, promql.Query, error) {
+	appliableNodes := findAppliableNodes(q.Statement(), nil)
+	var err error
+	subsels := make(map[string]string)
+	for _, m := range appliableNodes {
+		fmt.Println(m)
+		opt := m.optimizer
+		opt = &promql2.FinalizerOptimizer{
+			SubOptimizer: opt,
+		}
+		opt, err = promql2.PlanOptimize(m.node, opt)
+		if err != nil {
+			return nil, nil, err
+		}
+		planner, err := opt.Optimize(m.node)
+		if err != nil {
+			return nil, nil, err
+		}
+		fakeMetric := fmt.Sprintf("fake_metric_%d", time.Now().UnixNano())
+		swapChild(m.parent, m.node, &parser.VectorSelector{
+			Name:           fakeMetric,
+			OriginalOffset: 0,
+			Offset:         0,
+			Timestamp:      nil,
+			StartOrEnd:     0,
+			LabelMatchers: []*labels.Matcher{
+				{
+					Type:  labels.MatchEqual,
+					Name:  "__name__",
+					Value: fakeMetric,
+				},
+			},
+			UnexpandedSeriesSet: nil,
+			Series:              nil,
+			PosRange:            parser.PositionRange{},
+		})
+		sel, err := planner.Process(&shared2.PlannerContext{
+			IsCluster:           false,
+			From:                time.Unix(0, fromMs*1000000),
+			To:                  time.Unix(0, toMs*1000000),
+			Step:                time.Millisecond * 15000, /*time.Duration(stepMs)*/
+			TimeSeriesTable:     "time_series",
+			TimeSeriesDistTable: "time_series_dist",
+			TimeSeriesGinTable:  "time_series_gin",
+			MetricsTable:        "metrics_15s",
+			MetricsDistTable:    "metrics_15s_dist",
+		})
+		if err != nil {
+			return nil, nil, err
+		}
+		strSel, err := sel.String(&sql.Ctx{
+			Params: map[string]sql.SQLObject{},
+			Result: map[string]sql.SQLObject{},
+		})
+		if err != nil {
+			return nil, nil, err
+		}
+		subsels[fakeMetric] = strSel
+	}
+	return subsels, q, nil
 }
 
 //export onDataLoad
@@ -358,9 +469,101 @@ func writeVector(v promql.Vector) string {
 }
 
 func main() {
-	p := sync.Pool{}
-	a := p.Get()
-	_ = a
+}
+
+func getOptimizer(n parser.Node) promql2.IOptimizer {
+	for _, f := range promql2.Optimizers {
+		opt := f()
+		if opt.IsAppliable(n) {
+			return opt
+		}
+	}
+	return nil
+}
+
+func isRate(node parser.Node) (bool, bool) {
+	opt := getOptimizer(node)
+	if opt == nil {
+		return false, true
+	}
+	return true, false
+}
+
+type MatchNode struct {
+	node      parser.Node
+	parent    parser.Node
+	optimizer promql2.IOptimizer
+}
+
+func findAppliableNodes(root parser.Node, parent parser.Node) []MatchNode {
+	var res []MatchNode
+	optimizer := getOptimizer(root)
+	if optimizer != nil {
+		res = append(res, MatchNode{
+			node:      root,
+			parent:    parent,
+			optimizer: optimizer,
+		})
+		return res
+	}
+	for _, n := range parser.Children(root) {
+		res = append(res, findAppliableNodes(n, root)...)
+	}
+	return res
+}
+
+func swapChild(node parser.Node, child parser.Node, newChild parser.Expr) {
+	// For some reasons these switches have significantly better performance than interfaces
+	switch n := node.(type) {
+	case *parser.EvalStmt:
+		n.Expr = newChild
+	case parser.Expressions:
+		for i, e := range n {
+			if e.String() == child.String() {
+				n[i] = newChild
+			}
+		}
+	case *parser.AggregateExpr:
+		if n.Expr == nil && n.Param == nil {
+			return
+		} else if n.Expr == nil {
+			n.Param = newChild
+		} else if n.Param == nil {
+			n.Expr = newChild
+		} else {
+			if n.Expr.String() == child.String() {
+				n.Expr = newChild
+			} else {
+				n.Param = newChild
+			}
+		}
+	case *parser.BinaryExpr:
+		if n.LHS.String() == child.String() {
+			n.LHS = newChild
+		} else if n.RHS.String() == child.String() {
+			n.RHS = newChild
+		}
+	case *parser.Call:
+		for i, e := range n.Args {
+			if e.String() == child.String() {
+				n.Args[i] = newChild
+			}
+		}
+	case *parser.SubqueryExpr:
+		n.Expr = newChild
+	case *parser.ParenExpr:
+		n.Expr = newChild
+	case *parser.UnaryExpr:
+		n.Expr = newChild
+	case *parser.MatrixSelector:
+		n.VectorSelector = newChild
+	case *parser.StepInvariantExpr:
+		n.Expr = newChild
+	}
+}
+
+func getChildren(e parser.Node) []parser.Node {
+	return parser.Children(e)
 }
 
 type TestLogger struct{}
@@ -444,10 +647,11 @@ type TestSeries struct {
 	data   []byte
 	stepMs int64
 
-	labels labels.Labels
-	tsMs   int64
-	val    float64
-	i      int
+	labels    labels.Labels
+	tsMs      int64
+	val       float64
+	lastValTs int64
+	i         int
 
 	state int
 }
@@ -469,11 +673,14 @@ func (t *TestSeries) Next() bool {
 		t.tsMs += t.stepMs
 		if t.tsMs >= ts {
 			t.state = 0
+		} else if t.lastValTs+300000 < t.tsMs {
+			t.state = 0
 		}
 	}
 	if t.state == 0 {
 		t.tsMs = ts
 		t.val = *(*float64)(unsafe.Pointer(&t.data[t.i*16+8]))
+		t.lastValTs = t.tsMs
 		t.i++
 		t.state = 1
 	}
@@ -584,4 +791,18 @@ func matchers2Str(labelMatchers []*labels.Matcher) string {
 	}
 	matchersJson.WriteString("]")
 	return matchersJson.String()
+}
+
+type pqlRequest struct {
+	optimizable bool
+	body        string
+}
+
+func (p *pqlRequest) Read(body []byte) {
+	r := BinaryReader{buffer: body}
+	p.optimizable = r.ReadULeb32() != 0
+	p.body = r.ReadString()
+	if !p.optimizable {
+		return
+	}
 }
