@@ -62,7 +62,7 @@ module.exports.pqlRangeQuery = async (query, startMs, endMs, stepMs, getData) =>
   const step = stepMs || 15000
   return await pql(query,
     (ctx) => _wasm.exportsWrap.pqlRangeQuery(ctx.id, start, end, step, process.env.EXPERIMENTAL_PROMQL_OPTIMIZE ? 1 : 0),
-    (matchers, subq) => getData(matchers, start, end, subq))
+    (matchers, subq, startMs) => getData(matchers, startMs, end, subq))
 }
 
 /**
@@ -75,9 +75,10 @@ module.exports.pqlRangeQuery = async (query, startMs, endMs, stepMs, getData) =>
 module.exports.pqlInstantQuery = async (query, timeMs, getData) => {
   const time = timeMs || Date.now()
   const _wasm = getWasm()
+  const start = time - 300000
   return await pql(query,
     (ctx) => _wasm.exportsWrap.pqlInstantQuery(ctx.id, time, process.env.EXPERIMENTAL_PROMQL_OPTIMIZE ? 1 : 0),
-    (matchers, subq) => getData(matchers, time - 300000, time, subq))
+    (matchers, subq, start) => getData(matchers, start, time, subq))
 }
 
 module.exports.pqlMatchers = (query) => {
@@ -162,8 +163,8 @@ const pql = async (query, wasmCall, getData) => {
     const matchersObj = JSON.parse(ctx.read())
 
     const matchersResults = await Promise.all(
-      matchersObj.map(async (matchers, i) => {
-        const data = await getData(matchers.matchers, matchers.subqueries)
+      matchersObj.matchers.map(async (matchers, i) => {
+        const data = await getData(matchers, matchersObj.subqueries, matchersObj.fromMs)
         return { matchers, data }
       }))
 

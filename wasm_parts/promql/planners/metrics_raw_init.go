@@ -26,7 +26,8 @@ func (m *MetricsInitPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, e
 	return sql.NewSelect().With(withFpReq).Select(
 		sql.NewSimpleCol("fingerprint", "fingerprint"),
 		sql.NewCol(tsNsCol, "timestamp_ms"),
-		sql.NewCol(m.ValueCol, "value")).
+		sql.NewCol(m.ValueCol, "value"),
+		sql.NewSimpleCol("1::UInt8", "original")).
 		From(sql.NewSimpleCol(ctx.MetricsTable, "metrics")).
 		AndWhere(
 			sql.Ge(sql.NewRawObject("timestamp_ns"), sql.NewIntVal(ctx.From.UnixNano())),

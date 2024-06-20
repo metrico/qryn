@@ -32,16 +32,16 @@ func (f *FinalizePlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, erro
 	withMain := sql.NewWith(main, "pre_final")
 	res := sql.NewSelect().With(withMain).Select(withMain).
 		Select(
-			sql.NewSimpleCol("pre_final.fingerprint", "fingerprint"),
 			sql.NewSimpleCol(withLabels.GetAlias()+".labels", "labels"),
 			sql.NewSimpleCol("arraySort(groupArray((pre_final.timestamp_ms, pre_final.value)))", "values"),
 		).From(sql.NewWithRef(withMain)).
+		//AndWhere(sql.Neq(sql.NewRawObject("pre_final.value"), sql.NewIntVal(0))).
 		Join(sql.NewJoin(
 			"ANY LEFT",
 			sql.NewWithRef(withLabels),
 			sql.Eq(
 				sql.NewRawObject("pre_final.fingerprint"),
 				sql.NewRawObject(withLabels.GetAlias()+".new_fingerprint")))).
-		GroupBy(sql.NewRawObject("pre_final.fingerprint"), sql.NewRawObject(withLabels.GetAlias()+".labels"))
+		GroupBy(sql.NewRawObject(withLabels.GetAlias() + ".labels"))
 	return res, nil
 }

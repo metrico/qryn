@@ -15,7 +15,12 @@ func (m *MetricsZeroFillPlanner) Process(ctx *shared.PlannerContext) (sql.ISelec
 	if err != nil {
 		return nil, err
 	}
-	withMain := sql.NewWith(main, "prezerofill")
+	main.OrderBy(sql.NewRawObject("fingerprint"), sql.NewCustomCol(func(_ *sql.Ctx, options ...int) (string, error) {
+		return fmt.Sprintf("timestamp_ms WITH FILL FROM %d TO %d STEP %d",
+			ctx.From.UnixMilli(), ctx.To.UnixMilli(), ctx.Step.Milliseconds()), nil
+	}))
+	return main, nil
+	/*withMain := sql.NewWith(main, "prezerofill")
 	arrLen := (ctx.To.UnixNano()-ctx.From.UnixNano())/ctx.Step.Nanoseconds() + 1
 	zeroFillCol := sql.NewCustomCol(func(_ *sql.Ctx, options ...int) (string, error) {
 		return fmt.Sprintf("groupArrayInsertAt(nan, %d)(value, toUInt32(intDiv(timestamp_ms - %d, %d)))",
@@ -37,9 +42,9 @@ func (m *MetricsZeroFillPlanner) Process(ctx *shared.PlannerContext) (sql.ISelec
 	postZeroFill := sql.NewSelect().With(withZeroFill).
 		Select(
 			sql.NewSimpleCol("fingerprint", "fingerprint"),
-			sql.NewSimpleCol("val.1", "timestamp_ms"),
+			sql.NewSimpleCol("timestamp_ms", "timestamp_ms"),
 			sql.NewSimpleCol("val.2", "value")).
-		From(sql.NewWithRef(withZeroFill)).
+		From(sql.NewWithRef(withMain)).
 		Join(sql.NewJoin("array", sql.NewCol(joinZeroFillStmt, "val"), nil))
-	return postZeroFill, nil
+	return postZeroFill, nil*/
 }

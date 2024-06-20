@@ -22,7 +22,13 @@ func (m *MetricsExtendPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect,
 	withMain := sql.NewWith(main, "pre_extend")
 	extendedCol := sql.NewCustomCol(func(ctx *sql.Ctx, options ...int) (string, error) {
 		return fmt.Sprintf(
-			"argMaxIf(value, timestamp_ms, isNaN(value) = 0) OVER ("+
+			"argMaxIf(value, timestamp_ms, pre_extend.original = 1) OVER ("+
+				"PARTITION BY fingerprint ORDER BY timestamp_ms ROWS BETWEEN %d PRECEDING AND CURRENT ROW"+
+				")", extendCnt), nil
+	})
+	origCol := sql.NewCustomCol(func(ctx *sql.Ctx, options ...int) (string, error) {
+		return fmt.Sprintf(
+			"max(original) OVER ("+
 				"PARTITION BY fingerprint ORDER BY timestamp_ms ROWS BETWEEN %d PRECEDING AND CURRENT ROW"+
 				")", extendCnt), nil
 	})
@@ -30,7 +36,11 @@ func (m *MetricsExtendPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect,
 		Select(
 			sql.NewSimpleCol("fingerprint", "fingerprint"),
 			sql.NewSimpleCol("timestamp_ms", "timestamp_ms"),
-			sql.NewCol(extendedCol, "value")).
+			sql.NewCol(extendedCol, "value"),
+			sql.NewCol(origCol, "original")).
 		From(sql.NewWithRef(withMain))
-	return extend, nil
+	withExtend := sql.NewWith(extend, "extend")
+	return sql.NewSelect().With(withExtend).Select(sql.NewRawObject("*")).
+		From(sql.NewWithRef(withExtend)).
+		AndWhere(sql.Eq(sql.NewRawObject("original"), sql.NewIntVal(1))), nil
 }

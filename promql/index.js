@@ -121,6 +121,7 @@ module.exports.getData = async (matchers, fromMs, toMs, subqueries) => {
   const db = DATABASE_NAME()
   const subq = (subqueries || {})[getMetricName(matchers)]
   if (subq) {
+    console.log(subq)
     const data = await rawRequest(subq + ' FORMAT RowBinary',
       null, db, { responseType: 'arraybuffer' })
     return new Uint8Array(data.data)
