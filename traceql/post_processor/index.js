@@ -1,9 +1,5 @@
-const Otlp = require('../../lib/db/otlp')
 const Zipkin = require('../../lib/db/zipkin')
-const protobufjs = require('protobufjs')
-const path = require('path')
-const OTLPSpan = protobufjs.loadSync(path.join(__dirname, '..', '..',
-  'lib', 'otlp.proto')).lookupType('Span')
+const { flatOTLPAttrs, OTLPgetServiceNames } = require('../../lib/utils')
 /**
  *
  * @param rows {Row[]}
@@ -27,16 +23,23 @@ function postProcess (rows, script) {
     ...row,
     objs: row.payload.map((payload, i) => {
       let span = null
+      let attrs = null
+      let serviceName = null
+
       switch (row.payload_type[i]) {
         case 1:
           return new Zipkin(JSON.parse(Buffer.from(payload, 'base64').toString()))
         case 2:
-          span = OTLPSpan.toObject(
-            OTLPSpan.decode(Buffer.from(payload, 'base64')), {
-              longs: String,
-              bytes: String
-            })
-          return new Otlp(span)
+          span = JSON.parse(Buffer.from(payload, 'base64').toString())
+          attrs = flatOTLPAttrs(span.attributes)
+          serviceName = OTLPgetServiceNames(attrs)
+          attrs.name = span.name
+          attrs['service.name'] = serviceName.local
+          if (serviceName.remote) {
+            attrs['remoteService.name'] = serviceName.remote
+          }
+          attrs = [...Object.entries(attrs)]
+          return { tags: attrs }
       }
       return null
     })
