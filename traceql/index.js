@@ -47,7 +47,6 @@ const search = async (query, limit, from, to) => {
         (a, b) => b.startTimeUnixNano.localeCompare(a.startTimeUnixNano))
     )
   )
-  console.log(JSON.stringify(res, 2))
   return res
 }
 
