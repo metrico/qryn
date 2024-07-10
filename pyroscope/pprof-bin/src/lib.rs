@@ -6,6 +6,7 @@ use lazy_static::lazy_static;
 use pprof_pb::google::v1::Function;
 use pprof_pb::google::v1::Location;
 use pprof_pb::google::v1::Profile;
+use pprof_pb::google::v1::Sample;
 use pprof_pb::querier::v1::Level;
 use pprof_pb::querier::v1::FlameGraph;
 use pprof_pb::querier::v1::SelectMergeStacktracesResponse;
@@ -18,6 +19,7 @@ use std::vec::Vec;
 use wasm_bindgen::prelude::*;
 use ch64::city_hash_64;
 use ch64::read_uint64_le;
+use crate::pprof_pb::google::v1::{Line, ValueType};
 
 pub mod pprof_pb {
 
@@ -332,6 +334,108 @@ fn merge_trie(tree: &mut Tree, bytes: &[u8]) {
     }
 }
 
+fn upsert_string(prof: &mut Profile, s: String) -> i64 {
+    let mut idx = 0;
+    for i in 0..prof.string_table.len() {
+        if prof.string_table[i] == s {
+            idx = i as i64;
+            break;
+        }
+    }
+    if idx == 0 {
+        idx = prof.string_table.len() as i64;
+        prof.string_table.push(s);
+    }
+    idx
+}
+
+fn upsert_function(prof: &mut Profile, fn_id: u64, fn_name_id: i64) {
+    for f in prof.function.iter() {
+        if f.id == fn_id {
+            return;
+        }
+    }
+    let mut func = Function::default();
+    func.name = fn_name_id;
+    func.id = fn_id;
+    func.filename = upsert_string(prof, "unknown".to_string());
+    func.system_name = upsert_string(prof, "unknown".to_string());
+    prof.function.push(func);
+}
+
+fn inject_locations(prof: &mut Profile, tree: &Tree) {
+    for n in tree.names_map.iter() {
+        let hash = *n.1 as u64;
+        let name = tree.names[hash as usize].clone();
+        let fn_idx = upsert_string(prof, name);
+        upsert_function(prof, *n.0, fn_idx);
+        let mut loc = Location::default();
+        let mut line = Line::default();
+        line.function_id = *n.0;
+        loc.id = *n.0;
+        loc.line = vec![line];
+        prof.location.push(loc)
+    }
+}
+
+fn upsert_sample(prof: &mut Profile, loc_id: Vec<u64>, val: i64, val_idx: i64) -> i64 {
+    let mut idx = -1;
+    for i in 0..prof.sample.len() {
+        if prof.sample[i].location_id.len() != loc_id.len() {
+            continue;
+        }
+        let mut found = true;
+        for j in 0..prof.sample[i].location_id.len() {
+            if prof.sample[i].location_id[j] != loc_id[j] {
+                found = false;
+                break;
+            }
+        }
+        if found {
+            idx = i as i64;
+            break;
+        }
+    }
+    if idx == -1 {
+        let mut sample = Sample::default();
+        sample.location_id = loc_id.clone();
+        sample.location_id.reverse();
+        idx = prof.sample.len() as i64;
+        prof.sample.push(sample);
+    }
+    while prof.sample[idx as usize].value.len() <= val_idx as usize {
+        prof.sample[idx as usize].value.push(0)
+    }
+    prof.sample[idx as usize].value[val_idx as usize] += val;
+    idx
+}
+
+fn inject_functions(prof: &mut Profile, tree: &Tree, parent_id: u64,
+                    loc_ids: Vec<u64>, val_idx: i64) {
+    if !tree.nodes.contains_key(&parent_id) {
+        return;
+    }
+    let children = tree.nodes.get(&parent_id).unwrap();
+    for node in children.iter() {
+        let mut _loc_ids = loc_ids.clone();
+        _loc_ids.push(node.fn_id);
+        upsert_sample(prof, _loc_ids.clone(), node.slf as i64, val_idx);
+        if tree.nodes.contains_key(&node.node_id) {
+            inject_functions(prof, tree, node.node_id, _loc_ids, val_idx);
+        }
+    }
+}
+
+fn merge_profile(tree: & Tree, prof: &mut Profile, sample_type: String, sample_unit: String) {
+    let mut value_type = ValueType::default();
+    value_type.r#type=upsert_string(prof, sample_type);
+    value_type.unit = upsert_string(prof, sample_unit);
+    prof.sample_type.push(value_type);
+    let type_idx = prof.sample_type.len() as i64 - 1;
+    inject_locations(prof, tree);
+    inject_functions(prof, tree, 0, vec![], type_idx);
+}
+
 #[wasm_bindgen]
 pub fn merge_prof(id: u32, bytes: &[u8], sample_type: String) {
     let p = panic::catch_unwind(|| {
@@ -345,7 +449,6 @@ pub fn merge_prof(id: u32, bytes: &[u8], sample_type: String) {
     match p {
         Ok(res) => {}
         Err(err) => panic!(err)
-
     }
 }
 
@@ -385,6 +488,34 @@ pub fn export_tree(id: u32) -> Vec<u8> {
         bfs(tree, &mut fg.levels);
         res.flamegraph = Some(fg);
         return  res.encode_to_vec();
+    });
+    match p {
+        Ok(res) => return res,
+        Err(err) => panic!(err)
+    }
+}
+
+#[wasm_bindgen]
+pub fn export_trees_pprof(ids: &[u32],
+                          period_type: String, period_unit: String,
+                          _sample_types: String, _sample_units: String) -> Vec<u8> {
+    let p = panic::catch_unwind(|| {
+        let sample_types: Vec<&str> = _sample_types.split(';').collect();
+        let sample_units: Vec<&str> = _sample_units.split(';').collect();
+        let mut res = &mut Profile::default();
+        let mut period = ValueType::default();
+        period.r#type = upsert_string(res, period_type);
+        period.unit = upsert_string(res, period_unit);
+        res.string_table = vec!["".to_string()];
+        res.period_type = Some(period);
+        let mut ctx = CTX.lock().unwrap();
+        for i in 0..ids.len() {
+            upsert_tree(&mut ctx, ids[i]);
+            let tree = ctx.get(&ids[i]).unwrap();
+            merge_profile(tree, res,
+                          sample_types[i].to_string(), sample_units[i].to_string())
+        }
+        return res.encode_to_vec()
     });
     match p {
         Ok(res) => return res,

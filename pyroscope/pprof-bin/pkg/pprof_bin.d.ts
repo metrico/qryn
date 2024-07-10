@@ -17,6 +17,15 @@ export function merge_tree(id: number, bytes: Uint8Array): void;
 */
 export function export_tree(id: number): Uint8Array;
 /**
+* @param {Uint32Array} ids
+* @param {string} period_type
+* @param {string} period_unit
+* @param {string} _sample_types
+* @param {string} _sample_units
+* @returns {Uint8Array}
+*/
+export function export_trees_pprof(ids: Uint32Array, period_type: string, period_unit: string, _sample_types: string, _sample_units: string): Uint8Array;
+/**
 * @param {number} id
 */
 export function drop_tree(id: number): void;
