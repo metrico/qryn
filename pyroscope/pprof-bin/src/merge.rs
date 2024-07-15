@@ -7,12 +7,10 @@ use crate::pprof_pb::google::v1::Sample;
 use crate::pprof_pb::google::v1::ValueType;
 use crate::pprof_pb::google::v1::{Label, Profile};
 use bytemuck;
-use prost::Message;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
-use base64::{engine::general_purpose, Engine as _};
 
 struct ProfileMerge {
     prof: Option<Profile>,
@@ -142,6 +140,29 @@ impl ProfileMerge {
         }
         self.prof = Some(_prof);
     }
+
+    fn profile(&mut self) -> Profile {
+        if self.prof.is_none() {
+            return Profile::default();
+        }
+        let mut p = self.prof.as_mut().unwrap().clone();
+        p.sample = self.sample_table.as_mut().unwrap().values().clone();
+        p.location = self.location_table.as_mut().unwrap().values().clone();
+        p.function = self.function_table.as_mut().unwrap().values().clone();
+        p.mapping = self.mapping_table.as_mut().unwrap().values().clone();
+        p.string_table = self.string_table.as_mut().unwrap().values().clone();
+        for i in 0..p.location.len() {
+            p.location[i].id = i as u64 + 1;
+        }
+        for i in 0..p.function.len() {
+            p.function[i].id = i as u64 + 1;
+        }
+        for i in 0..p.mapping.len() {
+            p.mapping[i].id = i as u64 + 1;
+        }
+        return p;
+    }
+    
 }
 
 fn rewrite_strings(p: &mut Profile, n: &Vec<u32>) {
@@ -650,10 +671,9 @@ impl<K: std::cmp::Eq + std::hash::Hash, V, M> RewriteTable<K, V, M> {
             self.s.push((self.v)(&values[i]));
             self.t.insert(k, n);
         }
-    }
-
+    }*/
     fn values(&self) -> &Vec<M> {
         return &self.s;
-    }*/
+    }
 }
 
