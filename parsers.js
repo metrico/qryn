@@ -15,7 +15,6 @@ const PushRequest = protobufjs.loadSync(path.join(__dirname, 'lib', 'loki.proto'
 const OTLPTraceData = protobufjs.loadSync(path.join(__dirname, 'lib', 'otlp.proto')).lookupType('TracesData')
 const OTLPLogsData = protobufjs.loadSync(path.join(__dirname, 'lib', 'otlp.proto')).lookupType('LogsData')
 const { parse: queryParser } = require('fast-querystring')
-const fs = require('fs')
 
 /**
  *
