@@ -12,7 +12,7 @@ import {
   combinedParser,
   jsonParser,
   lokiPushJSONParser,
-  lokiPushProtoParser, otlpPushProtoParser, prometheusPushProtoParser,
+  lokiPushProtoParser, otlpLogsDataParser, otlpPushProtoParser, prometheusPushProtoParser,
   rawStringParser,
   tempoPushNDJSONParser,
   tempoPushParser, wwwFormParser, yamlParser
@@ -56,6 +56,7 @@ import handlerPromGetRules from './lib/handlers/alerts/prom_get_rules.js'
 import handlerTail from './lib/handlers/tail.js'
 import handlerTempoLabelV2 from './lib/handlers/tempo_v2_tags.js'
 import handlerTempoLabelV2Values from './lib/handlers/tempo_v2_values.js'
+import handlerOtlpLogsPush from './lib/handlers/otlp_log_push.js'
 import {init as pyroscopeInit } from './pyroscope/pyroscope.js'
 
 import { boolEnv, readonly, readerMode, writerMode } from './common.js'
@@ -331,6 +332,10 @@ export default async() => {
   readerMode && fastify.get('/tempo/api/v2/search/tag/:name/values', handlerTempoLabelV2Values)
 
   readerMode && pyroscopeInit(fastify)
+
+  writerMode && fastify.post('/v1/logs', handlerOtlpLogsPush, {
+    '*': otlpLogsDataParser
+  })
 
   const serveView = fs.existsSync(path.join(__dirname, 'view/index.html'))
   if (serveView) {

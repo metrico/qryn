@@ -59,12 +59,10 @@ const {
   shaper,
   parsers,
   lokiPushJSONParser, lokiPushProtoParser, jsonParser, rawStringParser, tempoPushParser, tempoPushNDJSONParser,
-  yamlParser, prometheusPushProtoParser, combinedParser, otlpPushProtoParser, wwwFormParser
+  yamlParser, prometheusPushProtoParser, combinedParser, otlpPushProtoParser, wwwFormParser, otlpLogsDataParser
 } = require('./parsers')
 
 const fastifyPlugin = require('fastify-plugin')
-
-
 
 let fastify = require('fastify')({
   logger,
@@ -459,6 +457,11 @@ let fastify = require('fastify')({
   }
 
   readerMode && require('./pyroscope/pyroscope').init(fastify)
+
+  const handleOTLPLogs = require('./lib/handlers/otlp_log_push').bind(this)
+  writerMode && fastify.post('/v1/logs', handleOTLPLogs, {
+    '*': otlpLogsDataParser
+  })
 
   // Run API Service
   fastify.listen(

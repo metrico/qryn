@@ -13,6 +13,7 @@ const path = require('path')
 const WriteRequest = protobufjs.loadSync(path.join(__dirname, 'lib', 'prompb.proto')).lookupType('WriteRequest')
 const PushRequest = protobufjs.loadSync(path.join(__dirname, 'lib', 'loki.proto')).lookupType('PushRequest')
 const OTLPTraceData = protobufjs.loadSync(path.join(__dirname, 'lib', 'otlp.proto')).lookupType('TracesData')
+const OTLPLogsData = protobufjs.loadSync(path.join(__dirname, 'lib', 'otlp.proto')).lookupType('LogsData')
 const { parse: queryParser } = require('fast-querystring')
 
 /**
@@ -204,6 +205,29 @@ function tempoNDJsonParser (req, payload) {
 
 /**
  *
+ * @param req {FastifyRequest}
+ * @param payload {Stream}
+ * @returns {*}
+ */
+async function otlpLogsDataParser (req, payload) {
+  const length = getContentLength(req, 5e6)
+  await shaper.register(length)
+  let body = []
+  const otelStream = stream.Readable.from(payload)
+  otelStream.on('data', data => {
+    body.push(data)
+  })
+  await new Promise(resolve => otelStream.once('end', resolve))
+  body = Buffer.concat(body)
+  body = OTLPLogsData.toObject(OTLPLogsData.decode(body), {
+    longs: String,
+    bytes: String
+  })
+  return body
+}
+
+/**
+ *
  * @param subparsers {function(FastifyRequest): Promise<*|undefined>}
  * @returns {function(FastifyRequest): Promise<*|undefined>}
  */
@@ -363,5 +387,6 @@ module.exports = {
   tempoNDJsonParser,
   otlpPushProtoParser,
   wwwFormParser,
-  parsers
+  parsers,
+  otlpLogsDataParser
 }
