@@ -1,7 +1,6 @@
 #![allow(unused_assignments)]
 mod ch64;
 mod merge;
-mod utils;
 
 use crate::pprof_pb::google::v1::{Line, ValueType};
 use ch64::city_hash_64;
