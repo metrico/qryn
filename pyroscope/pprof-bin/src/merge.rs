@@ -92,7 +92,7 @@ impl ProfileMerge {
         for i in 0..self.tmp.len() {
             let idx = self.tmp[i];
             let dst = &mut self.sample_table.as_mut().unwrap().s[idx as usize].value;
-            let src = p.sample[self.tmp[i] as usize].value.clone();
+            let src = p.sample[i as usize].value.clone();
             for j in 0..src.len() {
                 dst[j] += src[j];
             }

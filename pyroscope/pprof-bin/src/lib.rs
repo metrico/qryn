@@ -365,8 +365,8 @@ impl TrieReader {
             let uleb = read_uleb128(&self.bytes[self.offs..]);
             self.offs += uleb.1;
             let _size = uleb.0;
-            let string = &self.bytes[self.offs..self.offs + size];
-            self.offs += size;
+            let string = &self.bytes[self.offs..self.offs + _size];
+            self.offs += _size;
             res.push(string);
         }
         res

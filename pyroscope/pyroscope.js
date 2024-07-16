@@ -345,10 +345,11 @@ const selectMergeStacktracesV2 = async (req, res) => {
       ofs += profLen
     }
     start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
-    pprofBin.merge_tree(_ctxIdx, Uint8Array.from(profiles.data.slice(ofs)))
+    pprofBin.merge_tree(_ctxIdx, Uint8Array.from(profiles.data.slice(ofs)),
+      typeRegex.sampleType + ':' + typeRegex.sampleUnit)
     const mergeTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
     start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
-    const resp = pprofBin.export_tree(_ctxIdx)
+    const resp = pprofBin.export_tree(_ctxIdx, typeRegex.sampleType + ':' + typeRegex.sampleUnit)
     const exportTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
     req.log.debug(`merge_pprof: ${mergePprofLat / BigInt(1000000)}ms`)
     req.log.debug(`merge_tree: ${mergeTreeLat / BigInt(1000000)}ms`)
