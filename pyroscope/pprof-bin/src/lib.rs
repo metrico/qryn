@@ -2,7 +2,6 @@
 mod ch64;
 mod merge;
 
-use crate::pprof_pb::google::v1::{Line, ValueType};
 use ch64::city_hash_64;
 use ch64::read_uint64_le;
 use lazy_static::lazy_static;
@@ -342,6 +341,36 @@ impl TrieReader {
         self.offs += size;
         string
     }
+
+    /*fn read_blob(&mut self) -> &[u8] {
+        let size = self.read_size();
+        let string = &self.bytes[self.offs..self.offs + size];
+        self.offs += size;
+        string
+    }
+
+    fn read_string_vec(&mut self) -> Vec<String> {
+        let mut res = Vec::new();
+        let size = self.read_size();
+        for _ in 0..size {
+            res.push(self.read_string());
+        }
+        res
+    }*/
+
+    fn read_blob_vec(&mut self) -> Vec<&[u8]> {
+        let mut res = Vec::new();
+        let size = self.read_size();
+        for _ in 0..size {
+            let uleb = read_uleb128(&self.bytes[self.offs..]);
+            self.offs += uleb.1;
+            let _size = uleb.0;
+            let string = &self.bytes[self.offs..self.offs + size];
+            self.offs += size;
+            res.push(string);
+        }
+        res
+    }
     /*fn end(&self) -> bool {
         self.offs >= self.bytes.len()
     }*/
@@ -413,7 +442,7 @@ fn merge_trie(tree: &mut Tree, bytes: &[u8], samples_type: &String) {
     }
 }
 
-fn upsert_string(prof: &mut Profile, s: String) -> i64 {
+/*fn upsert_string(prof: &mut Profile, s: String) -> i64 {
     let mut idx = 0;
     for i in 0..prof.string_table.len() {
         if prof.string_table[i] == s {
@@ -426,9 +455,9 @@ fn upsert_string(prof: &mut Profile, s: String) -> i64 {
         prof.string_table.push(s);
     }
     idx
-}
+}*/
 
-fn upsert_function(prof: &mut Profile, fn_id: u64, fn_name_id: i64) {
+/*fn upsert_function(prof: &mut Profile, fn_id: u64, fn_name_id: i64) {
     for f in prof.function.iter() {
         if f.id == fn_id {
             return;
@@ -440,9 +469,9 @@ fn upsert_function(prof: &mut Profile, fn_id: u64, fn_name_id: i64) {
     func.filename = upsert_string(prof, "unknown".to_string());
     func.system_name = upsert_string(prof, "unknown".to_string());
     prof.function.push(func);
-}
+}*/
 
-fn inject_locations(prof: &mut Profile, tree: &Tree) {
+/*fn inject_locations(prof: &mut Profile, tree: &Tree) {
     for n in tree.names_map.iter() {
         let hash = *n.1 as u64;
         let name = tree.names[hash as usize].clone();
@@ -455,9 +484,9 @@ fn inject_locations(prof: &mut Profile, tree: &Tree) {
         loc.line = vec![line];
         prof.location.push(loc)
     }
-}
+}*/
 
-fn upsert_sample(prof: &mut Profile, loc_id: Vec<u64>, val: i64, val_idx: i64) -> i64 {
+/*fn upsert_sample(prof: &mut Profile, loc_id: Vec<u64>, val: i64, val_idx: i64) -> i64 {
     let mut idx = -1;
     for i in 0..prof.sample.len() {
         if prof.sample[i].location_id.len() != loc_id.len() {
@@ -487,9 +516,9 @@ fn upsert_sample(prof: &mut Profile, loc_id: Vec<u64>, val: i64, val_idx: i64) -
     }
     prof.sample[idx as usize].value[val_idx as usize] += val;
     idx
-}
+}*/
 
-fn inject_functions(
+/*fn inject_functions(
     prof: &mut Profile,
     tree: &Tree,
     parent_id: u64,
@@ -509,9 +538,9 @@ fn inject_functions(
             inject_functions(prof, tree, node.node_id, _loc_ids, val_idx);
         }
     }
-}
+}*/
 
-fn merge_profile(tree: &Tree, prof: &mut Profile, sample_type: String, sample_unit: String) {
+/*fn merge_profile(tree: &Tree, prof: &mut Profile, sample_type: String, sample_unit: String) {
     let mut value_type = ValueType::default();
     value_type.r#type = upsert_string(prof, sample_type);
     value_type.unit = upsert_string(prof, sample_unit);
@@ -519,7 +548,7 @@ fn merge_profile(tree: &Tree, prof: &mut Profile, sample_type: String, sample_un
     let type_idx = prof.sample_type.len() as i64 - 1;
     inject_locations(prof, tree);
     inject_functions(prof, tree, 0, vec![], type_idx);
-}
+}*/
 
 #[wasm_bindgen]
 pub fn merge_prof(id: u32, bytes: &[u8], sample_type: String) {
@@ -580,34 +609,17 @@ pub fn export_tree(id: u32, sample_type: String) -> Vec<u8> {
 }
 
 #[wasm_bindgen]
-pub fn export_trees_pprof(
-    ids: &[u32],
-    period_type: String,
-    period_unit: String,
-    _sample_types: String,
-    _sample_units: String,
-) -> Vec<u8> {
+pub fn export_trees_pprof(payload: &[u8]) -> Vec<u8> {
     let p = panic::catch_unwind(|| {
-        let sample_types: Vec<&str> = _sample_types.split(';').collect();
-        let sample_units: Vec<&str> = _sample_units.split(';').collect();
-        let res = &mut Profile::default();
-        let mut period = ValueType::default();
-        period.r#type = upsert_string(res, period_type);
-        period.unit = upsert_string(res, period_unit);
-        res.string_table = vec!["".to_string()];
-        res.period_type = Some(period);
-        let mut ctx = CTX.lock().unwrap();
-        for i in 0..ids.len() {
-            upsert_tree(&mut ctx, ids[i], vec![] /*TODO*/);
-            let tree = ctx.get(&ids[i]).unwrap();
-            merge_profile(
-                tree,
-                res,
-                sample_types[i].to_string(),
-                sample_units[i].to_string(),
-            )
+        let mut reader = TrieReader::new(payload);
+        let bin_profs = reader.read_blob_vec();
+        let mut merger = merge::ProfileMerge::new();
+        for bin_prof in bin_profs {
+            let mut prof = Profile::decode(bin_prof).unwrap();
+            merger.merge(&mut prof);
         }
-        return res.encode_to_vec();
+        let res = merger.profile();
+        res.encode_to_vec()
     });
     match p {
         Ok(res) => return res,

@@ -9,6 +9,7 @@ const { readULeb32 } = require('./pprof')
 const pprofBin = require('./pprof-bin/pkg/pprof_bin')
 const { QrynBadRequest } = require('../lib/handlers/errors')
 const { clusterName } = require('../common')
+const logger = require('../lib/logger')
 
 const HISTORY_TIMESPAN = 1000 * 60 * 60 * 24 * 7
 
@@ -332,7 +333,7 @@ const selectMergeStacktracesV2 = async (req, res) => {
   const [legacyLen, shift] = readULeb32(binData, 0)
   let ofs = shift
   try {
-    let mergePprofLat = BigInt(0);
+    let mergePprofLat = BigInt(0)
     for (let i = 0; i < legacyLen; i++) {
       const [profLen, shift] = readULeb32(binData, ofs)
       ofs += shift
@@ -345,7 +346,7 @@ const selectMergeStacktracesV2 = async (req, res) => {
     }
     start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
     pprofBin.merge_tree(_ctxIdx, Uint8Array.from(profiles.data.slice(ofs)))
-    const mergeTreeLat = (process.hrtime?.bigint? process.hrtime.bigint() : BigInt(0)) - start
+    const mergeTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
     start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
     const resp = pprofBin.export_tree(_ctxIdx)
     const exportTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
@@ -494,13 +495,82 @@ const selectSeries = async (req, res) => {
   return res.code(200).send(Buffer.from(resp.serializeBinary()))
 }
 
+const selectMergeProfile = async (req, res) => {
+  const _req = req.body
+  const fromTimeSec = Math.floor(req.getStart && req.getStart()
+    ? parseInt(req.getStart()) / 1000
+    : Date.now() / 1000 - HISTORY_TIMESPAN)
+  const toTimeSec = Math.floor(req.getEnd && req.getEnd()
+    ? parseInt(req.getEnd()) / 1000
+    : Date.now() / 1000)
+  let typeID = _req.getProfileTypeid && _req.getProfileTypeid()
+  if (!typeID) {
+    throw new QrynBadRequest('No type provided')
+  }
+  typeID = parseTypeId(typeID)
+  if (!typeID) {
+    throw new QrynBadRequest('Invalid type provided')
+  }
+  const dist = clusterName ? '_dist' : ''
+  // const sampleTypeId = typeID.sampleType + ':' + typeID.sampleUnit
+  const labelSelector = _req.getLabelSelector && _req.getLabelSelector()
+
+  const typeIdSelector = Sql.Eq(
+    'type_id',
+    Sql.val(`${typeID.type}:${typeID.periodType}:${typeID.periodUnit}`))
+  const serviceNameSelector = serviceNameSelectorQuery(labelSelector)
+
+  const idxReq = (new Sql.Select())
+    .select(new Sql.Raw('fingerprint'))
+    .from(`${DATABASE_NAME()}.profiles_series_gin`)
+    .where(
+      Sql.And(
+        typeIdSelector,
+        serviceNameSelector,
+        Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
+        Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`)),
+        Sql.Eq(
+          new Sql.Raw(
+            `has(sample_types_units, (${Sql.quoteVal(typeID.sampleType)}, ${Sql.quoteVal(typeID.sampleUnit)}))`
+          ),
+          1
+        )
+      )
+    )
+  labelSelectorQuery(idxReq, labelSelector)
+  const withIdxReq = (new Sql.With('idx', idxReq, !!clusterName))
+  const mainReq = (new Sql.Select())
+    .with(withIdxReq)
+    .select([new Sql.Raw('groupArray(payload)'), 'payload'])
+    .from([`${DATABASE_NAME()}.profiles${dist}`, 'p'])
+    .where(Sql.And(
+      new Sql.In('p.fingerprint', 'IN', new Sql.WithReference(withIdxReq)),
+      Sql.Gte('p.timestamp_ns', new Sql.Raw(`${fromTimeSec}000000000`)),
+      Sql.Lt('p.timestamp_ns', new Sql.Raw(`${toTimeSec}000000000`))))
+
+  const profiles = await clickhouse.rawRequest(mainReq.toString() + ' FORMAT RowBinary',
+    null,
+    DATABASE_NAME(),
+    {
+      responseType: 'arraybuffer'
+    })
+  const binData = Uint8Array.from(profiles.data)
+
+  require('./pprof-bin/pkg/pprof_bin').init_panic_hook()
+  const start = process.hrtime.bigint()
+  const response = pprofBin.export_trees_pprof(binData)
+  logger.debug(`Pprof export took ${process.hrtime.bigint() - start} nanoseconds`)
+  return res.code(200).send(Buffer.from(response))
+}
+
 module.exports.init = (fastify) => {
   const fns = {
     profileTypes: profileTypesHandler,
     labelNames: labelNames,
     labelValues: labelValues,
     selectMergeStacktraces: selectMergeStacktraces,
-    selectSeries: selectSeries
+    selectSeries: selectSeries,
+    selectMergeProfile: selectMergeProfile
   }
   for (const name of Object.keys(fns)) {
     fastify.post(services.QuerierServiceService[name].path, (req, res) => {

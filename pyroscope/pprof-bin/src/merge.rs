@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
 
-struct ProfileMerge {
+pub struct ProfileMerge {
     prof: Option<Profile>,
     tmp: Vec<u32>,
 
@@ -24,7 +24,7 @@ struct ProfileMerge {
 }
 
 impl ProfileMerge {
-    fn new() -> ProfileMerge {
+    pub(crate) fn new() -> ProfileMerge {
         ProfileMerge {
             prof: Option::None,
             tmp: Vec::new(),
@@ -36,7 +36,7 @@ impl ProfileMerge {
             sample_table: Option::None,
         }
     }
-    fn merge(&mut self, p: &mut Profile) {
+    pub fn merge(&mut self, p: &mut Profile) {
         if p.sample.len() == 0 || p.string_table.len() < 2 {
             return;
         }
@@ -141,7 +141,7 @@ impl ProfileMerge {
         self.prof = Some(_prof);
     }
 
-    fn profile(&mut self) -> Profile {
+    pub fn profile(&mut self) -> Profile {
         if self.prof.is_none() {
             return Profile::default();
         }
