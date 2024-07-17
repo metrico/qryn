@@ -14,6 +14,7 @@ use pprof_pb::querier::v1::Level;
 use pprof_pb::querier::v1::SelectMergeStacktracesResponse;
 use prost::Message;
 use std::collections::{HashMap, HashSet};
+use std::io::Read;
 use std::panic;
 use std::sync::Mutex;
 use std::vec::Vec;
@@ -615,8 +616,17 @@ pub fn export_trees_pprof(payload: &[u8]) -> Vec<u8> {
         let bin_profs = reader.read_blob_vec();
         let mut merger = merge::ProfileMerge::new();
         for bin_prof in bin_profs {
-            let mut prof = Profile::decode(bin_prof).unwrap();
-            merger.merge(&mut prof);
+            if bin_prof.len() >= 2 && bin_prof[0] == 0x1f && bin_prof[1] == 0x8b {
+                let mut decompressed = Vec::new();
+                let mut decoder = flate2::read::GzDecoder::new(&bin_prof[..]);
+                decoder.read_to_end(&mut decompressed).unwrap();
+                let mut prof = Profile::decode(std::io::Cursor::new(decompressed)).unwrap();
+                merger.merge(&mut prof);
+            }else {
+                let mut prof = Profile::decode(bin_prof).unwrap();
+                merger.merge(&mut prof);
+            }
+
         }
         let res = merger.profile();
         res.encode_to_vec()
