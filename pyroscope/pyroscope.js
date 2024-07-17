@@ -319,7 +319,6 @@ const selectMergeStacktracesV2 = async (req, res) => {
   }
 
   let start = Date.now()
-  console.log(sqlReq.toString())
   const profiles = await clickhouse.rawRequest(sqlReq.toString() + ' FORMAT RowBinary',
     null,
     DATABASE_NAME(),
@@ -459,7 +458,6 @@ const selectSeries = async (req, res) => {
   ).groupBy('timestamp_ns', 'fingerprint')
     .orderBy(['fingerprint', 'ASC'], ['timestamp_ns', 'ASC'])
   const strMainReq = mainReq.toString()
-  console.log(strMainReq)
   const chRes = await clickhouse
     .rawRequest(strMainReq + ' FORMAT JSON', null, DATABASE_NAME())
 
@@ -607,7 +605,6 @@ const series = async (req, res) => {
           new Sql.In('p.fingerprint', 'IN', new Sql.WithReference(withIdxReq))
         )
       )
-    console.log(labelsReq.toString())
     promises.push(clickhouse.rawRequest(labelsReq.toString() + ' FORMAT JSON', null, DATABASE_NAME()))
   }
   const resp = await Promise.all(promises)
@@ -658,7 +655,6 @@ const getSpecialMatchers = (query) => {
   const res = {}
   for (const name of
     ['__name__', '__period_type__', '__period_unit__', '__sample_type__', '__sample_unit__', '__profile_type__']) {
-    console.log(`${name}\\s*(=~|!~|=|!=)\\s*("([^"]|\\\\.)+"),*`)
     const re = new RegExp(`${name}\\s*(=~|!~|=|!=)\\s*("([^"]|\\\\.)+"),*`, 'g')
     const pair = re.exec(query)
     if (pair) {
