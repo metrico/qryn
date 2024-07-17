@@ -650,7 +650,10 @@ const series = async (req, res) => {
  */
 const getSpecialMatchers = (query) => {
   if (query.length <= 2) {
-    return []
+    return {
+      matchers: {},
+      query: query
+    }
   }
   const res = {}
   for (const name of
