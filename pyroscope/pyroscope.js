@@ -9,6 +9,7 @@ const { readULeb32 } = require('./pprof')
 const pprofBin = require('./pprof-bin/pkg/pprof_bin')
 const { QrynBadRequest } = require('../lib/handlers/errors')
 const { clusterName } = require('../common')
+const logger = require('../lib/logger')
 
 const HISTORY_TIMESPAN = 1000 * 60 * 60 * 24 * 7
 
@@ -318,7 +319,6 @@ const selectMergeStacktracesV2 = async (req, res) => {
   }
 
   let start = Date.now()
-  console.log(sqlReq.toString())
   const profiles = await clickhouse.rawRequest(sqlReq.toString() + ' FORMAT RowBinary',
     null,
     DATABASE_NAME(),
@@ -332,7 +332,7 @@ const selectMergeStacktracesV2 = async (req, res) => {
   const [legacyLen, shift] = readULeb32(binData, 0)
   let ofs = shift
   try {
-    let mergePprofLat = BigInt(0);
+    let mergePprofLat = BigInt(0)
     for (let i = 0; i < legacyLen; i++) {
       const [profLen, shift] = readULeb32(binData, ofs)
       ofs += shift
@@ -344,10 +344,11 @@ const selectMergeStacktracesV2 = async (req, res) => {
       ofs += profLen
     }
     start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
-    pprofBin.merge_tree(_ctxIdx, Uint8Array.from(profiles.data.slice(ofs)))
-    const mergeTreeLat = (process.hrtime?.bigint? process.hrtime.bigint() : BigInt(0)) - start
+    pprofBin.merge_tree(_ctxIdx, Uint8Array.from(profiles.data.slice(ofs)),
+      typeRegex.sampleType + ':' + typeRegex.sampleUnit)
+    const mergeTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
     start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
-    const resp = pprofBin.export_tree(_ctxIdx)
+    const resp = pprofBin.export_tree(_ctxIdx, typeRegex.sampleType + ':' + typeRegex.sampleUnit)
     const exportTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
     req.log.debug(`merge_pprof: ${mergePprofLat / BigInt(1000000)}ms`)
     req.log.debug(`merge_tree: ${mergeTreeLat / BigInt(1000000)}ms`)
@@ -457,7 +458,6 @@ const selectSeries = async (req, res) => {
   ).groupBy('timestamp_ns', 'fingerprint')
     .orderBy(['fingerprint', 'ASC'], ['timestamp_ns', 'ASC'])
   const strMainReq = mainReq.toString()
-  console.log(strMainReq)
   const chRes = await clickhouse
     .rawRequest(strMainReq + ' FORMAT JSON', null, DATABASE_NAME())
 
@@ -494,13 +494,240 @@ const selectSeries = async (req, res) => {
   return res.code(200).send(Buffer.from(resp.serializeBinary()))
 }
 
+const selectMergeProfile = async (req, res) => {
+  const _req = req.body
+  const fromTimeSec = Math.floor(req.getStart && req.getStart()
+    ? parseInt(req.getStart()) / 1000
+    : Date.now() / 1000 - HISTORY_TIMESPAN)
+  const toTimeSec = Math.floor(req.getEnd && req.getEnd()
+    ? parseInt(req.getEnd()) / 1000
+    : Date.now() / 1000)
+  let typeID = _req.getProfileTypeid && _req.getProfileTypeid()
+  if (!typeID) {
+    throw new QrynBadRequest('No type provided')
+  }
+  typeID = parseTypeId(typeID)
+  if (!typeID) {
+    throw new QrynBadRequest('Invalid type provided')
+  }
+  const dist = clusterName ? '_dist' : ''
+  // const sampleTypeId = typeID.sampleType + ':' + typeID.sampleUnit
+  const labelSelector = _req.getLabelSelector && _req.getLabelSelector()
+
+  const typeIdSelector = Sql.Eq(
+    'type_id',
+    Sql.val(`${typeID.type}:${typeID.periodType}:${typeID.periodUnit}`))
+  const serviceNameSelector = serviceNameSelectorQuery(labelSelector)
+
+  const idxReq = (new Sql.Select())
+    .select(new Sql.Raw('fingerprint'))
+    .from(`${DATABASE_NAME()}.profiles_series_gin`)
+    .where(
+      Sql.And(
+        typeIdSelector,
+        serviceNameSelector,
+        Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
+        Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`)),
+        Sql.Eq(
+          new Sql.Raw(
+            `has(sample_types_units, (${Sql.quoteVal(typeID.sampleType)}, ${Sql.quoteVal(typeID.sampleUnit)}))`
+          ),
+          1
+        )
+      )
+    )
+  labelSelectorQuery(idxReq, labelSelector)
+  const withIdxReq = (new Sql.With('idx', idxReq, !!clusterName))
+  const mainReq = (new Sql.Select())
+    .with(withIdxReq)
+    .select([new Sql.Raw('groupArray(payload)'), 'payload'])
+    .from([`${DATABASE_NAME()}.profiles${dist}`, 'p'])
+    .where(Sql.And(
+      new Sql.In('p.fingerprint', 'IN', new Sql.WithReference(withIdxReq)),
+      Sql.Gte('p.timestamp_ns', new Sql.Raw(`${fromTimeSec}000000000`)),
+      Sql.Lt('p.timestamp_ns', new Sql.Raw(`${toTimeSec}000000000`))))
+
+  const profiles = await clickhouse.rawRequest(mainReq.toString() + ' FORMAT RowBinary',
+    null,
+    DATABASE_NAME(),
+    {
+      responseType: 'arraybuffer'
+    })
+  const binData = Uint8Array.from(profiles.data)
+
+  require('./pprof-bin/pkg/pprof_bin').init_panic_hook()
+  const start = process.hrtime.bigint()
+  const response = pprofBin.export_trees_pprof(binData)
+  logger.debug(`Pprof export took ${process.hrtime.bigint() - start} nanoseconds`)
+  return res.code(200).send(Buffer.from(response))
+}
+
+const series = async (req, res) => {
+  const _req = req.body
+  const fromTimeSec = Math.floor(req.getStart && req.getStart()
+    ? parseInt(req.getStart()) / 1000
+    : Date.now() / 1000 - HISTORY_TIMESPAN)
+  const toTimeSec = Math.floor(req.getEnd && req.getEnd()
+    ? parseInt(req.getEnd()) / 1000
+    : Date.now() / 1000)
+  const dist = clusterName ? '_dist' : ''
+  const promises = []
+  for (const labelSelector of _req.getMatchersList() || []) {
+    const specialMatchers = getSpecialMatchers(labelSelector)
+    const specialClauses = specialMatchersQuery(specialMatchers.matchers)
+    const serviceNameSelector = serviceNameSelectorQuery(labelSelector)
+    const idxReq = (new Sql.Select())
+      .select(new Sql.Raw('fingerprint'))
+      .from(`${DATABASE_NAME()}.profiles_series_gin`)
+      .where(
+        Sql.And(
+          serviceNameSelector,
+          Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
+          Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`))
+        )
+      )
+    labelSelectorQuery(idxReq, specialMatchers.query)
+    const withIdxReq = (new Sql.With('idx', idxReq, !!clusterName))
+    const labelsReq = (new Sql.Select())
+      .with(withIdxReq)
+      .select(
+        ['tags', 'tags'],
+        ['type_id', 'type_id'],
+        ['sample_types_units', '_sample_types_units'])
+      .from([`${DATABASE_NAME()}.profiles_series${dist}`, 'p'])
+      .join('p.sample_types_units', 'array')
+      .where(
+        Sql.And(
+          serviceNameSelector,
+          specialClauses,
+          Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
+          Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`)),
+          new Sql.In('p.fingerprint', 'IN', new Sql.WithReference(withIdxReq))
+        )
+      )
+    promises.push(clickhouse.rawRequest(labelsReq.toString() + ' FORMAT JSON', null, DATABASE_NAME()))
+  }
+  const resp = await Promise.all(promises)
+  const response = new messages.SeriesResponse()
+  const labelsSet = []
+  resp.forEach(_res => {
+    for (const row of _res.data.data) {
+      const labels = new types.Labels()
+      const _labels = []
+      for (const tag of row.tags) {
+        const pair = new types.LabelPair()
+        pair.setName(tag[0])
+        pair.setValue(tag[1])
+        _labels.push(pair)
+      }
+      const typeId = row.type_id.split(':')
+      const _pair = (name, val) => {
+        const pair = new types.LabelPair()
+        pair.setName(name)
+        pair.setValue(val)
+        return pair
+      }
+      _labels.push(
+        _pair('__name__', typeId[0]),
+        _pair('__period_type__', typeId[1]),
+        _pair('__period_unit__', typeId[2]),
+        _pair('__sample_type__', row._sample_types_units[0]),
+        _pair('__sample_unit__', row._sample_types_units[1]),
+        _pair('__profile_type__',
+          `${typeId[0]}:${row._sample_types_units[0]}:${row._sample_types_units[1]}:${typeId[1]}:${typeId[2]}`)
+      )
+      labels.setLabelsList(_labels)
+      labelsSet.push(labels)
+    }
+  })
+  response.setLabelsSetList(labelsSet)
+  return res.code(200).send(Buffer.from(response.serializeBinary()))
+}
+
+/**
+ *
+ * @param query {string}
+ */
+const getSpecialMatchers = (query) => {
+  if (query.length <= 2) {
+    return []
+  }
+  const res = {}
+  for (const name of
+    ['__name__', '__period_type__', '__period_unit__', '__sample_type__', '__sample_unit__', '__profile_type__']) {
+    const re = new RegExp(`${name}\\s*(=~|!~|=|!=)\\s*("([^"]|\\\\.)+"),*`, 'g')
+    const pair = re.exec(query)
+    if (pair) {
+      res[name] = [pair[1], JSON.parse(pair[2])]
+    }
+    query = query.replaceAll(re, '')
+  }
+  query = query.replaceAll(/,\s*}$/g, '}')
+  return {
+    matchers: res,
+    query: query
+  }
+}
+
+const matcherClause = (field, matcher) => {
+  let valRul
+  const val = matcher[1]
+  switch (matcher[0]) {
+    case '=':
+      valRul = Sql.Eq(new Sql.Raw(field), Sql.val(val))
+      break
+    case '!=':
+      valRul = Sql.Ne(new Sql.Raw(field), Sql.val(val))
+      break
+    case '=~':
+      valRul = Sql.Eq(new Sql.Raw(`match(${(new Sql.Raw(field)).toString()}, ${Sql.quoteVal(val)})`), 1)
+      break
+    case '!~':
+      valRul = Sql.Ne(new Sql.Raw(`match(${(new Sql.Raw(field)).toString()}, ${Sql.quoteVal(val)})`), 1)
+  }
+  return valRul
+}
+
+const specialMatchersQuery = (matchers) => {
+  const clauses = []
+  if (matchers.__name__) {
+    clauses.push(matcherClause("splitByChar(':', type_id)[1]", matchers.__name__))
+  }
+  if (matchers.__period_type__) {
+    clauses.push(matcherClause("splitByChar(':', type_id)[2]", matchers.__period_type__))
+  }
+  if (matchers.__period_unit__) {
+    clauses.push(matcherClause("splitByChar(':', type_id)[3]", matchers.__period_unit__))
+  }
+  if (matchers.__sample_type__) {
+    clauses.push(matcherClause('_sample_types_units.1', matchers.__sample_type__))
+  }
+  if (matchers.__sample_unit__) {
+    clauses.push(matcherClause('_sample_types_units.2', matchers.__sample_unit__))
+  }
+  if (matchers.__profile_type__) {
+    clauses.push(matcherClause(
+      "format('{}:{}:{}:{}:{}', (splitByChar(':', type_id) as _parts)[1], _sample_types_units.1, _sample_types_units.2, _parts[2], _parts[3])",
+      matchers.__profile_type__))
+  }
+  if (clauses.length === 0) {
+    return Sql.Eq(new Sql.Raw('1'), 1)
+  }
+  if (clauses.length === 1) {
+    return clauses[0]
+  }
+  return new Sql.And(...clauses)
+}
+
 module.exports.init = (fastify) => {
   const fns = {
     profileTypes: profileTypesHandler,
     labelNames: labelNames,
     labelValues: labelValues,
     selectMergeStacktraces: selectMergeStacktraces,
-    selectSeries: selectSeries
+    selectSeries: selectSeries,
+    selectMergeProfile: selectMergeProfile,
+    series: series
   }
   for (const name of Object.keys(fns)) {
     fastify.post(services.QuerierServiceService[name].path, (req, res) => {

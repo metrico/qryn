@@ -110,11 +110,14 @@ module.exports.merge_prof = function(id, bytes, sample_type) {
 /**
 * @param {number} id
 * @param {Uint8Array} bytes
+* @param {string} sample_type
 */
-module.exports.merge_tree = function(id, bytes) {
+module.exports.merge_tree = function(id, bytes, sample_type) {
     const ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
-    wasm.merge_tree(id, ptr0, len0);
+    const ptr1 = passStringToWasm0(sample_type, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len1 = WASM_VECTOR_LEN;
+    wasm.merge_tree(id, ptr0, len0, ptr1, len1);
 };
 
 let cachedInt32Memory0 = null;
@@ -132,17 +135,40 @@ function getArrayU8FromWasm0(ptr, len) {
 }
 /**
 * @param {number} id
+* @param {string} sample_type
 * @returns {Uint8Array}
 */
-module.exports.export_tree = function(id) {
+module.exports.export_tree = function(id, sample_type) {
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.export_tree(retptr, id);
+        const ptr0 = passStringToWasm0(sample_type, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.export_tree(retptr, id, ptr0, len0);
         var r0 = getInt32Memory0()[retptr / 4 + 0];
         var r1 = getInt32Memory0()[retptr / 4 + 1];
-        var v1 = getArrayU8FromWasm0(r0, r1).slice();
+        var v2 = getArrayU8FromWasm0(r0, r1).slice();
         wasm.__wbindgen_free(r0, r1 * 1, 1);
-        return v1;
+        return v2;
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+};
+
+/**
+* @param {Uint8Array} payload
+* @returns {Uint8Array}
+*/
+module.exports.export_trees_pprof = function(payload) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passArray8ToWasm0(payload, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.export_trees_pprof(retptr, ptr0, len0);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        var v2 = getArrayU8FromWasm0(r0, r1).slice();
+        wasm.__wbindgen_free(r0, r1 * 1, 1);
+        return v2;
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
     }
