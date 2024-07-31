@@ -10,7 +10,8 @@ const pprofBin = require('./pprof-bin/pkg/pprof_bin')
 const { QrynBadRequest } = require('../lib/handlers/errors')
 const { clusterName } = require('../common')
 const logger = require('../lib/logger')
-
+const jsonParsers = require('./json_parsers')
+const { bufferize } = require('./shared')
 const HISTORY_TIMESPAN = 1000 * 60 * 60 * 24 * 7
 
 /**
@@ -28,6 +29,20 @@ const parseTypeId = (typeId) => {
     sampleUnit: typeParts[3],
     periodType: typeParts[4],
     periodUnit: typeParts[5]
+  }
+}
+
+const wrapResponse = (hndl) => {
+  return async (req, res) => {
+    const _res = await hndl(req, res)
+    if (!_res || !_res.serializeBinary) {
+      return _res
+    }
+    if (req.type === 'json') {
+      const strRes = JSON.stringify(normalizeProtoResponse(_res.toObject()))
+      return res.code(200).send(strRes)
+    }
+    return res.code(200).send(Buffer.from(_res.serializeBinary()))
   }
 }
 
@@ -57,7 +72,7 @@ WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDa
     pt.setPeriodUnit(periodUnit)
     return pt
   }))
-  return res.code(200).send(Buffer.from(_res.serializeBinary()))
+  return _res //res.code(200).send(Buffer.from(_res.serializeBinary()))
 }
 
 const labelNames = async (req, res) => {
@@ -74,7 +89,7 @@ WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDa
   null, DATABASE_NAME())
   const resp = new types.LabelNamesResponse()
   resp.setNamesList(labelNames.data.data.map(label => label.key))
-  return res.code(200).send(Buffer.from(resp.serializeBinary()))
+  return resp //res.code(200).send(Buffer.from(resp.serializeBinary()))
 }
 
 const labelValues = async (req, res) => {
@@ -98,26 +113,12 @@ date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND
 date <= toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)})) FORMAT JSON`, null, DATABASE_NAME())
   const resp = new types.LabelValuesResponse()
   resp.setNamesList(labelValues.data.data.map(label => label.val))
-  return res.code(200).send(Buffer.from(resp.serializeBinary()))
+  return resp //res.code(200).send(Buffer.from(resp.serializeBinary()))
 }
 
 const parser = (MsgClass) => {
   return async (req, payload) => {
-    const _body = []
-    payload.on('data', data => {
-      _body.push(data)// += data.toString()
-    })
-    if (payload.isPaused && payload.isPaused()) {
-      payload.resume()
-    }
-    await new Promise(resolve => {
-      payload.on('end', resolve)
-      payload.on('close', resolve)
-    })
-    const body = Buffer.concat(_body)
-    if (body.length === 0) {
-      return null
-    }
+    const body = await bufferize(payload)
     req._rawBody = body
     return MsgClass.deserializeBinary(body)
   }
@@ -134,7 +135,7 @@ const labelSelectorQuery = (query, labelSelector) => {
   if (!labelSelector || !labelSelector.length || labelSelector === '{}') {
     return query
   }
-  const labelSelectorScript = compiler.ParseScript(labelSelector).rootToken
+  const labelSelectorScript = parseLabelSelector(labelSelector)
   const labelsConds = []
   for (const rule of labelSelectorScript.Children('log_stream_selector_rule')) {
     const val = JSON.parse(rule.Child('quoted_str').value)
@@ -168,12 +169,19 @@ const labelSelectorQuery = (query, labelSelector) => {
   ))
 }
 
+const parseLabelSelector = (labelSelector) => {
+  if (labelSelector.endsWith(',}')) {
+    labelSelector = labelSelector.slice(0, -2) + '}'
+  }
+  return compiler.ParseScript(labelSelector).rootToken
+}
+
 const serviceNameSelectorQuery = (labelSelector) => {
   const empty = Sql.Eq(new Sql.Raw('1'), new Sql.Raw('1'))
   if (!labelSelector || !labelSelector.length || labelSelector === '{}') {
     return empty
   }
-  const labelSelectorScript = compiler.ParseScript(labelSelector).rootToken
+  const labelSelectorScript = parseLabelSelector(labelSelector)
   let conds = null
   for (const rule of labelSelectorScript.Children('log_stream_selector_rule')) {
     const label = rule.Child('label').value
@@ -491,7 +499,7 @@ const selectSeries = async (req, res) => {
 
   const resp = new messages.SelectSeriesResponse()
   resp.setSeriesList(seriesList)
-  return res.code(200).send(Buffer.from(resp.serializeBinary()))
+  return resp //res.code(200).send(Buffer.from(resp.serializeBinary()))
 }
 
 const selectMergeProfile = async (req, res) => {
@@ -607,13 +615,30 @@ const series = async (req, res) => {
       )
     promises.push(clickhouse.rawRequest(labelsReq.toString() + ' FORMAT JSON', null, DATABASE_NAME()))
   }
+  if ((_req.getMatchersList() || []).length === 0) {
+    const labelsReq = (new Sql.Select())
+      .select(
+        ['tags', 'tags'],
+        ['type_id', 'type_id'],
+        ['sample_types_units', '_sample_types_units'])
+      .from([`${DATABASE_NAME()}.profiles_series${dist}`, 'p'])
+      .join('p.sample_types_units', 'array')
+      .where(
+        Sql.And(
+          Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
+          Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`)),
+        )
+      )
+    promises.push(clickhouse.rawRequest(labelsReq.toString() + ' FORMAT JSON', null, DATABASE_NAME()))
+  }
   const resp = await Promise.all(promises)
   const response = new messages.SeriesResponse()
   const labelsSet = []
+  const filterLabelNames = _req.getLabelNamesList() || null
   resp.forEach(_res => {
     for (const row of _res.data.data) {
       const labels = new types.Labels()
-      const _labels = []
+      let _labels = []
       for (const tag of row.tags) {
         const pair = new types.LabelPair()
         pair.setName(tag[0])
@@ -636,12 +661,40 @@ const series = async (req, res) => {
         _pair('__profile_type__',
           `${typeId[0]}:${row._sample_types_units[0]}:${row._sample_types_units[1]}:${typeId[1]}:${typeId[2]}`)
       )
-      labels.setLabelsList(_labels)
-      labelsSet.push(labels)
+      if (filterLabelNames && filterLabelNames.length) {
+        _labels = _labels.filter((l) => filterLabelNames.includes(l.getName()))
+      }
+      if (_labels.length > 0) {
+        labels.setLabelsList(_labels)
+        labelsSet.push(labels)
+      }
     }
   })
   response.setLabelsSetList(labelsSet)
-  return res.code(200).send(Buffer.from(response.serializeBinary()))
+  return response //res.code(200).send(Buffer.from(response.serializeBinary()))
+}
+
+/**
+ *
+ * @param proto {Object}
+ */
+const normalizeProtoResponse = (proto) => {
+  if (typeof proto !== 'object') {
+    return proto
+  }
+  return Object.fromEntries(Object.entries(proto).map((e) => {
+    let name = e[0]
+    if (name.endsWith('List')) {
+      name = name.slice(0, -4)
+    }
+    if (Array.isArray(e[1])) {
+      return [name, e[1].map(normalizeProtoResponse)]
+    }
+    if (typeof e[1] === 'object') {
+      return [name, normalizeProtoResponse(e[1])]
+    }
+    return [name, e[1]]
+  }))
 }
 
 /**
@@ -722,6 +775,30 @@ const specialMatchersQuery = (matchers) => {
   return new Sql.And(...clauses)
 }
 
+const getProfileStats = async (req, res) => {
+  const sql = `
+with non_empty as (select any(1) as non_empty from profiles limit 1),
+     min_date as (select min(date) as min_date, max(date) as max_date from profiles_series),
+     min_time as (
+        select intDiv(min(timestamp_ns), 1000000) as min_time,
+               intDiv(max(timestamp_ns), 1000000) as max_time
+        from profiles
+        where timestamp_ns < toUnixTimestamp((select any (min_date) from min_date) + INTERVAL '1 day') * 1000000000 OR
+            timestamp_ns >= toUnixTimestamp((select any(max_date) from min_date)) * 1000000000
+    )
+select
+    (select any(non_empty) from non_empty) as non_empty,
+    (select any(min_time) from min_time) as min_time,
+    (select any(max_time) from min_time) as max_time
+`
+  const sqlRes = await clickhouse.rawRequest(sql + ' FORMAT JSON', null, DATABASE_NAME())
+  const response = new types.GetProfileStatsResponse()
+  response.setDataIngested(!!sqlRes.data.data[0].non_empty)
+  response.setOldestProfileTime(sqlRes.data.data[0].min_time)
+  response.setNewestProfileTime(sqlRes.data.data[0].max_time)
+  return response//res.code(200).send(Buffer.from(response.serializeBinary()))
+}
+
 module.exports.init = (fastify) => {
   const fns = {
     profileTypes: profileTypesHandler,
@@ -730,12 +807,19 @@ module.exports.init = (fastify) => {
     selectMergeStacktraces: selectMergeStacktraces,
     selectSeries: selectSeries,
     selectMergeProfile: selectMergeProfile,
-    series: series
+    series: series,
+    getProfileStats: getProfileStats
+  }
+  const parsers = {
+    series: jsonParsers.series,
+    getProfileStats: jsonParsers.getProfileStats,
+    labelNames: jsonParsers.labelNames
   }
   for (const name of Object.keys(fns)) {
     fastify.post(services.QuerierServiceService[name].path, (req, res) => {
-      return fns[name](req, res)
+      return wrapResponse(fns[name])(req, res)
     }, {
+      'application/json': parsers[name],
       '*': parser(services.QuerierServiceService[name].requestType)
     })
   }

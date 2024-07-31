@@ -17,6 +17,28 @@ function deserialize_google_v1_Profile(buffer_arg) {
   return google_v1_profile_pb.Profile.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_querier_v1_AnalyzeQueryRequest(arg) {
+  if (!(arg instanceof querier_pb.AnalyzeQueryRequest)) {
+    throw new Error('Expected argument of type querier.v1.AnalyzeQueryRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_querier_v1_AnalyzeQueryRequest(buffer_arg) {
+  return querier_pb.AnalyzeQueryRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_querier_v1_AnalyzeQueryResponse(arg) {
+  if (!(arg instanceof querier_pb.AnalyzeQueryResponse)) {
+    throw new Error('Expected argument of type querier.v1.AnalyzeQueryResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_querier_v1_AnalyzeQueryResponse(buffer_arg) {
+  return querier_pb.AnalyzeQueryResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_querier_v1_DiffRequest(arg) {
   if (!(arg instanceof querier_pb.DiffRequest)) {
     throw new Error('Expected argument of type querier.v1.DiffRequest');
@@ -160,6 +182,28 @@ function deserialize_querier_v1_SeriesResponse(buffer_arg) {
   return querier_pb.SeriesResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_types_v1_GetProfileStatsRequest(arg) {
+  if (!(arg instanceof types_v1_types_pb.GetProfileStatsRequest)) {
+    throw new Error('Expected argument of type types.v1.GetProfileStatsRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_types_v1_GetProfileStatsRequest(buffer_arg) {
+  return types_v1_types_pb.GetProfileStatsRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_types_v1_GetProfileStatsResponse(arg) {
+  if (!(arg instanceof types_v1_types_pb.GetProfileStatsResponse)) {
+    throw new Error('Expected argument of type types.v1.GetProfileStatsResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_types_v1_GetProfileStatsResponse(buffer_arg) {
+  return types_v1_types_pb.GetProfileStatsResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_types_v1_LabelNamesRequest(arg) {
   if (!(arg instanceof types_v1_types_pb.LabelNamesRequest)) {
     throw new Error('Expected argument of type types.v1.LabelNamesRequest');
@@ -266,7 +310,7 @@ selectMergeStacktraces: {
     responseSerialize: serialize_querier_v1_SelectMergeStacktracesResponse,
     responseDeserialize: deserialize_querier_v1_SelectMergeStacktracesResponse,
   },
-  // SelectMergeSpans returns matching profiles aggregated in a flamegraph format. It will combine samples from within the same callstack, with each element being grouped by its function name.
+  // SelectMergeSpanProfile returns matching profiles aggregated in a flamegraph format. It will combine samples from within the same callstack, with each element being grouped by its function name.
 selectMergeSpanProfile: {
     path: '/querier.v1.QuerierService/SelectMergeSpanProfile',
     requestStream: false,
@@ -302,7 +346,8 @@ selectSeries: {
     responseSerialize: serialize_querier_v1_SelectSeriesResponse,
     responseDeserialize: deserialize_querier_v1_SelectSeriesResponse,
   },
-  diff: {
+  // Diff returns a diff of two profiles
+diff: {
     path: '/querier.v1.QuerierService/Diff',
     requestStream: false,
     responseStream: false,
@@ -312,6 +357,29 @@ selectSeries: {
     requestDeserialize: deserialize_querier_v1_DiffRequest,
     responseSerialize: serialize_querier_v1_DiffResponse,
     responseDeserialize: deserialize_querier_v1_DiffResponse,
+  },
+  // GetProfileStats returns profile stats for the current tenant.
+getProfileStats: {
+    path: '/querier.v1.QuerierService/GetProfileStats',
+    requestStream: false,
+    responseStream: false,
+    requestType: types_v1_types_pb.GetProfileStatsRequest,
+    responseType: types_v1_types_pb.GetProfileStatsResponse,
+    requestSerialize: serialize_types_v1_GetProfileStatsRequest,
+    requestDeserialize: deserialize_types_v1_GetProfileStatsRequest,
+    responseSerialize: serialize_types_v1_GetProfileStatsResponse,
+    responseDeserialize: deserialize_types_v1_GetProfileStatsResponse,
+  },
+  analyzeQuery: {
+    path: '/querier.v1.QuerierService/AnalyzeQuery',
+    requestStream: false,
+    responseStream: false,
+    requestType: querier_pb.AnalyzeQueryRequest,
+    responseType: querier_pb.AnalyzeQueryResponse,
+    requestSerialize: serialize_querier_v1_AnalyzeQueryRequest,
+    requestDeserialize: deserialize_querier_v1_AnalyzeQueryRequest,
+    responseSerialize: serialize_querier_v1_AnalyzeQueryResponse,
+    responseDeserialize: deserialize_querier_v1_AnalyzeQueryResponse,
   },
 };
 
