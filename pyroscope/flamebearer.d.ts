@@ -6,13 +6,14 @@ type units = string;
 export interface Flamebearer {
     version: number,
     flamebearerProfileV1: flamebearerProfileV1
-    telemetry: {[key: string]: any}
+    telemetry?: {[key: string]: any}
 }
 
 export interface flamebearerProfileV1 {
     flamebearer: flamebearerV1,
     metadata: flamebearerMetadataV1,
     timeline: flamebearerTimelineV1,
+    groups: {[key: string]: flamebearerTimelineV1}
     heatmap: heatmap,
     leftTicks: string,
     rightTicks: string,

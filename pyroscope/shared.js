@@ -171,6 +171,8 @@ const labelSelectorQuery = (query, labelSelector) => {
   ))
 }
 
+const HISTORY_TIMESPAN = 1000 * 60 * 60 * 24 * 7
+
 module.exports = {
   bufferize,
   parser,
@@ -179,5 +181,6 @@ module.exports = {
   parseTypeId,
   serviceNameSelectorQuery,
   parseLabelSelector,
-  labelSelectorQuery
+  labelSelectorQuery,
+  HISTORY_TIMESPAN
 }
