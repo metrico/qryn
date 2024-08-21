@@ -2,34 +2,26 @@ const messages = require('./querier_pb')
 const types = require('./types/v1/types_pb')
 const services = require('./querier_grpc_pb')
 const clickhouse = require('../lib/db/clickhouse')
-const { DATABASE_NAME, checkVersion } = require('../lib/utils')
+const { DATABASE_NAME } = require('../lib/utils')
 const Sql = require('@cloki/clickhouse-sql')
-const compiler = require('../parser/bnf')
-const { readULeb32 } = require('./pprof')
 const pprofBin = require('./pprof-bin/pkg/pprof_bin')
 const { QrynBadRequest } = require('../lib/handlers/errors')
 const { clusterName } = require('../common')
 const logger = require('../lib/logger')
-
-const HISTORY_TIMESPAN = 1000 * 60 * 60 * 24 * 7
-
-/**
- *
- * @param typeId {string}
- */
-const parseTypeId = (typeId) => {
-  const typeParts = typeId.match(/^([^:]+):([^:]+):([^:]+):([^:]+):([^:]+)$/)
-  if (!typeParts) {
-    throw new QrynBadRequest('invalid type id')
-  }
-  return {
-    type: typeParts[1],
-    sampleType: typeParts[2],
-    sampleUnit: typeParts[3],
-    periodType: typeParts[4],
-    periodUnit: typeParts[5]
-  }
-}
+const jsonParsers = require('./json_parsers')
+const renderDiff = require('./render_diff')
+const {
+  parser,
+  wrapResponse,
+  parseTypeId,
+  serviceNameSelectorQuery,
+  labelSelectorQuery,
+  HISTORY_TIMESPAN
+} = require('./shared')
+const settings = require('./settings')
+const { mergeStackTraces } = require('./merge_stack_traces')
+const { selectSeriesImpl } = require('./select_series')
+const render = require('./render')
 
 const profileTypesHandler = async (req, res) => {
   const dist = clusterName ? '_dist' : ''
@@ -57,7 +49,7 @@ WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDa
     pt.setPeriodUnit(periodUnit)
     return pt
   }))
-  return res.code(200).send(Buffer.from(_res.serializeBinary()))
+  return _res
 }
 
 const labelNames = async (req, res) => {
@@ -74,7 +66,7 @@ WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDa
   null, DATABASE_NAME())
   const resp = new types.LabelNamesResponse()
   resp.setNamesList(labelNames.data.data.map(label => label.key))
-  return res.code(200).send(Buffer.from(resp.serializeBinary()))
+  return resp
 }
 
 const labelValues = async (req, res) => {
@@ -98,125 +90,14 @@ date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND
 date <= toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)})) FORMAT JSON`, null, DATABASE_NAME())
   const resp = new types.LabelValuesResponse()
   resp.setNamesList(labelValues.data.data.map(label => label.val))
-  return res.code(200).send(Buffer.from(resp.serializeBinary()))
-}
-
-const parser = (MsgClass) => {
-  return async (req, payload) => {
-    const _body = []
-    payload.on('data', data => {
-      _body.push(data)// += data.toString()
-    })
-    if (payload.isPaused && payload.isPaused()) {
-      payload.resume()
-    }
-    await new Promise(resolve => {
-      payload.on('end', resolve)
-      payload.on('close', resolve)
-    })
-    const body = Buffer.concat(_body)
-    if (body.length === 0) {
-      return null
-    }
-    req._rawBody = body
-    return MsgClass.deserializeBinary(body)
-  }
-}
-
-let ctxIdx = 0
-
-/**
- *
- * @param {Sql.Select} query
- * @param {string} labelSelector
- */
-const labelSelectorQuery = (query, labelSelector) => {
-  if (!labelSelector || !labelSelector.length || labelSelector === '{}') {
-    return query
-  }
-  const labelSelectorScript = compiler.ParseScript(labelSelector).rootToken
-  const labelsConds = []
-  for (const rule of labelSelectorScript.Children('log_stream_selector_rule')) {
-    const val = JSON.parse(rule.Child('quoted_str').value)
-    let valRul = null
-    switch (rule.Child('operator').value) {
-      case '=':
-        valRul = Sql.Eq(new Sql.Raw('val'), Sql.val(val))
-        break
-      case '!=':
-        valRul = Sql.Ne(new Sql.Raw('val'), Sql.val(val))
-        break
-      case '=~':
-        valRul = Sql.Eq(new Sql.Raw(`match(val, ${Sql.quoteVal(val)})`), 1)
-        break
-      case '!~':
-        valRul = Sql.Ne(new Sql.Raw(`match(val, ${Sql.quoteVal(val)})`), 1)
-    }
-    const labelSubCond = Sql.And(
-      Sql.Eq('key', Sql.val(rule.Child('label').value)),
-      valRul
-    )
-    labelsConds.push(labelSubCond)
-  }
-  query.where(Sql.Or(...labelsConds))
-  query.groupBy(new Sql.Raw('fingerprint'))
-  query.having(Sql.Eq(
-    new Sql.Raw(`groupBitOr(${labelsConds.map((cond, i) => {
-      return `bitShiftLeft(toUInt64(${cond}), ${i})`
-    }).join('+')})`),
-    new Sql.Raw(`bitShiftLeft(toUInt64(1), ${labelsConds.length})-1`)
-  ))
-}
-
-const serviceNameSelectorQuery = (labelSelector) => {
-  const empty = Sql.Eq(new Sql.Raw('1'), new Sql.Raw('1'))
-  if (!labelSelector || !labelSelector.length || labelSelector === '{}') {
-    return empty
-  }
-  const labelSelectorScript = compiler.ParseScript(labelSelector).rootToken
-  let conds = null
-  for (const rule of labelSelectorScript.Children('log_stream_selector_rule')) {
-    const label = rule.Child('label').value
-    if (label !== 'service_name') {
-      continue
-    }
-    const val = JSON.parse(rule.Child('quoted_str').value)
-    let valRul = null
-    switch (rule.Child('operator').value) {
-      case '=':
-        valRul = Sql.Eq(new Sql.Raw('service_name'), Sql.val(val))
-        break
-      case '!=':
-        valRul = Sql.Ne(new Sql.Raw('service_name'), Sql.val(val))
-        break
-      case '=~':
-        valRul = Sql.Eq(new Sql.Raw(`match(service_name, ${Sql.quoteVal(val)})`), 1)
-        break
-      case '!~':
-        valRul = Sql.Ne(new Sql.Raw(`match(service_name, ${Sql.quoteVal(val)})`), 1)
-    }
-    conds = valRul
-  }
-  return conds || empty
+  return resp
 }
 
 const selectMergeStacktraces = async (req, res) => {
   return await selectMergeStacktracesV2(req, res)
 }
 
-const sqlWithReference = (ref) => {
-  const res = new Sql.WithReference(ref)
-  res.toString = function () {
-    if (this.ref.inline) {
-      return `(${this.ref.query.toString()}) as ${this.ref.alias}`
-    }
-    return this.ref.alias
-  }
-  return res
-}
-
 const selectMergeStacktracesV2 = async (req, res) => {
-  const dist = clusterName ? '_dist' : ''
   const typeRegex = parseTypeId(req.body.getProfileTypeid())
   const sel = req.body.getLabelSelector()
   const fromTimeSec = req.body && req.body.getStart()
@@ -225,273 +106,18 @@ const selectMergeStacktracesV2 = async (req, res) => {
   const toTimeSec = req.body && req.body.getEnd()
     ? Math.floor(parseInt(req.body.getEnd()) / 1000)
     : Math.floor(Date.now() / 1000)
-  const v2 = checkVersion('profiles_v2', (fromTimeSec - 3600) * 1000)
-  const serviceNameSelector = serviceNameSelectorQuery(sel)
-  const typeIdSelector = Sql.Eq(
-    'type_id',
-    Sql.val(`${typeRegex.type}:${typeRegex.periodType}:${typeRegex.periodUnit}`)
-  )
-  const idxSelect = (new Sql.Select())
-    .select('fingerprint')
-    .from(`${DATABASE_NAME()}.profiles_series_gin`)
-    .where(
-      Sql.And(
-        Sql.Eq(new Sql.Raw(`has(sample_types_units, (${Sql.quoteVal(typeRegex.sampleType)},${Sql.quoteVal(typeRegex.sampleUnit)}))`), 1),
-        typeIdSelector,
-        Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
-        Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`)),
-        serviceNameSelector
-      )
-    ).groupBy('fingerprint')
-  labelSelectorQuery(idxSelect, sel)
-  const withIdxSelect = new Sql.With('idx', idxSelect, !!clusterName)
-  const rawReq = (new Sql.Select()).with(withIdxSelect)
-    .select([
-      new Sql.Raw(`arrayMap(x -> (x.1, x.2, x.3, (arrayFirst(y -> y.1 == ${Sql.quoteVal(`${typeRegex.sampleType}:${typeRegex.sampleUnit}`)}, x.4) as af).2, af.3), tree)`),
-      'tree'
-    ], 'functions')
-    .from(`${DATABASE_NAME()}.profiles${dist}`)
-    .where(
-      Sql.And(
-        Sql.Gte('timestamp_ns', new Sql.Raw(Math.floor(fromTimeSec) + '000000000')),
-        Sql.Lte('timestamp_ns', new Sql.Raw(Math.floor(toTimeSec) + '000000000')),
-        new Sql.In('fingerprint', 'IN', sqlWithReference(withIdxSelect)),
-        typeIdSelector,
-        serviceNameSelector
-      ))
-  if (process.env.ADVANCED_PROFILES_MERGE_LIMIT) {
-    rawReq.orderBy(['timestamp_ns', 'desc']).limit(parseInt(process.env.ADVANCED_PROFILES_MERGE_LIMIT))
-  }
-  const withRawReq = new Sql.With('raw', rawReq, !!clusterName)
-  const joinedReq = (new Sql.Select()).with(withRawReq).select([
-    new Sql.Raw('(raw.tree.1, raw.tree.2, raw.tree.3, sum(raw.tree.4), sum(raw.tree.5))'),
-    'tree2'
-  ]).from(sqlWithReference(withRawReq))
-    .join('raw.tree', 'array')
-    .groupBy(new Sql.Raw('raw.tree.1'), new Sql.Raw('raw.tree.2'), new Sql.Raw('raw.tree.3'))
-    .orderBy(new Sql.Raw('raw.tree.1')).limit(2000000)
-  const withJoinedReq = new Sql.With('joined', joinedReq, !!clusterName)
-  const joinedAggregatedReq = (new Sql.Select()).select(
-    [new Sql.Raw('groupArray(tree2)'), 'tree']).from(sqlWithReference(withJoinedReq))
-  const functionsReq = (new Sql.Select()).select(
-    [new Sql.Raw('groupUniqArray(raw.functions)'), 'functions2']
-  ).from(sqlWithReference(withRawReq)).join('raw.functions', 'array')
-
-  let brackLegacy = (new Sql.Select()).select(
-    [new Sql.Raw('[]::Array(String)'), 'legacy']
-  )
-  let withLegacy = null
-  if (!v2) {
-    const legacy = (new Sql.Select()).with(withIdxSelect)
-      .select('payload')
-      .from(`${DATABASE_NAME()}.profiles${dist}`)
-      .where(
-        Sql.And(
-          Sql.Gte('timestamp_ns', new Sql.Raw(Math.floor(fromTimeSec) + '000000000')),
-          Sql.Lte('timestamp_ns', new Sql.Raw(Math.floor(toTimeSec) + '000000000')),
-          new Sql.In('fingerprint', 'IN', sqlWithReference(withIdxSelect)),
-          Sql.Eq(new Sql.Raw('empty(tree)'), 1),
-          typeIdSelector,
-          serviceNameSelector
-        ))
-    if (process.env.ADVANCED_PROFILES_MERGE_LIMIT) {
-      legacy.orderBy(['timestamp_ns', 'desc']).limit(parseInt(process.env.ADVANCED_PROFILES_MERGE_LIMIT))
-    }
-    withLegacy = new Sql.With('legacy', legacy, !!clusterName)
-    brackLegacy = (new Sql.Select())
-      .select([new Sql.Raw('groupArray(payload)'), 'payloads'])
-      .from(sqlWithReference(withLegacy))
-  }
-  brackLegacy = new Sql.Raw(`(${brackLegacy.toString()})`)
-  const brack1 = new Sql.Raw(`(${joinedAggregatedReq.toString()})`)
-  const brack2 = new Sql.Raw(`(${functionsReq.toString()})`)
-
-  const sqlReq = (new Sql.Select())
-    .select(
-      [brackLegacy, 'legacy'],
-      [brack2, 'functions'],
-      [brack1, 'tree']
-    )
-  if (v2) {
-    sqlReq.with(withJoinedReq, withRawReq)
-  } else {
-    sqlReq.with(withJoinedReq, withRawReq, withLegacy)
-  }
-
-  let start = Date.now()
-  const profiles = await clickhouse.rawRequest(sqlReq.toString() + ' FORMAT RowBinary',
-    null,
-    DATABASE_NAME(),
-    {
-      responseType: 'arraybuffer'
-    })
-  const binData = Uint8Array.from(profiles.data)
-  req.log.debug(`selectMergeStacktraces: profiles downloaded: ${binData.length / 1025}kB in ${Date.now() - start}ms`)
-  require('./pprof-bin/pkg/pprof_bin').init_panic_hook()
-  const _ctxIdx = ++ctxIdx
-  const [legacyLen, shift] = readULeb32(binData, 0)
-  let ofs = shift
-  try {
-    let mergePprofLat = BigInt(0)
-    for (let i = 0; i < legacyLen; i++) {
-      const [profLen, shift] = readULeb32(binData, ofs)
-      ofs += shift
-      start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
-      pprofBin.merge_prof(_ctxIdx,
-        Uint8Array.from(profiles.data.slice(ofs, ofs + profLen)),
-        `${typeRegex.sampleType}:${typeRegex.sampleUnit}`)
-      mergePprofLat += (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
-      ofs += profLen
-    }
-    start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
-    pprofBin.merge_tree(_ctxIdx, Uint8Array.from(profiles.data.slice(ofs)),
-      typeRegex.sampleType + ':' + typeRegex.sampleUnit)
-    const mergeTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
-    start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
-    const resp = pprofBin.export_tree(_ctxIdx, typeRegex.sampleType + ':' + typeRegex.sampleUnit)
-    const exportTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
-    req.log.debug(`merge_pprof: ${mergePprofLat / BigInt(1000000)}ms`)
-    req.log.debug(`merge_tree: ${mergeTreeLat / BigInt(1000000)}ms`)
-    req.log.debug(`export_tree: ${exportTreeLat / BigInt(1000000)}ms`)
-    return res.code(200).send(Buffer.from(resp))
-  } finally {
-    try { pprofBin.drop_tree(_ctxIdx) } catch (e) {}
-  }
+  const resBuffer = await mergeStackTraces(typeRegex, sel, fromTimeSec, toTimeSec, req.log)
+  return res.code(200).send(resBuffer)
 }
 
 const selectSeries = async (req, res) => {
-  const _req = req.body
   const fromTimeSec = Math.floor(req.getStart && req.getStart()
     ? parseInt(req.getStart()) / 1000
     : Date.now() / 1000 - HISTORY_TIMESPAN)
   const toTimeSec = Math.floor(req.getEnd && req.getEnd()
     ? parseInt(req.getEnd()) / 1000
     : Date.now() / 1000)
-  let typeID = _req.getProfileTypeid && _req.getProfileTypeid()
-  if (!typeID) {
-    throw new QrynBadRequest('No type provided')
-  }
-  typeID = parseTypeId(typeID)
-  if (!typeID) {
-    throw new QrynBadRequest('Invalid type provided')
-  }
-  const dist = clusterName ? '_dist' : ''
-  const sampleTypeId = typeID.sampleType + ':' + typeID.sampleUnit
-  const labelSelector = _req.getLabelSelector && _req.getLabelSelector()
-  let groupBy = _req.getGroupByList && _req.getGroupByList()
-  groupBy = groupBy && groupBy.length ? groupBy : null
-  const step = _req.getStep && parseInt(_req.getStep())
-  if (!step || isNaN(step)) {
-    throw new QrynBadRequest('No step provided')
-  }
-  const aggregation = _req.getAggregation && _req.getAggregation()
-
-  const typeIdSelector = Sql.Eq(
-    'type_id',
-    Sql.val(`${typeID.type}:${typeID.periodType}:${typeID.periodUnit}`))
-  const serviceNameSelector = serviceNameSelectorQuery(labelSelector)
-
-  const idxReq = (new Sql.Select())
-    .select(new Sql.Raw('fingerprint'))
-    .from(`${DATABASE_NAME()}.profiles_series_gin`)
-    .where(
-      Sql.And(
-        typeIdSelector,
-        serviceNameSelector,
-        Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
-        Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`)),
-        Sql.Eq(new Sql.Raw(
-          `has(sample_types_units, (${Sql.quoteVal(typeID.sampleType)}, ${Sql.quoteVal(typeID.sampleUnit)}))`),
-        1)
-      )
-    )
-  labelSelectorQuery(idxReq, labelSelector)
-
-  const withIdxReq = (new Sql.With('idx', idxReq, !!clusterName))
-
-  let tagsReq = 'arraySort(p.tags)'
-  if (groupBy) {
-    tagsReq = `arraySort(arrayFilter(x -> x.1 in (${groupBy.map(g => Sql.quoteVal(g)).join(',')}), p.tags))`
-  }
-
-  const labelsReq = (new Sql.Select()).with(withIdxReq).select(
-    'fingerprint',
-    [new Sql.Raw(tagsReq), 'tags'],
-    [groupBy ? new Sql.Raw('cityHash64(tags)') : 'fingerprint', 'new_fingerprint']
-  ).distinct(true).from([`${DATABASE_NAME()}.profiles_series`, 'p'])
-    .where(Sql.And(
-      new Sql.In('fingerprint', 'IN', new Sql.WithReference(withIdxReq)),
-      Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
-      Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`)),
-      typeIdSelector,
-      serviceNameSelector
-    ))
-
-  const withLabelsReq = new Sql.With('labels', labelsReq, !!clusterName)
-
-  let valueCol = new Sql.Raw(
-    `sum(toFloat64(arrayFirst(x -> x.1 == ${Sql.quoteVal(sampleTypeId)}, p.values_agg).2))`)
-  if (aggregation === types.TimeSeriesAggregationType.TIME_SERIES_AGGREGATION_TYPE_AVERAGE) {
-    valueCol = new Sql.Raw(
-      `sum(toFloat64(arrayFirst(x -> x.1 == ${Sql.quoteVal(sampleTypeId)}).2, p.values_agg)) / ` +
-      `sum(toFloat64(arrayFirst(x -> x.1 == ${Sql.quoteVal(sampleTypeId)}).3, p.values_agg))`
-    )
-  }
-
-  const mainReq = (new Sql.Select()).with(withIdxReq, withLabelsReq).select(
-    [new Sql.Raw(`intDiv(p.timestamp_ns, 1000000000 * ${step}) * ${step} * 1000`), 'timestamp_ms'],
-    [new Sql.Raw('labels.new_fingerprint'), 'fingerprint'],
-    [new Sql.Raw('min(labels.tags)'), 'labels'],
-    [valueCol, 'value']
-  ).from([`${DATABASE_NAME()}.profiles${dist}`, 'p']).join(
-    [new Sql.WithReference(withLabelsReq), 'labels'],
-    'ANY LEFT',
-    Sql.Eq(new Sql.Raw('p.fingerprint'), new Sql.Raw('labels.fingerprint'))
-  ).where(
-    Sql.And(
-      new Sql.In('p.fingerprint', 'IN', new Sql.WithReference(withIdxReq)),
-      Sql.Gte('p.timestamp_ns', new Sql.Raw(`${fromTimeSec}000000000`)),
-      Sql.Lt('p.timestamp_ns', new Sql.Raw(`${toTimeSec}000000000`)),
-      typeIdSelector,
-      serviceNameSelector
-    )
-  ).groupBy('timestamp_ns', 'fingerprint')
-    .orderBy(['fingerprint', 'ASC'], ['timestamp_ns', 'ASC'])
-  const strMainReq = mainReq.toString()
-  const chRes = await clickhouse
-    .rawRequest(strMainReq + ' FORMAT JSON', null, DATABASE_NAME())
-
-  let lastFingerprint = null
-  const seriesList = []
-  let lastSeries = null
-  let lastPoints = []
-  for (let i = 0; i < chRes.data.data.length; i++) {
-    const e = chRes.data.data[i]
-    if (lastFingerprint !== e.fingerprint) {
-      lastFingerprint = e.fingerprint
-      lastSeries && lastSeries.setPointsList(lastPoints)
-      lastSeries && seriesList.push(lastSeries)
-      lastPoints = []
-      lastSeries = new types.Series()
-      lastSeries.setLabelsList(e.labels.map(l => {
-        const lp = new types.LabelPair()
-        lp.setName(l[0])
-        lp.setValue(l[1])
-        return lp
-      }))
-    }
-
-    const p = new types.Point()
-    p.setValue(e.value)
-    p.setTimestamp(e.timestamp_ms)
-    lastPoints.push(p)
-  }
-  lastSeries && lastSeries.setPointsList(lastPoints)
-  lastSeries && seriesList.push(lastSeries)
-
-  const resp = new messages.SelectSeriesResponse()
-  resp.setSeriesList(seriesList)
-  return res.code(200).send(Buffer.from(resp.serializeBinary()))
+  return selectSeriesImpl(fromTimeSec, toTimeSec, req.body)
 }
 
 const selectMergeProfile = async (req, res) => {
@@ -607,13 +233,30 @@ const series = async (req, res) => {
       )
     promises.push(clickhouse.rawRequest(labelsReq.toString() + ' FORMAT JSON', null, DATABASE_NAME()))
   }
+  if ((_req.getMatchersList() || []).length === 0) {
+    const labelsReq = (new Sql.Select())
+      .select(
+        ['tags', 'tags'],
+        ['type_id', 'type_id'],
+        ['sample_types_units', '_sample_types_units'])
+      .from([`${DATABASE_NAME()}.profiles_series${dist}`, 'p'])
+      .join('p.sample_types_units', 'array')
+      .where(
+        Sql.And(
+          Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
+          Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`))
+        )
+      )
+    promises.push(clickhouse.rawRequest(labelsReq.toString() + ' FORMAT JSON', null, DATABASE_NAME()))
+  }
   const resp = await Promise.all(promises)
   const response = new messages.SeriesResponse()
   const labelsSet = []
+  const filterLabelNames = _req.getLabelNamesList() || null
   resp.forEach(_res => {
     for (const row of _res.data.data) {
       const labels = new types.Labels()
-      const _labels = []
+      let _labels = []
       for (const tag of row.tags) {
         const pair = new types.LabelPair()
         pair.setName(tag[0])
@@ -636,12 +279,17 @@ const series = async (req, res) => {
         _pair('__profile_type__',
           `${typeId[0]}:${row._sample_types_units[0]}:${row._sample_types_units[1]}:${typeId[1]}:${typeId[2]}`)
       )
-      labels.setLabelsList(_labels)
-      labelsSet.push(labels)
+      if (filterLabelNames && filterLabelNames.length) {
+        _labels = _labels.filter((l) => filterLabelNames.includes(l.getName()))
+      }
+      if (_labels.length > 0) {
+        labels.setLabelsList(_labels)
+        labelsSet.push(labels)
+      }
     }
   })
   response.setLabelsSetList(labelsSet)
-  return res.code(200).send(Buffer.from(response.serializeBinary()))
+  return response
 }
 
 /**
@@ -722,6 +370,53 @@ const specialMatchersQuery = (matchers) => {
   return new Sql.And(...clauses)
 }
 
+const getProfileStats = async (req, res) => {
+  const sql = `
+with non_empty as (select any(1) as non_empty from profiles limit 1),
+     min_date as (select min(date) as min_date, max(date) as max_date from profiles_series),
+     min_time as (
+        select intDiv(min(timestamp_ns), 1000000) as min_time,
+               intDiv(max(timestamp_ns), 1000000) as max_time
+        from profiles
+        where timestamp_ns < toUnixTimestamp((select any (min_date) from min_date) + INTERVAL '1 day') * 1000000000 OR
+            timestamp_ns >= toUnixTimestamp((select any(max_date) from min_date)) * 1000000000
+    )
+select
+    (select any(non_empty) from non_empty) as non_empty,
+    (select any(min_time) from min_time) as min_time,
+    (select any(max_time) from min_time) as max_time
+`
+  const sqlRes = await clickhouse.rawRequest(sql + ' FORMAT JSON', null, DATABASE_NAME())
+  const response = new types.GetProfileStatsResponse()
+  response.setDataIngested(!!sqlRes.data.data[0].non_empty)
+  response.setOldestProfileTime(sqlRes.data.data[0].min_time)
+  response.setNewestProfileTime(sqlRes.data.data[0].max_time)
+  return response
+}
+
+const analyzeQuery = async (req, res) => {
+  const query = req.body.getQuery()
+  const fromTimeSec = Math.floor(req.getStart && req.getStart()
+    ? parseInt(req.getStart()) / 1000
+    : Date.now() / 1000 - HISTORY_TIMESPAN)
+  const toTimeSec = Math.floor(req.getEnd && req.getEnd()
+    ? parseInt(req.getEnd()) / 1000
+    : Date.now() / 1000)
+  console.log(query)
+
+  const scope = new messages.QueryScope()
+  scope.setComponentType('store')
+  scope.setComponentCount(1)
+  const impact = new messages.QueryImpact()
+  impact.setTotalBytesInTimeRange(10 * 1024 * 1024)
+  impact.setTotalQueriedSeries(15)
+  impact.setDeduplicationNeeded(false)
+  const response = new messages.AnalyzeQueryResponse()
+  response.setQueryScopesList([scope])
+  response.setQueryImpact(impact)
+  return response
+}
+
 module.exports.init = (fastify) => {
   const fns = {
     profileTypes: profileTypesHandler,
@@ -730,13 +425,25 @@ module.exports.init = (fastify) => {
     selectMergeStacktraces: selectMergeStacktraces,
     selectSeries: selectSeries,
     selectMergeProfile: selectMergeProfile,
-    series: series
+    series: series,
+    getProfileStats: getProfileStats,
+    analyzeQuery: analyzeQuery
+  }
+  const parsers = {
+    series: jsonParsers.series,
+    getProfileStats: jsonParsers.getProfileStats,
+    labelNames: jsonParsers.labelNames,
+    analyzeQuery: jsonParsers.analyzeQuery
   }
   for (const name of Object.keys(fns)) {
     fastify.post(services.QuerierServiceService[name].path, (req, res) => {
-      return fns[name](req, res)
+      return wrapResponse(fns[name])(req, res)
     }, {
+      'application/json': parsers[name],
       '*': parser(services.QuerierServiceService[name].requestType)
     })
   }
+  settings.init(fastify)
+  render.init(fastify)
+  renderDiff.init(fastify)
 }

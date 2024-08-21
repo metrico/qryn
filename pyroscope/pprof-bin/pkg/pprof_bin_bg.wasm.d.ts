@@ -3,6 +3,7 @@
 export const memory: WebAssembly.Memory;
 export function merge_prof(a: number, b: number, c: number, d: number, e: number): void;
 export function merge_tree(a: number, b: number, c: number, d: number, e: number): void;
+export function diff_tree(a: number, b: number, c: number, d: number, e: number): void;
 export function export_tree(a: number, b: number, c: number, d: number): void;
 export function export_trees_pprof(a: number, b: number, c: number): void;
 export function drop_tree(a: number): void;
