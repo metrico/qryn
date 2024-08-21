@@ -39,6 +39,11 @@ jobs:
     - run: npm run postinstall
     - run: git submodule init
     - run: git submodule update
+    - name: Install Compose
+      uses: ndeloof/install-compose-action@v0.0.1
+      with:
+        version: v2.1.0 # defaults to 'latest'
+        legacy: true    # will also install in PATH as `docker-compose`
     - run: docker-compose -f docker/e2e/docker-compose-cluster.yaml up -d
     - run: sleep 5
     - name: Workflow Telemetry
