@@ -133,7 +133,6 @@ const selectSeriesImpl = async (fromTimeSec, toTimeSec, payload) => {
 
   const resp = new messages.SelectSeriesResponse()
   resp.setSeriesList(seriesList)
-  console.log(`Queried ${seriesList.length} series`)
   return resp
 }
 

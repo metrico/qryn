@@ -136,7 +136,6 @@ const bfs = (t) => {
  * @param {string} sampleType
  */
 const createFlameGraph = (pprofBinaries, sampleType) => {
-  console.log(`got ${pprofBinaries.length} profiles`)
   const tree = new Tree()
   tree.sampleType = sampleType
   let start = Date.now()
@@ -144,10 +143,8 @@ const createFlameGraph = (pprofBinaries, sampleType) => {
     const prof = messages.Profile.deserializeBinary(p)
     tree.merge(prof)
   }
-  console.log(`ds + merge took ${Date.now() - start} ms`)
   start = Date.now()
   const levels = bfs(tree)
-  console.log(`bfs took ${Date.now() - start} ms`)
   return { levels: levels, names: tree.names, total: parseInt(tree.root.total), maxSelf: parseInt(tree.maxSelf) }
 }
 
