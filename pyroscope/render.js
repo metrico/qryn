@@ -223,7 +223,7 @@ const parseQuery = (query) => {
   let strLabels = (match[3] || '').trim()
   const labels = []
   while (strLabels && strLabels !== '' && strLabels !== '}') {
-    const m = strLabels.match(/^([,{])\s*([A-Za-z0-9_]+)\s*(!=|!~|=~|=)\s*("([^"\\]|\\.)*")/)
+    const m = strLabels.match(/^(,)?\s*([A-Za-z0-9_]+)\s*(!=|!~|=~|=)\s*("([^"\\]|\\.)*")/)
     if (!m) {
       throw new Error('Invalid label selector')
     }

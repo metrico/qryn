@@ -97,8 +97,8 @@ const selectSeriesImpl = async (fromTimeSec, toTimeSec, payload) => {
       typeIdSelector,
       serviceNameSelector
     )
-  ).groupBy('timestamp_ns', 'fingerprint')
-    .orderBy(['fingerprint', 'ASC'], ['timestamp_ns', 'ASC'])
+  ).groupBy('timestamp_ms', 'fingerprint')
+    .orderBy(['fingerprint', 'ASC'], ['timestamp_ms', 'ASC'])
   const strMainReq = mainReq.toString()
   const chRes = await clickhouse
     .rawRequest(strMainReq + ' FORMAT JSON', null, DATABASE_NAME())
