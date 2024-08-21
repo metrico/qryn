@@ -214,18 +214,21 @@ function sizeToBackfill (startMs, endMs, stepSec) {
  */
 const parseQuery = (query) => {
   query = query.trim()
-  const match = query.match(/^([^{]+)\s*(\{(.*)})?$/)
+  const match = query.match(/^([^{\s]+)\s*(\{(.*)})?$/)
   if (!match) {
     return null
   }
   const typeId = match[1]
   const typeDesc = parseTypeId(typeId)
-  const strLabels = match[3] || ''
+  let strLabels = (match[3] || '').trim()
   const labels = []
-  if (strLabels && strLabels !== '') {
-    for (const m in strLabels.matchAll(/([,{])\s*([^A-Za-z0-9_]+)\s*(!=|!~|=~|=)\s*("([^"\\]|\\.)*")/g)) {
-      labels.push([m[2], m[3], m[4]])
+  while (strLabels && strLabels !== '' && strLabels !== '}') {
+    const m = strLabels.match(/^([,{])\s*([A-Za-z0-9_]+)\s*(!=|!~|=~|=)\s*("([^"\\]|\\.)*")/)
+    if (!m) {
+      throw new Error('Invalid label selector')
     }
+    labels.push([m[2], m[3], m[4]])
+    strLabels = strLabels.substring(m[0].length).trim()
   }
   const profileType = new types.ProfileType()
   profileType.setId(typeId)
