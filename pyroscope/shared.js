@@ -102,6 +102,7 @@ const serviceNameSelectorQuery = (labelSelector) => {
   return conds || empty
 }
 
+
 const parseLabelSelector = (labelSelector) => {
   if (labelSelector.endsWith(',}')) {
     labelSelector = labelSelector.slice(0, -2) + '}'
