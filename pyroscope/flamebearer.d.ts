@@ -52,3 +52,16 @@ export interface heatmap {
     minDepth: uint64,
     maxDepth: uint64
 }
+
+export interface level {
+    values: number[]
+}
+
+export interface flamegraphDiff {
+    name: string[],
+    levels: level[],
+    total: int64,
+    maxSelf: int64,
+    leftTicks: int64,
+    rightTicks: int64
+}

@@ -13,6 +13,13 @@ export function merge_prof(id: number, bytes: Uint8Array, sample_type: string): 
 */
 export function merge_tree(id: number, bytes: Uint8Array, sample_type: string): void;
 /**
+* @param {number} id1
+* @param {number} id2
+* @param {string} sample_type
+* @returns {Uint8Array}
+*/
+export function diff_tree(id1: number, id2: number, sample_type: string): Uint8Array;
+/**
 * @param {number} id
 * @param {string} sample_type
 * @returns {Uint8Array}

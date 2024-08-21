@@ -9,6 +9,7 @@ const { QrynBadRequest } = require('../lib/handlers/errors')
 const { clusterName } = require('../common')
 const logger = require('../lib/logger')
 const jsonParsers = require('./json_parsers')
+const renderDiff = require('./render_diff')
 const {
   parser,
   wrapResponse,
@@ -444,4 +445,5 @@ module.exports.init = (fastify) => {
   }
   settings.init(fastify)
   render.init(fastify)
+  renderDiff.init(fastify)
 }

@@ -248,5 +248,7 @@ const init = (fastify) => {
 }
 
 module.exports = {
-  init
+  init,
+  parseQuery,
+  toFlamebearer
 }

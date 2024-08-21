@@ -22,7 +22,9 @@ const sqlWithReference = (ref) => {
 
 let ctxIdx = 0
 
-const mergeStackTraces = async (typeRegex, sel, fromTimeSec, toTimeSec, log) => {
+const newCtxIdx = () => ++ctxIdx
+
+const importStackTraces = async (typeRegex, sel, fromTimeSec, toTimeSec, log, _ctxIdx, save) => {
   const dist = clusterName ? '_dist' : ''
   const v2 = checkVersion('profiles_v2', (fromTimeSec - 3600) * 1000)
   const serviceNameSelector = serviceNameSelectorQuery(sel)
@@ -127,30 +129,36 @@ const mergeStackTraces = async (typeRegex, sel, fromTimeSec, toTimeSec, log) => 
   const binData = Uint8Array.from(profiles.data)
   log.debug(`selectMergeStacktraces: profiles downloaded: ${binData.length / 1025}kB in ${Date.now() - start}ms`)
   require('./pprof-bin/pkg/pprof_bin').init_panic_hook()
-  const _ctxIdx = ++ctxIdx
   const [legacyLen, shift] = readULeb32(binData, 0)
   let ofs = shift
+  let mergePprofLat = BigInt(0)
+  for (let i = 0; i < legacyLen; i++) {
+    const [profLen, shift] = readULeb32(binData, ofs)
+    ofs += shift
+    start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
+    pprofBin.merge_prof(_ctxIdx,
+      Uint8Array.from(profiles.data.slice(ofs, ofs + profLen)),
+      `${typeRegex.sampleType}:${typeRegex.sampleUnit}`)
+    mergePprofLat += (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
+    ofs += profLen
+  }
+  start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
+  save && require('fs').writeFileSync(`/home/hromozeka/QXIP/qryn/data.${Date.now()}.bin`,
+    Buffer.from(Uint8Array.from(profiles.data.slice(ofs))))
+  pprofBin.merge_tree(_ctxIdx, Uint8Array.from(profiles.data.slice(ofs)),
+    typeRegex.sampleType + ':' + typeRegex.sampleUnit)
+  const mergeTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
+  log.debug(`merge_pprof: ${mergePprofLat / BigInt(1000000)}ms`)
+  log.debug(`merge_tree: ${mergeTreeLat / BigInt(1000000)}ms`)
+}
+
+const mergeStackTraces = async (typeRegex, sel, fromTimeSec, toTimeSec, log) => {
+  const _ctxIdx = newCtxIdx()
   try {
-    let mergePprofLat = BigInt(0)
-    for (let i = 0; i < legacyLen; i++) {
-      const [profLen, shift] = readULeb32(binData, ofs)
-      ofs += shift
-      start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
-      pprofBin.merge_prof(_ctxIdx,
-        Uint8Array.from(profiles.data.slice(ofs, ofs + profLen)),
-        `${typeRegex.sampleType}:${typeRegex.sampleUnit}`)
-      mergePprofLat += (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
-      ofs += profLen
-    }
-    start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
-    pprofBin.merge_tree(_ctxIdx, Uint8Array.from(profiles.data.slice(ofs)),
-      typeRegex.sampleType + ':' + typeRegex.sampleUnit)
-    const mergeTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
-    start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
+    await importStackTraces(typeRegex, sel, fromTimeSec, toTimeSec, log, _ctxIdx)
+    const start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
     const resp = pprofBin.export_tree(_ctxIdx, typeRegex.sampleType + ':' + typeRegex.sampleUnit)
     const exportTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
-    log.debug(`merge_pprof: ${mergePprofLat / BigInt(1000000)}ms`)
-    log.debug(`merge_tree: ${mergeTreeLat / BigInt(1000000)}ms`)
     log.debug(`export_tree: ${exportTreeLat / BigInt(1000000)}ms`)
     return Buffer.from(resp)
   } finally {
@@ -159,5 +167,7 @@ const mergeStackTraces = async (typeRegex, sel, fromTimeSec, toTimeSec, log) => 
 }
 
 module.exports = {
-  mergeStackTraces
+  mergeStackTraces,
+  importStackTraces,
+  newCtxIdx
 }
