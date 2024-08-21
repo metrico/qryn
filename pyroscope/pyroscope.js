@@ -402,7 +402,6 @@ const analyzeQuery = async (req, res) => {
   const toTimeSec = Math.floor(req.getEnd && req.getEnd()
     ? parseInt(req.getEnd()) / 1000
     : Date.now() / 1000)
-  console.log(query)
 
   const scope = new messages.QueryScope()
   scope.setComponentType('store')

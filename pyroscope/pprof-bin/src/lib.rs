@@ -23,6 +23,8 @@ use std::vec::Vec;
 use wasm_bindgen::prelude::*;
 use std::sync::Arc;
 
+//TODO: REMOVE
+use std::fs;
 
 pub mod pprof_pb {
 
@@ -80,6 +82,9 @@ struct Tree {
 impl Tree {
     pub fn total(&self) -> i64 {
         let mut total: i64 = 0;
+        if !self.nodes.contains_key(&0) {
+            return  0 as i64;
+        }
         for c in 0..self.nodes.get(&0).unwrap().len() {
             let _c = &self.nodes.get(&0).unwrap()[c];
             total += _c.total[0];

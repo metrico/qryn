@@ -143,8 +143,6 @@ const importStackTraces = async (typeRegex, sel, fromTimeSec, toTimeSec, log, _c
     ofs += profLen
   }
   start = process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)
-  save && require('fs').writeFileSync(`/home/hromozeka/QXIP/qryn/data.${Date.now()}.bin`,
-    Buffer.from(Uint8Array.from(profiles.data.slice(ofs))))
   pprofBin.merge_tree(_ctxIdx, Uint8Array.from(profiles.data.slice(ofs)),
     typeRegex.sampleType + ':' + typeRegex.sampleUnit)
   const mergeTreeLat = (process.hrtime?.bigint ? process.hrtime.bigint() : BigInt(0)) - start
