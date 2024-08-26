@@ -185,7 +185,7 @@ const selectMergeProfile = async (req, res) => {
   )
   const approxData = approx.data.data[0]
   logger.debug(`Approximate size: ${approxData.size} bytes, profiles count: ${approxData.count}`)
-  const chunksCount = Math.max(Math.ceil(approxData.size / (50 * 1024)), 1)
+  const chunksCount = Math.max(Math.ceil(approxData.size / (50 * 1024 * 1024)), 1)
   logger.debug(`Request is processed in: ${chunksCount} chunks`)
   const chunkSize = Math.ceil(approxData.count / chunksCount)
   const promises = []
