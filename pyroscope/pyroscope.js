@@ -19,7 +19,7 @@ const {
   HISTORY_TIMESPAN
 } = require('./shared')
 const settings = require('./settings')
-const { mergeStackTraces } = require('./merge_stack_traces')
+const { mergeStackTraces, newCtxIdx } = require('./merge_stack_traces')
 const { selectSeriesImpl } = require('./select_series')
 const render = require('./render')
 
@@ -166,25 +166,55 @@ const selectMergeProfile = async (req, res) => {
   const withIdxReq = (new Sql.With('idx', idxReq, !!clusterName))
   const mainReq = (new Sql.Select())
     .with(withIdxReq)
-    .select([new Sql.Raw('groupArray(payload)'), 'payload'])
+    .select([new Sql.Raw('payload'), 'payload'])
     .from([`${DATABASE_NAME()}.profiles${dist}`, 'p'])
     .where(Sql.And(
       new Sql.In('p.fingerprint', 'IN', new Sql.WithReference(withIdxReq)),
       Sql.Gte('p.timestamp_ns', new Sql.Raw(`${fromTimeSec}000000000`)),
       Sql.Lt('p.timestamp_ns', new Sql.Raw(`${toTimeSec}000000000`))))
-
-  const profiles = await clickhouse.rawRequest(mainReq.toString() + ' FORMAT RowBinary',
-    null,
-    DATABASE_NAME(),
-    {
-      responseType: 'arraybuffer'
-    })
-  const binData = Uint8Array.from(profiles.data)
-
+    .orderBy(new Sql.Raw('timestamp_ns'))
+  const approxReq = (new Sql.Select())
+    .select(
+      [new Sql.Raw('sum(length(payload))'), 'size'],
+      [new Sql.Raw('count()'), 'count']
+    )
+    .from([new Sql.Raw('(' + mainReq.toString() + ')'), 'main'])
+  console.log('!!!!!' + approxReq.toString() + ' FORMAT JSON')
+  const approx = await clickhouse.rawRequest(
+    approxReq.toString() + ' FORMAT JSON', null, DATABASE_NAME()
+  )
+  const approxData = approx.data.data[0]
+  logger.debug(`Approximate size: ${approxData.size} bytes, profiles count: ${approxData.count}`)
+  const chunksCount = Math.max(Math.ceil(approxData.size / (50 * 1024)), 1)
+  logger.debug(`Request is processed in: ${chunksCount} chunks`)
+  const chunkSize = Math.ceil(approxData.count / chunksCount)
+  const promises = []
   require('./pprof-bin/pkg/pprof_bin').init_panic_hook()
+  let processNs = BigInt(0)
   const start = process.hrtime.bigint()
-  const response = pprofBin.export_trees_pprof(binData)
-  logger.debug(`Pprof export took ${process.hrtime.bigint() - start} nanoseconds`)
+  const ctx = newCtxIdx()
+  for (let i = 0; i < chunksCount; i++) {
+    promises.push((async (i) => {
+      logger.debug(`Chunk ${i}: ${mainReq.toString() + ` LIMIT ${chunkSize} OFFSET ${i * chunkSize} FORMAT RowBinary`}`)
+      const profiles = await clickhouse.rawRequest(mainReq.toString() + ` LIMIT ${chunkSize} OFFSET ${i * chunkSize} FORMAT RowBinary`,
+        null,
+        DATABASE_NAME(),
+        {
+          responseType: 'arraybuffer'
+        })
+      const binData = Uint8Array.from(profiles.data)
+      const start = process.hrtime.bigint()
+      pprofBin.merge_trees_pprof(ctx, binData)
+      const end = process.hrtime.bigint()
+      processNs += end - start
+    })(i))
+  }
+  await Promise.all(promises)
+  const response = pprofBin.export_trees_pprof(ctx)
+  const end = process.hrtime.bigint()
+
+  logger.debug(`Pprof merge took ${processNs} nanoseconds`)
+  logger.debug(`Pprof load + merge took ${end - start} nanoseconds`)
   return res.code(200).send(Buffer.from(response))
 }
 
