@@ -12,7 +12,7 @@ const renderDiff = async (req, res) => {
       parseParams(req.query.leftQuery, req.query.leftFrom, req.query.leftUntil);
     const [rightQuery, rightFromTimeSec, rightToTimeSec] =
       parseParams(req.query.rightQuery, req.query.rightFrom, req.query.rightUntil);
-    if (leftQuery.typeId != rightQuery.typeId) {
+    if (leftQuery.typeId !== rightQuery.typeId) {
       res.code(400).send('Different type IDs')
       return
     }
