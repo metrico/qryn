@@ -181,7 +181,6 @@ const selectMergeProfile = async (req, res) => {
         [new Sql.Raw('count()'), 'count']
       )
       .from([new Sql.Raw('(' + mainReq.toString() + ')'), 'main'])
-    console.log('!!!!!' + approxReq.toString() + ' FORMAT JSON')
     const approx = await clickhouse.rawRequest(
       approxReq.toString() + ' FORMAT JSON', null, DATABASE_NAME()
     )
@@ -197,7 +196,7 @@ const selectMergeProfile = async (req, res) => {
 
     for (let i = 0; i < chunksCount; i++) {
       promises.push((async (i) => {
-        logger.debug(`Chunk ${i}: ${mainReq.toString() + ` LIMIT ${chunkSize} OFFSET ${i * chunkSize} FORMAT RowBinary`}`)
+        logger.debug(`Processing chunk ${i}`)
         const profiles = await clickhouse.rawRequest(mainReq.toString() + ` LIMIT ${chunkSize} OFFSET ${i * chunkSize} FORMAT RowBinary`,
           null,
           DATABASE_NAME(),
@@ -205,6 +204,7 @@ const selectMergeProfile = async (req, res) => {
             responseType: 'arraybuffer'
           })
         const binData = Uint8Array.from(profiles.data)
+        logger.debug(`Chunk ${i} - ${binData.length} bytes`)
         const start = process.hrtime.bigint()
         pprofBin.merge_trees_pprof(ctx, binData)
         const end = process.hrtime.bigint()
