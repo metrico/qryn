@@ -26,12 +26,12 @@ const render = require('./render')
 const profileTypesHandler = async (req, res) => {
   const dist = clusterName ? '_dist' : ''
   const _res = new messages.ProfileTypesResponse()
-  const fromTimeSec = req.body && req.body.getStart
+  const fromTimeSec = Math.floor(req.body && req.body.getStart
     ? parseInt(req.body.getStart()) / 1000
-    : (Date.now() - HISTORY_TIMESPAN) / 1000
-  const toTimeSec = req.body && req.body.getEnd
+    : (Date.now() - HISTORY_TIMESPAN) / 1000)
+  const toTimeSec = Math.floor(req.body && req.body.getEnd
     ? parseInt(req.body.getEnd()) / 1000
-    : Date.now() / 1000
+    : Date.now() / 1000)
   const profileTypes = await clickhouse.rawRequest(`SELECT DISTINCT type_id, sample_type_unit 
 FROM profiles_series${dist} ARRAY JOIN sample_types_units as sample_type_unit
 WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)})) FORMAT JSON`,
@@ -54,12 +54,12 @@ WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDa
 
 const labelNames = async (req, res) => {
   const dist = clusterName ? '_dist' : ''
-  const fromTimeSec = req.body && req.body.getStart
+  const fromTimeSec = Math.floor(req.body && req.body.getStart
     ? parseInt(req.body.getStart()) / 1000
-    : (Date.now() - HISTORY_TIMESPAN) / 1000
-  const toTimeSec = req.body && req.body.getEnd
+    : (Date.now() - HISTORY_TIMESPAN) / 1000)
+  const toTimeSec = Math.floor(req.body && req.body.getEnd
     ? parseInt(req.body.getEnd()) / 1000
-    : Date.now() / 1000
+    : Date.now() / 1000)
   const labelNames = await clickhouse.rawRequest(`SELECT DISTINCT key 
 FROM profiles_series_keys${dist}
 WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)})) FORMAT JSON`,
@@ -74,12 +74,12 @@ const labelValues = async (req, res) => {
   const name = req.body && req.body.getName
     ? req.body.getName()
     : ''
-  const fromTimeSec = req.body && req.body.getStart && req.body.getStart()
+  const fromTimeSec = Math.floor(req.body && req.body.getStart && req.body.getStart()
     ? parseInt(req.body.getStart()) / 1000
-    : (Date.now() - HISTORY_TIMESPAN) / 1000
-  const toTimeSec = req.body && req.body.getEnd && req.body.getEnd()
+    : (Date.now() - HISTORY_TIMESPAN) / 1000)
+  const toTimeSec = Math.floor(req.body && req.body.getEnd && req.body.getEnd()
     ? parseInt(req.body.getEnd()) / 1000
-    : Date.now() / 1000
+    : Date.now() / 1000)
   if (!name) {
     throw new Error('No name provided')
   }
@@ -113,7 +113,7 @@ const selectMergeStacktracesV2 = async (req, res) => {
 const selectSeries = async (req, res) => {
   const fromTimeSec = Math.floor(req.getStart && req.getStart()
     ? parseInt(req.getStart()) / 1000
-    : Date.now() / 1000 - HISTORY_TIMESPAN)
+    : (Date.now() - HISTORY_TIMESPAN) / 1000)
   const toTimeSec = Math.floor(req.getEnd && req.getEnd()
     ? parseInt(req.getEnd()) / 1000
     : Date.now() / 1000)
@@ -127,12 +127,10 @@ const selectMergeProfile = async (req, res) => {
   const ctx = newCtxIdx()
   try {
     const _req = req.body
-    const fromTimeSec =
-    Math.floor(_req && _req.getStart
+    const fromTimeSec = Math.floor(_req && _req.getStart
       ? parseInt(_req.getStart()) / 1000
       : (Date.now() - HISTORY_TIMESPAN) / 1000)
-    const toTimeSec =
-    Math.floor(_req && _req.getEnd
+    const toTimeSec = Math.floor(_req && _req.getEnd
       ? parseInt(_req.getEnd()) / 1000
       : Date.now() / 1000)
     let typeID = _req.getProfileTypeid && _req.getProfileTypeid()
@@ -250,7 +248,7 @@ const series = async (req, res) => {
   const _req = req.body
   const fromTimeSec = Math.floor(req.getStart && req.getStart()
     ? parseInt(req.getStart()) / 1000
-    : Date.now() / 1000 - HISTORY_TIMESPAN)
+    : (Date.now() - HISTORY_TIMESPAN) / 1000)
   const toTimeSec = Math.floor(req.getEnd && req.getEnd()
     ? parseInt(req.getEnd()) / 1000
     : Date.now() / 1000)
@@ -456,7 +454,7 @@ const analyzeQuery = async (req, res) => {
   const query = req.body.getQuery()
   const fromTimeSec = Math.floor(req.getStart && req.getStart()
     ? parseInt(req.getStart()) / 1000
-    : Date.now() / 1000 - HISTORY_TIMESPAN)
+    : (Date.now() - HISTORY_TIMESPAN) / 1000)
   const toTimeSec = Math.floor(req.getEnd && req.getEnd()
     ? parseInt(req.getEnd()) / 1000
     : Date.now() / 1000)
