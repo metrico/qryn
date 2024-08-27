@@ -128,12 +128,12 @@ const selectMergeProfile = async (req, res) => {
   try {
     const _req = req.body
     const fromTimeSec =
-    Math.floor(req.body && req.body.getStart
-      ? parseInt(req.body.getStart()) / 1000
+    Math.floor(_req && _req.getStart
+      ? parseInt(_req.getStart()) / 1000
       : (Date.now() - HISTORY_TIMESPAN) / 1000)
     const toTimeSec =
-    Math.floor(req.body && req.body.getEnd
-      ? parseInt(req.body.getEnd()) / 1000
+    Math.floor(_req && _req.getEnd
+      ? parseInt(_req.getEnd()) / 1000
       : Date.now() / 1000)
     let typeID = _req.getProfileTypeid && _req.getProfileTypeid()
     if (!typeID) {
