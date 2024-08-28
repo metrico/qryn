@@ -1,6 +1,6 @@
 const { QrynBadRequest } = require('../lib/handlers/errors')
 const Sql = require('@cloki/clickhouse-sql')
-const compiler = require('../parser/bnf')
+const types = require('./types/v1/types_pb')
 /**
  *
  * @param payload {ReadableStream}
@@ -77,14 +77,14 @@ const serviceNameSelectorQuery = (labelSelector) => {
   }
   const labelSelectorScript = parseLabelSelector(labelSelector)
   let conds = null
-  for (const rule of labelSelectorScript.Children('log_stream_selector_rule')) {
-    const label = rule.Child('label').value
+  for (const rule of labelSelectorScript) {
+    const label = rule[0]
     if (label !== 'service_name') {
       continue
     }
-    const val = JSON.parse(rule.Child('quoted_str').value)
+    const val = JSON.parse(rule[2])
     let valRul = null
-    switch (rule.Child('operator').value) {
+    switch (rule[1]) {
       case '=':
         valRul = Sql.Eq(new Sql.Raw('service_name'), Sql.val(val))
         break
@@ -102,12 +102,54 @@ const serviceNameSelectorQuery = (labelSelector) => {
   return conds || empty
 }
 
-
-const parseLabelSelector = (labelSelector) => {
-  if (labelSelector.endsWith(',}')) {
-    labelSelector = labelSelector.slice(0, -2) + '}'
+/**
+ *
+ * @param query {string}
+ */
+const parseQuery = (query) => {
+  query = query.trim()
+  const match = query.match(/^([^{\s]+)\s*(\{(.*)})?$/)
+  if (!match) {
+    return null
   }
-  return compiler.ParseScript(labelSelector).rootToken
+  const typeId = match[1]
+  const typeDesc = parseTypeId(typeId)
+  const strLabels = (match[3] || '').trim()
+  const labels = parseLabelSelector(strLabels)
+  const profileType = new types.ProfileType()
+  profileType.setId(typeId)
+  profileType.setName(typeDesc.type)
+  profileType.setSampleType(typeDesc.sampleType)
+  profileType.setSampleUnit(typeDesc.sampleUnit)
+  profileType.setPeriodType(typeDesc.periodType)
+  profileType.setPeriodUnit(typeDesc.periodUnit)
+  return {
+    typeId,
+    typeDesc,
+    labels,
+    labelSelector: strLabels,
+    profileType
+  }
+}
+
+const parseLabelSelector = (strLabels) => {
+  strLabels = strLabels.trim()
+  if (strLabels.startsWith('{')) {
+    strLabels = strLabels.slice(1)
+  }
+  if (strLabels.endsWith('}')) {
+    strLabels = strLabels.slice(0, -1)
+  }
+  const labels = []
+  while (strLabels && strLabels !== '' && strLabels !== '}' && strLabels !== ',') {
+    const m = strLabels.match(/^(,)?\s*([A-Za-z0-9_]+)\s*(!=|!~|=~|=)\s*("([^"\\]|\\.)*")/)
+    if (!m) {
+      throw new Error('Invalid label selector')
+    }
+    labels.push([m[2], m[3], m[4]])
+    strLabels = strLabels.substring(m[0].length).trim()
+  }
+  return labels
 }
 
 /**
@@ -128,7 +170,6 @@ const parseTypeId = (typeId) => {
   }
 }
 
-
 /**
  *
  * @param {Sql.Select} query
@@ -140,10 +181,10 @@ const labelSelectorQuery = (query, labelSelector) => {
   }
   const labelSelectorScript = parseLabelSelector(labelSelector)
   const labelsConds = []
-  for (const rule of labelSelectorScript.Children('log_stream_selector_rule')) {
-    const val = JSON.parse(rule.Child('quoted_str').value)
+  for (const rule of labelSelectorScript) {
+    const val = JSON.parse(rule[2])
     let valRul = null
-    switch (rule.Child('operator').value) {
+    switch (rule[1]) {
       case '=':
         valRul = Sql.Eq(new Sql.Raw('val'), Sql.val(val))
         break
@@ -157,7 +198,7 @@ const labelSelectorQuery = (query, labelSelector) => {
         valRul = Sql.Ne(new Sql.Raw(`match(val, ${Sql.quoteVal(val)})`), 1)
     }
     const labelSubCond = Sql.And(
-      Sql.Eq('key', Sql.val(rule.Child('label').value)),
+      Sql.Eq('key', Sql.val(rule[0])),
       valRul
     )
     labelsConds.push(labelSubCond)
@@ -183,5 +224,6 @@ module.exports = {
   serviceNameSelectorQuery,
   parseLabelSelector,
   labelSelectorQuery,
-  HISTORY_TIMESPAN
+  HISTORY_TIMESPAN,
+  parseQuery
 }
