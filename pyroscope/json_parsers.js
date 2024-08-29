@@ -37,6 +37,18 @@ const labelNames = async (req, payload) => {
   }
 }
 
+const labelValues = async (req, payload) => {
+  req.type = 'json'
+  let body = await bufferize(payload)
+  body = JSON.parse(body.toString())
+  return {
+    getName: () => body.name,
+    getMatchers: () => body.matchers,
+    getStart: () => body.start,
+    getEnd: () => body.end
+  }
+}
+
 const analyzeQuery = async (req, payload) => {
   req.type = 'json'
   let body = await bufferize(payload)
@@ -52,6 +64,7 @@ module.exports = {
   series,
   getProfileStats,
   labelNames,
+  labelValues,
   settingsGet,
   analyzeQuery
 }

@@ -488,6 +488,7 @@ module.exports.init = (fastify) => {
     series: jsonParsers.series,
     getProfileStats: jsonParsers.getProfileStats,
     labelNames: jsonParsers.labelNames,
+    labelValues: jsonParsers.labelValues,
     analyzeQuery: jsonParsers.analyzeQuery
   }
   for (const name of Object.keys(fns)) {
