@@ -442,6 +442,9 @@ module.exports.transpileSeries = (request) => {
     const _query = getQuery(req)
     query.withs.idx_sel.query.sqls.push(_query.withs.idx_sel.query)
   }
+  if (process.env.ADVANCED_SERIES_REQUEST_LIMIT) {
+    query.limit(process.env.ADVANCED_SERIES_REQUEST_LIMIT)
+  }
   setQueryParam(query, sharedParamNames.timeSeriesTable, `${DATABASE_NAME()}.time_series${dist}`)
   setQueryParam(query, sharedParamNames.samplesTable, `${DATABASE_NAME()}.${samplesReadTableName()}${dist}`)
   // logger.debug(query.toString())

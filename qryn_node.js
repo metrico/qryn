@@ -5,6 +5,7 @@
  * (C) 2018-2024 QXIP BV
  */
 const { boolEnv, readerMode, writerMode } = require('./common')
+const { Duplex } = require('stream')
 
 this.readonly = boolEnv('READONLY')
 this.http_user = process.env.QRYN_LOGIN || process.env.CLOKI_LOGIN || undefined
@@ -54,6 +55,7 @@ this.pushOTLP = DATABASE.pushOTLP
 this.queryTempoTags = DATABASE.queryTempoTags
 this.queryTempoValues = DATABASE.queryTempoValues
 let profiler = null
+const pako = require('pako')
 
 const {
   shaper,
@@ -121,7 +123,37 @@ let fastify = require('fastify')({
     })
     done()
   }))
-  await fastify.register(require('@fastify/compress'))
+  await fastify.register(require('@fastify/compress'), {
+    encodings: ['gzip'],
+    zlib: {
+      createGzip: () => {
+        const deflator = new pako.Deflate({ gzip: true })
+        let lastChunk = null
+        const res = new Duplex({
+          write: (chunk, encoding, next) => {
+            lastChunk && deflator.push(lastChunk)
+            lastChunk = chunk
+            next()
+          },
+          read: function (size) {
+          },
+          final (callback) {
+            deflator.onEnd = async () => {
+              res.push(null)
+              callback(null)
+            }
+            !lastChunk && callback()
+            lastChunk && deflator.push(lastChunk, true)
+          },
+          emitClose: true
+        })
+        deflator.onData = (chunk) => {
+          res.push(chunk)
+        }
+        return res
+      }
+    }
+  })
   await fastify.register(require('@fastify/url-data'))
   await fastify.register(require('@fastify/websocket'))
 
