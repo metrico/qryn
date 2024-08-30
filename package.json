@@ -79,7 +79,8 @@
     "basic-auth": "^2.0.1",
     "google-protobuf": "^3.21.2",
     "@grpc/grpc-js": "^1.10.6",
-    "@grpc/proto-loader": "^0.7.12"
+    "@grpc/proto-loader": "^0.7.12",
+    "pako": "^2.1.0"
   },
   "devDependencies": {
     "@elastic/elasticsearch": "^8.5.0",
