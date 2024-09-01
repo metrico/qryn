@@ -5,29 +5,36 @@ const querierMessages = require('./querier_pb')
 const types = require('./types/v1/types_pb')
 
 const renderDiff = async (req, res) => {
-  const [leftQuery, leftFromTimeSec, leftToTimeSec] =
-    parseParams(req.query.leftQuery, req.query.leftFrom, req.query.leftUntil);
-  const [rightQuery, rightFromTimeSec, rightToTimeSec] =
-    parseParams(req.query.rightQuery, req.query.rightFrom, req.query.rightUntil);
-  if (leftQuery.typeId != rightQuery.typeId) {
-    res.code(400).send('Different type IDs')
-    return
-  }
   const leftCtxIdx = newCtxIdx()
-  await importStackTraces(leftQuery.typeDesc, '{' + leftQuery.labelSelector + '}', leftFromTimeSec, leftToTimeSec, req.log, leftCtxIdx, true)
   const rightCtxIdx = newCtxIdx()
-  await importStackTraces(rightQuery.typeDesc, '{' + rightQuery.labelSelector + '}', rightFromTimeSec, rightToTimeSec, req.log, rightCtxIdx, true)
-  const flamegraphDiffBin = pprofBin.diff_tree(leftCtxIdx, rightCtxIdx,
-    `${leftQuery.typeDesc.sampleType}:${leftQuery.typeDesc.sampleUnit}`)
-  const profileType = new types.ProfileType()
-  profileType.setId(leftQuery.typeId)
-  profileType.setName(leftQuery.typeDesc.type)
-  profileType.setSampleType(leftQuery.typeDesc.sampleType)
-  profileType.setSampleUnit(leftQuery.typeDesc.sampleUnit)
-  profileType.setPeriodType(leftQuery.typeDesc.periodType)
-  profileType.setPeriodUnit(leftQuery.typeDesc.periodUnit)
-  const diff = querierMessages.FlameGraphDiff.deserializeBinary(flamegraphDiffBin)
-  return res.code(200).send(diffToFlamegraph(diff, profileType).flamebearerProfileV1)
+  try {
+    const [leftQuery, leftFromTimeSec, leftToTimeSec] =
+      parseParams(req.query.leftQuery, req.query.leftFrom, req.query.leftUntil);
+    const [rightQuery, rightFromTimeSec, rightToTimeSec] =
+      parseParams(req.query.rightQuery, req.query.rightFrom, req.query.rightUntil);
+    if (leftQuery.typeId !== rightQuery.typeId) {
+      res.code(400).send('Different type IDs')
+      return
+    }
+
+    await importStackTraces(leftQuery.typeDesc, '{' + leftQuery.labelSelector + '}', leftFromTimeSec, leftToTimeSec, req.log, leftCtxIdx, true)
+
+    await importStackTraces(rightQuery.typeDesc, '{' + rightQuery.labelSelector + '}', rightFromTimeSec, rightToTimeSec, req.log, rightCtxIdx, true)
+    const flamegraphDiffBin = pprofBin.diff_tree(leftCtxIdx, rightCtxIdx,
+      `${leftQuery.typeDesc.sampleType}:${leftQuery.typeDesc.sampleUnit}`)
+    const profileType = new types.ProfileType()
+    profileType.setId(leftQuery.typeId)
+    profileType.setName(leftQuery.typeDesc.type)
+    profileType.setSampleType(leftQuery.typeDesc.sampleType)
+    profileType.setSampleUnit(leftQuery.typeDesc.sampleUnit)
+    profileType.setPeriodType(leftQuery.typeDesc.periodType)
+    profileType.setPeriodUnit(leftQuery.typeDesc.periodUnit)
+    const diff = querierMessages.FlameGraphDiff.deserializeBinary(flamegraphDiffBin)
+    return res.code(200).send(diffToFlamegraph(diff, profileType).flamebearerProfileV1)
+  } finally {
+    pprofBin.drop_tree(leftCtxIdx)
+    pprofBin.drop_tree(rightCtxIdx)
+  }
 }
 
 /**

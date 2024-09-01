@@ -19,19 +19,19 @@ const {
   HISTORY_TIMESPAN
 } = require('./shared')
 const settings = require('./settings')
-const { mergeStackTraces } = require('./merge_stack_traces')
+const { mergeStackTraces, newCtxIdx } = require('./merge_stack_traces')
 const { selectSeriesImpl } = require('./select_series')
 const render = require('./render')
 
 const profileTypesHandler = async (req, res) => {
   const dist = clusterName ? '_dist' : ''
   const _res = new messages.ProfileTypesResponse()
-  const fromTimeSec = req.body && req.body.getStart
+  const fromTimeSec = Math.floor(req.body && req.body.getStart
     ? parseInt(req.body.getStart()) / 1000
-    : (Date.now() - HISTORY_TIMESPAN) / 1000
-  const toTimeSec = req.body && req.body.getEnd
+    : (Date.now() - HISTORY_TIMESPAN) / 1000)
+  const toTimeSec = Math.floor(req.body && req.body.getEnd
     ? parseInt(req.body.getEnd()) / 1000
-    : Date.now() / 1000
+    : Date.now() / 1000)
   const profileTypes = await clickhouse.rawRequest(`SELECT DISTINCT type_id, sample_type_unit 
 FROM profiles_series${dist} ARRAY JOIN sample_types_units as sample_type_unit
 WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)})) FORMAT JSON`,
@@ -54,12 +54,12 @@ WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDa
 
 const labelNames = async (req, res) => {
   const dist = clusterName ? '_dist' : ''
-  const fromTimeSec = req.body && req.body.getStart
+  const fromTimeSec = Math.floor(req.body && req.body.getStart
     ? parseInt(req.body.getStart()) / 1000
-    : (Date.now() - HISTORY_TIMESPAN) / 1000
-  const toTimeSec = req.body && req.body.getEnd
+    : (Date.now() - HISTORY_TIMESPAN) / 1000)
+  const toTimeSec = Math.floor(req.body && req.body.getEnd
     ? parseInt(req.body.getEnd()) / 1000
-    : Date.now() / 1000
+    : Date.now() / 1000)
   const labelNames = await clickhouse.rawRequest(`SELECT DISTINCT key 
 FROM profiles_series_keys${dist}
 WHERE date >= toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)})) AND date <= toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)})) FORMAT JSON`,
@@ -74,12 +74,12 @@ const labelValues = async (req, res) => {
   const name = req.body && req.body.getName
     ? req.body.getName()
     : ''
-  const fromTimeSec = req.body && req.body.getStart && req.body.getStart()
+  const fromTimeSec = Math.floor(req.body && req.body.getStart && req.body.getStart()
     ? parseInt(req.body.getStart()) / 1000
-    : (Date.now() - HISTORY_TIMESPAN) / 1000
-  const toTimeSec = req.body && req.body.getEnd && req.body.getEnd()
+    : (Date.now() - HISTORY_TIMESPAN) / 1000)
+  const toTimeSec = Math.floor(req.body && req.body.getEnd && req.body.getEnd()
     ? parseInt(req.body.getEnd()) / 1000
-    : Date.now() / 1000
+    : Date.now() / 1000)
   if (!name) {
     throw new Error('No name provided')
   }
@@ -113,86 +113,142 @@ const selectMergeStacktracesV2 = async (req, res) => {
 const selectSeries = async (req, res) => {
   const fromTimeSec = Math.floor(req.getStart && req.getStart()
     ? parseInt(req.getStart()) / 1000
-    : Date.now() / 1000 - HISTORY_TIMESPAN)
+    : (Date.now() - HISTORY_TIMESPAN) / 1000)
   const toTimeSec = Math.floor(req.getEnd && req.getEnd()
     ? parseInt(req.getEnd()) / 1000
     : Date.now() / 1000)
   return selectSeriesImpl(fromTimeSec, toTimeSec, req.body)
 }
 
+let mergeRequestsCounter = 0
+const mergeRequestsLimit = 10
+
 const selectMergeProfile = async (req, res) => {
-  const _req = req.body
-  const fromTimeSec = Math.floor(req.getStart && req.getStart()
-    ? parseInt(req.getStart()) / 1000
-    : Date.now() / 1000 - HISTORY_TIMESPAN)
-  const toTimeSec = Math.floor(req.getEnd && req.getEnd()
-    ? parseInt(req.getEnd()) / 1000
-    : Date.now() / 1000)
-  let typeID = _req.getProfileTypeid && _req.getProfileTypeid()
-  if (!typeID) {
-    throw new QrynBadRequest('No type provided')
-  }
-  typeID = parseTypeId(typeID)
-  if (!typeID) {
-    throw new QrynBadRequest('Invalid type provided')
-  }
-  const dist = clusterName ? '_dist' : ''
-  // const sampleTypeId = typeID.sampleType + ':' + typeID.sampleUnit
-  const labelSelector = _req.getLabelSelector && _req.getLabelSelector()
+  const ctx = newCtxIdx()
+  try {
+    const _req = req.body
+    const fromTimeSec = Math.floor(_req && _req.getStart
+      ? parseInt(_req.getStart()) / 1000
+      : (Date.now() - HISTORY_TIMESPAN) / 1000)
+    const toTimeSec = Math.floor(_req && _req.getEnd
+      ? parseInt(_req.getEnd()) / 1000
+      : Date.now() / 1000)
+    let typeID = _req.getProfileTypeid && _req.getProfileTypeid()
+    if (!typeID) {
+      throw new QrynBadRequest('No type provided')
+    }
+    typeID = parseTypeId(typeID)
+    if (!typeID) {
+      throw new QrynBadRequest('Invalid type provided')
+    }
+    const dist = clusterName ? '_dist' : ''
+    // const sampleTypeId = typeID.sampleType + ':' + typeID.sampleUnit
+    const labelSelector = _req.getLabelSelector && _req.getLabelSelector()
 
-  const typeIdSelector = Sql.Eq(
-    'type_id',
-    Sql.val(`${typeID.type}:${typeID.periodType}:${typeID.periodUnit}`))
-  const serviceNameSelector = serviceNameSelectorQuery(labelSelector)
+    const typeIdSelector = Sql.Eq(
+      'type_id',
+      Sql.val(`${typeID.type}:${typeID.periodType}:${typeID.periodUnit}`))
+    const serviceNameSelector = serviceNameSelectorQuery(labelSelector)
 
-  const idxReq = (new Sql.Select())
-    .select(new Sql.Raw('fingerprint'))
-    .from(`${DATABASE_NAME()}.profiles_series_gin`)
-    .where(
-      Sql.And(
-        typeIdSelector,
-        serviceNameSelector,
-        Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
-        Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`)),
-        Sql.Eq(
-          new Sql.Raw(
-            `has(sample_types_units, (${Sql.quoteVal(typeID.sampleType)}, ${Sql.quoteVal(typeID.sampleUnit)}))`
-          ),
-          1
+    const idxReq = (new Sql.Select())
+      .select(new Sql.Raw('fingerprint'))
+      .from(`${DATABASE_NAME()}.profiles_series_gin`)
+      .where(
+        Sql.And(
+          typeIdSelector,
+          serviceNameSelector,
+          Sql.Gte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(fromTimeSec)}))`)),
+          Sql.Lte('date', new Sql.Raw(`toDate(FROM_UNIXTIME(${Math.floor(toTimeSec)}))`)),
+          Sql.Eq(
+            new Sql.Raw(
+              `has(sample_types_units, (${Sql.quoteVal(typeID.sampleType)}, ${Sql.quoteVal(typeID.sampleUnit)}))`
+            ),
+            1
+          )
         )
       )
+    labelSelectorQuery(idxReq, labelSelector)
+    const withIdxReq = (new Sql.With('idx', idxReq, !!clusterName))
+    let mainReq = (new Sql.Select())
+      .with(withIdxReq)
+      .select([new Sql.Raw('payload'), 'payload'])
+      .from([`${DATABASE_NAME()}.profiles${dist}`, 'p'])
+      .where(Sql.And(
+        new Sql.In('p.fingerprint', 'IN', new Sql.WithReference(withIdxReq)),
+        Sql.Gte('p.timestamp_ns', new Sql.Raw(`${fromTimeSec}000000000`)),
+        Sql.Lt('p.timestamp_ns', new Sql.Raw(`${toTimeSec}000000000`))))
+      .orderBy([new Sql.Raw('timestamp_ns'), 'DESC'], [new Sql.Raw('p.fingerprint'), 'ASC'])
+    if (process.env.ADVANCED_PROFILES_MERGE_LIMIT) {
+      mainReq = mainReq.limit(parseInt(process.env.ADVANCED_PROFILES_MERGE_LIMIT))
+    }
+    const approxReq = (new Sql.Select())
+      .select(
+        [new Sql.Raw('sum(length(payload))'), 'size'],
+        [new Sql.Raw('count()'), 'count']
+      )
+      .from([new Sql.Raw('(' + mainReq.toString() + ')'), 'main'])
+    const approx = await clickhouse.rawRequest(
+      approxReq.toString() + ' FORMAT JSON', null, DATABASE_NAME()
     )
-  labelSelectorQuery(idxReq, labelSelector)
-  const withIdxReq = (new Sql.With('idx', idxReq, !!clusterName))
-  const mainReq = (new Sql.Select())
-    .with(withIdxReq)
-    .select([new Sql.Raw('groupArray(payload)'), 'payload'])
-    .from([`${DATABASE_NAME()}.profiles${dist}`, 'p'])
-    .where(Sql.And(
-      new Sql.In('p.fingerprint', 'IN', new Sql.WithReference(withIdxReq)),
-      Sql.Gte('p.timestamp_ns', new Sql.Raw(`${fromTimeSec}000000000`)),
-      Sql.Lt('p.timestamp_ns', new Sql.Raw(`${toTimeSec}000000000`))))
+    const approxData = approx.data.data[0]
+    logger.debug(`Approximate size: ${approxData.size} bytes, profiles count: ${approxData.count}`)
+    const chunksCount = Math.max(Math.ceil(approxData.size / (50 * 1024 * 1024)), 1)
+    logger.debug(`Request is processed in: ${chunksCount} chunks`)
+    const chunkSize = Math.ceil(approxData.count / chunksCount)
+    const promises = []
+    require('./pprof-bin/pkg/pprof_bin').init_panic_hook()
+    let processNs = BigInt(0)
+    const start = process.hrtime.bigint()
 
-  const profiles = await clickhouse.rawRequest(mainReq.toString() + ' FORMAT RowBinary',
-    null,
-    DATABASE_NAME(),
-    {
-      responseType: 'arraybuffer'
-    })
-  const binData = Uint8Array.from(profiles.data)
+    for (let i = 0; i < chunksCount; i++) {
+      promises.push((async (i) => {
+        // eslint-disable-next-line no-unmodified-loop-condition
+        while (mergeRequestsCounter >= mergeRequestsLimit) {
+          await (new Promise((resolve) => setTimeout(resolve, 50)))
+        }
+        logger.debug(`Processing chunk ${i}`)
+        mergeRequestsCounter++
+        let profiles = null
+        try {
+          let end = i * chunkSize + chunkSize
+          if (process.env.ADVANCED_PROFILES_MERGE_LIMIT && end > process.env.ADVANCED_PROFILES_MERGE_LIMIT) {
+            end = process.env.ADVANCED_PROFILES_MERGE_LIMIT
+          }
+          mainReq.limit(end - i * chunkSize, i * chunkSize)
+          profiles = await clickhouse.rawRequest(mainReq.toString() + ' FORMAT RowBinary',
+            null,
+            DATABASE_NAME(),
+            {
+              responseType: 'arraybuffer'
+            })
+        } finally {
+          mergeRequestsCounter--
+        }
+        const binData = Uint8Array.from(profiles.data)
+        logger.debug(`Chunk ${i} - ${binData.length} bytes`)
+        const start = process.hrtime.bigint()
+        pprofBin.merge_trees_pprof(ctx, binData)
+        const end = process.hrtime.bigint()
+        processNs += end - start
+      })(i))
+    }
+    await Promise.all(promises)
+    const response = pprofBin.export_trees_pprof(ctx)
+    const end = process.hrtime.bigint()
 
-  require('./pprof-bin/pkg/pprof_bin').init_panic_hook()
-  const start = process.hrtime.bigint()
-  const response = pprofBin.export_trees_pprof(binData)
-  logger.debug(`Pprof export took ${process.hrtime.bigint() - start} nanoseconds`)
-  return res.code(200).send(Buffer.from(response))
+    logger.debug(`Pprof merge took ${processNs} nanoseconds`)
+    logger.debug(`Pprof load + merge took ${end - start} nanoseconds`)
+    return res.code(200).send(Buffer.from(response))
+  } finally {
+    pprofBin.drop_tree(ctx)
+  }
 }
 
 const series = async (req, res) => {
   const _req = req.body
   const fromTimeSec = Math.floor(req.getStart && req.getStart()
     ? parseInt(req.getStart()) / 1000
-    : Date.now() / 1000 - HISTORY_TIMESPAN)
+    : (Date.now() - HISTORY_TIMESPAN) / 1000)
   const toTimeSec = Math.floor(req.getEnd && req.getEnd()
     ? parseInt(req.getEnd()) / 1000
     : Date.now() / 1000)
@@ -398,7 +454,7 @@ const analyzeQuery = async (req, res) => {
   const query = req.body.getQuery()
   const fromTimeSec = Math.floor(req.getStart && req.getStart()
     ? parseInt(req.getStart()) / 1000
-    : Date.now() / 1000 - HISTORY_TIMESPAN)
+    : (Date.now() - HISTORY_TIMESPAN) / 1000)
   const toTimeSec = Math.floor(req.getEnd && req.getEnd()
     ? parseInt(req.getEnd()) / 1000
     : Date.now() / 1000)
@@ -432,6 +488,7 @@ module.exports.init = (fastify) => {
     series: jsonParsers.series,
     getProfileStats: jsonParsers.getProfileStats,
     labelNames: jsonParsers.labelNames,
+    labelValues: jsonParsers.labelValues,
     analyzeQuery: jsonParsers.analyzeQuery
   }
   for (const name of Object.keys(fns)) {

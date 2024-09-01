@@ -1,8 +1,7 @@
-const { parseTypeId } = require('./shared')
+const { parseQuery } = require('./shared')
 const { mergeStackTraces } = require('./merge_stack_traces')
 const querierMessages = require('./querier_pb')
 const { selectSeriesImpl } = require('./select_series')
-const types = require('./types/v1/types_pb')
 
 const render = async (req, res) => {
   const query = req.query.query
@@ -52,28 +51,50 @@ const render = async (req, res) => {
   const [bMergeStackTrace, selectSeries] =
     await Promise.all(promises)
   const mergeStackTrace = querierMessages.SelectMergeStacktracesResponse.deserializeBinary(bMergeStackTrace)
-  let series = new types.Series()
-  if (selectSeries.getSeriesList().length === 1) {
-    series = selectSeries.getSeriesList()[0]
-  }
-  const fb = toFlamebearer(mergeStackTrace.getFlamegraph(), parsedQuery.profileType)
-  fb.flamebearerProfileV1.timeline = timeline(series,
-    fromTimeSec * 1000,
-    toTimeSec * 1000,
-    timelineStep)
-
-  if (groupBy.length > 0) {
-    fb.flamebearerProfileV1.groups = {}
-    let key = '*'
-    series.getSeriesList().forEach((_series) => {
-      _series.getLabelsList().forEach((label) => {
-        key = label.getName() === groupBy[0] ? label.getValue() : key
-      })
-    })
-    fb.flamebearerProfileV1.groups[key] = timeline(series,
+  let pTimeline = null
+  for (const series of selectSeries.getSeriesList()) {
+    if (!pTimeline) {
+      pTimeline = timeline(series,
+        fromTimeSec * 1000,
+        toTimeSec * 1000,
+        timelineStep)
+      continue
+    }
+    const _timeline = timeline(series,
       fromTimeSec * 1000,
       toTimeSec * 1000,
       timelineStep)
+    pTimeline.samples = pTimeline.samples.map((v, i) => v + _timeline.samples[i])
+  }
+  const fb = toFlamebearer(mergeStackTrace.getFlamegraph(), parsedQuery.profileType)
+  fb.flamebearerProfileV1.timeline = pTimeline
+
+  if (groupBy.length > 0) {
+    const pGroupedTimelines = {}
+    fb.flamebearerProfileV1.groups = {}
+    for (const series of selectSeries.getSeriesList()) {
+      const _key = {}
+      for (const label of series.getLabelsList()) {
+        if (groupBy.includes(label.getName())) {
+          _key[label.getName()] = label.getValue()
+        }
+      }
+      const key = '{' + Object.entries(_key).map(e => `${e[0]}=${JSON.stringify(e[1])}`)
+        .sort().join(', ') + '}'
+      if (!pGroupedTimelines[key]) {
+        pGroupedTimelines[key] = timeline(series,
+          fromTimeSec * 1000,
+          toTimeSec * 1000,
+          timelineStep)
+      } else {
+        const _timeline = timeline(series,
+          fromTimeSec * 1000,
+          toTimeSec * 1000,
+          timelineStep)
+        pGroupedTimelines[key].samples = pGroupedTimelines[key].samples.map((v, i) => v + _timeline.samples[i])
+      }
+    }
+    fb.flamebearerProfileV1.groups = pGroupedTimelines
   }
   res.code(200)
   res.headers({ 'Content-Type': 'application/json' })
@@ -208,43 +229,6 @@ function sizeToBackfill (startMs, endMs, stepSec) {
   return Math.floor((endMs - startMs) / (stepSec * 1000))
 }
 
-/**
- *
- * @param query {string}
- */
-const parseQuery = (query) => {
-  query = query.trim()
-  const match = query.match(/^([^{\s]+)\s*(\{(.*)})?$/)
-  if (!match) {
-    return null
-  }
-  const typeId = match[1]
-  const typeDesc = parseTypeId(typeId)
-  let strLabels = (match[3] || '').trim()
-  const labels = []
-  while (strLabels && strLabels !== '' && strLabels !== '}') {
-    const m = strLabels.match(/^(,)?\s*([A-Za-z0-9_]+)\s*(!=|!~|=~|=)\s*("([^"\\]|\\.)*")/)
-    if (!m) {
-      throw new Error('Invalid label selector')
-    }
-    labels.push([m[2], m[3], m[4]])
-    strLabels = strLabels.substring(m[0].length).trim()
-  }
-  const profileType = new types.ProfileType()
-  profileType.setId(typeId)
-  profileType.setName(typeDesc.type)
-  profileType.setSampleType(typeDesc.sampleType)
-  profileType.setSampleUnit(typeDesc.sampleUnit)
-  profileType.setPeriodType(typeDesc.periodType)
-  profileType.setPeriodUnit(typeDesc.periodUnit)
-  return {
-    typeId,
-    typeDesc,
-    labels,
-    labelSelector: strLabels,
-    profileType
-  }
-}
 
 const init = (fastify) => {
   fastify.get('/pyroscope/render', render)

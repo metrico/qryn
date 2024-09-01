@@ -77,6 +77,7 @@ struct Tree {
     sample_types: Vec<String>,
     max_self: Vec<i64>,
     nodes_num: i32,
+    pprof: Profile,
 }
 
 impl Tree {
@@ -357,6 +358,7 @@ fn upsert_tree(ctx: &mut HashMap<u32, Mutex<Tree>>, id: u32, sample_types: Vec<S
                 sample_types,
                 max_self: vec![0; _len],
                 nodes_num: 1,
+                pprof: Profile::default(),
             }),
         );
     }
@@ -384,7 +386,7 @@ impl TrieReader {
     fn read_size(&mut self) -> usize {
         let res = read_uleb128(&self.bytes[self.offs..]);
         self.offs += res.1;
-        res.0
+        res.0.clone()
     }
 
     fn read_string(&mut self) -> String {
@@ -414,6 +416,24 @@ impl TrieReader {
         let mut res = Vec::new();
         let size = self.read_size();
         for _ in 0..size {
+            let uleb = read_uleb128(&self.bytes[self.offs..]);
+            self.offs += uleb.1;
+            let _size = uleb.0;
+            let string = &self.bytes[self.offs..self.offs + _size];
+            self.offs += _size;
+            res.push(string);
+        }
+        res
+    }
+    fn read_blob(&mut self) -> &[u8] {
+        let size = self.read_size();
+        let string = &self.bytes[self.offs..self.offs + size];
+        self.offs += size;
+        string
+    }
+    fn read_blob_list(&mut self) -> Vec<&[u8]> {
+        let mut res = Vec::new();
+        while self.offs < self.bytes.len() {
             let uleb = read_uleb128(&self.bytes[self.offs..]);
             self.offs += uleb.1;
             let _size = uleb.0;
@@ -917,11 +937,15 @@ pub fn export_tree(id: u32, sample_type: String) -> Vec<u8> {
 }
 
 #[wasm_bindgen]
-pub fn export_trees_pprof(payload: &[u8]) -> Vec<u8> {
+pub fn merge_trees_pprof(id: u32, payload: &[u8]) {
     let p = panic::catch_unwind(|| {
+        let mut ctx = CTX.lock().unwrap();
+        upsert_tree(&mut ctx, id, vec![]);
+        let mut tree = ctx.get_mut(&id).unwrap().lock().unwrap();
         let mut reader = TrieReader::new(payload);
-        let bin_profs = reader.read_blob_vec();
+        let bin_profs = reader.read_blob_list();
         let mut merger = merge::ProfileMerge::new();
+        merger.merge(&mut tree.pprof);
         for bin_prof in bin_profs {
             if bin_prof.len() >= 2 && bin_prof[0] == 0x1f && bin_prof[1] == 0x8b {
                 let mut decompressed = Vec::new();
@@ -936,12 +960,20 @@ pub fn export_trees_pprof(payload: &[u8]) -> Vec<u8> {
 
         }
         let res = merger.profile();
-        res.encode_to_vec()
+        tree.pprof = res;
     });
     match p {
-        Ok(res) => return res,
+        Ok(_) => {}
         Err(err) => panic!("{:?}", err),
     }
+}
+
+#[wasm_bindgen]
+pub fn export_trees_pprof(id: u32) -> Vec<u8> {
+    let mut ctx = CTX.lock().unwrap();
+    upsert_tree(&mut ctx, id, vec![]);
+    let tree = ctx.get_mut(&id).unwrap().lock().unwrap();
+    tree.pprof.encode_to_vec()
 }
 
 #[wasm_bindgen]
