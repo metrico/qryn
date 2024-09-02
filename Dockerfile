@@ -1,5 +1,5 @@
 # qryn
-FROM node:20-slim
+FROM node:20.10-slim
 
 COPY . /app
 WORKDIR /app
