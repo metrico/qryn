@@ -124,7 +124,7 @@ let fastify = require('fastify')({
     done()
   }))
   await fastify.register(require('@fastify/compress'), {
-    encodings: ['gzip']/*,
+    encodings: ['gzip'],
     zlib: {
       createGzip: () => {
         const deflator = new pako.Deflate({ gzip: true })
@@ -152,7 +152,7 @@ let fastify = require('fastify')({
         }
         return res
       }
-    }*/
+    }
   })
   await fastify.register(require('@fastify/url-data'))
   await fastify.register(require('@fastify/websocket'))
