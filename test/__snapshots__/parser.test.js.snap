@@ -1,8 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`should compile regex 1`] = `
-"SCRIPT: abcd\\\\(
- SYNTAX: abcd\\\\(
+"SCRIPT: abcd\\(
+ SYNTAX: abcd\\(
   literal: a
    letter: a
   literal: b
@@ -11,20 +11,20 @@ exports[`should compile regex 1`] = `
    letter: c
   literal: d
    letter: d
-  literal: \\\\(
-   quoted_brack: \\\\(
+  literal: \\(
+   quoted_brack: \\(
 "
 `;
 
 exports[`should compile regex 2`] = `
-"SCRIPT: (a\\\\(bc)
- SYNTAX: (a\\\\(bc)
-  any_group: (a\\\\(bc)
-   group_tail: a\\\\(bc
+"SCRIPT: (a\\(bc)
+ SYNTAX: (a\\(bc)
+  any_group: (a\\(bc)
+   group_tail: a\\(bc
     literal: a
      letter: a
-    literal: \\\\(
-     quoted_brack: \\\\(
+    literal: \\(
+     quoted_brack: \\(
     literal: b
      letter: b
     literal: c
@@ -33,26 +33,26 @@ exports[`should compile regex 2`] = `
 `;
 
 exports[`should compile regex 3`] = `
-"SCRIPT: (?<label1>a[^\\\\[\\\\(\\\\)]bc)
- SYNTAX: (?<label1>a[^\\\\[\\\\(\\\\)]bc)
-  any_group: (?<label1>a[^\\\\[\\\\(\\\\)]bc)
+"SCRIPT: (?<label1>a[^\\[\\(\\)]bc)
+ SYNTAX: (?<label1>a[^\\[\\(\\)]bc)
+  any_group: (?<label1>a[^\\[\\(\\)]bc)
    group_name: ?<label1>
     label: label1
-   group_tail: a[^\\\\[\\\\(\\\\)]bc
+   group_tail: a[^\\[\\(\\)]bc
     literal: a
      letter: a
     literal: [
      letter: [
     literal: ^
      letter: ^
-    literal: \\\\
-     letter: \\\\
+    literal: \\
+     letter: \\
     literal: [
      letter: [
-    literal: \\\\(
-     quoted_brack: \\\\(
-    literal: \\\\)
-     quoted_brack: \\\\)
+    literal: \\(
+     quoted_brack: \\(
+    literal: \\)
+     quoted_brack: \\)
     literal: ]
      letter: ]
     literal: b
@@ -63,28 +63,28 @@ exports[`should compile regex 3`] = `
 `;
 
 exports[`should compile regex 4`] = `
-"SCRIPT: (a(?<label1>[^\\\\[\\\\(\\\\)]bc))
- SYNTAX: (a(?<label1>[^\\\\[\\\\(\\\\)]bc))
-  any_group: (a(?<label1>[^\\\\[\\\\(\\\\)]bc))
-   group_tail: a(?<label1>[^\\\\[\\\\(\\\\)]bc)
+"SCRIPT: (a(?<label1>[^\\[\\(\\)]bc))
+ SYNTAX: (a(?<label1>[^\\[\\(\\)]bc))
+  any_group: (a(?<label1>[^\\[\\(\\)]bc))
+   group_tail: a(?<label1>[^\\[\\(\\)]bc)
     literal: a
      letter: a
-    any_group: (?<label1>[^\\\\[\\\\(\\\\)]bc)
+    any_group: (?<label1>[^\\[\\(\\)]bc)
      group_name: ?<label1>
       label: label1
-     group_tail: [^\\\\[\\\\(\\\\)]bc
+     group_tail: [^\\[\\(\\)]bc
       literal: [
        letter: [
       literal: ^
        letter: ^
-      literal: \\\\
-       letter: \\\\
+      literal: \\
+       letter: \\
       literal: [
        letter: [
-      literal: \\\\(
-       quoted_brack: \\\\(
-      literal: \\\\)
-       quoted_brack: \\\\)
+      literal: \\(
+       quoted_brack: \\(
+      literal: \\)
+       quoted_brack: \\)
       literal: ]
        letter: ]
       literal: b
@@ -95,18 +95,18 @@ exports[`should compile regex 4`] = `
 `;
 
 exports[`should compile regex 5`] = `
-"SCRIPT: (a[\\\\(\\\\)]+(?<l2>b)(?<label1>[^\\\\[\\\\(\\\\)]bc))
- SYNTAX: (a[\\\\(\\\\)]+(?<l2>b)(?<label1>[^\\\\[\\\\(\\\\)]bc))
-  any_group: (a[\\\\(\\\\)]+(?<l2>b)(?<label1>[^\\\\[\\\\(\\\\)]bc))
-   group_tail: a[\\\\(\\\\)]+(?<l2>b)(?<label1>[^\\\\[\\\\(\\\\)]bc)
+"SCRIPT: (a[\\(\\)]+(?<l2>b)(?<label1>[^\\[\\(\\)]bc))
+ SYNTAX: (a[\\(\\)]+(?<l2>b)(?<label1>[^\\[\\(\\)]bc))
+  any_group: (a[\\(\\)]+(?<l2>b)(?<label1>[^\\[\\(\\)]bc))
+   group_tail: a[\\(\\)]+(?<l2>b)(?<label1>[^\\[\\(\\)]bc)
     literal: a
      letter: a
     literal: [
      letter: [
-    literal: \\\\(
-     quoted_brack: \\\\(
-    literal: \\\\)
-     quoted_brack: \\\\)
+    literal: \\(
+     quoted_brack: \\(
+    literal: \\)
+     quoted_brack: \\)
     literal: ]
      letter: ]
     literal: +
@@ -117,22 +117,22 @@ exports[`should compile regex 5`] = `
      group_tail: b
       literal: b
        letter: b
-    any_group: (?<label1>[^\\\\[\\\\(\\\\)]bc)
+    any_group: (?<label1>[^\\[\\(\\)]bc)
      group_name: ?<label1>
       label: label1
-     group_tail: [^\\\\[\\\\(\\\\)]bc
+     group_tail: [^\\[\\(\\)]bc
       literal: [
        letter: [
       literal: ^
        letter: ^
-      literal: \\\\
-       letter: \\\\
+      literal: \\
+       letter: \\
       literal: [
        letter: [
-      literal: \\\\(
-       quoted_brack: \\\\(
-      literal: \\\\)
-       quoted_brack: \\\\)
+      literal: \\(
+       quoted_brack: \\(
+      literal: \\)
+       quoted_brack: \\)
       literal: ]
        letter: ]
       literal: b
@@ -142,71 +142,71 @@ exports[`should compile regex 5`] = `
 "
 `;
 
-exports[`should erase names 1`] = `"abcd\\\\("`;
+exports[`should erase names 1`] = `"abcd\\("`;
 
-exports[`should erase names 2`] = `"(a\\\\(bc)"`;
+exports[`should erase names 2`] = `"(a\\(bc)"`;
 
-exports[`should erase names 3`] = `"(a[^\\\\[\\\\(\\\\)]bc)"`;
+exports[`should erase names 3`] = `"(a[^\\[\\(\\)]bc)"`;
 
-exports[`should erase names 4`] = `"(a([^\\\\[\\\\(\\\\)]bc))"`;
+exports[`should erase names 4`] = `"(a([^\\[\\(\\)]bc))"`;
 
-exports[`should erase names 5`] = `"(a[\\\\(\\\\)]+(b)([^\\\\[\\\\(\\\\)]bc))"`;
+exports[`should erase names 5`] = `"(a[\\(\\)]+(b)([^\\[\\(\\)]bc))"`;
 
-exports[`should get named groups 1`] = `Array []`;
+exports[`should get named groups 1`] = `[]`;
 
 exports[`should get named groups 2`] = `
-Array [
-  Object {
-    "val": "a\\\\(bc",
+[
+  {
+    "val": "a\\(bc",
   },
 ]
 `;
 
 exports[`should get named groups 3`] = `
-Array [
-  Object {
+[
+  {
     "name": "label1",
-    "val": "a[^\\\\[\\\\(\\\\)]bc",
+    "val": "a[^\\[\\(\\)]bc",
   },
 ]
 `;
 
 exports[`should get named groups 4`] = `
-Array [
-  Object {
-    "val": "a(?<label1>[^\\\\[\\\\(\\\\)]bc)",
+[
+  {
+    "val": "a(?<label1>[^\\[\\(\\)]bc)",
   },
-  Object {
+  {
     "name": "label1",
-    "val": "[^\\\\[\\\\(\\\\)]bc",
+    "val": "[^\\[\\(\\)]bc",
   },
 ]
 `;
 
 exports[`should get named groups 5`] = `
-Array [
-  Object {
-    "val": "a[\\\\(\\\\)]+(?<l2>b)(?<label1>[^\\\\[\\\\(\\\\)]bc)",
+[
+  {
+    "val": "a[\\(\\)]+(?<l2>b)(?<label1>[^\\[\\(\\)]bc)",
   },
-  Object {
+  {
     "name": "l2",
     "val": "b",
   },
-  Object {
+  {
     "name": "label1",
-    "val": "[^\\\\[\\\\(\\\\)]bc",
+    "val": "[^\\[\\(\\)]bc",
   },
 ]
 `;
 
 exports[`should process regex 1`] = `
-Object {
-  "labels": Array [
-    Object {
+{
+  "labels": [
+    {
       "name": "helper",
       "val": "[a-zA-Z0-9]+",
     },
-    Object {
+    {
       "name": "token",
       "val": "[a-zA-Z]+",
     },
