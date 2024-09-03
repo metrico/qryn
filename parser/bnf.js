@@ -79,21 +79,35 @@ compiler._ParseScript = compiler.ParseScript
 compiler.ParseScript = function (script) {
   const qLiterals = []
   const aqLiterals = []
-  const quotedStrings = script.replaceAll(/"([^"\\]|\\.)*"/g, (str) => {
-    if (str.length < 512) {
-      return str
+  let _script = script
+  let res = ''
+  let qsMatch = _script.match(/^([^"]*)("([^"\\]|\\.)*")?/)
+  while (qsMatch && qsMatch[0]) {
+    let repl = qsMatch[2] || ''
+    if (repl.length > 512) {
+      qLiterals.push(repl)
+      repl = `"QL_${qLiterals.length - 1}"`
     }
-    qLiterals.push(str)
-    return `"QL_${qLiterals.length - 1}"`
-  })
-  const aQuotedStrings = quotedStrings.replaceAll(/`([^`\\]|\\.)*`/g, (str) => {
-    if (str.length < 512) {
-      return str
+    res = res + qsMatch[1] + repl
+    _script = _script.slice(qsMatch[0].length)
+    qsMatch = _script.match(/^([^"]*)("([^"\\]|\\.)*")?/)
+  }
+
+  _script = res
+  res = ''
+  qsMatch = _script.match(/^([^`]*)(`([^`\\]|\\.)*`)?/)
+  while (qsMatch && qsMatch[0]) {
+    let repl = qsMatch[2] || ''
+    if (repl.length > 512) {
+      aqLiterals.push(repl)
+      repl = `\`AL_${qLiterals.length - 1}\``
     }
-    aqLiterals.push(str)
-    return `\`AL_${aqLiterals.length - 1}\``
-  })
-  const parsedScript = this._ParseScript(aQuotedStrings)
+    res = res + qsMatch[1] + repl
+    _script = _script.slice(qsMatch[0].length)
+    qsMatch = _script.match(/^([^`]*)(`([^`\\]|\\.)*`)?/)
+  }
+
+  const parsedScript = this._ParseScript(res)
   if (!parsedScript) {
     return parsedScript
   }
