@@ -1,4 +1,4 @@
-const { getDuration, Aliased } = require('../common')
+const { getDuration, preJoinLabels, dist } = require('../common')
 const reg = require('./log_range_agg_reg_v3_2')
 const Sql = require('@cloki/clickhouse-sql')
 const { DATABASE_NAME, checkVersion } = require('../../../lib/utils')
@@ -51,14 +51,13 @@ module.exports.apply = (token, fromNS, toNS, stepNS) => {
     .select(['samples.fingerprint', 'fingerprint'])
     .from([`${DATABASE_NAME()}.metrics_15s${_dist}`, 'samples'])
     .where(tsClause)
-  q.join(new Aliased(`${DATABASE_NAME()}.time_series`, 'time_series'), 'left any',
-    Sql.Eq('samples.fingerprint', new Sql.Raw('time_series.fingerprint')))
-  q.select([new Sql.Raw('any(JSONExtractKeysAndValues(time_series.labels, \'String\'))'), 'labels'])
 
   q.ctx = {
     step: stepNS / 1000000000,
     inline: !!clusterName
   }
+
+  preJoinLabels(token, q, dist)
 
   for (const streamSelectorRule of token.Children('log_stream_selector_rule')) {
     q = streamSelectorReg[streamSelectorRule.Child('operator').value](streamSelectorRule, q)
