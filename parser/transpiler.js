@@ -10,7 +10,7 @@ const lineFormat = require('./registry/line_format')
 const parserRegistry = require('./registry/parser_registry')
 const unwrap = require('./registry/unwrap')
 const unwrapRegistry = require('./registry/unwrap_registry')
-const { durationToMs, sharedParamNames, getStream, Aliased } = require('./registry/common')
+const { durationToMs, sharedParamNames, getStream, preJoinLabels } = require('./registry/common')
 const compiler = require('./bnf')
 const {
   parseMs,
@@ -75,11 +75,6 @@ module.exports.initQuery = (joinLabels, types) => {
     .addParam(to)
     .addParam(limit)
     .addParam(matrix)
-  if (joinLabels) {
-    q.join(new Aliased(`${DATABASE_NAME()}.time_series`, 'time_series'), 'left any',
-      Sql.Eq('samples.fingerprint', new Sql.Raw('time_series.fingerprint')))
-    q.select([new Sql.Raw('JSONExtractKeysAndValues(time_series.labels, \'String\')'), 'labels'])
-  }
   return q
 }
 
@@ -88,7 +83,7 @@ module.exports.initQuery = (joinLabels, types) => {
  * @param types {[number] || undefined}
  * @returns {Select}
  */
-module.exports.initQueryV3_2 = (joinLabels, types) => {
+/*module.exports.initQueryV3_2 = (joinLabels, types) => {
   types = types || [bothType, logType]
   const from = new Sql.Parameter(sharedParamNames.from)
   const to = new Sql.Parameter(sharedParamNames.to)
@@ -108,12 +103,13 @@ module.exports.initQueryV3_2 = (joinLabels, types) => {
     .addParam(from)
     .addParam(to)
   if (joinLabels) {
+    //TODO: fix join
     q.join(new Aliased(`${DATABASE_NAME()}.time_series${dist}`, 'time_series'), 'left any',
       Sql.Eq('samples.fingerprint', new Sql.Raw('time_series.fingerprint')))
     q.select([new Sql.Raw('JSONExtractKeysAndValues(time_series.labels, \'String\')'), 'labels'])
   }
   return q
-}
+}*/
 
 /**
  *
@@ -193,6 +189,8 @@ module.exports.transpile = (request) => {
       end
     }
   }
+  joinLabels && doStreamSelectorOperatorRegistry(token, query)
+  joinLabels && preJoinLabels(token, query)
   matrixOp = matrixOp || (token.Child('summary') && 'summary')
   switch (matrixOp) {
     case 'aggregation_operator':
@@ -223,10 +221,9 @@ module.exports.transpile = (request) => {
         .orderBy(['labels', order], ['timestamp_ns', order])
       setQueryParam(query, sharedParamNames.limit, limit)
       if (!joinLabels) {
-        query.join(new Aliased(`${DATABASE_NAME()}.time_series${dist}`, 'time_series'), 'left any',
-          Sql.Eq('sel_a.fingerprint', new Sql.Raw('time_series.fingerprint')))
-        query.select([new Sql.Raw('JSONExtractKeysAndValues(time_series.labels, \'String\')'), 'labels'],
-          new Sql.Raw('sel_a.*'))
+        query.from([new Sql.WithReference(query.with().sel_a), 'samples'])
+        preJoinLabels(token, query, dist)
+        query.select(new Sql.Raw('samples.*'))
       }
   }
   if (token.Child('agg_statement') && token.Child('compared_agg_statement_cmp')) {
@@ -381,7 +378,9 @@ module.exports.transpileTail = (request) => {
     }
   }
 
-  let query = module.exports.initQuery(true)
+  let query = module.exports.initQuery(false)
+  doStreamSelectorOperatorRegistry(expression.rootToken, query)
+  preJoinLabels(expression.rootToken, query, dist)
   query.ctx = {
     ...(query.ctx || {}),
     legacy: true
@@ -393,7 +392,6 @@ module.exports.transpileTail = (request) => {
   query.order_expressions = []
   query.orderBy(['timestamp_ns', 'asc'])
   query.limit(undefined, undefined)
-  //logger.debug(query.toString())
   return {
     query: request.rawRequest ? query : query.toString(),
     stream: getStream(query)
@@ -496,11 +494,7 @@ module.exports.transpileLogRangeAggregation = (token, query) => {
  * @returns {Sql.Select}
  */
 module.exports.transpileLogStreamSelector = (token, query) => {
-  const rules = token.Children('log_stream_selector_rule')
-  for (const rule of rules) {
-    const op = rule.Child('operator').value
-    query = streamSelectorOperatorRegistry[op](rule, query)
-  }
+  doStreamSelectorOperatorRegistry(token, query)
   for (const pipeline of token.Children('log_pipeline')) {
     if (pipeline.Child('line_filter_expression')) {
       const op = pipeline.Child('line_filter_operator').value
@@ -618,4 +612,14 @@ const whereBuilder = (clause) => {
   const op = clause[0]
   const _clause = clause.slice(1).map(c => Array.isArray(c) ? `(${whereBuilder(c)})` : c)
   return _clause.join(` ${op} `)
+}
+
+const doStreamSelectorOperatorRegistry = (token, query) => {
+  if (!query.with().idx_sel && !query.with().str_sel) {
+    const rules = token.Children('log_stream_selector_rule')
+    for (const rule of rules) {
+      const op = rule.Child('operator').value
+      query = streamSelectorOperatorRegistry[op](rule, query)
+    }
+  }
 }

@@ -1,6 +1,7 @@
 const { hashLabels, parseLabels } = require('../../common')
 const { getPlg } = require('../../plugins/engine')
 const Sql = require('@cloki/clickhouse-sql')
+const { DATABASE_NAME } = require('../../lib/utils')
 const clusterName = require('../../common').clusterName
 module.exports.dist = clusterName ? '_dist' : ''
 
@@ -412,4 +413,49 @@ module.exports.patchCol = (query, name, patcher) => {
     }
     return col
   })
+}
+
+module.exports.preJoinLabels = (token, query, dist) => {
+  const from = query.getParam(module.exports.sharedParamNames.from)
+  const to = query.getParam(module.exports.sharedParamNames.to)
+  const sqlFrom = new Sql.Raw()
+  sqlFrom.toString = () => {
+    let fromNs = 0
+    if (from.get()) {
+      fromNs = from.get()
+    }
+    return `toDate(fromUnixTimestamp(intDiv(${fromNs}, 1000000000)))`
+  }
+  const sqlTo = new Sql.Raw()
+  sqlTo.toString = () => {
+    let toNs = 0
+    if (to.get()) {
+      toNs = to.get()
+    }
+    return `toDate(fromUnixTimestamp(intDiv(${toNs}, 1000000000)))`
+  }
+  let withIdxSel = query.with().idx_sel
+  let inRightSide = new Sql.WithReference(withIdxSel)
+  if (!withIdxSel) {
+    withIdxSel = query.with().str_sel
+    inRightSide = new Sql.Select()
+      .select('fingerprint')
+      .from(new Sql.WithReference(withIdxSel))
+  }
+  dist = dist || ''
+  const timeSeriesReq = new Sql.Select()
+    .select('fingerprint', 'labels')
+    .from([`${DATABASE_NAME()}.time_series${dist}`, 'time_series'])
+    .where(new Sql.And(
+      new Sql.In('time_series.fingerprint', 'in', inRightSide),
+      Sql.Gte(new Sql.Raw('date'), sqlFrom),
+      Sql.Lte(new Sql.Raw('date'), sqlTo)
+    ))
+  timeSeriesReq._toString = timeSeriesReq.toString
+  timeSeriesReq.toString = () => {
+    return `(${timeSeriesReq._toString()})`
+  }
+  query.join(new module.exports.Aliased(timeSeriesReq, 'time_series'), 'left any',
+    Sql.Eq('samples.fingerprint', new Sql.Raw('time_series.fingerprint')))
+  query.select([new Sql.Raw('JSONExtractKeysAndValues(time_series.labels, \'String\')'), 'labels'])
 }
