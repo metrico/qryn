@@ -45,6 +45,8 @@ jobs:
       uses: ./.github/actions/get-view
       with:
         tag: v3.3.2
+    - name: check if qryn-view pulled
+      run: pushd view && ls | grep assets && popd
     - run: npm install
     - run: npm run postinstall
     - run: git submodule init

@@ -2,5 +2,8 @@ name: pull view action
 runs:
   steps:
     - run: mkdir view && cd view
+      shell: bash
     - run: wget https://github.com/metrico/qryn-view/releases/download/$INPUT_TAG/dist.zip
+      shell: bash
     - run: unzip dist.zip && rm dist.zip
+      shell: bash
