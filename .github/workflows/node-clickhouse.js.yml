@@ -41,6 +41,12 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+    - name: build qryn-view
+      uses: ./.github/actions/get-view
+      env:
+        TAG: v3.3.2
+    - name: check if qryn-view pulled
+      run: pushd view && ls | grep assets && popd
     - run: npm install
     - run: npm run postinstall
     - run: git submodule init
