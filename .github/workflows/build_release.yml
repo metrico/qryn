@@ -34,6 +34,10 @@ jobs:
         if: ${{ steps.checksecrets.outputs.secretspresent }}
         with:
           node-version: 18
+      - name: build qryn-view
+        uses: ./.github/workflows/build-view.yml
+        with:
+          node_version: 18
       - name: Publish to NPM
         if: ${{ steps.checksecrets.outputs.secretspresent }}
         continue-on-error: true
@@ -65,6 +69,10 @@ jobs:
           fi
         env:
           SECRET: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: build qryn-view
+        uses: ./.github/workflows/build-view.yml
+        with:
+          node_version: 18
       - name: Set up Docker QEMU
         if: ${{ steps.checkdocker.outputs.secretspresent }}
         uses: docker/setup-qemu-action@v3.0.0
@@ -136,6 +144,10 @@ jobs:
           fi
         env:
           SECRET: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: build qryn-view
+        uses: ./.github/workflows/build-view.yml
+        with:
+          node_version: 18
       - name: Set up Docker QEMU
         if: ${{ steps.checkdocker.outputs.secretspresent }}
         uses: docker/setup-qemu-action@v3.0.0

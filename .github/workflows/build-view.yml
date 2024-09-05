@@ -1,0 +1,32 @@
+name: Reusable Workflow
+
+on:
+  workflow_call:
+    inputs:
+      node_version:
+        type: string
+
+jobs:
+  reusable_job:
+    runs-on: ubuntu-latest
+    outputs:
+      job_output: ${{ steps.set_output.outputs.step_output }}
+    steps:
+      - name: Use Node.js ${{ inputs.node_version }}
+        uses: actions/setup-node@v4.0.1
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: "pnpm"
+
+      - run: git submodule init && git submodule update
+
+      - run: cd view/qryn-view
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm build
+
+      - name: cleanup
+        run: cd .. && mv qryn-view/packages/main/dist/* . && rm -rf qryn-view
