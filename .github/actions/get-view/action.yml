@@ -1,4 +1,9 @@
 name: pull view action
+inputs:
+  tag:
+    description: 'The release tag to pull'
+    type: string
+    required: true
 runs:
   using: "composite"
   steps:
