@@ -1,6 +1,5 @@
-name: Reusable Workflow
-
-jobs:
+name: pull view action
+runs:
   pull:
     runs-on: ubuntu-latest
     steps:
