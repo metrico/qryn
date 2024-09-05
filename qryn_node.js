@@ -124,35 +124,7 @@ let fastify = require('fastify')({
     done()
   }))
   await fastify.register(require('@fastify/compress'), {
-    encodings: ['gzip'],
-    zlib: {
-      createGzip: () => {
-        const deflator = new pako.Deflate({ gzip: true })
-        let lastChunk = null
-        const res = new Duplex({
-          write: (chunk, encoding, next) => {
-            lastChunk && deflator.push(lastChunk)
-            lastChunk = chunk
-            next()
-          },
-          read: function (size) {
-          },
-          final (callback) {
-            deflator.onEnd = async () => {
-              res.push(null)
-              callback(null)
-            }
-            !lastChunk && callback()
-            lastChunk && deflator.push(lastChunk, true)
-          },
-          emitClose: true
-        })
-        deflator.onData = (chunk) => {
-          res.push(chunk)
-        }
-        return res
-      }
-    }
+    encodings: ['gzip']
   })
   await fastify.register(require('@fastify/url-data'))
   await fastify.register(require('@fastify/websocket'))
