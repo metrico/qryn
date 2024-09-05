@@ -37,7 +37,7 @@ jobs:
       - name: build qryn-view
         uses: ./.github/actions/get-view
         env:
-          tag: v3.3.2
+          TAG: v3.3.2
       - name: Publish to NPM
         if: ${{ steps.checksecrets.outputs.secretspresent }}
         continue-on-error: true
@@ -72,7 +72,7 @@ jobs:
       - name: build qryn-view
         uses: ./.github/actions/get-view
         env:
-          tag: v3.3.2
+          TAG: v3.3.2
       - name: Set up Docker QEMU
         if: ${{ steps.checkdocker.outputs.secretspresent }}
         uses: docker/setup-qemu-action@v3.0.0
@@ -147,7 +147,7 @@ jobs:
       - name: build qryn-view
         uses: ./.github/actions/get-view
         env:
-          tag: v3.3.2
+          TAG: v3.3.2
       - name: Set up Docker QEMU
         if: ${{ steps.checkdocker.outputs.secretspresent }}
         uses: docker/setup-qemu-action@v3.0.0

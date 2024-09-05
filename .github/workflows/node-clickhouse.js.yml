@@ -44,7 +44,7 @@ jobs:
     - name: build qryn-view
       uses: ./.github/actions/get-view
       env:
-        tag: v3.3.2
+        TAG: v3.3.2
     - name: check if qryn-view pulled
       run: pushd view && ls | grep assets && popd
     - run: npm install
