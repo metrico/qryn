@@ -36,7 +36,7 @@ jobs:
           node-version: 18
       - name: build qryn-view
         uses: ./.github/actions/get-view
-        with:
+        env:
           tag: v3.3.2
       - name: Publish to NPM
         if: ${{ steps.checksecrets.outputs.secretspresent }}
@@ -71,7 +71,7 @@ jobs:
           SECRET: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: build qryn-view
         uses: ./.github/actions/get-view
-        with:
+        env:
           tag: v3.3.2
       - name: Set up Docker QEMU
         if: ${{ steps.checkdocker.outputs.secretspresent }}
@@ -146,7 +146,7 @@ jobs:
           SECRET: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: build qryn-view
         uses: ./.github/actions/get-view
-        with:
+        env:
           tag: v3.3.2
       - name: Set up Docker QEMU
         if: ${{ steps.checkdocker.outputs.secretspresent }}

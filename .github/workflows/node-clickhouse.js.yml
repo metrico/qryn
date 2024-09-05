@@ -43,7 +43,7 @@ jobs:
         cache: 'npm'
     - name: build qryn-view
       uses: ./.github/actions/get-view
-      with:
+      env:
         tag: v3.3.2
     - name: check if qryn-view pulled
       run: pushd view && ls | grep assets && popd

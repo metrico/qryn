@@ -1,15 +1,10 @@
 name: pull view action
-inputs:
-  tag:
-    description: 'The release tag to pull'
-    type: string
-    required: true
 runs:
   using: "composite"
   steps:
     - run: mkdir view && cd view
       shell: bash
-    - run: wget https://github.com/metrico/qryn-view/releases/download/$INPUT_TAG/dist.zip
+    - run: wget https://github.com/metrico/qryn-view/releases/download/$TAG/dist.zip
       shell: bash
     - run: unzip dist.zip && rm dist.zip
       shell: bash
