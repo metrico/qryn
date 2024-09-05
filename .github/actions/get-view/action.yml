@@ -6,5 +6,5 @@ runs:
       shell: bash
     - run: wget https://github.com/metrico/qryn-view/releases/download/$TAG/dist.zip
       shell: bash
-    - run: unzip dist.zip && rm dist.zip
+    - run: unzip -o dist.zip && rm dist.zip
       shell: bash
