@@ -3,7 +3,7 @@ const { addStream, isEOF } = require('../common')
 const { LineFmtOption } = require('../../../common')
 const { compile } = require('./go_native_fmt')
 const logger = require('../../../lib/logger')
-require('handlebars-helpers')(['math', 'string'], {
+require('../../../lib/handlebars-helpers')(['math', 'string'], {
   handlebars: hb
 })
 
