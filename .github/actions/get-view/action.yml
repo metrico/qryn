@@ -3,7 +3,7 @@ runs:
   using: "composite"
   steps:
     - run: |
-        mkdir view && cd view && \
+        pwd && mkdir -p view && cd view && \
         wget https://github.com/metrico/qryn-view/releases/download/$TAG/dist.zip && \
         unzip -o dist.zip && rm dist.zip
       shell: bash
