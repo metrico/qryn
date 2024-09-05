@@ -2,9 +2,8 @@ name: pull view action
 runs:
   using: "composite"
   steps:
-    - run: mkdir view && cd view
-      shell: bash
-    - run: wget https://github.com/metrico/qryn-view/releases/download/$TAG/dist.zip
-      shell: bash
-    - run: unzip -o dist.zip && rm dist.zip
+    - run: |
+        mkdir view && cd view && \
+        wget https://github.com/metrico/qryn-view/releases/download/$TAG/dist.zip && \
+        unzip -o dist.zip && rm dist.zip
       shell: bash
