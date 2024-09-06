@@ -1,0 +1,55 @@
+name: 'CI+CD'
+
+on:
+  pull_request:
+    branches: [ master, beta ]
+    paths-ignore:
+      - '**.md'
+      - '**.yml'
+      - '**.yaml'
+  workflow_dispatch:
+    inputs:
+      TAG_NAME:
+        description: 'Release Version Tag (0.0.0)'
+        required: true
+
+jobs:
+  node:
+    name: 'Build & Test Node'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          ref: ${{ github.ref }}
+      - name: Check Docker secret presence
+        id: checkdocker
+        shell: bash
+        run: |
+          if [ "$SECRET" == "" ]; then
+            echo "secretspresent=false" >> $GITHUB_OUTPUT
+          else
+            echo "secretspresent=true" >> $GITHUB_OUTPUT
+          fi
+        env:
+          SECRET: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: build qryn-view
+        uses: ./.github/actions/get-view
+        env:
+          TAG: v3.3.2
+      - name: Set up Docker QEMU
+        if: ${{ steps.checkdocker.outputs.secretspresent }}
+        uses: docker/setup-qemu-action@v3.0.0
+        with:
+           platforms: amd64, arm64
+      - name: Set up Docker Buildx
+        if: ${{ steps.checkdocker.outputs.secretspresent }}
+        uses: docker/setup-buildx-action@v3.0.0
+      - name: Build and push to Docker Hub
+        if: ${{ steps.checkdocker.outputs.secretspresent }}
+        uses: docker/build-push-action@v5.0.0
+        with:
+          platforms: linux/amd64, linux/arm64
+          push: false
+          tags: |
+            qxip/qryn:latest
+      - run: docker run qxip/qryn:latest sh -c 'cd view && ls | grep assets'
