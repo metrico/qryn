@@ -4,6 +4,8 @@ FROM node:20.10-slim
 COPY . /app
 WORKDIR /app
 
+RUN cd view && ls
+
 RUN groupadd -r qryn && useradd -r -g qryn -m qryn && chown -R qryn:qryn /app
 USER qryn
 
