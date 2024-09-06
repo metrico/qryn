@@ -90,8 +90,9 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}  
       - name: Build and push to Docker Hub
         if: ${{ steps.checkdocker.outputs.secretspresent }}
-        uses: docker/build-push-action@v5.0.0
+        uses: docker/build-push-action@v6
         with:
+          context: "."
           platforms: linux/amd64, linux/arm64
           push: true
           tags: |
@@ -110,9 +111,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push to GHCR
-        uses: docker/build-push-action@v5.0.0
+        uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64, linux/arm64
+          context: "."
           file: ./Dockerfile
           push: true
           tags: |
@@ -164,8 +166,9 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}  
       - name: Build and push to Docker Hub (bun)
         if: ${{ steps.checkdocker.outputs.secretspresent }}
-        uses: docker/build-push-action@v5.1.0
+        uses: docker/build-push-action@v6
         with:
+          context: "."
           platforms: linux/amd64, linux/arm64
           file: ./Dockerfile_bun
           push: true
@@ -183,8 +186,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push to GHCR (bun)
-        uses: docker/build-push-action@v5.1.0
+        uses: docker/build-push-action@v6
         with:
+          context: "."
           platforms: linux/amd64, linux/arm64
           file: ./Dockerfile_bun
           push: true
