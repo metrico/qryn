@@ -7,7 +7,7 @@
     "qryn": "./qryn_node.js"
   },
   "scripts": {
-    "test": "jest",
+    "test": "jest --maxWorkers 1 --forceExit",
     "start": "node qryn.mjs",
     "pretty": "node qryn.mjs | pino-pretty",
     "postinstall": "patch-package",

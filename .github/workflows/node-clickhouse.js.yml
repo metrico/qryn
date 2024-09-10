@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18, 16.x, 20]
+        node-version: [18, 16, 20]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     services:
       clickhouse:
@@ -36,29 +36,17 @@ jobs:
           - 9000:9000
     steps:
     - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4.0.0
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
     - name: build qryn-view
       uses: ./.github/actions/get-view
       env:
         TAG: v3.3.2
     - name: check if qryn-view pulled
       run: pushd view && ls | grep assets && popd
-    - run: npm install
-    - run: npm run postinstall
     - run: git submodule init
     - run: git submodule update
     - name: Workflow Telemetry
       uses: runforesight/workflow-telemetry-action@v1.8.7
       if: github.event_name != 'pull_request'
     - env:
-        CLICKHOUSE_DB: qryn
-        CLICKHOUSE_TSDB: qryn
-        INTEGRATION_E2E: 1
-        CLOKI_EXT_URL: 127.0.0.1:3100
-        QRYN_LOGIN: a
-        QRYN_PASSWORD: b
-      run: node qryn.mjs >/dev/stdout & npm run test --forceExit
+        NODE_VERSION: ${{ matrix.node-version }}
+      run: "sh ./test/e2e/compose/clickhouse_sso_e2e/run_test.sh"

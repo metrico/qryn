@@ -26,15 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18, 16.x, 20]
+        node-version: [18, 16, 20]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
     - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4.0.0
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
     - run: npm install
     - run: npm run postinstall
     - run: git submodule init
@@ -44,14 +39,9 @@ jobs:
       with:
         version: v2.1.0 # defaults to 'latest'
         legacy: true    # will also install in PATH as `docker-compose`
-    - run: docker-compose -f docker/e2e/docker-compose-cluster.yaml up -d
-    - run: sleep 5
     - name: Workflow Telemetry
       uses: runforesight/workflow-telemetry-action@v1.8.7 
       if: github.event_name != 'pull_request'
     - env:
-        CLICKHOUSE_DB: qryn
-        CLICKHOUSE_TSDB: qryn
-        INTEGRATION_E2E: 1
-        CLOKI_EXT_URL: 127.0.0.1:3100
-      run: CLUSTER_NAME=test_cluster_two_shards node qryn.mjs >/dev/stdout & sleep 10 && npm run test --forceExit
+        NODE_VERSION: ${{ matrix.node-version }}
+      run: "sh ./test/e2e/compose/clickhouse_cluster_e2e/run_test.sh"
