@@ -246,11 +246,11 @@ const selectMergeProfile = async (req, res) => {
 
 const series = async (req, res) => {
   const _req = req.body
-  const fromTimeSec = Math.floor(req.getStart && req.getStart()
-    ? parseInt(req.getStart()) / 1000
+  const fromTimeSec = Math.floor(_req.getStart && _req.getStart()
+    ? parseInt(_req.getStart()) / 1000
     : (Date.now() - HISTORY_TIMESPAN) / 1000)
-  const toTimeSec = Math.floor(req.getEnd && req.getEnd()
-    ? parseInt(req.getEnd()) / 1000
+  const toTimeSec = Math.floor(_req.getEnd && _req.getEnd()
+    ? parseInt(_req.getEnd()) / 1000
     : Date.now() / 1000)
   const dist = clusterName ? '_dist' : ''
   const promises = []
