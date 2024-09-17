@@ -27,6 +27,7 @@ flate2 = "1.0"
 # code size when deploying.
 console_error_panic_hook = { version = "0.1.7", optional = true }
 base64 = "0.22.1"
+memchr = "2.7.4"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"
