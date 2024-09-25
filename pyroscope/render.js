@@ -13,7 +13,7 @@ const render = async (req, res) => {
     ? Math.floor(parseInt(req.query.until) / 1000)
     : Math.floor((Date.now() - 1000 * 60 * 60 * 48) / 1000)
   if (!parsedQuery) {
-    return res.sendStatus(400).send('Invalid query')
+    return res.code(400).send('Invalid query')
   }
   const groupBy = req.query.groupBy || []
   let agg = ''
@@ -26,7 +26,7 @@ const render = async (req, res) => {
       break
   }
   if (req.query.format === 'dot') {
-    return res.sendStatus(400).send('Dot format is not supported')
+    return res.code(400).send('Dot format is not supported')
   }
   const promises = []
   promises.push(mergeStackTraces(

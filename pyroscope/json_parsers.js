@@ -33,7 +33,8 @@ const labelNames = async (req, payload) => {
   return {
     getStart: () => body.start,
     getEnd: () => body.end,
-    getName: () => body.name
+    getName: () => body.name,
+    getMatchersList: () => body.matchers
   }
 }
 
@@ -43,7 +44,7 @@ const labelValues = async (req, payload) => {
   body = JSON.parse(body.toString())
   return {
     getName: () => body.name,
-    getMatchers: () => body.matchers,
+    getMatchersList: () => body.matchers,
     getStart: () => body.start,
     getEnd: () => body.end
   }
