@@ -377,13 +377,14 @@ const series = async (req, res) => {
         `format('{}:{}:{}:{}:{}', (splitByChar(':', type_id) as _parts)[1], ${sampleTypesUnitsFieldName}.1, ${sampleTypesUnitsFieldName}.2, _parts[2], _parts[3])`,
         specialMatchers.__profile_type__))
     }
+    let specialClauses = null
     if (clauses.length === 0) {
-      return Sql.Eq(new Sql.Raw('1'), 1)
+      specialClauses = Sql.Eq(new Sql.Raw('1'), 1)
+    } else if (clauses.length === 1) {
+      specialClauses = clauses[0]
+    } else {
+      specialClauses = Sql.And(...clauses)
     }
-    if (clauses.length === 1) {
-      return clauses[0]
-    }
-    const specialClauses = Sql.And(...clauses)
     //
     const serviceNameSelector = serviceNameSelectorQuery(labelSelector)
     const idxReq = matcherIdxRequest(labelSelector, specialMatchers, fromTimeSec, toTimeSec)
