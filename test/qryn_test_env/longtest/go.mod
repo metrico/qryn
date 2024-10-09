@@ -7,7 +7,7 @@ replace k8s.io/client-go v12.0.0+incompatible => k8s.io/client-go v0.22.1
 require (
 	github.com/akvlad/flog v0.4.4-0.20220607095327-09ef70e4099e
 	github.com/apache/arrow/go/v13 v13.0.0-20230607163259-9be7074f85d6
-	github.com/golang/protobuf v1.5.2
+	github.com/golang/protobuf v1.5.3
 	github.com/golang/snappy v0.0.4
 	github.com/influxdata/influxdb-client-go/v2 v2.12.2
 	github.com/influxdata/line-protocol v0.0.0-20210922203350-b1ad95c89adf
@@ -39,12 +39,12 @@ require (
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	golang.org/x/exp v0.0.0-20230206171751-46f607a40771 // indirect
 	golang.org/x/mod v0.8.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.6.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
-	google.golang.org/genproto v0.0.0-20230209215440-0dfe4f8abfcc // indirect
-	google.golang.org/grpc v1.53.0 // indirect
+	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
+	google.golang.org/grpc v1.56.3 // indirect
 )
