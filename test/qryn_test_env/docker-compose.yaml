@@ -72,7 +72,10 @@ services:
       - NODE_OPTIONS="--max-old-space-size=4096"
       - FASTIFY_METRICS=true
     working_dir: /app
-    command: ["qryn.mjs"]
+    entrypoint: sh
+    command:
+      - -c
+      - "mkdir /_app && cp -rf patches package.json package-lock.json /_app && cd /_app && npm install && cd /app && NODE_PATH='.:../_app/node_modules' node qryn_node.js"
     depends_on:
       clickhouse-server:
         condition: service_healthy
