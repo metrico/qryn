@@ -1,4 +1,4 @@
-const { getDuration, preJoinLabels, dist } = require('../common')
+const { getDuration, preJoinLabels, dist, sharedParamNames } = require('../common')
 const reg = require('./log_range_agg_reg_v3_2')
 const Sql = require('@cloki/clickhouse-sql')
 const { DATABASE_NAME, checkVersion } = require('../../../lib/utils')
@@ -44,6 +44,8 @@ function isLogPipeline (token) {
  */
 module.exports.apply = (token, fromNS, toNS, stepNS) => {
   fromNS = Math.floor(fromNS / 15000000000) * 15000000000
+  const fromParam = new Sql.Parameter(sharedParamNames.from)
+  const toParam = new Sql.Parameter(sharedParamNames.to)
   const tsClause = toNS
     ? Sql.between('samples.timestamp_ns', fromNS, toNS)
     : Sql.Gt('samples.timestamp_ns', fromNS)
@@ -51,17 +53,21 @@ module.exports.apply = (token, fromNS, toNS, stepNS) => {
     .select(['samples.fingerprint', 'fingerprint'])
     .from([`${DATABASE_NAME()}.metrics_15s${_dist}`, 'samples'])
     .where(tsClause)
+    .addParam(fromParam)
+    .addParam(toParam)
+  fromParam.set(fromNS)
+  toParam.set(toNS)
 
   q.ctx = {
     step: stepNS / 1000000000,
     inline: !!clusterName
   }
 
-  preJoinLabels(token, q, dist)
-
   for (const streamSelectorRule of token.Children('log_stream_selector_rule')) {
     q = streamSelectorReg[streamSelectorRule.Child('operator').value](streamSelectorRule, q)
   }
+  preJoinLabels(token, q, dist)
+  q = q.groupBy('labels')
 
   const lra = token.Child('log_range_aggregation')
   q = reg[lra.Child('log_range_aggregation_fn').value](lra, q)
