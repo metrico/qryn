@@ -321,6 +321,7 @@ fn bfs(t: &Tree, res: &mut Vec<Level>, sample_type: String) {
                 }
             } else {
                 prepend += parent.total[sample_type_index];
+                continue;
             }
 
             prepend += parent.slf[sample_type_index];
