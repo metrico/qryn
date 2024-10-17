@@ -31,6 +31,11 @@ memchr = "2.7.4"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"
+criterion = { version = "0.5.1", features = ["html_reports"] }
+
+[[bench]]
+name = "my_benchmark"
+harness = false
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
