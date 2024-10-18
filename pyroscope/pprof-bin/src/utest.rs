@@ -144,7 +144,7 @@ mod tests {
             for j in 0..exp_res.levels[i].values.len()  / 7 {
                 exp_level.push(exp_res.names[exp_res.levels[i].values[j * 7 + 6] as usize].clone())
             }
-            for j in 0..o_res.levels[i].values.len() / 6 {
+            for j in 0..o_res.levels[i].values.len() / 7 {
                 res_level.push(o_res.names[o_res.levels[i].values[j * 7 + 6] as usize].clone())
             }
             exp_level.sort();

@@ -582,7 +582,9 @@ fn synchronize_names(t1: &mut Tree, t2: &mut Tree) {
 }
 
 fn merge_nodes(t1: &mut Tree, t2: &mut Tree) {
-    let keys: Vec<u64> = t1.nodes.keys().cloned().collect();
+    let mut keys: HashSet<u64> = HashSet::new();
+    keys.extend(t1.nodes.keys());
+    keys.extend(t2.nodes.keys());
 
     for key in keys {
         let t1_children = t1.nodes.entry(key).or_insert_with(Vec::new);
