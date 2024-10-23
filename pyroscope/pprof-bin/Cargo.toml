@@ -27,9 +27,15 @@ flate2 = "1.0"
 # code size when deploying.
 console_error_panic_hook = { version = "0.1.7", optional = true }
 base64 = "0.22.1"
+memchr = "2.7.4"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"
+criterion = { version = "0.5.1", features = ["html_reports"] }
+
+[[bench]]
+name = "my_benchmark"
+harness = false
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
