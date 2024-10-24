@@ -15,7 +15,7 @@ use pprof_pb::querier::v1::FlameGraphDiff;
 use pprof_pb::querier::v1::Level;
 use pprof_pb::querier::v1::SelectMergeStacktracesResponse;
 use prost::Message;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::Read;
 use std::panic;
 use std::sync::Arc;
@@ -655,28 +655,33 @@ fn compute_flame_graph_diff(t1: &Tree, t2: &Tree) -> FlameGraphDiff {
     res.right_ticks = t2.total()[0];
     res.total = res.left_ticks + res.right_ticks;
 
-    let mut left_nodes = vec![Arc::new(TreeNodeV2 {
+    let mut left_nodes: VecDeque<Arc<TreeNodeV2>> = VecDeque::new();
+    left_nodes.push_back(Arc::new(TreeNodeV2 {
         fn_id: 0,
         node_id: 0,
         slf: vec![0],
         total: vec![res.left_ticks],
-    })];
+    }));
 
-    let mut right_nodes = vec![Arc::new(TreeNodeV2 {
+    let mut right_nodes: VecDeque<Arc<TreeNodeV2>> = VecDeque::new();
+    right_nodes.push_back(Arc::new(TreeNodeV2 {
         fn_id: 0,
         node_id: 0,
         slf: vec![0],
         total: vec![res.right_ticks],
-    })];
+    }));
 
     let mut levels = vec![0];
-    let mut x_left_offsets = vec![0];
-    let mut x_right_offsets = vec![0];
+    let mut x_left_offsets: VecDeque<i64> = VecDeque::new();
+    x_left_offsets.push_back(0);
+    let mut x_right_offsets = VecDeque::new();
+    x_right_offsets.push_back(0);
     let mut name_location_cache: HashMap<String, i64> = HashMap::new();
 
-    while let (Some(left), Some(right)) = (left_nodes.pop(), right_nodes.pop()) {
-        let x_left_offset = x_left_offsets.pop().unwrap();
-        let x_right_offset = x_right_offsets.pop().unwrap();
+    while let (Some(left), Some(right)) =
+        (left_nodes.pop_back(), right_nodes.pop_back()) {
+        let mut x_left_offset = x_left_offsets.pop_back().unwrap().clone();
+        let mut x_right_offset = x_right_offsets.pop_back().unwrap().clone();
         let level = levels.pop().unwrap();
 
         let name = if left.fn_id == 0 {
@@ -694,6 +699,13 @@ fn compute_flame_graph_diff(t1: &Tree, t2: &Tree) -> FlameGraphDiff {
             res.levels.push(Level::default());
         }
 
+        if res.max_self < left.slf[0] {
+            res.max_self = left.slf[0];
+        }
+        if res.max_self < right.slf[0] {
+            res.max_self = right.slf[0];
+        }
+
         res.levels[level].values.extend_from_slice(&[
             x_left_offset,
             left.total[0],
@@ -708,12 +720,27 @@ fn compute_flame_graph_diff(t1: &Tree, t2: &Tree) -> FlameGraphDiff {
             let empty_vec = Vec::new();
             let children_right = t2.nodes.get(&right.node_id).unwrap_or(&empty_vec);
             for (child_left, child_right) in children_left.iter().zip(children_right.iter()) {
-                left_nodes.push(child_left.clone());
-                right_nodes.push(child_right.clone());
-                x_left_offsets.push(x_left_offset + child_left.total[0]);
-                x_right_offsets.push(x_right_offset + child_right.total[0]);
-                levels.push(level + 1);
+                left_nodes.push_front(child_left.clone());
+                right_nodes.push_front(child_right.clone());
+                x_left_offsets.push_front(x_left_offset.clone());
+                x_right_offsets.push_front(x_right_offset.clone());
+                x_left_offset += child_left.total[0].clone();
+                x_right_offset += child_right.total[0].clone();
+                levels.insert(0,level + 1);
             }
+        }
+    }
+
+    for i in 0..res.levels.len() {
+        let mut j = 0;
+        let mut prev0 = 0i64;
+        let mut prev3 = 0i64;
+        while j < res.levels[i].values.len() {
+            res.levels[i].values[j] -= prev0;
+            prev0 += res.levels[i].values[j] + res.levels[i].values[j+1];
+            res.levels[i].values[j+3] -= prev3;
+            prev3 += res.levels[i].values[j+3] + res.levels[i].values[j+4];
+            j += 7;
         }
     }
 
