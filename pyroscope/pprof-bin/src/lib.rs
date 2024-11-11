@@ -1,8 +1,8 @@
 #![allow(unused_assignments)]
 mod ch64;
 mod merge;
+pub mod utest;
 
-use std::cmp::Ordering;
 use ch64::city_hash_64;
 use ch64::read_uint64_le;
 use lazy_static::lazy_static;
@@ -11,20 +11,17 @@ use pprof_pb::google::v1::Location;
 use pprof_pb::google::v1::Profile;
 use pprof_pb::google::v1::Sample;
 use pprof_pb::querier::v1::FlameGraph;
+use pprof_pb::querier::v1::FlameGraphDiff;
 use pprof_pb::querier::v1::Level;
 use pprof_pb::querier::v1::SelectMergeStacktracesResponse;
-use pprof_pb::querier::v1::FlameGraphDiff;
 use prost::Message;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::Read;
 use std::panic;
+use std::sync::Arc;
 use std::sync::Mutex;
 use std::vec::Vec;
 use wasm_bindgen::prelude::*;
-use std::sync::Arc;
-
-//TODO: REMOVE
-use std::fs;
 
 pub mod pprof_pb {
 
@@ -81,264 +78,257 @@ struct Tree {
 }
 
 impl Tree {
-    pub fn total(&self) -> i64 {
-        let mut total: i64 = 0;
-        if !self.nodes.contains_key(&0) {
-            return  0 as i64;
+    pub fn total(&self) -> Vec<i64> {
+        if let Some(children) = self.nodes.get(&0) {
+            let mut total = vec![0; children[0].total.len()];
+            for child in children.iter() {
+                for (t, &child_total) in total.iter_mut().zip(&child.total) {
+                    *t += child_total;
+                }
+            }
+            total
+        } else {
+            Vec::new()
         }
-        for c in 0..self.nodes.get(&0).unwrap().len() {
-            let _c = &self.nodes.get(&0).unwrap()[c];
-            total += _c.total[0];
-        }
-        total
     }
+
     pub fn add_name(&mut self, name: String, name_hash: u64) {
-        if self.names_map.contains_key(&name_hash) {
-            return;
+        if let std::collections::hash_map::Entry::Vacant(entry) = self.names_map.entry(name_hash) {
+            self.names.push(name);
+            entry.insert(self.names.len() - 1);
         }
-        self.names.push(name);
-        self.names_map.insert(name_hash, self.names.len() - 1);
     }
 }
 
-fn find_node(id: u64, nodes: &Vec<Arc<TreeNodeV2>>) -> i32 {
-    let mut n: i32 = -1;
-    for c in 0..nodes.len() {
-        let _c = &nodes[c];
-        if _c.node_id == id {
-            n = c as i32;
-            break;
-        }
-    }
-    n
+fn find_node(id: u64, nodes: &[Arc<TreeNodeV2>]) -> Option<usize> {
+    nodes.iter().position(|node| node.node_id == id)
 }
 
 fn get_node_id(parent_id: u64, name_hash: u64, level: u16) -> u64 {
-    let mut node_bytes: [u8; 16] = [0; 16];
-    for i in 0..8 {
-        node_bytes[i] = ((parent_id >> (i * 8)) & 0xFF) as u8;
-    }
-    for i in 0..8 {
-        node_bytes[i + 8] = ((name_hash >> (i * 8)) & 0xFF) as u8;
-    }
-    let mut _level = level;
-    if _level > 511 {
-        _level = 511;
-    }
-    (city_hash_64(&node_bytes[0..]) >> 9) | ((_level as u64) << 55)
+    let mut node_bytes = [0u8; 16];
+    node_bytes[..8].copy_from_slice(&parent_id.to_le_bytes());
+    node_bytes[8..].copy_from_slice(&name_hash.to_le_bytes());
+
+    let adjusted_level = level.min(511);
+    (city_hash_64(&node_bytes) >> 9) | ((adjusted_level as u64) << 55)
 }
 
 struct MergeTotalsProcessor {
-    from_idx: Vec<i32>,
+    from_idx: Vec<Option<usize>>,
 }
 
 impl MergeTotalsProcessor {
     fn new(tree: &Tree, p: &Profile) -> MergeTotalsProcessor {
-        let mut from_idx: Vec<i32> = vec![-1; tree.sample_types.len()];
-        for i in 0..tree.sample_types.len() {
-            let sample_type_to = &tree.sample_types[i];
-            for j in 0..p.sample_type.len() {
-                let sample_type_from = format!(
-                    "{}:{}",
-                    p.string_table[p.sample_type[j].r#type as usize],
-                    p.string_table[p.sample_type[j].unit as usize]
-                );
-                if sample_type_from == *sample_type_to {
-                    from_idx[i] = j as i32;
-                    break;
-                }
-            }
-        }
+        let from_idx: Vec<Option<usize>> = tree
+            .sample_types
+            .iter()
+            .map(|sample_type_to| {
+                p.sample_type.iter().position(|sample_type| {
+                    let sample_type_from = format!(
+                        "{}:{}",
+                        p.string_table[sample_type.r#type as usize],
+                        p.string_table[sample_type.unit as usize]
+                    );
+                    sample_type_from == *sample_type_to
+                })
+            })
+            .collect();
+
         MergeTotalsProcessor { from_idx }
     }
 
     fn merge_totals(
         &self,
         node: Arc<TreeNodeV2>,
-        _max_self: &Vec<i64>,
+        max_self: &mut Vec<i64>,
         sample: &Sample,
         merge_self: bool,
-    ) -> (TreeNodeV2, Vec<i64>) {
-        let mut max_self = _max_self.clone();
+    ) -> TreeNodeV2 {
         let mut res: TreeNodeV2 = TreeNodeV2 {
             fn_id: node.fn_id,
             node_id: node.node_id,
             slf: vec![0; node.slf.len()],
             total: vec![0; node.slf.len()],
         };
-        for i in 0..self.from_idx.len() {
-            if self.from_idx[i] == -1 {
-                continue;
-            }
-            res.total[i] += sample.value[self.from_idx[i] as usize];
-            if merge_self {
-                res.slf[i] += sample.value[self.from_idx[i] as usize];
-                for i in 0..max_self.len() {
+
+        for (i, opt_idx) in self.from_idx.iter().enumerate() {
+            if let Some(from_idx) = opt_idx {
+                res.total[i] += sample.value[*from_idx];
+                if merge_self {
+                    res.slf[i] += sample.value[*from_idx];
                     if max_self[i] < node.slf[i] {
                         max_self[i] = node.slf[i];
                     }
                 }
             }
         }
-        (res, max_self)
+
+        res
     }
 }
 
 fn merge(tree: &mut Tree, p: &Profile) {
-    let mut functions: HashMap<u64, &Function> = HashMap::new();
-    for f in p.function.iter() {
-        functions.insert(f.id, &f);
-    }
-    let mut locations: HashMap<u64, &Location> = HashMap::new();
-    for l in p.location.iter() {
-        locations.insert(l.id, &l);
-    }
+    let functions: HashMap<u64, &Function> = p.function.iter().map(|f| (f.id, f)).collect();
+    let locations: HashMap<u64, &Location> = p.location.iter().map(|l| (l.id, l)).collect();
 
-    let m = MergeTotalsProcessor::new(tree, p);
-    for l in p.location.iter() {
-        let line = &p.string_table[functions[&l.line[0].function_id].name as usize];
-        let line_hash = city_hash_64(line.as_bytes());
-        if tree.names_map.contains_key(&line_hash) {
-            continue;
+    let merge_processor = MergeTotalsProcessor::new(tree, p);
+
+    for location in &p.location {
+        if let Some(function) = functions.get(&location.line[0].function_id) {
+            let line = &p.string_table[function.name as usize];
+            let line_hash = city_hash_64(line.as_bytes());
+
+            if let std::collections::hash_map::Entry::Vacant(entry) =
+                tree.names_map.entry(line_hash)
+            {
+                tree.names.push(line.clone());
+                entry.insert(tree.names.len() - 1);
+            }
         }
-        tree.names.push(line.clone());
-        tree.names_map.insert(line_hash, tree.names.len() - 1);
     }
 
-    for s in p.sample.iter() {
+    for sample in &p.sample {
         let mut parent_id: u64 = 0;
-        for i in (0..s.location_id.len()).rev() {
-            let location = locations[&s.location_id[i]];
-            let name = &p.string_table[functions[&location.line[0].function_id].name as usize];
-            let name_hash = city_hash_64(name.as_bytes());
-            let node_id = get_node_id(parent_id, name_hash, (s.location_id.len() - i) as u16);
-            if !tree.nodes.contains_key(&parent_id) && tree.nodes_num < 2000000 {
-                tree.nodes.insert(parent_id, Vec::new());
+
+        for (i, &location_id) in sample.location_id.iter().enumerate().rev() {
+            if let Some(location) = locations.get(&location_id) {
+                if let Some(function) = functions.get(&location.line[0].function_id) {
+                    let name = &p.string_table[function.name as usize];
+                    let name_hash = city_hash_64(name.as_bytes());
+                    let node_id =
+                        get_node_id(parent_id, name_hash, (sample.location_id.len() - i) as u16);
+
+                    let children = tree.nodes.entry(parent_id).or_insert_with(Vec::new);
+
+                    match find_node(node_id, children) {
+                        Some(index) => {
+                            if tree.nodes_num < 2_000_000 {
+                                let updated_node = merge_processor.merge_totals(
+                                    children[index].clone(),
+                                    &mut tree.max_self,
+                                    sample,
+                                    i == 0,
+                                );
+                                children[index] = Arc::new(updated_node);
+                                tree.nodes_num += 1;
+                            }
+                        }
+                        None => {
+                            if tree.nodes_num < 2_000_000 {
+                                let new_node = TreeNodeV2 {
+                                    fn_id: name_hash,
+                                    node_id,
+                                    slf: vec![0; tree.sample_types.len()],
+                                    total: vec![0; tree.sample_types.len()],
+                                };
+
+                                let new_node_arc = Arc::new(new_node);
+                                let updated_node = merge_processor.merge_totals(
+                                    new_node_arc.clone(),
+                                    &mut tree.max_self,
+                                    sample,
+                                    i == 0,
+                                );
+
+                                children.push(Arc::new(updated_node));
+                                tree.nodes_num += 1;
+                            }
+                        }
+                    }
+
+                    parent_id = node_id;
+                }
             }
-            let mut fake_children: Vec<Arc<TreeNodeV2>> = Vec::new();
-            let children = tree.nodes.get_mut(&parent_id).unwrap_or(&mut fake_children);
-            let mut n = find_node(node_id, children);
-            if n == -1 {
-                children.push(Arc::new(TreeNodeV2 {
-                    //parent_id,
-                    fn_id: name_hash,
-                    node_id,
-                    slf: vec![0; tree.sample_types.len()],
-                    total: vec![0; tree.sample_types.len()],
-                }));
-                let idx = children.len().clone() - 1;
-                let new_node_and_max_self = m.merge_totals(
-                    children.get(idx).unwrap().clone(),
-                    tree.max_self.as_ref(),
-                    s,
-                    i == 0,
-                );
-                children[idx] = Arc::new(new_node_and_max_self.0);
-                tree.max_self = new_node_and_max_self.1;
-                n = idx as i32;
-            } else if tree.nodes_num < 2000000 {
-                m.merge_totals(
-                    children.get_mut(n as usize).unwrap().clone(),
-                    &tree.max_self,
-                    s,
-                    i == 0,
-                );
-                tree.nodes_num += 1;
-            }
-            parent_id = node_id;
         }
     }
 }
 
 fn read_uleb128(bytes: &[u8]) -> (usize, usize) {
-    let mut result = 0;
+    let mut result = 0usize;
     let mut shift = 0;
-    loop {
-        let byte = bytes[shift];
-        result |= ((byte & 0x7f) as usize) << (shift * 7);
-        shift += 1;
+
+    for (index, &byte) in bytes.iter().enumerate() {
+        result |= ((byte & 0x7f) as usize) << shift;
+        shift += 7;
+
         if byte & 0x80 == 0 {
-            break;
+            return (result, index + 1);
         }
     }
-    (result, shift)
+
+    (result, bytes.len())
 }
 
 fn bfs(t: &Tree, res: &mut Vec<Level>, sample_type: String) {
-    let mut total: i64 = 0;
-    let mut root_children: &Vec<Arc<TreeNodeV2>> = &Vec::new();
-    if t.nodes.contains_key(&(0u64)) {
-        root_children = t.nodes.get(&(0u64)).unwrap();
-    }
+    let sample_type_index = match t.sample_types.iter().position(|x| x == &sample_type) {
+        Some(index) => index,
+        None => return,
+    };
 
-    let mut _sample_type_index: i32 = -1;
-    for i in 0..t.sample_types.len() {
-        if t.sample_types[i] == sample_type {
-            _sample_type_index = i as i32;
-            break;
-        }
-    }
-    if _sample_type_index == -1 {
-        return;
-    }
-    let sample_type_index = _sample_type_index as usize;
+    let empty_vec = Vec::new();
+    let root_children = t.nodes.get(&0u64).unwrap_or(&empty_vec);
 
-    for i in root_children.iter() {
-        total += i.total[sample_type_index];
-    }
-    let mut lvl = Level::default();
-    lvl.values.extend([0, total, 0, 0]);
-    res.push(lvl);
+    let total: i64 = root_children
+        .iter()
+        .map(|child| child.total[sample_type_index])
+        .sum();
+
+    res.push(Level {
+        values: vec![0, total, 0, 0],
+    });
 
     let mut totals = vec![0; t.sample_types.len()];
     totals[sample_type_index] = total;
-    let total_node: TreeNodeV2 = TreeNodeV2 {
+
+    let total_node = TreeNodeV2 {
         slf: vec![0; t.sample_types.len()],
         total: totals,
         node_id: 0,
         fn_id: 0,
-        //parent_id: 0
     };
-    let mut prepend_map: HashMap<u64, i64> = HashMap::new();
 
+    let mut prepend_map: HashMap<u64, i64> = HashMap::new();
     let mut reviewed: HashSet<u64> = HashSet::new();
 
-    let mut refs: Vec<&TreeNodeV2> = vec![&total_node];
-    let mut ref_len: usize = 1;
-    while ref_len > 0 {
-        let mut prepend: i64 = 0;
-        let _refs = refs.clone();
-        refs.clear();
-        lvl = Level::default();
-        for parent in _refs.iter() {
-            prepend += prepend_map.get(&parent.node_id).unwrap_or(&0);
-            let opt = t.nodes.get(&parent.node_id);
+    let mut current_level_nodes = vec![&total_node];
 
-            if opt.is_none() {
+    while !current_level_nodes.is_empty() {
+        let mut next_level_nodes = Vec::new();
+        let mut prepend: i64 = 0;
+        let mut lvl = Level::default();
+
+        for parent in current_level_nodes {
+            prepend += *prepend_map.get(&parent.node_id).unwrap_or(&0);
+
+            if let Some(children) = t.nodes.get(&parent.node_id) {
+                for child in children {
+                    if !reviewed.insert(child.node_id) {
+                        // Loop detected, exit early
+                        return;
+                    }
+
+                    prepend_map.insert(child.node_id, prepend);
+                    next_level_nodes.push(child.as_ref());
+
+                    lvl.values.extend_from_slice(&[
+                        prepend,
+                        child.total[sample_type_index],
+                        child.slf[sample_type_index],
+                        *t.names_map.get(&child.fn_id).unwrap_or(&1) as i64,
+                    ]);
+
+                    prepend = 0;
+                }
+            } else {
                 prepend += parent.total[sample_type_index];
                 continue;
             }
-            for n in opt.unwrap().iter() {
-                if reviewed.contains(&n.node_id) {
-                    // PANIC!!! WE FOUND A LOOP
-                    return;
-                } else {
-                    reviewed.insert(n.node_id);
-                }
-                prepend_map.insert(n.node_id, prepend);
-                refs.push(n);
-                lvl.values.extend([
-                    prepend as i64,
-                    n.total[sample_type_index],
-                    n.slf[sample_type_index],
-                    *t.names_map.get(&n.fn_id).unwrap_or(&1) as i64,
-                ]);
-                prepend = 0;
-            }
+
             prepend += parent.slf[sample_type_index];
         }
-        res.push(lvl.clone());
-        ref_len = refs.len();
+
+        res.push(lvl);
+        current_level_nodes = next_level_nodes;
     }
 }
 
@@ -396,22 +386,6 @@ impl TrieReader {
         string
     }
 
-    /*fn read_blob(&mut self) -> &[u8] {
-        let size = self.read_size();
-        let string = &self.bytes[self.offs..self.offs + size];
-        self.offs += size;
-        string
-    }
-
-    fn read_string_vec(&mut self) -> Vec<String> {
-        let mut res = Vec::new();
-        let size = self.read_size();
-        for _ in 0..size {
-            res.push(self.read_string());
-        }
-        res
-    }*/
-
     fn read_blob_vec(&mut self) -> Vec<&[u8]> {
         let mut res = Vec::new();
         let size = self.read_size();
@@ -443,179 +417,74 @@ impl TrieReader {
         }
         res
     }
-    /*fn end(&self) -> bool {
-        self.offs >= self.bytes.len()
-    }*/
 }
 
-fn merge_trie(tree: &mut Tree, bytes: &[u8], samples_type: &String) {
-    let _sample_type_index = tree.sample_types.iter().position(|x| x == samples_type);
-    if _sample_type_index.is_none() {
-        return;
-    }
-    let sample_type_index = _sample_type_index.unwrap();
+fn merge_trie(tree: &mut Tree, bytes: &[u8], sample_type: &str) {
+    let sample_type_index = match tree.sample_types.iter().position(|x| x == sample_type) {
+        Some(index) => index,
+        None => return,
+    };
+
     let mut reader = TrieReader::new(bytes);
-    let mut size = reader.read_size();
-    for _i in 0..size {
+
+    for _ in 0..reader.read_size() {
         let id = reader.read_uint64_le();
         let func = reader.read_string();
-        if !tree.names_map.contains_key(&id) && tree.names.len() < 2000000 {
-            tree.names.push(func);
-            tree.names_map.insert(id, tree.names.len() - 1);
+        if tree.names_map.len() < 2_000_000 {
+            if !tree.names_map.contains_key(&id) {
+                tree.names.push(func);
+                tree.names_map.insert(id, tree.names.len() - 1);
+            }
         }
     }
 
-    size = reader.read_size();
-    for _i in 0..size {
+    for _ in 0..reader.read_size() {
         let parent_id = reader.read_uint64_le();
         let fn_id = reader.read_uint64_le();
         let node_id = reader.read_uint64_le();
-        let _slf = reader.read_uint64_le() as i64;
-        let _total = reader.read_uint64_le() as i64;
-        if tree.max_self[sample_type_index] < _slf {
-            tree.max_self[sample_type_index] = _slf;
+        let slf_value = reader.read_uint64_le() as i64;
+        let total_value = reader.read_uint64_le() as i64;
+
+        if tree.max_self[sample_type_index] < slf_value {
+            tree.max_self[sample_type_index] = slf_value;
         }
+
         let mut slf = vec![0; tree.sample_types.len()];
-        slf[sample_type_index] = _slf;
+        slf[sample_type_index] = slf_value;
+
         let mut total = vec![0; tree.sample_types.len()];
-        total[sample_type_index] = _total;
-        let mut n: i32 = -1;
-        if tree.nodes.contains_key(&parent_id) {
-            n = find_node(node_id, tree.nodes.get(&parent_id).unwrap());
+        total[sample_type_index] = total_value;
+
+        if let Some(children) = tree.nodes.get_mut(&parent_id) {
+            if let Some(pos) = find_node(node_id, children) {
+                let node_arc = &children[pos];
+                let mut node = node_arc.as_ref().clone();
+
+                node.slf[sample_type_index] += slf_value;
+                node.total[sample_type_index] += total_value;
+
+                children[pos] = Arc::new(node);
+                continue;
+            }
         }
-        if n != -1 {
-            let mut __node = tree.nodes.get_mut(&parent_id).unwrap().get_mut(n as usize).unwrap().clone();
-            let mut _node = __node.as_ref().clone();
-            _node.total[sample_type_index] += total[sample_type_index];
-            _node.slf[sample_type_index] += slf[sample_type_index];
-            tree.nodes.get_mut(&parent_id).unwrap()[n as usize] = Arc::new(_node);
-        }
-        if tree.nodes_num >= 2000000 {
+
+        if tree.nodes_num >= 2_000_000 {
             return;
         }
-        if !tree.nodes.contains_key(&parent_id) {
-            tree.nodes.insert(parent_id, Vec::new());
-        }
-        tree.nodes.get_mut(&parent_id).unwrap().push(Arc::new(TreeNodeV2 {
+
+        let children = tree.nodes.entry(parent_id).or_insert_with(Vec::new);
+        children.push(Arc::new(TreeNodeV2 {
             fn_id,
-            //parent_id,
             node_id,
             slf,
             total,
         }));
+
         tree.nodes_num += 1;
     }
 }
 
-/*fn upsert_string(prof: &mut Profile, s: String) -> i64 {
-    let mut idx = 0;
-    for i in 0..prof.string_table.len() {
-        if prof.string_table[i] == s {
-            idx = i as i64;
-            break;
-        }
-    }
-    if idx == 0 {
-        idx = prof.string_table.len() as i64;
-        prof.string_table.push(s);
-    }
-    idx
-}*/
-
-/*fn upsert_function(prof: &mut Profile, fn_id: u64, fn_name_id: i64) {
-    for f in prof.function.iter() {
-        if f.id == fn_id {
-            return;
-        }
-    }
-    let mut func = Function::default();
-    func.name = fn_name_id;
-    func.id = fn_id;
-    func.filename = upsert_string(prof, "unknown".to_string());
-    func.system_name = upsert_string(prof, "unknown".to_string());
-    prof.function.push(func);
-}*/
-
-/*fn inject_locations(prof: &mut Profile, tree: &Tree) {
-    for n in tree.names_map.iter() {
-        let hash = *n.1 as u64;
-        let name = tree.names[hash as usize].clone();
-        let fn_idx = upsert_string(prof, name);
-        upsert_function(prof, *n.0, fn_idx);
-        let mut loc = Location::default();
-        let mut line = Line::default();
-        line.function_id = *n.0;
-        loc.id = *n.0;
-        loc.line = vec![line];
-        prof.location.push(loc)
-    }
-}*/
-
-/*fn upsert_sample(prof: &mut Profile, loc_id: Vec<u64>, val: i64, val_idx: i64) -> i64 {
-    let mut idx = -1;
-    for i in 0..prof.sample.len() {
-        if prof.sample[i].location_id.len() != loc_id.len() {
-            continue;
-        }
-        let mut found = true;
-        for j in 0..prof.sample[i].location_id.len() {
-            if prof.sample[i].location_id[j] != loc_id[j] {
-                found = false;
-                break;
-            }
-        }
-        if found {
-            idx = i as i64;
-            break;
-        }
-    }
-    if idx == -1 {
-        let mut sample = Sample::default();
-        sample.location_id = loc_id.clone();
-        sample.location_id.reverse();
-        idx = prof.sample.len() as i64;
-        prof.sample.push(sample);
-    }
-    while prof.sample[idx as usize].value.len() <= val_idx as usize {
-        prof.sample[idx as usize].value.push(0)
-    }
-    prof.sample[idx as usize].value[val_idx as usize] += val;
-    idx
-}*/
-
-/*fn inject_functions(
-    prof: &mut Profile,
-    tree: &Tree,
-    parent_id: u64,
-    loc_ids: Vec<u64>,
-    val_idx: i64,
-) {
-    if !tree.nodes.contains_key(&parent_id) {
-        return;
-    }
-    let children = tree.nodes.get(&parent_id).unwrap();
-    for node in children.iter() {
-        let mut _loc_ids = loc_ids.clone();
-        _loc_ids.push(node.fn_id);
-        //TODO:
-        upsert_sample(prof, _loc_ids.clone(), node.slf[0 /*TODO*/] as i64, val_idx);
-        if tree.nodes.contains_key(&node.node_id) {
-            inject_functions(prof, tree, node.node_id, _loc_ids, val_idx);
-        }
-    }
-}*/
-
-/*fn merge_profile(tree: &Tree, prof: &mut Profile, sample_type: String, sample_unit: String) {
-    let mut value_type = ValueType::default();
-    value_type.r#type = upsert_string(prof, sample_type);
-    value_type.unit = upsert_string(prof, sample_unit);
-    prof.sample_type.push(value_type);
-    let type_idx = prof.sample_type.len() as i64 - 1;
-    inject_locations(prof, tree);
-    inject_functions(prof, tree, 0, vec![], type_idx);
-}*/
-
-fn assert_positive(t: &Tree) -> bool{
+fn assert_positive(t: &Tree) -> bool {
     for n in t.nodes.keys() {
         for _n in 0..t.nodes.get(&n).unwrap().len() {
             for __n in 0..t.nodes.get(&n).unwrap()[_n].slf.len() {
@@ -661,252 +530,222 @@ pub fn merge_tree(id: u32, bytes: &[u8], sample_type: String) {
 #[wasm_bindgen]
 pub fn diff_tree(id1: u32, id2: u32, sample_type: String) -> Vec<u8> {
     let mut ctx = CTX.lock().unwrap();
-    let _ctx = &mut ctx;
-    upsert_tree(_ctx, id1, vec![sample_type.clone()]);
-    upsert_tree(_ctx, id2, vec![sample_type.clone()]);
-    let mut t1 = _ctx.get(&id1).unwrap().lock().unwrap();
-    let mut t2 = _ctx.get(&id2).unwrap().lock().unwrap();
-    let mut is_positive = assert_positive(&t1);
-    if !is_positive {
-        panic!("Tree 1 is not positive");
-    }
-    is_positive = assert_positive(&t2);
-    if!is_positive {
-        panic!("Tree 2 is not positive");
-    }
+    upsert_tree(&mut ctx, id1, vec![sample_type.clone()]);
+    upsert_tree(&mut ctx, id2, vec![sample_type.clone()]);
 
+    let mut t1 = ctx.get(&id1).unwrap().lock().unwrap();
+    let mut t2 = ctx.get(&id2).unwrap().lock().unwrap();
 
-    for n in t1.names_map.keys() {
-        if !t2.names_map.contains_key(&n) {
-            t2.names.push(t1.names[*t1.names_map.get(&n).unwrap()].clone());
-            let idx = t2.names.len() - 1;
-            t2.names_map.insert(*n, idx);
-        }
-    }
-    for n in t2.names_map.keys() {
-        if !t1.names_map.contains_key(&n) {
-            let idx = t2.names_map.get(&n).unwrap().clone();
-            t1.names.push(t2.names[idx].clone());
-            let idx2 = t1.names.len() - 1;
-            t1.names_map.insert(*n, idx2);
-        }
-    }
+    assert_tree_positive(&t1, "Tree 1");
+    assert_tree_positive(&t2, "Tree 2");
 
-    let keys = t1.nodes.keys().map(|x| (*x).clone()).collect::<Vec<_>>();
-    for n in  keys {
-        if !t2.nodes.contains_key(&n) {
-            t2.nodes.insert(n, vec![]);
-        }
-        let lnodes = t1.nodes.get_mut(&n).unwrap();
-        let rnodes = t2.nodes.get_mut(&n).unwrap();
-        lnodes.sort_by(|x, y|
-            if x.node_id < y.node_id { Ordering::Less } else { Ordering::Greater });
-        rnodes.sort_by(|x, y|
-            if x.node_id < y.node_id { Ordering::Less } else { Ordering::Greater });
-        let mut i = 0;
-        let mut j = 0;
-        let mut new_t1_nodes: Vec<Arc<TreeNodeV2>> = vec![];
-        let mut new_t2_nodes: Vec<Arc<TreeNodeV2>> = vec![];
-        let t1_nodes = t1.nodes.get(&n).unwrap();
-        let t2_nodes = t2.nodes.get(&n).unwrap();
-        while i < t1_nodes.len() && j < t2_nodes.len() {
-            if n == 0 {
-                println!("{:?}:{:?} - {:?}:{:?}",
-                         t1_nodes[i].node_id,
-                    t1.names[*t1.names_map.get(&t1_nodes[i].fn_id).unwrap() as usize],
-                         t2_nodes[j].node_id,
-                         t2.names[*t2.names_map.get(&t2_nodes[j].fn_id).unwrap() as usize]
-                )
-            }
+    synchronize_names(&mut t1, &mut t2);
+    merge_nodes(&mut t1, &mut t2);
 
-            if t1_nodes[i].node_id == t2_nodes[j].node_id {
-                new_t1_nodes.push(t1_nodes[i].clone());
-                new_t2_nodes.push(t2_nodes[j].clone());
-                i += 1;
-                j += 1;
-                continue;
-            }
-            if t1_nodes[i].node_id < t2_nodes[j].node_id {
-                new_t1_nodes.push(t1_nodes[i].clone());
-                new_t2_nodes.push(Arc::new(TreeNodeV2{
-                    node_id: t1_nodes[i].node_id,
-                    fn_id: t1_nodes[i].fn_id,
-                    slf: vec![0],
-                    total: vec![0],
-                }));
-                i += 1;
-            } else {
-                new_t2_nodes.push(t2_nodes[j].clone());
-                new_t1_nodes.push(Arc::new(TreeNodeV2{
-                    node_id: t2_nodes[j].node_id,
-                    fn_id: t2_nodes[j].fn_id,
-                    slf: vec![0],
-                    total: vec![0],
-                }));
-                j += 1;
-            }
-        }
-        while i < t1_nodes.len() {
-            new_t1_nodes.push(t1_nodes[i].clone());
-            new_t2_nodes.push(Arc::new(TreeNodeV2{
-                node_id: t1_nodes[i].node_id,
-                fn_id: t1_nodes[i].fn_id,
-                slf: vec![0],
-                total: vec![0],
-            }));
-            i += 1;
-        }
-        while j < t2_nodes.len() {
-            new_t2_nodes.push(t2_nodes[j].clone());
-            new_t1_nodes.push(Arc::new(TreeNodeV2{
-                node_id: t2_nodes[j].node_id,
-                fn_id: t2_nodes[j].fn_id,
-                slf: vec![0],
-                total: vec![0],
-            }));
-            j+=1;
-        }
-        t1.nodes.insert(n, new_t1_nodes);
-        t2.nodes.insert(n, new_t2_nodes);
-    }
+    let flame_graph_diff = compute_flame_graph_diff(&t1, &t2);
 
-    for n in t2.nodes.keys().clone() {
-        if!t1.nodes.contains_key(&n) {
-            let mut new_t1_nodes: Vec<Arc<TreeNodeV2>> = vec![];
-            for _n in t2.nodes.get(&n).unwrap() {
-                new_t1_nodes.push(Arc::new(TreeNodeV2{
-                    node_id: _n.node_id,
-                    fn_id: _n.fn_id,
-                    slf: vec![0],
-                    total: vec![0],
-                }))
-            }
-            t1.nodes.insert(*n, new_t1_nodes);
-        }
-    }
-
-    let total_left = t1.total();
-    let total_right = t2.total();
-    let mut min_val = 0 as i64;
-    let tn = Arc::new(TreeNodeV2{
-        fn_id: 0,
-        node_id: 0,
-        slf: vec![0],
-        total: vec![total_left],
-    });
-    let mut left_nodes = vec![tn];
-    let tn2 = Arc::new(TreeNodeV2{
-        fn_id: 0,
-        node_id: 0,
-        slf: vec![0],
-        total: vec![total_right],
-    });
-    let mut right_nodes = vec![tn2];
-
-    let mut x_left_offsets = vec![0 as i64];
-    let mut x_right_offsets = vec![0 as i64];
-    let mut levels = vec![0 as i64];
-    let mut name_location_cache: HashMap<String, i64> = HashMap::new();
-    let mut res = FlameGraphDiff::default();
-    res.left_ticks = total_left;
-    res.right_ticks = total_right;
-    res.total = total_left + total_right;
-    while left_nodes.len() > 0 {
-        let left = left_nodes.pop().unwrap();
-        let right = right_nodes.pop().unwrap();
-        let mut x_left_offset = x_left_offsets.pop().unwrap();
-        let mut x_right_offset = x_right_offsets.pop().unwrap();
-        let level = levels.pop().unwrap();
-        let mut name: String = "total".to_string();
-        if left.fn_id != 0 {
-            name = t1.names[t1.names_map.get(&left.fn_id).unwrap().clone() as usize].clone();
-        }
-        if left.total[0] >= min_val || right.total[0] >= min_val || name == "other" {
-            let mut i = 0 as i64;
-            if !name_location_cache.contains_key(&name) {
-                res.names.push(name.clone().to_string());
-                name_location_cache.insert(name, (res.names.len() - 1) as i64);
-                i = res.names.len() as i64 - 1;
-            } else {
-                i = *name_location_cache.get(name.as_str()).unwrap();
-            }
-            if level == res.levels.len() as i64 {
-                res.levels.push(Level::default())
-            }
-            if res.max_self < left.slf[0] {
-                res.max_self = left.slf[0];
-            }
-            if res.max_self < right.slf[0] {
-                res.max_self = right.slf[0];
-            }
-            let mut values = vec![x_left_offset, left.total[0], left.slf[0],
-                                  x_right_offset, right.total[0], right.slf[0], i];
-            res.levels[level as usize].values.extend(values);
-            let mut other_left_total = 0 as i64;
-            let mut other_right_total = 0 as i64;
-            let mut nodes_len = 0;
-            if t1.nodes.contains_key(&left.node_id) {
-                nodes_len = t1.nodes.get(&left.node_id).unwrap().len().clone();
-            }
-            for j in 0..nodes_len {
-                let _left = t1.nodes.get(&left.node_id).unwrap()[j].clone();
-                let _right = t2.nodes.get(&left.node_id).unwrap()[j].clone();
-                if _left.total[0] >= min_val || _right.total[0] >= min_val {
-                    levels.insert(0, level + 1);
-                    x_left_offsets.insert(0, x_left_offset);
-                    x_right_offsets.insert(0, x_right_offset);
-                    x_left_offset += _left.total[0].clone() as i64;
-                    x_right_offset += _right.total[0].clone() as i64;
-                    left_nodes.insert(0, _left.clone());
-                    right_nodes.insert(0, _right.clone());
-                } else {
-                    other_left_total += _left.total[0] as i64;
-                    other_right_total += _right.total[0] as i64;
-                }
-                if other_left_total > 0 || other_right_total > 0 {
-                    levels.insert(0, level + 1);
-                    t1.add_name("other".to_string(), 1);
-                    x_left_offsets.insert(0, x_left_offset);
-                    left_nodes.insert(0, Arc::new(TreeNodeV2{
-                        fn_id: 1,
-                        node_id: 1,
-                        slf: vec![other_left_total as i64],
-                        total: vec![other_left_total as i64],
-                    }));
-                    t2.add_name("other".to_string(), 1);
-                    x_right_offsets.insert(0, x_right_offset);
-                    right_nodes.insert(0, Arc::new(TreeNodeV2{
-                        fn_id: 1,
-                        node_id: 1,
-                        slf: vec![other_right_total as i64],
-                        total: vec![other_right_total as i64],
-                    }));
-                }
-            }
-        }
-
-    }
-    for i in 0..res.levels.len() {
-        let mut j = 0;
-        let mut prev = 0 as i64;
-        while j < res.levels[i].values.len() {
-            res.levels[i].values[j] -= prev;
-            prev += res.levels[i].values[j] + res.levels[i].values[j+1];
-            j += 7;
-        }
-        prev = 0;
-        j = 3;
-        while j < res.levels[i].values.len() {
-            res.levels[i].values[j] -= prev;
-            prev += res.levels[i].values[j] + res.levels[i].values[j+1];
-            j += 7;
-        }
-    }
-
-    res.encode_to_vec()
+    flame_graph_diff.encode_to_vec()
 }
 
+fn assert_tree_positive(tree: &Tree, tree_name: &str) {
+    if !assert_positive(tree) {
+        panic!("{} is not positive", tree_name);
+    }
+}
 
+fn synchronize_names(t1: &mut Tree, t2: &mut Tree) {
+    let mut names_to_add_to_t2 = vec![];
+    for (&id, &idx) in &t1.names_map {
+        if !t2.names_map.contains_key(&id) {
+            names_to_add_to_t2.push((id, t1.names[idx].clone()));
+        }
+    }
+
+    for (id, name) in names_to_add_to_t2 {
+        let idx = t2.names.len();
+        t2.names.push(name);
+        t2.names_map.insert(id, idx);
+    }
+
+    let mut names_to_add_to_t1 = vec![];
+    for (&id, &idx) in &t2.names_map {
+        if !t1.names_map.contains_key(&id) {
+            names_to_add_to_t1.push((id, t2.names[idx].clone()));
+        }
+    }
+
+    for (id, name) in names_to_add_to_t1 {
+        let idx = t1.names.len();
+        t1.names.push(name);
+        t1.names_map.insert(id, idx);
+    }
+}
+
+fn merge_nodes(t1: &mut Tree, t2: &mut Tree) {
+    let mut keys: HashSet<u64> = HashSet::new();
+    keys.extend(t1.nodes.keys());
+    keys.extend(t2.nodes.keys());
+
+    for key in keys {
+        let t1_children = t1.nodes.entry(key).or_insert_with(Vec::new);
+        let t2_children = t2.nodes.entry(key).or_insert_with(Vec::new);
+
+        t1_children.sort_by_key(|n| n.node_id);
+        t2_children.sort_by_key(|n| n.node_id);
+
+        let (new_t1_nodes, new_t2_nodes) = merge_children(t1_children, t2_children);
+        t1.nodes.insert(key, new_t1_nodes);
+        t2.nodes.insert(key, new_t2_nodes);
+    }
+}
+
+fn merge_children(
+    t1_nodes: &[Arc<TreeNodeV2>],
+    t2_nodes: &[Arc<TreeNodeV2>],
+) -> (Vec<Arc<TreeNodeV2>>, Vec<Arc<TreeNodeV2>>) {
+    let mut new_t1_nodes = Vec::new();
+    let mut new_t2_nodes = Vec::new();
+    let mut i = 0;
+    let mut j = 0;
+
+    while i < t1_nodes.len() && j < t2_nodes.len() {
+        if t1_nodes[i].node_id == t2_nodes[j].node_id {
+            new_t1_nodes.push(t1_nodes[i].clone());
+            new_t2_nodes.push(t2_nodes[j].clone());
+            i += 1;
+            j += 1;
+        } else if t1_nodes[i].node_id < t2_nodes[j].node_id {
+            new_t1_nodes.push(t1_nodes[i].clone());
+            new_t2_nodes.push(create_empty_node(&t1_nodes[i]));
+            i += 1;
+        } else {
+            new_t2_nodes.push(t2_nodes[j].clone());
+            new_t1_nodes.push(create_empty_node(&t2_nodes[j]));
+            j += 1;
+        }
+    }
+
+    while i < t1_nodes.len() {
+        new_t1_nodes.push(t1_nodes[i].clone());
+        new_t2_nodes.push(create_empty_node(&t1_nodes[i]));
+        i += 1;
+    }
+
+    while j < t2_nodes.len() {
+        new_t2_nodes.push(t2_nodes[j].clone());
+        new_t1_nodes.push(create_empty_node(&t2_nodes[j]));
+        j += 1;
+    }
+
+    (new_t1_nodes, new_t2_nodes)
+}
+
+fn create_empty_node(node: &Arc<TreeNodeV2>) -> Arc<TreeNodeV2> {
+    Arc::new(TreeNodeV2 {
+        node_id: node.node_id,
+        fn_id: node.fn_id,
+        slf: vec![0],
+        total: vec![0],
+    })
+}
+
+fn compute_flame_graph_diff(t1: &Tree, t2: &Tree) -> FlameGraphDiff {
+    let mut res = FlameGraphDiff::default();
+    res.left_ticks = t1.total()[0];
+    res.right_ticks = t2.total()[0];
+    res.total = res.left_ticks + res.right_ticks;
+
+    let mut left_nodes: VecDeque<Arc<TreeNodeV2>> = VecDeque::new();
+    left_nodes.push_back(Arc::new(TreeNodeV2 {
+        fn_id: 0,
+        node_id: 0,
+        slf: vec![0],
+        total: vec![res.left_ticks],
+    }));
+
+    let mut right_nodes: VecDeque<Arc<TreeNodeV2>> = VecDeque::new();
+    right_nodes.push_back(Arc::new(TreeNodeV2 {
+        fn_id: 0,
+        node_id: 0,
+        slf: vec![0],
+        total: vec![res.right_ticks],
+    }));
+
+    let mut levels = vec![0];
+    let mut x_left_offsets: VecDeque<i64> = VecDeque::new();
+    x_left_offsets.push_back(0);
+    let mut x_right_offsets = VecDeque::new();
+    x_right_offsets.push_back(0);
+    let mut name_location_cache: HashMap<String, i64> = HashMap::new();
+
+    while let (Some(left), Some(right)) =
+        (left_nodes.pop_back(), right_nodes.pop_back()) {
+        let mut x_left_offset = x_left_offsets.pop_back().unwrap().clone();
+        let mut x_right_offset = x_right_offsets.pop_back().unwrap().clone();
+        let level = levels.pop().unwrap();
+
+        let name = if left.fn_id == 0 {
+            "total".to_string()
+        } else {
+            t1.names[*t1.names_map.get(&left.fn_id).unwrap()].clone()
+        };
+
+        let name_idx = *name_location_cache.entry(name.clone()).or_insert_with(|| {
+            res.names.push(name);
+            (res.names.len() - 1) as i64
+        });
+
+        if res.levels.len() <= level {
+            res.levels.push(Level::default());
+        }
+
+        if res.max_self < left.slf[0] {
+            res.max_self = left.slf[0];
+        }
+        if res.max_self < right.slf[0] {
+            res.max_self = right.slf[0];
+        }
+
+        res.levels[level].values.extend_from_slice(&[
+            x_left_offset,
+            left.total[0],
+            left.slf[0],
+            x_right_offset,
+            right.total[0],
+            right.slf[0],
+            name_idx,
+        ]);
+
+        if let Some(children_left) = t1.nodes.get(&left.node_id) {
+            let empty_vec = Vec::new();
+            let children_right = t2.nodes.get(&right.node_id).unwrap_or(&empty_vec);
+            for (child_left, child_right) in children_left.iter().zip(children_right.iter()) {
+                left_nodes.push_front(child_left.clone());
+                right_nodes.push_front(child_right.clone());
+                x_left_offsets.push_front(x_left_offset.clone());
+                x_right_offsets.push_front(x_right_offset.clone());
+                x_left_offset += child_left.total[0].clone();
+                x_right_offset += child_right.total[0].clone();
+                levels.insert(0,level + 1);
+            }
+        }
+    }
+
+    for i in 0..res.levels.len() {
+        let mut j = 0;
+        let mut prev0 = 0i64;
+        let mut prev3 = 0i64;
+        while j < res.levels[i].values.len() {
+            res.levels[i].values[j] -= prev0;
+            prev0 += res.levels[i].values[j] + res.levels[i].values[j+1];
+            res.levels[i].values[j+3] -= prev3;
+            prev3 += res.levels[i].values[j+3] + res.levels[i].values[j+4];
+            j += 7;
+        }
+    }
+
+    res
+}
 
 #[wasm_bindgen]
 pub fn export_tree(id: u32, sample_type: String) -> Vec<u8> {
@@ -953,11 +792,10 @@ pub fn merge_trees_pprof(id: u32, payload: &[u8]) {
                 decoder.read_to_end(&mut decompressed).unwrap();
                 let mut prof = Profile::decode(std::io::Cursor::new(decompressed)).unwrap();
                 merger.merge(&mut prof);
-            }else {
+            } else {
                 let mut prof = Profile::decode(bin_prof).unwrap();
                 merger.merge(&mut prof);
             }
-
         }
         let res = merger.profile();
         tree.pprof = res;
