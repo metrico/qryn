@@ -445,7 +445,7 @@ module.exports.preJoinLabels = (token, query, dist) => {
   dist = dist || ''
   const timeSeriesReq = new Sql.Select()
     .select('fingerprint', 'labels')
-    .from([`${DATABASE_NAME()}.time_series${dist}`, 'time_series'])
+    .from([`${DATABASE_NAME()}.time_series`, 'time_series'])
     .where(new Sql.And(
       new Sql.In('time_series.fingerprint', 'in', inRightSide),
       Sql.Gte(new Sql.Raw('date'), sqlFrom),

@@ -60,7 +60,9 @@ module.exports.series = async (query, fromMs, toMs) => {
     const data = await rawRequest(req.toString() + ' FORMAT JSON',
       null,
       DATABASE_NAME())
-    return data.data.data.map(l => JSON.parse(l.labels))
+    return data.data.data.map(l =>
+      Object.fromEntries(Object.entries(JSON.parse(l.labels)).filter(e => e[1]))
+    )
   } catch (e) {
     if (e instanceof prometheus.WasmError) {
       throw new PSQLError(e.message)

@@ -9,3 +9,6 @@ node_modules
 /wasm_parts/vendor/
 /wasm_parts/main.wasm
 /wasm_parts/wasm_parts.iml
+/test/qryn_test_env/clickhouse/_data/
+/test/qryn_test_env/grafana/_data/
+/test/qryn_test_cluster_env/grafana/_data/
