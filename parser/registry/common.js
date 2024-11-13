@@ -85,9 +85,11 @@ module.exports.querySelectorPostProcess = (query) => {
  * @returns {string}
  */
 module.exports.unquoteToken = (token) => {
-  let value = token.Child('quoted_str').value
-  value = `"${value.substr(1, value.length - 2)}"`
-  return JSON.parse(value)
+  const value = token.Child('quoted_str').value
+  if (value.startsWith('"')) {
+    return JSON.parse(value)
+  }
+  return value.substr(1, value.length - 2)
 }
 
 /**
