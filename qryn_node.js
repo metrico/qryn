@@ -243,11 +243,9 @@ let fastify = require('fastify')({
   })
   const handlerElasticBulk = require('./lib/handlers/elastic_bulk.js').bind(this)
   writerMode && fastify.post('/_bulk', handlerElasticBulk, {
-    'application/json': jsonParser,
     '*': rawStringParser
   })
   writerMode && fastify.post('/:target/_bulk', handlerElasticBulk, {
-    'application/json': jsonParser,
     '*': rawStringParser
   })
 
