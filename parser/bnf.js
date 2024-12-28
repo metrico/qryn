@@ -81,32 +81,23 @@ compiler.ParseScript = function (script) {
   const aqLiterals = []
   let _script = script
   let res = ''
-  let qsMatch = _script.match(/^([^"]*)("([^"\\]|\\.)*")?/)
+  const re = /^([^"`]*)("(([^"\\]|\\.)*)"|`(([^`\\]|\\.)*)`)?/
+  let qsMatch = _script.match(re)
   while (qsMatch && qsMatch[0]) {
-    let repl = qsMatch[2] || ''
+    let repl = qsMatch[2] || qsMatch[4] || ''
     if (repl.length > 512) {
-      qLiterals.push(repl)
-      repl = `"QL_${qLiterals.length - 1}"`
+      if (repl.startsWith('"')) {
+        qLiterals.push(repl)
+        repl = `"QL_${qLiterals.length - 1}"`
+      } else {
+        aqLiterals.push(repl)
+        repl = `\`AL_${aqLiterals.length - 1}\``
+      }
     }
     res = res + qsMatch[1] + repl
     _script = _script.slice(qsMatch[0].length)
-    qsMatch = _script.match(/^([^"]*)("([^"\\]|\\.)*")?/)
+    qsMatch = _script.match(re)
   }
-
-  _script = res
-  res = ''
-  qsMatch = _script.match(/^([^`]*)(`([^`\\]|\\.)*`)?/)
-  while (qsMatch && qsMatch[0]) {
-    let repl = qsMatch[2] || ''
-    if (repl.length > 512) {
-      aqLiterals.push(repl)
-      repl = `\`AL_${qLiterals.length - 1}\``
-    }
-    res = res + qsMatch[1] + repl
-    _script = _script.slice(qsMatch[0].length)
-    qsMatch = _script.match(/^([^`]*)(`([^`\\]|\\.)*`)?/)
-  }
-
   const parsedScript = this._ParseScript(res)
   if (!parsedScript) {
     return parsedScript
