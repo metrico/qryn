@@ -72,7 +72,7 @@ module.exports = class Builder {
       for (const term of self.terms) {
         const sqlTerm = self.getTerm(term)
         self.sqlConditions.push(sqlTerm)
-        if (!term.Child('label_name').value.match(/^(\.|span\.|resource\.|name)/)) {
+        if (!term.Child('label_name').value.match(/^(\.|span\.|resource\.|name|status)/)) {
           continue
         }
         self.where.push(sqlTerm)
@@ -180,6 +180,9 @@ module.exports = class Builder {
           return this.getDurationCondition(key, term)
         case 'name':
           key = 'name'
+          break
+        case 'status':
+          key = 'status'
           break
         default:
           throw new Error(`unsupported attribute ${key}`)
