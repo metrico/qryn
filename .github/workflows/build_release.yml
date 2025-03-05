@@ -1,62 +1,33 @@
 name: 'CI+CD'
 
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
+    inputs:
+      ref_name:
+        description: Release Version
+        required: true
+      release:
+        required: true
+        type: boolean
+  release:
+    types: [created]
 
 jobs:
   node:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
     name: 'Build & Publish'
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.1.1
         with:
           ref: ${{ github.ref }}
-#      - name: Check Docker secret presence
-#        id: checkdocker
-#        shell: bash
-#        run: |
-#          if [ "$SECRET" == "" ]; then
-#            echo "secretspresent=false" >> $GITHUB_OUTPUT
-#          else
-#            echo "secretspresent=true" >> $GITHUB_OUTPUT
-#          fi
-#        env:
-#          SECRET: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: build qryn-view
         uses: ./.github/actions/get-view
         env:
           TAG: v3.3.2
-#      - name: Set up Docker QEMU
-#        if: ${{ steps.checkdocker.outputs.secretspresent }}
-#        uses: docker/setup-qemu-action@v3.0.0
-#        with:
-#           platforms: amd64, arm64
       - run: bash -c 'pwd && ls view/dist'
-        
-#      - name: Login to DockerHub
-#        if: ${{ steps.checkdocker.outputs.secretspresent }}
-#        uses: docker/login-action@v3.0.0
-#        with:
-#          username: ${{ secrets.DOCKERHUB_USERNAME }}
-#          password: ${{ secrets.DOCKERHUB_TOKEN }}
-#      - name: Build and push to Docker Hub
-#        if: ${{ steps.checkdocker.outputs.secretspresent }}
-#        uses: docker/build-push-action@v6
-#        with:
-#          context: "."
-#          platforms: linux/amd64, linux/arm64
-#          push: true
-#          tags: |
-#            qxip/qryn:latest
-#            qxip/qryn:${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}
-#            qxip/cloki:latest
-#            qxip/cloki:${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}
-#          labels: |
-#            dev.qryn.image.title=qryn
-#            dev.qryn.image.type=nodejs
-#            dev.qryn.image.version={{github.event.inputs.TAG_NAME || github.event.release.tag_name }}
       - name: Log in to the GHCR registry
         uses: docker/login-action@v3.0.0
         with:
@@ -72,7 +43,8 @@ jobs:
           file: ./scripts/deploy/docker/Dockerfile
           push: true
           tags: |
-             ghcr.io/metrico/qryn-aio-oos:latest
+             ghcr.io/metrico/gigapipe:latest
+             ghcr.io/metrico/gigapipe:{{ github.event_name == 'workflow_dispatch') && github.event.inputs.ref_name || github.ref_name }}
           labels: |
             dev.qryn.image.title=qryn
             dev.qryn.image.type=go
