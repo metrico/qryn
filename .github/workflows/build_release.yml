@@ -1,10 +1,15 @@
-name: 'CI+CD'
+name: 'CI+CD Gigapipe'
 
 on:
   workflow_dispatch:
     inputs:
       ref_name:
         description: Release Version
+        required: true
+      branch:
+        description: Release Branch
+        type: string
+        default: 'main'
         required: true
       release:
         required: true
@@ -22,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.1
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ (github.event_name == 'workflow_dispatch') && github.event.inputs.branch || github.ref }}
       - name: build qryn-view
         uses: ./.github/actions/get-view
         env:
@@ -44,8 +49,6 @@ jobs:
           push: true
           tags: |
              ghcr.io/metrico/gigapipe:latest
-             ghcr.io/metrico/gigapipe:{{ github.event_name == 'workflow_dispatch') && github.event.inputs.ref_name || github.ref_name }}
+             ghcr.io/metrico/gigapipe:${{ (github.event_name == 'workflow_dispatch') && github.event.inputs.ref_name || github.ref_name }}
           labels: |
-            dev.qryn.image.title=qryn
-            dev.qryn.image.type=go
-            dev.qryn.image.version=latest
+            dev.qryn.image.title=gigapipe
