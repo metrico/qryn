@@ -66,7 +66,7 @@ const wrapResponse = (hndl) => {
       const strRes = JSON.stringify(normalizeProtoResponse(_res.toObject()))
       return res.code(200).send(strRes)
     }
-    return res.code(200).send(Buffer.from(_res.serializeBinary()))
+    return res.code(200).type('application/proto').send(Buffer.from(_res.serializeBinary()))
   }
 }
 
