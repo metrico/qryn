@@ -1,3 +1,4 @@
+# TODO: Check if it works for new version
 name: Resync PR with Master
 
 on:

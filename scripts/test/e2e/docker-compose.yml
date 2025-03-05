@@ -1,0 +1,58 @@
+# small setup for e2e tests
+version: '2.1'
+networks:
+  common:
+    driver: bridge
+services:
+  e2e-aio:
+    image: gigapipe:latest
+    container_name: e2e.aio
+    hostname: e2e.aio
+    expose:
+      - 9080
+    networks:
+      - common
+    ports:
+      - '3102:9080'
+    environment:
+      CLUSTER_NAME: "test_cluster_two_shards"
+      CLICKHOUSE_SERVER: "e2e.clickhouse"
+      QRYN_LOGIN: a
+      QRYN_PASSWORD: b
+      BULK_MAX_AGE_MS: "100"
+      PORT: "9080"
+    command:
+      - sh
+      - -c
+      - sleep 15 && /gigapipe
+  e2e-clickhouse:
+    image: clickhouse/clickhouse-server:24.9.1
+    container_name: e2e.clickhouse
+    hostname: e2e.clickhouse
+    volumes:
+      - ./clickhouse/config.xml:/etc/clickhouse-server/config.xml
+    networks:
+      common:
+        aliases:
+          - "clickhouse_1"
+    expose:
+      - "2181"
+      - "9444"
+      - "9000"
+  e2e-clickhouse2:
+    image: clickhouse/clickhouse-server:24.9.1
+    container_name: e2e.clickhouse2
+    hostname: e2e.clickhouse2
+    volumes:
+      - ./clickhouse/config2.xml:/etc/clickhouse-server/config.xml
+    networks:
+      common:
+        aliases:
+          - "clickhouse_2"
+    expose:
+      - "2181"
+      - "9444"
+      - "9000"
+
+
+# CLUSTER_NAME=test_cluster_two_shards CLICKHOUSE_SERVER=e2e.clickhouse QRYN_LOGIN=a QRYN_PASSWORD=b BULK_MAX_AGE_MS=100 PORT=9080

@@ -1,3 +1,4 @@
+# TODO! Change the way qryn runs
 name: K6 Test qxip/qryn
 on:
   push:
