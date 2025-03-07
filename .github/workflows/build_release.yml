@@ -21,7 +21,6 @@ jobs:
   node:
     strategy:
       matrix:
-#        os: [ubuntu-latest, ubuntu-24.04-arm]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     name: 'Build & Publish'
@@ -51,7 +50,7 @@ jobs:
             VIEW=1
           file: ./scripts/deploy/docker/Dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
           tags: |
              ghcr.io/metrico/gigapipe:latest
              ghcr.io/metrico/gigapipe:${{ (github.event_name == 'workflow_dispatch') && github.event.inputs.ref_name || github.ref_name }}
