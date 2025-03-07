@@ -270,14 +270,15 @@ func (svc *InsertServiceV2) fetchLoopIteration() {
 		}
 	}
 
-	if svc.OnBeforeInsert != nil {
-		svc.OnBeforeInsert()
-	}
-
 	portion, err := svc.swapBuffers()
 	if portion == nil {
 		return
 	}
+
+	if svc.OnBeforeInsert != nil {
+		svc.OnBeforeInsert()
+	}
+
 	waiting := append([]*promise.Promise[uint32]{}, portion.res...)
 	releaseWaiting := func(err error) {
 		for _, w := range waiting {

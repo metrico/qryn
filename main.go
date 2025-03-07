@@ -259,6 +259,8 @@ func main() {
 		view.Init(cfg, app)
 	}
 
+	initPyro()
+
 	httpURL := fmt.Sprintf("%s:%d", cfg.Setting.HTTP_SETTINGS.Host, cfg.Setting.HTTP_SETTINGS.Port)
 	httpStart(app, httpURL)
 }
