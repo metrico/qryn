@@ -1,4 +1,0 @@
-id: macros
-name: Macros plugin base
-description: Base plugin for macros type
-loader: index.js

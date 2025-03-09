@@ -1,8 +1,0 @@
-/target
-**/*.rs.bk
-Cargo.lock
-bin/
-wasm-pack.log
-.appveyor.yml
-.travis.yml
-README.md
