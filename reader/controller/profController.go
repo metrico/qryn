@@ -1,4 +1,5 @@
 package controllerv1
+import "html"
 
 import (
 	"encoding/json"
@@ -220,7 +221,7 @@ func (pc *ProfController) RenderDiff(w http.ResponseWriter, r *http.Request) {
 		strVal := r.URL.Query()[v[0].(string)][0]
 		iVal, err := strconv.ParseInt(strVal, 10, 64)
 		if err != nil {
-			defaultError(w, 400, fmt.Sprintf("Invalid value for %s: %s", v[0], strVal))
+			defaultError(w, 400, fmt.Sprintf("Invalid value for %s: %s", html.EscapeString(v[0].(string)), html.EscapeString(strVal)))
 			return
 		}
 		*(v[1].(*time.Time)) = time.Unix(iVal/1000, 0)

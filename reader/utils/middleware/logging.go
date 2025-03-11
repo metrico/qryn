@@ -1,4 +1,5 @@
 package middleware
+import "html"
 
 import (
 	"bufio"
@@ -24,15 +25,15 @@ func LoggingMiddleware(tpl string) func(next http.Handler) http.Handler {
 			duration := time.Since(start)
 			b := bytes.NewBuffer(nil)
 			t.Execute(b, map[string]any{
-				"method":     r.Method,
-				"url":        r.URL.String(),
-				"proto":      r.Proto,
+				"method":     html.EscapeString(r.Method),
+				"url":        html.EscapeString(r.URL.String()),
+				"proto":      html.EscapeString(r.Proto),
 				"status":     _w.statusCode,
 				"length":     _w.length,
-				"referer":    r.Referer(),
-				"user_agent": r.UserAgent(),
-				"host":       r.Host,
-				"path":       r.URL.Path,
+				"referer":    html.EscapeString(r.Referer()),
+				"user_agent": html.EscapeString(r.UserAgent()),
+				"host":       html.EscapeString(r.Host),
+				"path":       html.EscapeString(r.URL.Path),
 				"latency":    duration.String(),
 			})
 			logger.Info(string(b.Bytes()))
