@@ -303,7 +303,7 @@ func (p *parserDoer) onEntries(labels [][]string, timestampsNS []int64,
 		var _labels [][]string
 		for _, lbl := range labels {
 			if lbl[0] == "__ttl_days__" {
-				_ttlDays, err := strconv.Atoi(lbl[1])
+				_ttlDays, err := strconv.ParseInt(lbl[1], 10, 16)
 				if err == nil {
 					ttlDays = uint16(_ttlDays)
 				}
