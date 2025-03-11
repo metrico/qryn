@@ -272,7 +272,8 @@ func (q *QueryRangeService) QueryInstant(ctx context.Context, query string, time
 				val = strings.TrimSuffix(val, ".")
 			}
 			res <- model.QueryRangeOutput{Str: fmt.Sprintf(
-				`{"metric":%s, "value": [%d, "%s"]}`, string(stream), e.TimestampNS/1000000000, val)}
+				`{"metric":%s, "value": [%d, %s]}`,
+				string(stream), e.TimestampNS/1000000000, strconv.Quote(val))}
 			i++
 		}
 		res <- model.QueryRangeOutput{Str: "]}}"}
@@ -363,7 +364,8 @@ func (q *QueryRangeService) Tail(ctx context.Context, query string) (model.IWatc
 							i = 1
 							j = 0
 							stream, _ := json.Marshal(e.Labels)
-							_res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{"stream":%s, "values": [`, string(stream))}
+							_res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{"stream":%s, "values": [`,
+								string(stream))}
 						}
 						if j > 0 {
 							_res <- model.QueryRangeOutput{Str: ","}
