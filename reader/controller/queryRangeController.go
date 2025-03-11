@@ -41,9 +41,9 @@ func (q *QueryRangeController) QueryRange(w http.ResponseWriter, r *http.Request
 	//	direction = "backward"
 	//}
 	_limit := r.URL.Query().Get("limit")
-	limit := uint64(0)
+	limit := int64(0)
 	if _limit != "" {
-		limit, _ = strconv.ParseUint(_limit, 10, 64)
+		limit, _ = strconv.ParseInt(_limit, 10, 64)
 	}
 	if err != nil {
 		PromError(400, err.Error(), w)
@@ -92,9 +92,9 @@ func (q *QueryRangeController) Query(w http.ResponseWriter, r *http.Request) {
 
 	step, err := getRequiredDuration(r, "step", "1", err)
 	_limit := r.URL.Query().Get("limit")
-	limit := uint64(100)
+	limit := int64(100)
 	if _limit != "" {
-		limit, _ = strconv.ParseUint(_limit, 10, 64)
+		limit, _ = strconv.ParseInt(_limit, 10, 64)
 	}
 	if err != nil {
 		PromError(400, err.Error(), w)

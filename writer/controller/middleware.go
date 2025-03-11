@@ -168,7 +168,7 @@ var WithOverallContextMiddleware = WithPreRequest(func(w http.ResponseWriter, r 
 	async := getAsyncMode(r)
 	TTLDays := uint16(0)
 	if strTTLDays != "" {
-		iTTLDays, err := strconv.Atoi(strTTLDays)
+		iTTLDays, err := strconv.ParseUint(strTTLDays, 10, 16)
 		if err == nil {
 			TTLDays = uint16(iTTLDays)
 		}

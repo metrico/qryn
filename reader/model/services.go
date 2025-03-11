@@ -29,9 +29,9 @@ type IQueryLabelsService interface {
 }
 type IQueryRangeService interface {
 	QueryRange(ctx context.Context, query string, fromNs int64, toNs int64, stepMs int64,
-		limit uint64, forward bool) (chan QueryRangeOutput, error)
+		limit int64, forward bool) (chan QueryRangeOutput, error)
 	QueryInstant(ctx context.Context, query string, timeNs int64, stepMs int64,
-		limit uint64) (chan QueryRangeOutput, error)
+		limit int64) (chan QueryRangeOutput, error)
 	Tail(ctx context.Context, query string) (IWatcher, error)
 }
 

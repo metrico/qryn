@@ -93,7 +93,8 @@ func (q *QueryRangeService) exportStreamsValue(out chan []shared.LogEntry,
 				i = 1
 				j = 0
 				stream, _ := json.Marshal(e.Labels)
-				res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{"stream":%s, "values": [`, string(stream))}
+				res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{%s:%s, %s: [`,
+					strconv.Quote("stream"), string(stream), strconv.Quote("values"))}
 			}
 			if j > 0 {
 				res <- model.QueryRangeOutput{Str: ","}
@@ -116,7 +117,7 @@ func (q *QueryRangeService) exportStreamsValue(out chan []shared.LogEntry,
 }
 
 func (q *QueryRangeService) prepareOutput(ctx context.Context, query string, fromNs int64, toNs int64, stepMs int64,
-	limit uint64, forward bool) (chan []shared.LogEntry, bool, error) {
+	limit int64, forward bool) (chan []shared.LogEntry, bool, error) {
 	conn, err := q.Session.GetDB(ctx)
 	if err != nil {
 		return nil, false, err
@@ -154,7 +155,7 @@ func (q *QueryRangeService) prepareOutput(ctx context.Context, query string, fro
 }
 
 func (q *QueryRangeService) QueryRange(ctx context.Context, query string, fromNs int64, toNs int64, stepMs int64,
-	limit uint64, forward bool) (chan model.QueryRangeOutput, error) {
+	limit int64, forward bool) (chan model.QueryRangeOutput, error) {
 	out, isMatrix, err := q.prepareOutput(ctx, query, fromNs, toNs, stepMs, limit, forward)
 	if err != nil {
 		return nil, err
@@ -193,7 +194,8 @@ func (q *QueryRangeService) QueryRange(ctx context.Context, query string, fromNs
 					i = 1
 					j = 0
 					stream, _ := json.Marshal(e.Labels)
-					res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{"metric":%s, "values": [`, string(stream))}
+					res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{%s:%s, %s: [`,
+						strconv.Quote("stream"), string(stream), strconv.Quote("values"))}
 				}
 				if j > 0 {
 					res <- model.QueryRangeOutput{Str: ","}
@@ -220,7 +222,7 @@ func (q *QueryRangeService) QueryRange(ctx context.Context, query string, fromNs
 }
 
 func (q *QueryRangeService) QueryInstant(ctx context.Context, query string, timeNs int64, stepMs int64,
-	limit uint64) (chan model.QueryRangeOutput, error) {
+	limit int64) (chan model.QueryRangeOutput, error) {
 	out, isMatrix, err := q.prepareOutput(ctx, query, timeNs-300000000000, timeNs, stepMs, limit, false)
 	if err != nil {
 		return nil, err

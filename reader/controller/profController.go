@@ -1,4 +1,5 @@
 package controllerv1
+
 import "html"
 
 import (
@@ -310,5 +311,6 @@ func defaultMarshaller[T proto.Message](r *http.Request, t T) ([]byte, error) {
 
 func defaultError(w http.ResponseWriter, code int, message string) {
 	w.WriteHeader(code)
-	w.Write([]byte(message))
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(strconv.Quote(message)))
 }
