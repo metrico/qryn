@@ -117,7 +117,7 @@ func NewWriterClient(ctx context.Context, dbObject *config.ClokiBaseDataBase, da
 		DialTimeout: time.Second * 30,
 	}
 	if dbObject.Secure {
-		opts.Dialer = &v3SecureDialer{}
+		opts.Dialer = &v3SecureDialer{dbObject.InsecureSkipVerify}
 	}
 	DSN := "n-"
 	if dbObject.ClusterName != "" {

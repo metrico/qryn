@@ -46,10 +46,11 @@ func (c *InsertCHWrapper) Close() error {
 }
 
 type v3SecureDialer struct {
+	InsecureSkipVerify bool
 }
 
 func (v *v3SecureDialer) DialContext(_ context.Context, network string, address string) (net.Conn, error) {
-	return tls.Dial(network, address, &tls.Config{InsecureSkipVerify: true})
+	return tls.Dial(network, address, &tls.Config{InsecureSkipVerify: v.InsecureSkipVerify})
 }
 
 // Methods that should return errors in InsertClient
