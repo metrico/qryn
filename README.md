@@ -29,7 +29,7 @@
 
 # 🚀 Get Started
 
-* Setup & Deploy **gigapipe** _opensource_ using the [documentation](https://gigapipe.com/oss/installation) and get help in our [Matrix room](https://matrix.to/#/#qryn:matrix.org) :octocat:
+* Setup & Deploy **gigapipe** _opensource_ using the [documentation](https://gigapipe.com/docs/oss) and get help in our [Matrix room](https://matrix.to/#/#qryn:matrix.org) :octocat:
 * Looking for a quick test before installing? Signup for a free trial at [gigapipe.com](https://gigapipe.com)
 
 ## Features
@@ -42,7 +42,7 @@ Ingested data can be queried using any of the avialable gigapipe APIs _(LogQL, P
 > 💡 _No modifications required to your opentelemetry instrumentation!_
 
 ### 📚 Native APIs
-**gigapipe** supports [native ingestion](https://gigapipe.com/#/support) for Loki, Prometheus, Tempo/Zipkin, Pyroscope and _[many other protocols](https://gigapipe.com/#/support)_<br>
+**gigapipe** supports [native ingestion](https://gigapipe.com/docs/api) for Loki, Prometheus, Tempo/Zipkin, Pyroscope and _[many other protocols](https://gigapipe.com/docs/api)_<br>
 With gigapipe integrators can _push and read data using any desired combination of APIs and formats_
 
 > 💡 _No opentelemetry or any other middlewayre/proxy required!_
@@ -59,7 +59,7 @@ With gigapipe integrators can _push and read data using any desired combination 
 
 The Grafana Loki datasource can be used to natively browse and query _logs_ and display extracted _timeseries_<br>
 
-<a href="https://gigapipe.com/#/logs/query" target="_blank">
+<a href="https://gigapipe.com/docs" target="_blank">
 <img src="https://user-images.githubusercontent.com/1423657/196654073-b84a218c-6a70-49bb-a477-e8be5714e0ba.gif" width=700 class=border />
 </a>
 
@@ -77,7 +77,7 @@ The Grafana Loki datasource can be used to natively browse and query _logs_ and 
 
 The Grafana Prometheus datasource can be used to natively to query _metrics_ and display _timeseries_<br>
 
-<a href="https://gigapipe.com/#/metrics/query" target="_blank">
+<a href="https://gigapipe.com/docs" target="_blank">
 <img src="https://user-images.githubusercontent.com/1423657/196654084-1f1d8a62-3fd2-4420-a2fa-57ac2872938c.gif" width=700 class=border />
 </a>
 
@@ -96,7 +96,7 @@ The Grafana Prometheus datasource can be used to natively to query _metrics_ and
 
 The Tempo datasource can be used to natively query _traces_ including _**TraceQL**_ and supporting _service graphs_<br>
 
-<a href="https://gigapipe.com/#/telemetry/query" target="_blank">
+<a href="https://gigapipe.com/docs" target="_blank">
 <img src="https://user-images.githubusercontent.com/1423657/196654097-8a235253-bf5d-4937-9e78-fddf12819d44.gif" width=700 class=border />
 </a>
 
@@ -121,7 +121,7 @@ The Tempo datasource can be used to natively query _traces_ including _**TraceQL
 
 **gigapipe** ships with **view** - our zero dependency, lightweight data explorer for **Logs, Metrics** and **Traces**
 
-<a href="https://gigape.com" target="_blank">
+<a href="https://gigape.com/docs" target="_blank">
 <img src="https://user-images.githubusercontent.com/1423657/200136242-f4133229-ee7c-45e0-8228-8734cf56140a.gif" width=700 class=border />
 </a>
 
@@ -129,7 +129,7 @@ The Tempo datasource can be used to natively query _traces_ including _**TraceQL
 
 ### 📚 Vendors Compatibility
 
-**gigapipe** can ingest data using formats from [Grafana, InfluxDB, DataDog, Elastic](https://gigapipe.com/#/support) and other vendors.
+**gigapipe** can ingest data using formats from [Grafana, InfluxDB, DataDog, Elastic](https://gigapipe.com/docs) and other vendors.
 
 
 <br>
@@ -152,7 +152,7 @@ With **gigapipe** and **grafana** everything _just works_ right out of the box:
 
 ------------
 
-📚 Follow our team _behind the scenes_ on the [gigapipe blog](https://blog.qryn.dev)
+📚 Follow our team _behind the scenes_ on the [gigapipe blog](https://blog.gigapipe.com)
 
 ------------
 
