@@ -98,7 +98,7 @@ func portCHEnv(cfg *clconfig.ClokiConfig) error {
 	if os.Getenv("CLICKHOUSE_PORT") != "" {
 		strPort = os.Getenv("CLICKHOUSE_PORT")
 	}
-	port, err := strconv.Atoi(strPort)
+	port, err := strconv.ParseUint(strPort, 10, 32)
 	if err != nil {
 		return fmt.Errorf("invalid port number: %w", err)
 	}
