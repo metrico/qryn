@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2/shared"
 	"github.com/metrico/qryn/reader/model"
@@ -16,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	_ "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/utils/logger"
 	sql "github.com/metrico/qryn/reader/utils/sql_select"
 )
@@ -195,7 +197,7 @@ func (q *QueryRangeService) QueryRange(ctx context.Context, query string, fromNs
 					j = 0
 					stream, _ := json.Marshal(e.Labels)
 					res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{%s:%s, %s: [`,
-						strconv.Quote("stream"), string(stream), strconv.Quote("values"))}
+						strconv.Quote("metric"), string(stream), strconv.Quote("values"))}
 				}
 				if j > 0 {
 					res <- model.QueryRangeOutput{Str: ","}
@@ -237,8 +239,24 @@ func (q *QueryRangeService) QueryInstant(ctx context.Context, query string, time
 
 	go func() {
 		defer close(res)
+		json := jsoniter.ConfigFastest
+		stream := json.BorrowStream(nil)
+		defer json.ReturnStream(stream)
 
-		res <- model.QueryRangeOutput{Str: `{"status": "success","data": {"resultType": "vector", "result": [`}
+		stream.WriteObjectStart()
+		stream.WriteObjectField("status")
+		stream.WriteString("success")
+		stream.WriteMore()
+		stream.WriteObjectField("data")
+		stream.WriteObjectStart()
+		stream.WriteObjectField("resultType")
+		stream.WriteString("vector")
+		stream.WriteMore()
+		stream.WriteObjectField("result")
+		stream.WriteArrayStart()
+
+		res <- model.QueryRangeOutput{Str: string(stream.Buffer())}
+		stream.Reset(nil)
 		i := 0
 		lastValues := make(map[uint64]shared.LogEntry)
 		for entries := range out {
@@ -262,21 +280,44 @@ func (q *QueryRangeService) QueryInstant(ctx context.Context, query string, time
 		}
 		for _, e := range lastValues {
 			if i > 0 {
-				res <- model.QueryRangeOutput{Str: ","}
+				stream.WriteMore()
 			}
-			stream, _ := json.Marshal(e.Labels)
+			stream.WriteObjectStart()
+			stream.WriteObjectField("metric")
+			stream.WriteObjectStart()
+			j := 0
+			for k, v := range e.Labels {
+				if j > 0 {
+					stream.WriteMore()
+				}
+				stream.WriteObjectField(k)
+				stream.WriteString(v)
+				j++
+			}
+			stream.WriteObjectEnd()
+			stream.WriteMore()
 
 			val := strconv.FormatFloat(e.Value, 'f', -1, 64)
 			if strings.Contains(val, ".") {
 				val := strings.TrimSuffix(val, "0")
 				val = strings.TrimSuffix(val, ".")
 			}
-			res <- model.QueryRangeOutput{Str: fmt.Sprintf(
-				`{"metric":%s, "value": [%d, %s]}`,
-				string(stream), e.TimestampNS/1000000000, strconv.Quote(val))}
+
+			stream.WriteObjectField("value")
+			stream.WriteArrayStart()
+			stream.WriteInt64(e.TimestampNS / 1000000000)
+			stream.WriteMore()
+			stream.WriteString(val)
+			stream.WriteArrayEnd()
+			stream.WriteObjectEnd()
+			res <- model.QueryRangeOutput{Str: string(stream.Buffer())}
+			stream.Reset(nil)
 			i++
 		}
-		res <- model.QueryRangeOutput{Str: "]}}"}
+		stream.WriteArrayEnd()
+		stream.WriteObjectEnd()
+		stream.WriteObjectEnd()
+		res <- model.QueryRangeOutput{Str: string(stream.Buffer())}
 	}()
 
 	return res, nil
@@ -307,6 +348,10 @@ func (q *QueryRangeService) Tail(ctx context.Context, query string) (model.IWatc
 		defer cancel()
 		defer close(res.GetRes())
 		defer ticker.Stop()
+		json := jsoniter.ConfigFastest
+
+		stream := json.BorrowStream(nil)
+		defer json.ReturnStream(stream)
 		for _ = range ticker.C {
 			versionInfo, err := dbVersion.GetVersionInfo(ctx, conn.Config.ClusterName != "", conn.Session)
 			if err != nil {
@@ -318,8 +363,8 @@ func (q *QueryRangeService) Tail(ctx context.Context, query string) (model.IWatc
 			case <-res.Done():
 				return
 			default:
-
 			}
+
 			out, err := sqlQuery[0].Process(tables.PopulateTableNames(&shared.PlannerContext{
 				IsCluster:  conn.Config.ClusterName != "",
 				From:       from,
@@ -340,59 +385,60 @@ func (q *QueryRangeService) Tail(ctx context.Context, query string) (model.IWatc
 				logger.Error(err)
 				return
 			}
-			_res := make(chan model.QueryRangeOutput)
-			go func() {
-				defer close(_res)
-				var lastFp uint64
-				i := 0
-				j := 0
-				_res <- model.QueryRangeOutput{Str: "{\"streams\":["}
-				for entries := range out {
-					for _, e := range entries {
-						if e.Err == io.EOF {
-							continue
+			var lastFp uint64
+			i := 0
+			j := 0
+			stream.WriteObjectStart()
+			stream.WriteObjectField("streams")
+			stream.WriteArrayStart()
+			for entries := range out {
+				for _, e := range entries {
+					if e.Err == io.EOF {
+						continue
+					}
+					if e.Err != nil {
+						onErr(e.Err, res.GetRes())
+						return
+					}
+					if lastFp != e.Fingerprint {
+						if i > 0 {
+							stream.WriteArrayEnd()
+							stream.WriteObjectEnd()
+							stream.WriteMore()
 						}
-						if e.Err != nil {
-							onErr(e.Err, _res)
-							return
-						}
-						if lastFp != e.Fingerprint {
-							if i > 0 {
-								_res <- model.QueryRangeOutput{Str: "]},"}
-							}
-							lastFp = e.Fingerprint
-							i = 1
-							j = 0
-							stream, _ := json.Marshal(e.Labels)
-							_res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{"stream":%s, "values": [`,
-								string(stream))}
-						}
-						if j > 0 {
-							_res <- model.QueryRangeOutput{Str: ","}
-						}
-						j = 1
-						msg, err := json.Marshal(e.Message)
-						if err != nil {
-							msg = []byte("error string")
-						}
-						_res <- model.QueryRangeOutput{
-							Str: fmt.Sprintf(`["%d", %s]`, e.TimestampNS, msg),
-						}
-						if from.UnixNano() < e.TimestampNS {
-							from = time.Unix(0, e.TimestampNS+1)
-						}
+						lastFp = e.Fingerprint
+						i = 1
+						j = 0
+
+						stream.WriteObjectStart()
+						stream.WriteObjectField("stream")
+						writeMap(stream, e.Labels)
+						stream.WriteMore()
+						stream.WriteObjectField("values")
+						stream.WriteArrayStart()
+					}
+					if j > 0 {
+						stream.WriteMore()
+					}
+					j = 1
+					stream.WriteArrayStart()
+					stream.WriteString(fmt.Sprintf("%d", e.TimestampNS))
+					stream.WriteMore()
+					stream.WriteString(e.Message)
+					stream.WriteArrayEnd()
+					if from.UnixNano() < e.TimestampNS {
+						from = time.Unix(0, e.TimestampNS+1)
 					}
 				}
-				if i > 0 {
-					_res <- model.QueryRangeOutput{Str: "]}"}
-				}
-				_res <- model.QueryRangeOutput{Str: "]}"}
-			}()
-			builder := strings.Builder{}
-			for str := range _res {
-				builder.WriteString(str.Str)
 			}
-			res.GetRes() <- model.QueryRangeOutput{Str: builder.String()}
+			if i > 0 {
+				stream.WriteArrayEnd()
+				stream.WriteObjectEnd()
+			}
+			stream.WriteArrayEnd()
+			stream.WriteObjectEnd()
+			res.GetRes() <- model.QueryRangeOutput{Str: string(stream.Buffer())}
+			stream.Reset(nil)
 		}
 	}()
 	return res, nil
@@ -423,4 +469,18 @@ func (w *Watcher) GetRes() chan model.QueryRangeOutput {
 
 func (w *Watcher) Close() {
 	w.cancel()
+}
+
+func writeMap(stream *jsoniter.Stream, m map[string]string) {
+	i := 0
+	stream.WriteObjectStart()
+	for k, v := range m {
+		if i > 0 {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField(k)
+		stream.WriteString(v)
+		i++
+	}
+	stream.WriteObjectEnd()
 }
