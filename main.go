@@ -119,6 +119,14 @@ func portCHEnv(cfg *clconfig.ClokiConfig) error {
 		secure = true
 	}
 	cfg.Setting.DATABASE_DATA[0].Secure = secure
+	if os.Getenv("SELF_SIGNED_CERT") != "" {
+		insecureSkipVerify, err := boolEnv(os.Getenv("SELF_SIGNED_CERT"))
+		if err != nil {
+			return fmt.Errorf("invalid self_signed_cert value: %w", err)
+		}
+		cfg.Setting.DATABASE_DATA[0].InsecureSkipVerify = insecureSkipVerify
+	}
+
 	cfg.Setting.DATABASE_DATA[0].TTLDays = 7
 	if os.Getenv("SAMPLES_DAYS") != "" {
 		days, err := strconv.Atoi(os.Getenv("SAMPLES_DAYS"))

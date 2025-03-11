@@ -40,7 +40,7 @@ func NewGeneralPurposeClient(ctx context.Context, dbObject *config.ClokiBaseData
 	}
 	if dbObject.Secure {
 		opt.TLS = &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: dbObject.InsecureSkipVerify,
 		}
 	}
 	conn, err := clickhouse.Open(opt)
@@ -182,7 +182,7 @@ func NewWriterClientWithDSN(ctx context.Context, dsn string, database bool) (ICh
 	if dsnOpts.TLS != nil {
 		opts.Dialer = &tls.Dialer{
 			Config: &tls.Config{
-				InsecureSkipVerify: true,
+				InsecureSkipVerify: dsnOpts.TLS.InsecureSkipVerify,
 			},
 		}
 	}
