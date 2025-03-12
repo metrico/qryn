@@ -3,8 +3,8 @@ package maintenance
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"github.com/ClickHouse/clickhouse-go/v2"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/ctrl/logger"
 	"github.com/metrico/qryn/ctrl/qryn/sql"
 	rand2 "math/rand"
@@ -90,7 +90,8 @@ func getSQLFile(strContents string) ([]string, error) {
 func getDBExec(db clickhouse.Conn, env map[string]string, logger logger.ILogger) func(query string, args ...[]interface{}) error {
 	rand := rand2.New(rand2.NewSource(time.Now().UnixNano()))
 	return func(query string, args ...[]interface{}) error {
-		name := fmt.Sprintf("tpl_%d", rand.Uint64())
+		//name := fmt.Sprintf("tpl_%d", rand.Uint64())
+		name := buildString("tpl_", strconv.FormatUint(rand.Uint64(), 10))
 		tpl, err := template.New(name).Parse(query)
 		if err != nil {
 			logger.Error(query)
@@ -126,7 +127,8 @@ func updateScripts(db clickhouse.Conn, dbname string, clusterName string, k int6
 		"DIST_CREATE_SETTINGS": "",
 	}
 	if storagePolicy != "" {
-		env["CREATE_SETTINGS"] = fmt.Sprintf("SETTINGS storage_policy = '%s'", storagePolicy)
+		//env["CREATE_SETTINGS"] = fmt.Sprintf("SETTINGS storage_policy = '%s'", storagePolicy)
+		env["CREATE_SETTINGS"] = buildString("SETTINGS storage_policy = '", storagePolicy, "'")
 	}
 	//TODO: move to the config package as it should be: os.Getenv("ADVANCED_SAMPLES_ORDERING")
 	if advancedSamplesOrdering != "" {
@@ -134,7 +136,8 @@ func updateScripts(db clickhouse.Conn, dbname string, clusterName string, k int6
 	}
 	//TODO: move to the config package
 	if skipUnavailableShards {
-		env["DIST_CREATE_SETTINGS"] += fmt.Sprintf(" SETTINGS skip_unavailable_shards = 1")
+		//	env["DIST_CREATE_SETTINGS"] += fmt.Sprintf(" SETTINGS skip_unavailable_shards = 1")
+		env["DIST_CREATE_SETTINGS"] += buildString(" SETTINGS skip_unavailable_shards = 1")
 	}
 	if ttlDays != 0 {
 		env["DefaultTtlDays"] = strconv.FormatInt(int64(ttlDays), 10)
@@ -168,8 +171,10 @@ ENGINE=Distributed('{{.CLUSTER}}','{{.DB}}', 'ver', rand())`)
 	}
 	var ver uint64 = 0
 	if k >= 0 {
-		rows, err := db.Query(context.Background(),
-			fmt.Sprintf("SELECT max(ver) as ver FROM %s WHERE k = $1 FORMAT JSON", verTable), k)
+		queryStr := buildString("SELECT max(ver) as ver FROM ", verTable, " WHERE k = $1 FORMAT JSON")
+		//rows, err := db.Query(context.Background(),
+		//	fmt.Sprintf("SELECT max(ver) as ver FROM %s WHERE k = $1 FORMAT JSON", verTable), k)
+		rows, err := db.Query(context.Background(), queryStr, k)
 		if err != nil {
 			return err
 		}
@@ -182,7 +187,9 @@ ENGINE=Distributed('{{.CLUSTER}}','{{.DB}}', 'ver', rand())`)
 		}
 	}
 	for i := ver; i < uint64(len(scripts)); i++ {
-		logger.Info(fmt.Sprintf("Upgrade v.%d to v.%d ", i, i+1))
+		//logger.Info(fmt.Sprintf("Upgrade v.%d to v.%d ", i, i+1))
+		msg := buildString("Upgrade v.", strconv.FormatUint(i, 10), " to v.", strconv.FormatUint(i+1, 10), " ")
+		logger.Info(msg)
 		err = exec(scripts[i])
 		if err != nil {
 			logger.Error(scripts[i])
@@ -192,7 +199,9 @@ ENGINE=Distributed('{{.CLUSTER}}','{{.DB}}', 'ver', rand())`)
 		if err != nil {
 			return err
 		}
-		logger.Info(fmt.Sprintf("Upgrade v.%d to v.%d ok", i, i+1))
+		//logger.Info(fmt.Sprintf("Upgrade v.%d to v.%d ok", i, i+1))
+		msg = buildString("Upgrade v.", strconv.FormatUint(i, 10), " to v.", strconv.FormatUint(i+1, 10), " ok")
+		logger.Info(msg)
 	}
 	return nil
 }
@@ -217,7 +226,9 @@ func tableExists(db clickhouse.Conn, name string) (bool, error) {
 }
 
 func tableEmpty(db clickhouse.Conn, name string) (bool, error) {
-	rows, err := db.Query(context.Background(), fmt.Sprintf("SELECT count(1) FROM %s", name))
+	queryStr := buildString("SELECT count(1) FROM ", name)
+	//rows, err := db.Query(context.Background(), fmt.Sprintf("SELECT count(1) FROM %s", name))
+	rows, err := db.Query(context.Background(), queryStr)
 	if err != nil {
 		return false, err
 	}
@@ -275,7 +286,8 @@ func Cleanup(db clickhouse.Conn, clusterName string, distributed bool, dbname st
 				return err
 			}
 			if existsAndEmpty {
-				err = exec(fmt.Sprintf("DROP TABLE IF EXISTS %s {{.OnCluster}}", main))
+				err = exec(buildString("DROP TABLE IF EXISTS ", main, " {{.OnCluster}}"))
+				//	err = exec(fmt.Sprintf("DROP TABLE IF EXISTS %s {{.OnCluster}}", main))
 				if err != nil {
 					return err
 				}
@@ -290,17 +302,29 @@ func Cleanup(db clickhouse.Conn, clusterName string, distributed bool, dbname st
 			continue
 		}
 		for _, tbl := range dep.depsTables {
-			err := exec(fmt.Sprintf("DROP TABLE IF EXISTS %s {{.OnCluster}}", tbl))
+			err := exec(buildString("DROP TABLE IF EXISTS ", tbl, " {{.OnCluster}}"))
+			//	err := exec(fmt.Sprintf("DROP TABLE IF EXISTS %s {{.OnCluster}}", tbl))
 			if err != nil {
 				return err
 			}
 		}
 		for _, view := range dep.depsViews {
-			err := db.Exec(context.Background(), fmt.Sprintf("DROP VIEW IF EXISTS %s {{.OnCluster}}", view))
+			err := db.Exec(context.Background(), buildString("DROP VIEW IF EXISTS ", view, " {{.OnCluster}}"))
+			//err := db.Exec(context.Background(), fmt.Sprintf("DROP VIEW IF EXISTS %s {{.OnCluster}}", view))
 			if err != nil {
 				return err
 			}
 		}
 	}
 	return nil
+}
+
+func buildString(parts ...string) string {
+	stream := jsoniter.ConfigFastest.BorrowStream(nil)
+	for _, part := range parts {
+		stream.WriteRaw(part)
+	}
+	ret := string(stream.Buffer())
+	jsoniter.ConfigFastest.ReturnStream(stream)
+	return ret
 }

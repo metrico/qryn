@@ -2,6 +2,7 @@ package transpiler
 
 import (
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2/clickhouse_planner"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2/shared"
 	"github.com/metrico/qryn/reader/prof/parser"
@@ -131,7 +132,27 @@ func (s *StreamSelectorPlanner) getArrayExists(cond sql.SQLCondition, field sql.
 		if err != nil {
 			return "", err
 		}
-		return fmt.Sprintf("arrayExists(x -> %s, %s)", strCond, strField), nil
+		//	return fmt.Sprintf("arrayExists(x -> %s, %s)", strCond, strField), nil
+
+		json := jsoniter.ConfigFastest
+		stream := json.BorrowStream(nil)
+		defer json.ReturnStream(stream)
+
+		stream.WriteRaw("arrayExists(x -> ")
+		stream.WriteString(strCond)
+		stream.WriteRaw(", ")
+		stream.WriteString(strField)
+		stream.WriteRaw(")")
+
+		if stream.Error != nil {
+			return "", stream.Error
+		}
+
+		// Copy the buffer to avoid data being overwritten when the stream is reused
+		result := make([]byte, len(stream.Buffer()))
+		copy(result, stream.Buffer())
+
+		return string(result), nil
 	})
 }
 
@@ -152,7 +173,18 @@ func (s *StreamSelectorPlanner) getMatcherClause(field sql.SQLObject, op string,
 			if err != nil {
 				return "", err
 			}
-			return fmt.Sprintf("match(%s, %s)", strField, strVal), nil
+			json := jsoniter.ConfigFastest
+			stream := json.BorrowStream(nil)
+			defer json.ReturnStream(stream)
+
+			stream.WriteRaw("match(")
+			stream.WriteString(strField)
+			stream.WriteRaw(", ")
+			stream.WriteString(strVal)
+			stream.WriteRaw(")")
+
+			return string(stream.Buffer()), nil
+			//return fmt.Sprintf("match(%s, %s)", strField, strVal), nil
 		}), sql.NewRawObject("1")), nil
 	case "!~":
 		return sql.Neq(sql.NewCustomCol(func(ctx *sql.Ctx, options ...int) (string, error) {
@@ -164,7 +196,18 @@ func (s *StreamSelectorPlanner) getMatcherClause(field sql.SQLObject, op string,
 			if err != nil {
 				return "", err
 			}
-			return fmt.Sprintf("match(%s, %s)", strField, strVal), nil
+			json := jsoniter.ConfigFastest
+			stream := json.BorrowStream(nil)
+			defer json.ReturnStream(stream)
+
+			stream.WriteRaw("match(")
+			stream.WriteString(strField)
+			stream.WriteRaw(", ")
+			stream.WriteString(strVal)
+			stream.WriteRaw(")")
+
+			return string(stream.Buffer()), nil
+			//return fmt.Sprintf("match(%s, %s)", strField, strVal), nil
 		}), sql.NewRawObject("1")), nil
 	}
 	return nil, fmt.Errorf("unknown operator: %s", op)

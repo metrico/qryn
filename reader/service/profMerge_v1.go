@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/prof"
 	"github.com/metrico/qryn/writer/utils/heputils/cityhash102"
 	"sort"
@@ -195,8 +196,28 @@ func equalValueType(vt1, vt2 *prof.ValueType) bool {
 }
 
 func GetFunctionKey(f *prof.Function) uint64 {
-	str := fmt.Sprintf("%d:%d:%d:%d", f.StartLine, f.Name, f.SystemName, f.Filename)
+	stream := jsoniter.ConfigFastest.BorrowStream(nil)
+	defer jsoniter.ConfigFastest.ReturnStream(stream)
+
+	// Write the start line as an integer.
+	stream.WriteInt64(f.StartLine)
+	// Write the colon separator.
+	stream.WriteRaw(":")
+	// Write the function name.
+	stream.WriteInt64(f.Name)
+	stream.WriteRaw(":")
+	// Write the system name.
+	stream.WriteInt64(f.SystemName)
+	stream.WriteRaw(":")
+	// Write the file name.
+	stream.WriteInt64(f.Filename)
+
+	// Get the resulting string.
+	str := string(stream.Buffer())
+
 	return cityhash102.CityHash64([]byte(str), uint32(len(str)))
+	//str := fmt.Sprintf("%d:%d:%d:%d", f.StartLine, f.Name, f.SystemName, f.Filename)
+	//return cityhash102.CityHash64([]byte(str), uint32(len(str)))
 }
 
 func GetMappingKey(m *prof.Mapping) uint64 {
@@ -211,14 +232,38 @@ func GetMappingKey(m *prof.Mapping) uint64 {
 	} else if m.Filename != 0 {
 		buildIdOrFile = m.Filename
 	}
+	stream := jsoniter.ConfigFastest.BorrowStream(nil)
+	defer jsoniter.ConfigFastest.ReturnStream(stream)
 
-	str := fmt.Sprintf("%d:%d:%d", size, m.FileOffset, buildIdOrFile)
+	// Build the string: "<size>:<FileOffset>:<buildIdOrFile>"
+	stream.WriteUint64(size)
+	stream.WriteRaw(":")
+	stream.WriteUint64(m.FileOffset)
+	stream.WriteRaw(":")
+	stream.WriteInt64(buildIdOrFile)
+
+	str := string(stream.Buffer())
 	return cityhash102.CityHash64([]byte(str), uint32(len(str)))
+
+	//str := fmt.Sprintf("%d:%d:%d", size, m.FileOffset, buildIdOrFile)
+	//return cityhash102.CityHash64([]byte(str), uint32(len(str)))
 }
 
 func GetLocationKey(l *prof.Location) uint64 {
 	lines := hashLines(l.Line)
-	str := fmt.Sprintf("%d:%d:%d", l.Address, lines, l.MappingId)
+	// Borrow a stream from jsoniter.
+	stream := jsoniter.ConfigFastest.BorrowStream(nil)
+	defer jsoniter.ConfigFastest.ReturnStream(stream)
+
+	// Build the string as "<l.Address>:<lines>:<l.MappingId>"
+	stream.WriteUint64(l.Address)
+	stream.WriteRaw(":")
+	stream.WriteUint64(lines)
+	stream.WriteRaw(":")
+	stream.WriteUint64(l.MappingId)
+
+	str := string(stream.Buffer())
+	//str := fmt.Sprintf("%d:%d:%d", l.Address, lines, l.MappingId)
 	return cityhash102.CityHash64([]byte(str), uint32(len(str)))
 }
 
@@ -237,7 +282,16 @@ func hashLines(lines []*prof.Line) uint64 {
 func GetSampleKey(s *prof.Sample) uint64 {
 	locations := hashLocations(s.LocationId)
 	labels := hashProfileLabels(s.Label)
-	str := fmt.Sprintf("%d:%d", locations, labels)
+	//str := fmt.Sprintf("%d:%d", locations, labels)
+	stream := jsoniter.ConfigFastest.BorrowStream(nil)
+	defer jsoniter.ConfigFastest.ReturnStream(stream)
+
+	// Build the string in the format "<locations>:<labels>"
+	stream.WriteUint64(locations)
+	stream.WriteRaw(":")
+	stream.WriteUint64(labels)
+
+	str := string(stream.Buffer())
 	return cityhash102.CityHash64([]byte(str), uint32(len(str)))
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/logql/logql_parser"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2/clickhouse_planner"
@@ -186,7 +187,16 @@ func (q *QueryLabelsService) Prom2LogqlMatch(match string) (string, error) {
 	for i, m := range matchers {
 		strMatchers[i] = m.String()
 	}
-	return fmt.Sprintf("{%s}", strings.Join(strMatchers, ",")), nil
+	joined := strings.Join(strMatchers, ",")
+	stream := jsoniter.ConfigFastest.BorrowStream(nil)
+	defer jsoniter.ConfigFastest.ReturnStream(stream)
+
+	stream.WriteRaw("{")
+	stream.WriteRaw(joined)
+	stream.WriteRaw("}")
+
+	return string(stream.Buffer()), nil
+	//return fmt.Sprintf("{%s}", strings.Join(strMatchers, ",")), nil
 }
 
 func (q *QueryLabelsService) Values(ctx context.Context, label string, match []string, startMs int64, endMs int64,

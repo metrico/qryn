@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/model"
 	"github.com/metrico/qryn/reader/prof"
 	"github.com/metrico/qryn/reader/prof/parser"
@@ -58,19 +59,40 @@ func (ps *ProfService) ProfileTypes(ctx context.Context, start time.Time, end ti
 			return nil, err
 		}
 		namePeriodTypeUnit := strings.SplitN(typeId, ":", 3)
+		stream := jsoniter.ConfigFastest.BorrowStream(nil)
+		// Write the parts with colon separators.
+		stream.WriteRaw(namePeriodTypeUnit[0])
+		stream.WriteRaw(":")
+		stream.WriteRaw(sampleTypeUnit[0].(string))
+		stream.WriteRaw(":")
+		stream.WriteRaw(sampleTypeUnit[1].(string))
+		stream.WriteRaw(":")
+		stream.WriteRaw(namePeriodTypeUnit[1])
+		stream.WriteRaw(":")
+		stream.WriteRaw(namePeriodTypeUnit[2])
+		id := string(stream.Buffer())
+		jsoniter.ConfigFastest.ReturnStream(stream)
 		result = append(result, &v1.ProfileType{
-			ID: fmt.Sprintf("%s:%s:%s:%s:%s",
-				namePeriodTypeUnit[0],
-				sampleTypeUnit[0].(string),
-				sampleTypeUnit[1].(string),
-				namePeriodTypeUnit[1],
-				namePeriodTypeUnit[2]),
+			ID:         id,
 			Name:       namePeriodTypeUnit[0],
 			SampleType: sampleTypeUnit[0].(string),
 			SampleUnit: sampleTypeUnit[1].(string),
 			PeriodType: namePeriodTypeUnit[1],
 			PeriodUnit: namePeriodTypeUnit[2],
 		})
+		//result = append(result, &v1.ProfileType{
+		//	ID: fmt.Sprintf("%s:%s:%s:%s:%s",
+		//		namePeriodTypeUnit[0],
+		//		sampleTypeUnit[0].(string),
+		//		sampleTypeUnit[1].(string),
+		//		namePeriodTypeUnit[1],
+		//		namePeriodTypeUnit[2]),
+		//	Name:       namePeriodTypeUnit[0],
+		//	SampleType: sampleTypeUnit[0].(string),
+		//	SampleUnit: sampleTypeUnit[1].(string),
+		//	PeriodType: namePeriodTypeUnit[1],
+		//	PeriodUnit: namePeriodTypeUnit[2],
+		//})
 	}
 	return result, nil
 }
@@ -144,8 +166,13 @@ func (ps *ProfService) MergeStackTraces(ctx context.Context, strScript string, s
 		return nil, err
 	}
 
-	sampleTypeUnit := fmt.Sprintf("%s:%s", typeId.SampleType, typeId.SampleUnit)
-
+	//sampleTypeUnit := fmt.Sprintf("%s:%s", typeId.SampleType, typeId.SampleUnit)
+	stream := jsoniter.ConfigFastest.BorrowStream(nil)
+	defer jsoniter.ConfigFastest.ReturnStream(stream)
+	stream.WriteRaw(typeId.SampleType)
+	stream.WriteRaw(":")
+	stream.WriteRaw(typeId.SampleUnit)
+	sampleTypeUnit := string(stream.Buffer())
 	levels := tree.BFS(sampleTypeUnit)
 
 	res := &prof.SelectMergeStacktracesResponse{
@@ -293,13 +320,30 @@ func (ps *ProfService) TimeSeries(ctx context.Context, strScripts []string, labe
 		ls.Labels = append(ls.Labels, &v1.LabelPair{Name: "__period_unit__", Value: parsedTypeId.PeriodUnit})
 		ls.Labels = append(ls.Labels, &v1.LabelPair{Name: "__sample_type__", Value: sampleTypeUnit[0].(string)})
 		ls.Labels = append(ls.Labels, &v1.LabelPair{Name: "__sample_unit__", Value: sampleTypeUnit[1].(string)})
-		ls.Labels = append(ls.Labels, &v1.LabelPair{Name: "__profile_type__", Value: fmt.Sprintf(
-			"%s:%s:%s:%s:%s",
-			parsedTypeId.Tp,
-			sampleTypeUnit[0].(string),
-			sampleTypeUnit[1].(string),
-			parsedTypeId.PeriodType,
-			parsedTypeId.PeriodUnit)})
+
+		stream := jsoniter.ConfigFastest.BorrowStream(nil)
+		defer jsoniter.ConfigFastest.ReturnStream(stream)
+		stream.WriteRaw(parsedTypeId.Tp)
+		stream.WriteRaw(":")
+		stream.WriteRaw(sampleTypeUnit[0].(string))
+		stream.WriteRaw(":")
+		stream.WriteRaw(sampleTypeUnit[1].(string))
+		stream.WriteRaw(":")
+		stream.WriteRaw(parsedTypeId.PeriodType)
+		stream.WriteRaw(":")
+		stream.WriteRaw(parsedTypeId.PeriodUnit)
+		profileTypeStr := string(stream.Buffer())
+		ls.Labels = append(ls.Labels, &v1.LabelPair{
+			Name:  "__profile_type__",
+			Value: profileTypeStr,
+		})
+		//ls.Labels = append(ls.Labels, &v1.LabelPair{Name: "__profile_type__", Value: fmt.Sprintf(
+		//	"%s:%s:%s:%s:%s",
+		//	parsedTypeId.Tp,
+		//	sampleTypeUnit[0].(string),
+		//	sampleTypeUnit[1].(string),
+		//	parsedTypeId.PeriodType,
+		//	parsedTypeId.PeriodUnit)})
 		for _, tag := range tags {
 			ls.Labels = append(ls.Labels, &v1.LabelPair{Name: tag[0].(string), Value: tag[1].(string)})
 		}
@@ -321,27 +365,77 @@ func (ps *ProfService) ProfileStats(ctx context.Context) (*v1.GetProfileStatsRes
 	profilesTableName := tables.GetTableName("profiles")
 	profilesSeriesTableName := tables.GetTableName("profiles_series")
 	if db.Config.ClusterName != "" {
-		profilesTableName = fmt.Sprintf("`%s`.%s_dist", db.Config.Name, profilesTableName)
-		profilesSeriesTableName = fmt.Sprintf("`%s`.%s_dist", db.Config.Name, profilesSeriesTableName)
+		{
+			// Build profilesTableName using jsoniter's streaming API.
+			stream := jsoniter.ConfigFastest.BorrowStream(nil)
+			stream.WriteRaw("`")
+			stream.WriteRaw(db.Config.Name)
+			stream.WriteRaw("`.")
+			stream.WriteRaw(profilesTableName)
+			stream.WriteRaw("_dist")
+			profilesTableName = string(stream.Buffer())
+			jsoniter.ConfigFastest.ReturnStream(stream)
+		}
+		{
+			// Build profilesSeriesTableName using jsoniter's streaming API.
+			stream := jsoniter.ConfigFastest.BorrowStream(nil)
+			stream.WriteRaw("`")
+			stream.WriteRaw(db.Config.Name)
+			stream.WriteRaw("`.")
+			stream.WriteRaw(profilesSeriesTableName)
+			stream.WriteRaw("_dist")
+			profilesSeriesTableName = string(stream.Buffer())
+			jsoniter.ConfigFastest.ReturnStream(stream)
+		}
+
+		//	profilesTableName = fmt.Sprintf("`%s`.%s_dist", db.Config.Name, profilesTableName)
+		//	profilesSeriesTableName = fmt.Sprintf("`%s`.%s_dist", db.Config.Name, profilesSeriesTableName)
 	}
 
 	brackets := func(object sql.SQLObject) sql.SQLObject {
+		//return sql.NewCustomCol(func(ctx *sql.Ctx, options ...int) (string, error) {
+		//	strObject, err := object.String(ctx, options...)
+		//	if err != nil {
+		//		return "", err
+		//	}
+		//	return fmt.Sprintf("(%s)", strObject), nil
+		//})
 		return sql.NewCustomCol(func(ctx *sql.Ctx, options ...int) (string, error) {
 			strObject, err := object.String(ctx, options...)
 			if err != nil {
 				return "", err
 			}
-			return fmt.Sprintf("(%s)", strObject), nil
+			stream := jsoniter.ConfigFastest.BorrowStream(nil)
+			stream.WriteRaw("(")
+			stream.WriteRaw(strObject)
+			stream.WriteRaw(")")
+			res := string(stream.Buffer())
+			jsoniter.ConfigFastest.ReturnStream(stream)
+			return res, nil
 		})
 	}
 
 	dateToNS := func(object sql.SQLObject) sql.SQLObject {
+		//return sql.NewCustomCol(func(ctx *sql.Ctx, options ...int) (string, error) {
+		//	strObject, err := object.String(ctx, options...)
+		//	if err != nil {
+		//		return "", err
+		//	}
+		//	return fmt.Sprintf("toUnixTimestamp((%s)) * 1000000000", strObject), nil
+		//})
+
 		return sql.NewCustomCol(func(ctx *sql.Ctx, options ...int) (string, error) {
 			strObject, err := object.String(ctx, options...)
 			if err != nil {
 				return "", err
 			}
-			return fmt.Sprintf("toUnixTimestamp((%s)) * 1000000000", strObject), nil
+			stream := jsoniter.ConfigFastest.BorrowStream(nil)
+			stream.WriteRaw("toUnixTimestamp((")
+			stream.WriteRaw(strObject)
+			stream.WriteRaw(")) * 1000000000")
+			res := string(stream.Buffer())
+			jsoniter.ConfigFastest.ReturnStream(stream)
+			return res, nil
 		})
 	}
 
@@ -535,7 +629,13 @@ func (ps *ProfService) getTree(ctx context.Context, script *parser.Script, typeI
 		return nil, err
 	}
 
-	sampleTypeUnit := fmt.Sprintf("%s:%s", typeId.SampleType, typeId.SampleUnit)
+	//sampleTypeUnit := fmt.Sprintf("%s:%s", typeId.SampleType, typeId.SampleUnit)
+	stream := jsoniter.ConfigFastest.BorrowStream(nil)
+	defer jsoniter.ConfigFastest.ReturnStream(stream)
+	stream.WriteRaw(typeId.SampleType)
+	stream.WriteRaw(":")
+	stream.WriteRaw(typeId.SampleUnit)
+	sampleTypeUnit := string(stream.Buffer())
 	tree := NewTree()
 	tree.SampleTypes = []string{sampleTypeUnit}
 	tree.MergeTrie(treeNodes, functions, sampleTypeUnit)

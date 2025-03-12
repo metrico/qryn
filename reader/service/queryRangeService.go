@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2/shared"
@@ -40,24 +39,64 @@ func NewQueryRangeService(data *model.ServiceData) *QueryRangeService {
 }
 
 func hashLabels(labels [][]interface{}) string {
+	//_labels := make([]string, len(labels))
+	//for i, l := range labels {
+	//	val, _ := json.Marshal(l[1].(string))
+	//	_labels[i] = fmt.Sprintf("\"%s\":%s", l[0].(string), val)
+	//}
+	//return fmt.Sprintf("{%s}", strings.Join(_labels, ","))
 	_labels := make([]string, len(labels))
 	for i, l := range labels {
+
+		stream := jsoniter.ConfigFastest.BorrowStream(nil)
+		stream.WriteRaw("\"")
+		stream.WriteRaw(l[0].(string))
+		stream.WriteRaw("\":")
 		val, _ := json.Marshal(l[1].(string))
-		_labels[i] = fmt.Sprintf("\"%s\":%s", l[0].(string), val)
+		stream.WriteRaw(string(val))
+		_labels[i] = string(stream.Buffer())
+		jsoniter.ConfigFastest.ReturnStream(stream)
 	}
-	return fmt.Sprintf("{%s}", strings.Join(_labels, ","))
+	stream2 := jsoniter.ConfigFastest.BorrowStream(nil)
+	stream2.WriteRaw("{")
+	stream2.WriteRaw(strings.Join(_labels, ","))
+	stream2.WriteRaw("}")
+	res := string(stream2.Buffer())
+	jsoniter.ConfigFastest.ReturnStream(stream2)
+	return res
 }
 
 func hashLabelsMap(labels map[string]string) string {
+	//_labels := make([]string, len(labels))
+	//i := 0
+	//for k, v := range labels {
+	//	val, _ := json.Marshal(v)
+	//	_labels[i] = fmt.Sprintf("\"%s\":%s", k, val)
+	//	i++
+	//}
+	//sort.Strings(_labels)
+	//return fmt.Sprintf("{%s}", strings.Join(_labels, ","))
 	_labels := make([]string, len(labels))
 	i := 0
 	for k, v := range labels {
+		stream := jsoniter.ConfigFastest.BorrowStream(nil)
+		stream.WriteRaw("\"")
+		stream.WriteRaw(k)
+		stream.WriteRaw("\":")
 		val, _ := json.Marshal(v)
-		_labels[i] = fmt.Sprintf("\"%s\":%s", k, val)
+		stream.WriteRaw(string(val))
+		_labels[i] = string(stream.Buffer())
+		jsoniter.ConfigFastest.ReturnStream(stream)
 		i++
 	}
 	sort.Strings(_labels)
-	return fmt.Sprintf("{%s}", strings.Join(_labels, ","))
+	stream2 := jsoniter.ConfigFastest.BorrowStream(nil)
+	stream2.WriteRaw("{")
+	stream2.WriteRaw(strings.Join(_labels, ","))
+	stream2.WriteRaw("}")
+	res := string(stream2.Buffer())
+	jsoniter.ConfigFastest.ReturnStream(stream2)
+	return res
 }
 
 func onErr(err error, res chan model.QueryRangeOutput) {
@@ -95,8 +134,22 @@ func (q *QueryRangeService) exportStreamsValue(out chan []shared.LogEntry,
 				i = 1
 				j = 0
 				stream, _ := json.Marshal(e.Labels)
-				res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{%s:%s, %s: [`,
-					strconv.Quote("stream"), string(stream), strconv.Quote("values"))}
+				s := func() string {
+					s2 := jsoniter.ConfigFastest.BorrowStream(nil)
+					s2.WriteRaw("{")
+					s2.WriteRaw(strconv.Quote("stream"))
+					s2.WriteRaw(":")
+					s2.WriteRaw(string(stream))
+					s2.WriteRaw(", ")
+					s2.WriteRaw(strconv.Quote("values"))
+					s2.WriteRaw(": [")
+					ret := string(s2.Buffer())
+					jsoniter.ConfigFastest.ReturnStream(s2)
+					return ret
+				}()
+				res <- model.QueryRangeOutput{Str: s}
+				//res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{%s:%s, %s: [`,
+				//	strconv.Quote("stream"), string(stream), strconv.Quote("values"))}
 			}
 			if j > 0 {
 				res <- model.QueryRangeOutput{Str: ","}
@@ -106,9 +159,23 @@ func (q *QueryRangeService) exportStreamsValue(out chan []shared.LogEntry,
 			if err != nil {
 				msg = []byte("error string")
 			}
-			res <- model.QueryRangeOutput{
-				Str: fmt.Sprintf(`["%d", %s]`, e.TimestampNS, msg),
-			}
+
+			s := func() string {
+				s3 := jsoniter.ConfigFastest.BorrowStream(nil)
+				s3.WriteRaw("[")
+				// Build quoted timestamp.
+				s3.WriteRaw(strconv.Quote(strconv.FormatInt(e.TimestampNS, 10)))
+				s3.WriteRaw(", ")
+				s3.WriteRaw(string(msg))
+				s3.WriteRaw("]")
+				ret := string(s3.Buffer())
+				jsoniter.ConfigFastest.ReturnStream(s3)
+				return ret
+			}()
+			res <- model.QueryRangeOutput{Str: s}
+			//res <- model.QueryRangeOutput{
+			//	Str: fmt.Sprintf(`["%d", %s]`, e.TimestampNS, msg),
+			//}
 		}
 	}
 
@@ -196,8 +263,23 @@ func (q *QueryRangeService) QueryRange(ctx context.Context, query string, fromNs
 					i = 1
 					j = 0
 					stream, _ := json.Marshal(e.Labels)
-					res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{%s:%s, %s: [`,
-						strconv.Quote("metric"), string(stream), strconv.Quote("values"))}
+
+					s := func() string {
+						s2 := jsoniter.ConfigFastest.BorrowStream(nil)
+						s2.WriteRaw("{")
+						s2.WriteRaw(strconv.Quote("metric"))
+						s2.WriteRaw(":")
+						s2.WriteRaw(string(stream))
+						s2.WriteRaw(", ")
+						s2.WriteRaw(strconv.Quote("values"))
+						s2.WriteRaw(": [")
+						ret := string(s2.Buffer())
+						jsoniter.ConfigFastest.ReturnStream(s2)
+						return ret
+					}()
+					res <- model.QueryRangeOutput{Str: s}
+					//res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{%s:%s, %s: [`,
+					//	strconv.Quote("metric"), string(stream), strconv.Quote("values"))}
 				}
 				if j > 0 {
 					res <- model.QueryRangeOutput{Str: ","}
@@ -209,9 +291,21 @@ func (q *QueryRangeService) QueryRange(ctx context.Context, query string, fromNs
 					val = strings.TrimSuffix(val, ".")
 				}
 
-				res <- model.QueryRangeOutput{
-					Str: fmt.Sprintf(`[%f, "%s"]`, float64(e.TimestampNS)/1e9, val),
-				}
+				//res <- model.QueryRangeOutput{
+				//	Str: fmt.Sprintf(`[%f, "%s"]`, float64(e.TimestampNS)/1e9, val),
+				//}
+				s := func() string {
+					s3 := jsoniter.ConfigFastest.BorrowStream(nil)
+					s3.WriteRaw("[")
+					s3.WriteRaw(strconv.Quote(strconv.FormatInt(e.TimestampNS/1000000000, 10)))
+					s3.WriteRaw(", ")
+					s3.WriteRaw(strconv.Quote(val))
+					s3.WriteRaw("]")
+					ret := string(s3.Buffer())
+					jsoniter.ConfigFastest.ReturnStream(s3)
+					return ret
+				}()
+				res <- model.QueryRangeOutput{Str: s}
 			}
 		}
 
@@ -422,7 +516,8 @@ func (q *QueryRangeService) Tail(ctx context.Context, query string) (model.IWatc
 					}
 					j = 1
 					stream.WriteArrayStart()
-					stream.WriteString(fmt.Sprintf("%d", e.TimestampNS))
+					//stream.WriteString(fmt.Sprintf("%d", e.TimestampNS))
+					stream.WriteRaw(strconv.FormatInt(e.TimestampNS, 10))
 					stream.WriteMore()
 					stream.WriteString(e.Message)
 					stream.WriteArrayEnd()

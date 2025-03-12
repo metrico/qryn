@@ -1,7 +1,7 @@
 package transpiler
 
 import (
-	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2/shared"
 	"github.com/metrico/qryn/reader/prof/parser"
 	sql "github.com/metrico/qryn/reader/utils/sql_select"
@@ -33,9 +33,16 @@ func (m *MergeRawPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, erro
 				if err != nil {
 					return "", err
 				}
-				return fmt.Sprintf(
-					"arrayMap(x -> (x.1, x.2, x.3, (arrayFirst(y -> y.1 == %s, x.4) as af).2, af.3), tree)",
-					strVal), nil
+
+				stream := jsoniter.ConfigFastest.BorrowStream(nil)
+				defer jsoniter.ConfigFastest.ReturnStream(stream)
+				stream.WriteRaw("arrayMap(x -> (x.1, x.2, x.3, (arrayFirst(y -> y.1 == ")
+				stream.WriteRaw(strVal)
+				stream.WriteRaw(", x.4) as af).2, af.3), tree)")
+				return string(stream.Buffer()), nil
+				//return fmt.Sprintf(
+				//	"arrayMap(x -> (x.1, x.2, x.3, (arrayFirst(y -> y.1 == %s, x.4) as af).2, af.3), tree)",
+				//	strVal), nil
 			}), "tree"),
 			sql.NewRawObject("functions")).
 		From(sql.NewRawObject(ctx.ProfilesDistTable)).

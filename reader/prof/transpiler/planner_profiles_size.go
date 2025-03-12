@@ -1,7 +1,7 @@
 package transpiler
 
 import (
-	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2/shared"
 	sql "github.com/metrico/qryn/reader/utils/sql_select"
 )
@@ -39,7 +39,13 @@ func (p *ProfileSizePlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, e
 			if err != nil {
 				return "", err
 			}
-			return fmt.Sprintf("(%s)", str), nil
+			//	return fmt.Sprintf("(%s)", str), nil
+			stream := jsoniter.ConfigFastest.BorrowStream(nil)
+			defer jsoniter.ConfigFastest.ReturnStream(stream)
+			stream.WriteRaw("(")
+			stream.WriteRaw(str)
+			stream.WriteRaw(")")
+			return string(stream.Buffer()), nil
 		})
 	}
 

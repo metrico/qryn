@@ -2,8 +2,8 @@ package controllerv1
 
 import (
 	"context"
-	"fmt"
 	"github.com/gorilla/websocket"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/model"
 	"github.com/metrico/qryn/reader/service"
 	"net/http"
@@ -75,10 +75,22 @@ func (q *QueryRangeController) Query(w http.ResponseWriter, r *http.Request) {
 	}
 	if query == "vector(1)+vector(1)" {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(fmt.Sprintf(`{"status": "success", "data": {"resultType": "vector", "result": [{
-  "metric": {},
-  "value": [%d, "2"]
-}]}}`, time.Now().Unix())))
+
+		stream := jsoniter.ConfigFastest.BorrowStream(nil)
+		defer jsoniter.ConfigFastest.ReturnStream(stream)
+		// Write the fixed parts of the JSON response.
+		stream.WriteRaw(`{"status": "success", "data": {"resultType": "vector", "result": [{`)
+		stream.WriteRaw(`"metric": {},`)
+		stream.WriteRaw(`"value": [`)
+		// Write the timestamp as a string (represents %d)
+		stream.WriteRaw(strconv.FormatInt(time.Now().Unix(), 10))
+		stream.WriteRaw(`, "2"]}]}}`)
+		w.Write([]byte(string(stream.Buffer())))
+		return
+		//		w.Write([]byte(fmt.Sprintf(`{"status": "success", "data": {"resultType": "vector", "result": [{
+		//  "metric": {},
+		//  "value": [%d, "2"]
+		//}]}}`, time.Now().Unix())))
 		return
 	}
 	iTime, err := getRequiredI64(r, "time", "0", nil)

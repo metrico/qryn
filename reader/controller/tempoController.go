@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/model"
 	"github.com/metrico/qryn/reader/utils/unmarshal"
 	common "go.opentelemetry.io/proto/otlp/common/v1"
@@ -176,7 +177,15 @@ func (t *TempoController) TagsV2(w http.ResponseWriter, r *http.Request) {
 		}
 		iT, err := strconv.ParseInt(strT, 10, 64)
 		if err != nil {
-			PromError(400, fmt.Sprintf("Invalid timestamp for %s: %v", req[0].(string), err), w)
+			//PromError(400, fmt.Sprintf("Invalid timestamp for %s: %v", req[0].(string), err), w)
+			stream := jsoniter.ConfigFastest.BorrowStream(nil)
+			stream.WriteRaw("Invalid timestamp for ")
+			stream.WriteRaw(req[0].(string))
+			stream.WriteRaw(": ")
+			stream.WriteRaw(err.Error())
+			errMsg := string(stream.Buffer())
+			jsoniter.ConfigFastest.ReturnStream(stream)
+			PromError(400, errMsg, w)
 			return
 		}
 		timespan[i] = time.Unix(iT, 0)
@@ -240,8 +249,17 @@ func (t *TempoController) ValuesV2(w http.ResponseWriter, r *http.Request) {
 		}
 		iT, err := strconv.ParseInt(strT, 10, 64)
 		if err != nil {
-			PromError(400, fmt.Sprintf("Invalid timestamp for %s: %v", req[0].(string), err), w)
+			//PromError(400, fmt.Sprintf("Invalid timestamp for %s: %v", req[0].(string), err), w)
+			stream := jsoniter.ConfigFastest.BorrowStream(nil)
+			stream.WriteRaw("Invalid timestamp for ")
+			stream.WriteRaw(req[0].(string))
+			stream.WriteRaw(": ")
+			stream.WriteRaw(err.Error())
+			errMsg := string(stream.Buffer())
+			jsoniter.ConfigFastest.ReturnStream(stream)
+			PromError(400, errMsg, w)
 			return
+			//	return
 		}
 		timespan[i] = time.Unix(iT, 0)
 	}

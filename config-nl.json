@@ -1,0 +1,94 @@
+{
+  "database_data": [
+    {
+      "help": "Settings for Clickhouse Database (data)",
+      "user": "default",
+      "node": "clickhouse1",
+      "pass": "E1O4IqCli",
+      "name": "qryn_cloud",
+      "host": "nl.ch.hepic.tel",
+      "port": 9556,
+      "strategy": "failover",
+      "primary": true,
+      "debug": true,
+      "secure": false,
+      "https": false,
+      "ttl_days": 7,
+      "distributed": false
+    }
+  ],
+  "multitenance_settings": {
+    "enabled": true
+  },
+  "http_settings": {
+    "help": "Settings for the CLOKIWRITER Webapp Server",
+    "host": "0.0.0.0",
+    "port": 3215,
+    "prefork": false,
+    "root": "",
+    "gzip": true,
+    "gzip_static": true,
+    "api_prefix": "",
+    "debug":true,
+    "websocket": {
+      "enable": false
+    }
+  },
+  "https_settings": {
+    "help": "SSL settings for CLOKIWRITER Webapp Server",
+    "enable": false,
+    "host": "0.0.0.0",
+    "port": 3201,
+    "min-tls-version": "TLS1.2",
+    "max-tls-version": "TLS1.4",
+    "http_redirect": false,
+    "cert": "/usr/local/clokiwriter/tls/cert.pem",
+    "key": "/usr/local/clokiwriter/tls/key.pem"
+  },
+  "analytics_database": "n-clickhouse://default:E1O4IqCli@nl.ch.hepic.tel:9556/analytics",
+  "http_connect": {
+    "_help": "connect timeout in seconds",
+    "connect_timeout": 10
+  },
+  "prometheus_client": {
+    "help": "Settings for internal Prometheus Client (optional)",
+    "allow_ip": ["127.0.0.1"],
+    "metrics_path": "/metrics",
+    "service_name": "prometheus",
+    "push_url": "",
+    "push_name": "",
+    "push_interval": 60,
+    "enable": false
+  },
+  "log_settings": {
+    "path": "/usr/local/clokiwriter/log",
+    "level": "info",
+    "stdout": true,
+    "json": true,
+    "name": "clokiwriter-webapp.log",
+    "syslog": false,
+    "syslog_level": "LOG_INFO",
+    "syslog_uri": "",
+    "max_age_days": 7,
+    "rotation_hours": 24
+  },
+  "system_settings": {
+    "help": "Settings for CLOKIWRITER logs",
+    "hostname": "home",
+    "url": "http://127.0.0.1",
+    "hash_type": "bernstein",
+    "uuid": "",
+    "db_bulk": 1000,
+    "db_timer": 0.1,
+    "buffer_size": 80000
+  },
+  "api_settings": {
+    "enable_token_access": true
+  },
+  "auth_settings": {
+    "_comment": "The type param can be internal, ldap",
+    "type": "internal",
+    "_help:token_expire": "the settings in minutes",
+    "token_expire": 1200
+  }
+}

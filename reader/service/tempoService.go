@@ -5,6 +5,7 @@ import (
 	sql2 "database/sql"
 	"encoding/hex"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2/shared"
 	"github.com/metrico/qryn/reader/model"
 	"github.com/metrico/qryn/reader/plugins"
@@ -75,7 +76,13 @@ func (t *TempoService) GetQueryRequest(ctx context.Context, startNS int64, endNS
 					if err != nil {
 						return "", err
 					}
-					return fmt.Sprintf("unhex(%s)", strTraceId), nil
+					stream := jsoniter.ConfigFastest.BorrowStream(nil)
+					defer jsoniter.ConfigFastest.ReturnStream(stream)
+					stream.WriteRaw("unhex(")
+					stream.WriteRaw(strTraceId)
+					stream.WriteRaw(")")
+					return string(stream.Buffer()), nil
+					//return fmt.Sprintf("unhex(%s)", strTraceId), nil
 				}),
 			)).
 		OrderBy(sql.NewRawObject("timestamp_ns")).

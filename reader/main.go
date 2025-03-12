@@ -1,10 +1,10 @@
 package reader
 
 import (
-	"fmt"
 	_ "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/gorilla/mux"
 	_ "github.com/gorilla/mux"
+	jsoniter "github.com/json-iterator/go"
 	clconfig "github.com/metrico/cloki-config"
 	"github.com/metrico/qryn/reader/config"
 	"github.com/metrico/qryn/reader/dbRegistry"
@@ -45,7 +45,16 @@ func Init(cnf *clconfig.ClokiConfig, app *mux.Router) {
 }
 
 func configureAsHTTPServer(acc *mux.Router) {
-	httpURL := fmt.Sprintf("%s:%d", config.Cloki.Setting.HTTP_SETTINGS.Host, config.Cloki.Setting.HTTP_SETTINGS.Port)
+	//httpURL := fmt.Sprintf("%s:%d", config.Cloki.Setting.HTTP_SETTINGS.Host, config.Cloki.Setting.HTTP_SETTINGS.Port)
+	httpURL := func() string {
+		stream := jsoniter.ConfigFastest.BorrowStream(nil)
+		defer jsoniter.ConfigFastest.ReturnStream(stream)
+		stream.WriteRaw(config.Cloki.Setting.HTTP_SETTINGS.Host)
+		stream.WriteRaw(":")
+		// If Port is int, convert it to int64 first.
+		stream.WriteInt64(int64(config.Cloki.Setting.HTTP_SETTINGS.Port))
+		return string(stream.Buffer())
+	}()
 	applyMiddlewares(acc)
 
 	performV1APIRouting(acc)

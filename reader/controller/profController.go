@@ -1,10 +1,12 @@
 package controllerv1
 
-import "html"
+import (
+	jsoniter "github.com/json-iterator/go"
+	"html"
+)
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/metrico/qryn/reader/prof"
 	v1 "github.com/metrico/qryn/reader/prof/types/v1"
 	"github.com/metrico/qryn/reader/service"
@@ -207,7 +209,13 @@ func (pc *ProfController) Settings(w http.ResponseWriter, r *http.Request) {
 func (pc *ProfController) RenderDiff(w http.ResponseWriter, r *http.Request) {
 	for _, param := range []string{"leftQuery", "leftFrom", "leftUntil", "rightQuery", "rightFrom", "rightUntil"} {
 		if len(r.URL.Query()[param]) == 0 || r.URL.Query()[param][0] == "" {
-			defaultError(w, 400, fmt.Sprintf("Missing required parameter: %s", param))
+			//defaultError(w, 400, fmt.Sprintf("Missing required parameter: %s", param))
+			stream := jsoniter.ConfigFastest.BorrowStream(nil)
+			stream.WriteRaw("Missing required parameter: ")
+			stream.WriteRaw(param)
+			errMsg := string(stream.Buffer())
+			jsoniter.ConfigFastest.ReturnStream(stream)
+			defaultError(w, 400, errMsg)
 			return
 		}
 	}
@@ -222,7 +230,17 @@ func (pc *ProfController) RenderDiff(w http.ResponseWriter, r *http.Request) {
 		strVal := r.URL.Query()[v[0].(string)][0]
 		iVal, err := strconv.ParseInt(strVal, 10, 64)
 		if err != nil {
-			defaultError(w, 400, fmt.Sprintf("Invalid value for %s: %s", html.EscapeString(v[0].(string)), html.EscapeString(strVal)))
+			//defaultError(w, 400, fmt.Sprintf("Invalid value for %s: %s", html.EscapeString(v[0].(string)), html.EscapeString(strVal)))
+			//return
+
+			stream := jsoniter.ConfigFastest.BorrowStream(nil)
+			stream.WriteRaw("Invalid value for ")
+			stream.WriteRaw(html.EscapeString(v[0].(string)))
+			stream.WriteRaw(": ")
+			stream.WriteRaw(html.EscapeString(strVal))
+			errMsg := string(stream.Buffer())
+			jsoniter.ConfigFastest.ReturnStream(stream)
+			defaultError(w, 400, errMsg)
 			return
 		}
 		*(v[1].(*time.Time)) = time.Unix(iVal/1000, 0)

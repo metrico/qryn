@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2/shared"
 	"github.com/metrico/qryn/reader/model"
 	traceql_parser "github.com/metrico/qryn/reader/traceql/parser"
@@ -33,10 +33,42 @@ func (t *TempoService) SearchTraceQL(ctx context.Context,
 	ctx, cancel := context.WithCancel(ctx)
 
 	var (
-		tracesAttrsTable     = fmt.Sprintf("`%s`.tempo_traces_attrs_gin", conn.Config.Name)
-		tracesAttrsDistTable = fmt.Sprintf("`%s`.tempo_traces_attrs_gin_dist", conn.Config.Name)
-		tracesTable          = fmt.Sprintf("`%s`.tempo_traces", conn.Config.Name)
-		tracesDistTable      = fmt.Sprintf("`%s`.tempo_traces_dist", conn.Config.Name)
+		tracesAttrsTable = func() string {
+			stream := jsoniter.ConfigFastest.BorrowStream(nil)
+			defer jsoniter.ConfigFastest.ReturnStream(stream)
+			stream.WriteRaw("`")
+			stream.WriteRaw(conn.Config.Name)
+			stream.WriteRaw("`.tempo_traces_attrs_gin")
+			return string(stream.Buffer())
+		}()
+		tracesAttrsDistTable = func() string {
+			stream := jsoniter.ConfigFastest.BorrowStream(nil)
+			defer jsoniter.ConfigFastest.ReturnStream(stream)
+			stream.WriteRaw("`")
+			stream.WriteRaw(conn.Config.Name)
+			stream.WriteRaw("`.tempo_traces_attrs_gin_dist")
+			return string(stream.Buffer())
+		}()
+		tracesTable = func() string {
+			stream := jsoniter.ConfigFastest.BorrowStream(nil)
+			defer jsoniter.ConfigFastest.ReturnStream(stream)
+			stream.WriteRaw("`")
+			stream.WriteRaw(conn.Config.Name)
+			stream.WriteRaw("`.tempo_traces")
+			return string(stream.Buffer())
+		}()
+		tracesDistTable = func() string {
+			stream := jsoniter.ConfigFastest.BorrowStream(nil)
+			defer jsoniter.ConfigFastest.ReturnStream(stream)
+			stream.WriteRaw("`")
+			stream.WriteRaw(conn.Config.Name)
+			stream.WriteRaw("`.tempo_traces_dist")
+			return string(stream.Buffer())
+		}()
+		//tracesAttrsTable     = fmt.Sprintf("`%s`.tempo_traces_attrs_gin", conn.Config.Name)
+		//tracesAttrsDistTable = fmt.Sprintf("`%s`.tempo_traces_attrs_gin_dist", conn.Config.Name)
+		//tracesTable          = fmt.Sprintf("`%s`.tempo_traces", conn.Config.Name)
+		//tracesDistTable      = fmt.Sprintf("`%s`.tempo_traces_dist", conn.Config.Name)
 	)
 
 	ch, err := planner.Process(&shared.PlannerContext{

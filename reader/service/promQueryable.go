@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/VictoriaMetrics/fastcache"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2/shared"
 	"github.com/metrico/qryn/reader/model"
 	"github.com/metrico/qryn/reader/plugins"
@@ -319,7 +320,14 @@ func newLabelsGetter(from time.Time, to time.Time, conn *model.DataDatabasesMap,
 func (l *labelsGetter) Get(fingerprint uint64) labels.Labels {
 	strLabels, ok := l.fingerprintsHas[fingerprint]
 	if !ok {
-		logger.Error(fmt.Sprintf("Warning: no fingerprint %d found", fingerprint))
+		//logger.Error(fmt.Sprintf("Warning: no fingerprint %d found", fingerprint))
+		//return labels.Labels{}
+		stream := jsoniter.ConfigFastest.BorrowStream(nil)
+		defer jsoniter.ConfigFastest.ReturnStream(stream)
+		stream.WriteRaw("Warning: no fingerprint ")
+		stream.WriteRaw(strconv.FormatUint(fingerprint, 10))
+		stream.WriteRaw(" found")
+		logger.Error(string(stream.Buffer()))
 		return labels.Labels{}
 	}
 	res := make(labels.Labels, len(strLabels))

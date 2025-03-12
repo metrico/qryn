@@ -1,7 +1,7 @@
 package transpiler
 
 import (
-	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2/shared"
 	sql "github.com/metrico/qryn/reader/utils/sql_select"
 )
@@ -34,7 +34,13 @@ func (f *FilterLabelsPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, 
 			return "", err
 		}
 
-		return fmt.Sprintf("arrayFilter(x -> %s, tags)", strCond), nil
+		//	return fmt.Sprintf("arrayFilter(x -> %s, tags)", strCond), nil
+		stream := jsoniter.ConfigFastest.BorrowStream(nil)
+		defer jsoniter.ConfigFastest.ReturnStream(stream)
+		stream.WriteRaw("arrayFilter(x -> ")
+		stream.WriteRaw(strCond)
+		stream.WriteRaw(", tags)")
+		return string(stream.Buffer()), nil
 	})
 
 	res := sql.NewSelect().
