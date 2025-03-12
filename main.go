@@ -237,7 +237,7 @@ func main() {
 		cfg.Setting.HTTP_SETTINGS.Port = 3100
 	}
 
-	//initDB(cfg)
+	initDB(cfg)
 	if os.Getenv("MODE") == "init_only" {
 		return
 	}
