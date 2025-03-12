@@ -2,7 +2,7 @@ package logql_parser
 
 import (
 	"encoding/json"
-	jsoniter "github.com/json-iterator/go"
+	"fmt"
 	"strings"
 )
 
@@ -51,17 +51,10 @@ func (l StrSelector) String() string {
 	for i, p := range l.Pipelines {
 		ppl[i] = p.String()
 	}
-	//return fmt.Sprintf("{%s}%s",
-	//	strings.Join(sel, ","),
-	//	strings.Join(ppl, " "))
-	stream := jsoniter.ConfigFastest.BorrowStream(nil)
-	defer jsoniter.ConfigFastest.ReturnStream(stream)
-	stream.WriteRaw("{")
-	stream.WriteRaw(strings.Join(sel, ","))
-	stream.WriteRaw("}")
-	stream.WriteRaw(strings.Join(ppl, " "))
+	return fmt.Sprintf("{%s}%s",
+		strings.Join(sel, ","),
+		strings.Join(ppl, " "))
 
-	return string(stream.Buffer())
 }
 
 type StrSelCmd struct {
@@ -144,14 +137,7 @@ type LineFilter struct {
 }
 
 func (l *LineFilter) String() string {
-	//return fmt.Sprintf(" %s %s", l.Fn, l.Val.String())
-	stream := jsoniter.ConfigFastest.BorrowStream(nil)
-	defer jsoniter.ConfigFastest.ReturnStream(stream)
-	stream.WriteRaw(" ")
-	stream.WriteRaw(l.Fn)
-	stream.WriteRaw(" ")
-	stream.WriteRaw(l.Val.String())
-	return string(stream.Buffer())
+	return fmt.Sprintf(" %s %s", l.Fn, l.Val.String())
 }
 
 type LabelFilter struct {
@@ -193,19 +179,8 @@ type SimpleLabelFilter struct {
 }
 
 func (s *SimpleLabelFilter) String() string {
-	//bld := strings.Builder{}
-	//bld.WriteString(fmt.Sprintf("%s %s ", s.Label, s.Fn))
-	//if s.StrVal != nil {
-	//	bld.WriteString(s.StrVal.String())
-	//} else {
-	//	bld.WriteString(s.NumVal)
-	//}
-	//return bld.String()
-	var bld strings.Builder
-	bld.WriteString(s.Label.String())
-	bld.WriteString(" ")
-	bld.WriteString(s.Fn)
-	bld.WriteString(" ")
+	bld := strings.Builder{}
+	bld.WriteString(fmt.Sprintf("%s %s ", s.Label, s.Fn))
 	if s.StrVal != nil {
 		bld.WriteString(s.StrVal.String())
 	} else {
@@ -222,20 +197,14 @@ type Parser struct {
 
 func (p *Parser) String() string {
 	if p.ParserParams == nil {
-		//	return fmt.Sprintf("| %s", p.Fn)
-		return "| " + p.Fn
+		return fmt.Sprintf("| %s", p.Fn)
+
 	}
 	params := make([]string, len(p.ParserParams))
 	for i, param := range p.ParserParams {
 		params[i] = param.String()
 	}
-	var b strings.Builder
-	b.WriteString("| ")
-	b.WriteString(p.Fn)
-	b.WriteString(" ")
-	b.WriteString(strings.Join(params, ", "))
-	return b.String()
-	//return fmt.Sprintf("| %s %s", p.Fn, strings.Join(params, ", "))
+	return fmt.Sprintf("| %s %s", p.Fn, strings.Join(params, ", "))
 }
 
 type ParserParam struct {
@@ -247,13 +216,7 @@ func (p *ParserParam) String() string {
 	if p.Label == nil {
 		return p.Val.String()
 	}
-	stream := jsoniter.ConfigFastest.BorrowStream(nil)
-	defer jsoniter.ConfigFastest.ReturnStream(stream)
-	stream.WriteRaw(p.Label.String())
-	stream.WriteRaw(" = ")
-	stream.WriteRaw(p.Val.String())
-	return string(stream.Buffer())
-	//return fmt.Sprintf("%s = %s", p.Label, p.Val.String())
+	return fmt.Sprintf("%s = %s", p.Label, p.Val.String())
 }
 
 type LineFormat struct {
@@ -262,13 +225,8 @@ type LineFormat struct {
 
 func (f *LineFormat) String() string {
 
-	//return fmt.Sprintf("| line_format %s", f.Val.String())
+	return fmt.Sprintf("| line_format %s", f.Val.String())
 
-	stream := jsoniter.ConfigFastest.BorrowStream(nil)
-	defer jsoniter.ConfigFastest.ReturnStream(stream)
-	stream.WriteRaw("| line_format ")
-	stream.WriteRaw(f.Val.String())
-	return string(stream.Buffer())
 }
 
 type LabelFormat struct {
@@ -276,20 +234,12 @@ type LabelFormat struct {
 }
 
 func (l *LabelFormat) String() string {
-	//ops := make([]string, len(l.LabelFormatOps))
-	//for i, op := range l.LabelFormatOps {
-	//	ops[i] = op.String()
-	//}
-	//return fmt.Sprintf("| label_format %s", strings.Join(ops, ", "))
 	ops := make([]string, len(l.LabelFormatOps))
 	for i, op := range l.LabelFormatOps {
 		ops[i] = op.String()
 	}
-	stream := jsoniter.ConfigFastest.BorrowStream(nil)
-	defer jsoniter.ConfigFastest.ReturnStream(stream)
-	stream.WriteRaw("| label_format ")
-	stream.WriteRaw(strings.Join(ops, ", "))
-	return string(stream.Buffer())
+	return fmt.Sprintf("| label_format %s", strings.Join(ops, ", "))
+
 }
 
 type LabelFormatOp struct {
@@ -316,15 +266,7 @@ type Unwrap struct {
 }
 
 func (u *Unwrap) String() string {
-	//return fmt.Sprintf("| %s %s", u.Fn, u.Label.String())
-	stream := jsoniter.ConfigFastest.BorrowStream(nil)
-	defer jsoniter.ConfigFastest.ReturnStream(stream)
-	stream.WriteRaw("| ")
-	stream.WriteRaw(u.Fn)
-	stream.WriteRaw(" ")
-	stream.WriteRaw(u.Label.String())
-	return string(stream.Buffer())
-
+	return fmt.Sprintf("| %s %s", u.Fn, u.Label.String())
 }
 
 type Drop struct {
@@ -333,22 +275,12 @@ type Drop struct {
 }
 
 func (d *Drop) String() string {
-	//params := make([]string, len(d.Params))
-	//for i, param := range d.Params {
-	//	params[i] = param.String()
-	//}
-	//return fmt.Sprintf("| %s %s", d.Fn, strings.Join(params, ","))
 	params := make([]string, len(d.Params))
 	for i, param := range d.Params {
 		params[i] = param.String()
 	}
-	stream := jsoniter.ConfigFastest.BorrowStream(nil)
-	defer jsoniter.ConfigFastest.ReturnStream(stream)
-	stream.WriteRaw("| ")
-	stream.WriteRaw(d.Fn)
-	stream.WriteRaw(" ")
-	stream.WriteRaw(strings.Join(params, ","))
-	return string(stream.Buffer())
+	return fmt.Sprintf("| %s %s", d.Fn, strings.Join(params, ","))
+
 }
 
 type DropParam struct {
@@ -408,22 +340,12 @@ type ByOrWithout struct {
 }
 
 func (l ByOrWithout) String() string {
-	//labels := make([]string, len(l.Labels))
-	//for i, label := range l.Labels {
-	//	labels[i] = label.String()
-	//}
-	//return fmt.Sprintf("%s (%s)", l.Fn, strings.Join(labels, ","))
 	labels := make([]string, len(l.Labels))
 	for i, label := range l.Labels {
 		labels[i] = label.String()
 	}
-	stream := jsoniter.ConfigFastest.BorrowStream(nil)
-	defer jsoniter.ConfigFastest.ReturnStream(stream)
-	stream.WriteRaw(l.Fn)
-	stream.WriteRaw(" (")
-	stream.WriteRaw(strings.Join(labels, ","))
-	stream.WriteRaw(")")
-	return string(stream.Buffer())
+	return fmt.Sprintf("%s (%s)", l.Fn, strings.Join(labels, ","))
+
 }
 
 func (l ByOrWithout) LabelNames() []string {
@@ -464,22 +386,12 @@ type MacrosOp struct {
 }
 
 func (l MacrosOp) String() string {
-	//params := make([]string, len(l.Params))
-	//for i, p := range l.Params {
-	//	params[i] = p.String()
-	//}
-	//return fmt.Sprintf("%s(%s)", l.Name, strings.Join(params, ","))
 	params := make([]string, len(l.Params))
 	for i, p := range l.Params {
 		params[i] = p.String()
 	}
-	stream := jsoniter.ConfigFastest.BorrowStream(nil)
-	defer jsoniter.ConfigFastest.ReturnStream(stream)
-	stream.WriteRaw(l.Name)
-	stream.WriteRaw("(")
-	stream.WriteRaw(strings.Join(params, ","))
-	stream.WriteRaw(")")
-	return string(stream.Buffer())
+	return fmt.Sprintf("%s(%s)", l.Name, strings.Join(params, ","))
+
 }
 
 type TopK struct {
@@ -503,17 +415,8 @@ func (l TopK) String() string {
 	if l.Comparison != nil {
 		cmp = l.Comparison.String()
 	}
-	//return fmt.Sprintf("%s(%s, %s)%s", l.Fn, l.Param, fn, cmp)
-	stream := jsoniter.ConfigFastest.BorrowStream(nil)
-	defer jsoniter.ConfigFastest.ReturnStream(stream)
-	stream.WriteRaw(l.Fn)
-	stream.WriteRaw("(")
-	stream.WriteRaw(l.Param)
-	stream.WriteRaw(", ")
-	stream.WriteRaw(fn)
-	stream.WriteRaw(")")
-	stream.WriteRaw(cmp)
-	return string(stream.Buffer())
+	return fmt.Sprintf("%s(%s, %s)%s", l.Fn, l.Param, fn, cmp)
+
 }
 
 type QuantileOverTime struct {

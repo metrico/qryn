@@ -3,6 +3,7 @@ package tempo
 import (
 	"context"
 	"errors"
+	"fmt"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/utils/dbVersion"
 	sql "github.com/metrico/qryn/reader/utils/sql_select"
@@ -71,23 +72,16 @@ func (s *SQLIndexQuery) String(ctx *sql.Ctx, options ...int) (string, error) {
 				append(sqlTagRequests[i].GetSelect(), sql.NewRawObject("timestamp_ns"))...)
 		}
 		if s.FromNS > 0 {
-			//from := time.Unix(s.FromNS/1e9, s.FromNS%1e9)
-			//date := fmt.Sprintf("toDate('%s')", from.Format("2006-01-02"))
-			//sqlTagRequests[i].AndWhere(
-			//	sql.Ge(sql.NewRawObject("date"), sql.NewRawObject(date)),
-			//)
-			//if s.Ver.IsVersionSupported("tempo_v2", s.FromNS, s.ToNS) {
-			//	sqlTagRequests[i].AndWhere(
-			//		sql.Ge(sql.NewRawObject("timestamp_ns"), sql.NewIntVal(s.FromNS)))
-			//}
-
 			from := time.Unix(s.FromNS/1e9, s.FromNS%1e9)
-			stream := jsoniter.ConfigFastest.BorrowStream(nil)
-			stream.WriteRaw("toDate('")
-			stream.WriteRaw(from.Format("2006-01-02"))
-			stream.WriteRaw("')")
-			date := string(stream.Buffer())
-			jsoniter.ConfigFastest.ReturnStream(stream)
+			date := fmt.Sprintf("toDate('%s')", from.Format("2006-01-02"))
+			sqlTagRequests[i].AndWhere(
+				sql.Ge(sql.NewRawObject("date"), sql.NewRawObject(date)),
+			)
+			if s.Ver.IsVersionSupported("tempo_v2", s.FromNS, s.ToNS) {
+				sqlTagRequests[i].AndWhere(
+					sql.Ge(sql.NewRawObject("timestamp_ns"), sql.NewIntVal(s.FromNS)))
+			}
+
 			sqlTagRequests[i].AndWhere(
 				sql.Ge(sql.NewRawObject("date"), sql.NewRawObject(date)),
 			)
@@ -97,23 +91,15 @@ func (s *SQLIndexQuery) String(ctx *sql.Ctx, options ...int) (string, error) {
 			}
 		}
 		if s.ToNS > 0 {
-			//to := time.Unix(s.ToNS/1e9, s.ToNS%1e9)
-			//date := fmt.Sprintf("toDate('%s')", to.Format("2006-01-02"))
-			//sqlTagRequests[i].AndWhere(
-			//	sql.Le(sql.NewRawObject("date"), sql.NewRawObject(date)),
-			//)
-			//if s.Ver.IsVersionSupported("tempo_v2", s.FromNS, s.ToNS) {
-			//	sqlTagRequests[i].AndWhere(
-			//		sql.Le(sql.NewRawObject("timestamp_ns"), sql.NewIntVal(s.ToNS)))
-			//}
-
 			to := time.Unix(s.ToNS/1e9, s.ToNS%1e9)
-			stream := jsoniter.ConfigFastest.BorrowStream(nil)
-			stream.WriteRaw("toDate('")
-			stream.WriteRaw(to.Format("2006-01-02"))
-			stream.WriteRaw("')")
-			date := string(stream.Buffer())
-			jsoniter.ConfigFastest.ReturnStream(stream)
+			date := fmt.Sprintf("toDate('%s')", to.Format("2006-01-02"))
+			sqlTagRequests[i].AndWhere(
+				sql.Le(sql.NewRawObject("date"), sql.NewRawObject(date)),
+			)
+			if s.Ver.IsVersionSupported("tempo_v2", s.FromNS, s.ToNS) {
+				sqlTagRequests[i].AndWhere(
+					sql.Le(sql.NewRawObject("timestamp_ns"), sql.NewIntVal(s.ToNS)))
+			}
 			sqlTagRequests[i].AndWhere(
 				sql.Le(sql.NewRawObject("date"), sql.NewRawObject(date)),
 			)
@@ -138,12 +124,7 @@ func (s *SQLIndexQuery) String(ctx *sql.Ctx, options ...int) (string, error) {
 			request.From(sql.NewCol(getSubSelect(subSel), "subsel_0"))
 			continue
 		}
-		//	alias := fmt.Sprintf("subsel_%d", i)
-		stream := jsoniter.ConfigFastest.BorrowStream(nil)
-		stream.WriteRaw("subsel_")
-		stream.WriteInt64(int64(i))
-		alias := string(stream.Buffer())
-		jsoniter.ConfigFastest.ReturnStream(stream)
+		alias := fmt.Sprintf("subsel_%d", i)
 		request.AddJoin(sql.NewJoin("INNER ANY",
 			sql.NewCol(getSubSelect(subSel), alias),
 			sql.And(
@@ -153,14 +134,9 @@ func (s *SQLIndexQuery) String(ctx *sql.Ctx, options ...int) (string, error) {
 		))
 	}
 	if s.Ver.IsVersionSupported("tempo_v2", s.FromNS, s.ToNS) && s.Limit > 0 {
-		stream := jsoniter.ConfigFastest.BorrowStream(nil)
-		stream.WriteInt64(s.Limit)
-		limitStr := string(stream.Buffer())
-		jsoniter.ConfigFastest.ReturnStream(stream)
+
 		request.OrderBy(sql.NewOrderBy(sql.NewRawObject("subsel_0.timestamp_ns"), sql.ORDER_BY_DIRECTION_DESC)).
-			Limit(sql.NewRawObject(limitStr))
-		//request.OrderBy(sql.NewOrderBy(sql.NewRawObject("subsel_0.timestamp_ns"), sql.ORDER_BY_DIRECTION_DESC)).
-		//	Limit(sql.NewRawObject(fmt.Sprintf("%d", s.Limit)))
+			Limit(sql.NewRawObject(fmt.Sprintf("%d", s.Limit)))
 	}
 	return request.String(ctx, options...)
 }
@@ -171,14 +147,7 @@ func getSubSelect(sel sql.SQLObject) sql.SQLObject {
 		if err != nil {
 			return "", err
 		}
-		//return fmt.Sprintf("(%s)", str), nil
-		stream := jsoniter.ConfigFastest.BorrowStream(nil)
-		stream.WriteRaw("(")
-		stream.WriteRaw(str)
-		stream.WriteRaw(")")
-		ret := string(stream.Buffer())
-		jsoniter.ConfigFastest.ReturnStream(stream)
-		return ret, nil
+		return fmt.Sprintf("(%s)", str), nil
 	})
 }
 
@@ -190,26 +159,14 @@ var opRegistry = map[string]func(val sql.SQLObject) sql.SQLCondition{
 		return sql.Neq(sql.NewRawObject("val"), val)
 	},
 	"=~": func(val sql.SQLObject) sql.SQLCondition {
-		//return sql.Eq(sql.NewCustomCol(func(ctx *sql.Ctx, options ...int) (string, error) {
-		//	strVal, err := val.String(ctx, options...)
-		//	if err != nil {
-		//		return "", err
-		//	}
-		//	return fmt.Sprintf("match(val, %s)", strVal), nil
-		//}), sql.NewRawObject("1"))
 		return sql.Eq(sql.NewCustomCol(func(ctx *sql.Ctx, options ...int) (string, error) {
 			strVal, err := val.String(ctx, options...)
 			if err != nil {
 				return "", err
 			}
-			stream := jsoniter.ConfigFastest.BorrowStream(nil)
-			stream.WriteRaw("match(val, ")
-			stream.WriteRaw(strVal)
-			stream.WriteRaw(")")
-			ret := string(stream.Buffer())
-			jsoniter.ConfigFastest.ReturnStream(stream)
-			return ret, nil
+			return fmt.Sprintf("match(val, %s)", strVal), nil
 		}), sql.NewRawObject("1"))
+
 	},
 	"!~": func(val sql.SQLObject) sql.SQLCondition {
 		return sql.Neq(sql.NewCustomCol(func(ctx *sql.Ctx, options ...int) (string, error) {
@@ -217,14 +174,7 @@ var opRegistry = map[string]func(val sql.SQLObject) sql.SQLCondition{
 			if err != nil {
 				return "", err
 			}
-			//return fmt.Sprintf("match(val, %s)", strVal), nil
-			stream := jsoniter.ConfigFastest.BorrowStream(nil)
-			stream.WriteRaw("match(val, ")
-			stream.WriteRaw(strVal)
-			stream.WriteRaw(")")
-			ret := string(stream.Buffer())
-			jsoniter.ConfigFastest.ReturnStream(stream)
-			return ret, nil
+			return fmt.Sprintf("match(val, %s)", strVal), nil
 		}), sql.NewRawObject("1"))
 	},
 }

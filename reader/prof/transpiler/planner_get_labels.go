@@ -1,7 +1,7 @@
 package transpiler
 
 import (
-	jsoniter "github.com/json-iterator/go"
+	"fmt"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2/clickhouse_planner"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2/shared"
 	"github.com/metrico/qryn/reader/prof/parser"
@@ -39,13 +39,7 @@ func (g *GetLabelsPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, err
 			if err != nil {
 				return "", err
 			}
-			stream := jsoniter.ConfigFastest.BorrowStream(nil)
-			defer jsoniter.ConfigFastest.ReturnStream(stream)
-			stream.WriteRaw("arrayFilter(x -> ")
-			stream.WriteRaw(strInTags)
-			stream.WriteRaw(", p.tags)")
-			return string(stream.Buffer()), nil
-			//return fmt.Sprintf("arrayFilter(x -> %s, p.tags)", strInTags), nil
+			return fmt.Sprintf("arrayFilter(x -> %s, p.tags)", strInTags), nil
 		}), "tags")
 	}
 

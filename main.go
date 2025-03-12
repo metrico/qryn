@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gorilla/mux"
-	jsoniter "github.com/json-iterator/go"
 	clconfig "github.com/metrico/cloki-config"
 	"github.com/metrico/cloki-config/config"
 	"github.com/metrico/qryn/ctrl"
@@ -269,16 +268,7 @@ func main() {
 	}
 
 	initPyro()
-
-	//	httpURL := fmt.Sprintf("%s:%d", cfg.Setting.HTTP_SETTINGS.Host, cfg.Setting.HTTP_SETTINGS.Port)
-	httpURL := func() string {
-		stream := jsoniter.ConfigFastest.BorrowStream(nil)
-		defer jsoniter.ConfigFastest.ReturnStream(stream)
-		stream.WriteRaw(cfg.Setting.HTTP_SETTINGS.Host)
-		stream.WriteRaw(":")
-		stream.WriteInt(cfg.Setting.HTTP_SETTINGS.Port)
-		return string(stream.Buffer())
-	}()
+	httpURL := fmt.Sprintf("%s:%d", cfg.Setting.HTTP_SETTINGS.Host, cfg.Setting.HTTP_SETTINGS.Port)
 	httpStart(app, httpURL)
 }
 

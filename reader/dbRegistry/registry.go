@@ -2,9 +2,9 @@ package dbRegistry
 
 import (
 	"crypto/tls"
+	"fmt"
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/jmoiron/sqlx"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/config"
 	"github.com/metrico/qryn/reader/model"
 	"github.com/metrico/qryn/reader/plugins"
@@ -45,40 +45,12 @@ func initDataDBSession() {
 
 	for _, _dbObject := range config.Cloki.Setting.DATABASE_DATA {
 		dbObject := _dbObject
-		//logger.Info(fmt.Sprintf("Connecting to [%s, %s, %s, %s, %d, %d, %d]\n", dbObject.Host, dbObject.User, dbObject.Name,
-		//	dbObject.Node, dbObject.Port, dbObject.ReadTimeout, dbObject.WriteTimeout))
-		stream := jsoniter.ConfigFastest.BorrowStream(nil)
-		defer jsoniter.ConfigFastest.ReturnStream(stream)
-		stream.WriteRaw("Connecting to [")
-		stream.WriteRaw(dbObject.Host)
-		stream.WriteRaw(", ")
-		stream.WriteRaw(dbObject.User)
-		stream.WriteRaw(", ")
-		stream.WriteRaw(dbObject.Name)
-		stream.WriteRaw(", ")
-		stream.WriteRaw(dbObject.Node)
-		stream.WriteRaw(", ")
-		stream.WriteInt64(int64(dbObject.Port))
-		stream.WriteRaw(", ")
-		stream.WriteInt64(int64(dbObject.ReadTimeout))
-		stream.WriteRaw(", ")
-		stream.WriteInt64(int64(dbObject.WriteTimeout))
-		stream.WriteRaw("]\n")
-		logger.Info(string(stream.Buffer()))
-		addr := func() string {
-			stream := jsoniter.ConfigFastest.BorrowStream(nil)
-			defer jsoniter.ConfigFastest.ReturnStream(stream)
-			stream.WriteRaw(dbObject.Host)
-			stream.WriteRaw(":")
-			// WriteUint32 is used if dbObject.Port is a uint32; otherwise adjust conversion as needed.
-			stream.WriteUint32(dbObject.Port)
-			return string(stream.Buffer())
-		}()
+		logger.Info(fmt.Sprintf("Connecting to [%s, %s, %s, %s, %d, %d, %d]\n", dbObject.Host, dbObject.User, dbObject.Name,
+			dbObject.Node, dbObject.Port, dbObject.ReadTimeout, dbObject.WriteTimeout))
 		getDB := func() *sqlx.DB {
 			opts := &clickhouse.Options{
-				TLS: nil,
-				//Addr: []string{fmt.Sprintf("%s:%d", dbObject.Host, dbObject.Port)},
-				Addr: []string{addr},
+				TLS:  nil,
+				Addr: []string{fmt.Sprintf("%s:%d", dbObject.Host, dbObject.Port)},
 				Auth: clickhouse.Auth{
 					Database: dbObject.Name,
 					Username: dbObject.User,

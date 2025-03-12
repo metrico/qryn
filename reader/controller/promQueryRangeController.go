@@ -163,63 +163,47 @@ func parseQueryRangeProps(ctx *fiber.Ctx) (QueryRangeProps, error) {
 }
 
 func PromError(code int, msg string, w http.ResponseWriter) {
-	//w.WriteHeader(code)
-	//w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Header().Set("Content-Type", "application/json")
 	//w.Write([]byte(fmt.Sprintf(`{"status": "error", "errorType":"error", "error": %s}`,
 	//	strconv.Quote(msg))))
 
-	w.WriteHeader(code)
-	w.Header().Set("Content-Type", "application/json")
-	stream := jsoniter.ConfigFastest.BorrowStream(nil)
-	// Build: {"status": "error", "errorType":"error", "error": "<msg>"}
-	stream.WriteRaw(`{"status": "error", "errorType":"error", "error": `)
-	stream.WriteRaw(strconv.Quote(msg))
-	stream.WriteRaw(`}`)
-	out := string(stream.Buffer())
-	jsoniter.ConfigFastest.ReturnStream(stream)
-	w.Write([]byte(out))
+	json := jsoniter.ConfigFastest
+	stream := json.BorrowStream(nil)
+	defer json.ReturnStream(stream)
+
+	stream.WriteObjectStart()
+	stream.WriteObjectField("status")
+	stream.WriteString("error")
+	stream.WriteMore()
+
+	stream.WriteObjectField("errorType")
+	stream.WriteString("error")
+	stream.WriteMore()
+
+	stream.WriteObjectField("error")
+	stream.WriteString(msg) // Automatically escapes quotes like strconv.Quote
+	stream.WriteObjectEnd()
+
+	w.Write(stream.Buffer())
+
 }
 
 func writeResponse(res *promql.Result, w http.ResponseWriter) error {
-	//var err error
-	//w.Header().Set("Content-Type", "application/json")
-	//_, err = w.Write([]byte(fmt.Sprintf(`{"status" : "success", "data" : {"resultType" : "%s", "result" : [`,
-	//	res.Value.Type())))
-	//if err != nil {
-	//	return err
-	//}
-	//switch res.Value.(type) {
-	//case promql.Matrix:
-	//	err = writeMatrix(res, w)
-	//	break
-	//case promql.Vector:
-	//	err = writeVector(res, w)
-	//	break
-	//case promql.Scalar:
-	//	err = writeScalar(res, w)
-	//}
-	//if err != nil {
-	//	return err
-	//}
-	//w.Write([]byte("]}}"))
-	//return nil
+	var err error
 	w.Header().Set("Content-Type", "application/json")
-	stream := jsoniter.ConfigFastest.BorrowStream(nil)
-	// Build: {"status" : "success", "data" : {"resultType" : "<res.Value.Type()>", "result" : [
-	stream.WriteRaw(`{"status" : "success", "data" : {"resultType" : `)
-	stream.WriteRaw(strconv.Quote(string(res.Value.Type())))
-	stream.WriteRaw(`, "result" : [`)
-	initial := string(stream.Buffer())
-	jsoniter.ConfigFastest.ReturnStream(stream)
-	_, err := w.Write([]byte(initial))
+	_, err = w.Write([]byte(fmt.Sprintf(`{"status" : "success", "data" : {"resultType" : "%s", "result" : [`,
+		res.Value.Type())))
 	if err != nil {
 		return err
 	}
 	switch res.Value.(type) {
 	case promql.Matrix:
 		err = writeMatrix(res, w)
+		break
 	case promql.Vector:
 		err = writeVector(res, w)
+		break
 	case promql.Scalar:
 		err = writeScalar(res, w)
 	}
@@ -231,134 +215,54 @@ func writeResponse(res *promql.Result, w http.ResponseWriter) error {
 }
 
 func writeScalar(res *promql.Result, w http.ResponseWriter) error {
-	//val := res.Value.(promql.Scalar)
-	//w.Write([]byte(fmt.Sprintf(`%f, "%f"`, float64(val.T)/1000, val.V)))
-	//return nil
 	val := res.Value.(promql.Scalar)
-	stream := jsoniter.ConfigFastest.BorrowStream(nil)
-	stream.WriteRaw(strconv.FormatFloat(float64(val.T)/1000, 'f', -1, 64))
-	stream.WriteRaw(", ")
-	stream.WriteRaw(strconv.Quote(strconv.FormatFloat(val.V, 'f', -1, 64)))
-	out := string(stream.Buffer())
-	jsoniter.ConfigFastest.ReturnStream(stream)
-	w.Write([]byte(out))
+	w.Write([]byte(fmt.Sprintf(`%f, "%f"`, float64(val.T)/1000, val.V)))
 	return nil
 }
 
 func writeMatrix(res *promql.Result, w http.ResponseWriter) error {
-	//val := res.Value.(promql.Matrix)
-	//for i, s := range val {
-	//	if i > 0 {
-	//		w.Write([]byte(","))
-	//	}
-	//	w.Write([]byte(`{"metric": {`))
-	//	for j, v := range s.Metric {
-	//		if j > 0 {
-	//			w.Write([]byte(","))
-	//		}
-	//		w.Write([]byte(fmt.Sprintf("%s:%s", strconv.Quote(v.Name), strconv.Quote(v.Value))))
-	//	}
-	//	w.Write([]byte(`},"values": [`))
-	//	for j, v := range s.Points {
-	//		if j > 0 {
-	//			w.Write([]byte(","))
-	//		}
-	//		w.Write([]byte(fmt.Sprintf(`[%f,"%f"]`, float64(v.T)/1000, v.V)))
-	//	}
-	//	w.Write([]byte("]}"))
-	//}
-	//return nil
-
 	val := res.Value.(promql.Matrix)
 	for i, s := range val {
 		if i > 0 {
 			w.Write([]byte(","))
 		}
 		w.Write([]byte(`{"metric": {`))
-		firstMetric := true
-		for _, v := range s.Metric {
-			if !firstMetric {
+		for j, v := range s.Metric {
+			if j > 0 {
 				w.Write([]byte(","))
 			}
-			stream := jsoniter.ConfigFastest.BorrowStream(nil)
-			// Build: "<v.Name>":"<v.Value>"
-			stream.WriteRaw(strconv.Quote(v.Name))
-			stream.WriteRaw(":")
-			stream.WriteRaw(strconv.Quote(v.Value))
-			part := string(stream.Buffer())
-			jsoniter.ConfigFastest.ReturnStream(stream)
-			w.Write([]byte(part))
-			firstMetric = false
+			w.Write([]byte(fmt.Sprintf("%s:%s", strconv.Quote(v.Name), strconv.Quote(v.Value))))
 		}
 		w.Write([]byte(`},"values": [`))
 		for j, v := range s.Points {
 			if j > 0 {
 				w.Write([]byte(","))
 			}
-			stream := jsoniter.ConfigFastest.BorrowStream(nil)
-			// Build: [<timestamp>, "<value>"]
-			stream.WriteRaw("[")
-			stream.WriteRaw(strconv.FormatFloat(float64(v.T)/1000, 'f', -1, 64))
-			stream.WriteRaw(",")
-			stream.WriteRaw(strconv.Quote(strconv.FormatFloat(v.V, 'f', -1, 64)))
-			stream.WriteRaw("]")
-			part := string(stream.Buffer())
-			jsoniter.ConfigFastest.ReturnStream(stream)
-			w.Write([]byte(part))
+			w.Write([]byte(fmt.Sprintf(`[%f,"%f"]`, float64(v.T)/1000, v.V)))
 		}
 		w.Write([]byte("]}"))
 	}
 	return nil
+
 }
 
 func writeVector(res *promql.Result, w http.ResponseWriter) error {
-	//val := res.Value.(promql.Vector)
-	//for i, s := range val {
-	//	if i > 0 {
-	//		w.Write([]byte(","))
-	//	}
-	//	w.Write([]byte(`{"metric":{`))
-	//	for j, lbl := range s.Metric {
-	//		if j > 0 {
-	//			w.Write([]byte(","))
-	//		}
-	//		w.Write([]byte(fmt.Sprintf("%s:%s", strconv.Quote(lbl.Name), strconv.Quote(lbl.Value))))
-	//	}
-	//	w.Write([]byte(fmt.Sprintf(`},"value":[%f,"%f"]}`, float64(s.T/1000), s.V)))
-	//}
-	//return nil
 	val := res.Value.(promql.Vector)
 	for i, s := range val {
 		if i > 0 {
 			w.Write([]byte(","))
 		}
 		w.Write([]byte(`{"metric":{`))
-		firstMetric := true
-		for _, lbl := range s.Metric {
-			if !firstMetric {
+		for j, lbl := range s.Metric {
+			if j > 0 {
 				w.Write([]byte(","))
 			}
-			stream := jsoniter.ConfigFastest.BorrowStream(nil)
-			// Build: "<lbl.Name>":"<lbl.Value>"
-			stream.WriteRaw(strconv.Quote(lbl.Name))
-			stream.WriteRaw(":")
-			stream.WriteRaw(strconv.Quote(lbl.Value))
-			part := string(stream.Buffer())
-			jsoniter.ConfigFastest.ReturnStream(stream)
-			w.Write([]byte(part))
-			firstMetric = false
+			w.Write([]byte(fmt.Sprintf("%s:%s", strconv.Quote(lbl.Name), strconv.Quote(lbl.Value))))
 		}
-		stream := jsoniter.ConfigFastest.BorrowStream(nil)
-		stream.WriteRaw(`},"value":[`)
-		stream.WriteRaw(strconv.FormatFloat(float64(s.T)/1000, 'f', -1, 64))
-		stream.WriteRaw(",")
-		stream.WriteRaw(strconv.Quote(strconv.FormatFloat(s.V, 'f', -1, 64)))
-		stream.WriteRaw("]}")
-		out := string(stream.Buffer())
-		jsoniter.ConfigFastest.ReturnStream(stream)
-		w.Write([]byte(out))
+		w.Write([]byte(fmt.Sprintf(`},"value":[%f,"%f"]}`, float64(s.T/1000), s.V)))
 	}
 	return nil
+
 }
 
 func parseDuration(s string) (time.Duration, error) {

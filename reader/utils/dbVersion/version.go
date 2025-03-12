@@ -3,7 +3,6 @@ package dbVersion
 import (
 	"context"
 	"fmt"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/model"
 	"strconv"
 	"sync"
@@ -48,19 +47,8 @@ func GetVersionInfo(ctx context.Context, dist bool, db model.ISqlxDB) (VersionIn
 		tableName += "_dist"
 	}
 	_versions := map[string]int64{}
-
-	stream := jsoniter.ConfigFastest.BorrowStream(nil)
-	stream.WriteRaw("SELECT argMax(name, inserted_at) as _name , argMax(value, inserted_at) as _value FROM ")
-	stream.WriteRaw(tableName)
-	stream.WriteRaw(" WHERE type='update' GROUP BY fingerprint HAVING _name!=''")
-	queryStr := string(stream.Buffer())
-	jsoniter.ConfigFastest.ReturnStream(stream)
-	rows, err := db.QueryCtx(ctx, queryStr)
-	if err != nil {
-		return nil, err
-	}
-	//	rows, err := db.QueryCtx(ctx, fmt.Sprintf(`SELECT argMax(name, inserted_at) as _name , argMax(value, inserted_at) as _value
-	//FROM %s WHERE type='update' GROUP BY fingerprint HAVING _name!=''`, tableName))
+	rows, err := db.QueryCtx(ctx, fmt.Sprintf(`SELECT argMax(name, inserted_at) as _name , argMax(value, inserted_at) as _value
+	FROM %s WHERE type='update' GROUP BY fingerprint HAVING _name!=''`, tableName))
 	if err != nil {
 		return nil, err
 	}
@@ -77,12 +65,8 @@ func GetVersionInfo(ctx context.Context, dist bool, db model.ISqlxDB) (VersionIn
 			_versions[ver] = _time
 		}
 	}
-	stream = jsoniter.ConfigFastest.BorrowStream(nil)
-	stream.WriteRaw("SHOW TABLES")
-	tablesQuery := string(stream.Buffer())
-	jsoniter.ConfigFastest.ReturnStream(stream)
-	tables, err := db.QueryCtx(ctx, tablesQuery)
-	//	tables, err := db.QueryCtx(ctx, fmt.Sprintf(`SHOW TABLES`))
+
+	tables, err := db.QueryCtx(ctx, fmt.Sprintf(`SHOW TABLES`))
 	if err != nil {
 		return nil, err
 	}

@@ -75,21 +75,47 @@ func (q *QueryRangeController) Query(w http.ResponseWriter, r *http.Request) {
 	}
 	if query == "vector(1)+vector(1)" {
 		w.Header().Set("Content-Type", "application/json")
+		json := jsoniter.ConfigFastest
+		stream := json.BorrowStream(nil)
+		defer json.ReturnStream(stream)
 
-		stream := jsoniter.ConfigFastest.BorrowStream(nil)
-		defer jsoniter.ConfigFastest.ReturnStream(stream)
-		// Write the fixed parts of the JSON response.
-		stream.WriteRaw(`{"status": "success", "data": {"resultType": "vector", "result": [{`)
-		stream.WriteRaw(`"metric": {},`)
-		stream.WriteRaw(`"value": [`)
-		// Write the timestamp as a string (represents %d)
-		stream.WriteRaw(strconv.FormatInt(time.Now().Unix(), 10))
-		stream.WriteRaw(`, "2"]}]}}`)
-		w.Write([]byte(string(stream.Buffer())))
-		return
-		//		w.Write([]byte(fmt.Sprintf(`{"status": "success", "data": {"resultType": "vector", "result": [{
-		//  "metric": {},
-		//  "value": [%d, "2"]
+		stream.WriteObjectStart()
+		stream.WriteObjectField("status")
+		stream.WriteString("success")
+		stream.WriteMore()
+
+		stream.WriteObjectField("data")
+		stream.WriteObjectStart()
+
+		stream.WriteObjectField("resultType")
+		stream.WriteString("vector")
+		stream.WriteMore()
+
+		stream.WriteObjectField("result")
+		stream.WriteArrayStart()
+
+		stream.WriteObjectStart()
+		stream.WriteObjectField("metric")
+		stream.WriteEmptyObject()
+		stream.WriteMore()
+
+		stream.WriteObjectField("value")
+		stream.WriteArrayStart()
+		stream.WriteInt64(time.Now().Unix()) // Unix timestamp
+		stream.WriteMore()
+		stream.WriteString("2")
+		stream.WriteArrayEnd()
+
+		stream.WriteObjectEnd() // End of result object
+		stream.WriteArrayEnd()  // End of result array
+
+		stream.WriteObjectEnd() // End of data object
+		stream.WriteObjectEnd() // End of main object
+
+		w.Write(stream.Buffer())
+		//w.Write([]byte(fmt.Sprintf(`{"status": "success", "data": {"resultType": "vector", "result": [{
+		// "metric": {},
+		// "value": [%d, "2"]
 		//}]}}`, time.Now().Unix())))
 		return
 	}

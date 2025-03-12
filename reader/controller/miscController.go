@@ -41,17 +41,30 @@ func (uc *MiscController) Metadata(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uc *MiscController) Buildinfo(w http.ResponseWriter, r *http.Request) {
+	//w.Header().Set("Content-Type", "application/json")
+	//w.WriteHeader(http.StatusOK)
+	//w.Write([]byte(fmt.Sprintf(`{"status": "success","data": {"version": "%s"}}`, uc.Version)))
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	//w.Write([]byte(fmt.Sprintf(`{"status": "success","data": {"version": "%s"}}`, uc.Version)))
-	stream := jsoniter.ConfigFastest.BorrowStream(nil)
-	defer jsoniter.ConfigFastest.ReturnStream(stream)
 
-	// Build the JSON response:
-	// {"status": "success","data": {"version": "<uc.Version>"}}
-	stream.WriteRaw(`{"status": "success","data": {"version": `)
-	stream.WriteString(uc.Version) // WriteString will output a properly quoted JSON string.
-	stream.WriteRaw(`}}`)
+	json := jsoniter.ConfigFastest
+	stream := json.BorrowStream(nil)
+	defer json.ReturnStream(stream)
+	stream.WriteObjectStart()
+	stream.WriteObjectField("status")
+	stream.WriteString("success")
+	stream.WriteMore()
 
-	w.Write([]byte(string(stream.Buffer())))
+	stream.WriteObjectField("data")
+	stream.WriteObjectStart()
+
+	stream.WriteObjectField("version")
+	stream.WriteString(uc.Version)
+
+	stream.WriteObjectEnd()
+	stream.WriteObjectEnd()
+
+	w.Write(stream.Buffer())
+
 }

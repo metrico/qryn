@@ -1,8 +1,8 @@
 package logql_parser
 
 import (
+	"fmt"
 	"github.com/alecthomas/participle/v2"
-	jsoniter "github.com/json-iterator/go"
 	"reflect"
 	"regexp"
 )
@@ -26,14 +26,8 @@ func ParseSeries(str string) (*LogQLScript, error) {
 		} else {
 			left = "}"
 		}
-		//str = fmt.Sprintf("{__name__=\"%s\"%s", string(promExp[1]), left)
-		stream := jsoniter.ConfigFastest.BorrowStream(nil)
-		defer jsoniter.ConfigFastest.ReturnStream(stream)
-		stream.WriteRaw("{__name__=\"")
-		stream.WriteRaw(string(promExp[1]))
-		stream.WriteRaw("\"")
-		stream.WriteRaw(left)
-		str = string(stream.Buffer())
+		str = fmt.Sprintf("{__name__=\"%s\"%s", string(promExp[1]), left)
+
 	}
 	parser, err := participle.Build[LogQLScript](participle.Lexer(LogQLLexerDefinition), participle.UseLookahead(2))
 	if err != nil {
