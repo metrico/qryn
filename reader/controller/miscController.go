@@ -1,7 +1,7 @@
 package controllerv1
 
 import (
-	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/utils/logger"
 	watchdog "github.com/metrico/qryn/reader/watchdog"
 	"net/http"
@@ -41,7 +41,30 @@ func (uc *MiscController) Metadata(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uc *MiscController) Buildinfo(w http.ResponseWriter, r *http.Request) {
+	//w.Header().Set("Content-Type", "application/json")
+	//w.WriteHeader(http.StatusOK)
+	//w.Write([]byte(fmt.Sprintf(`{"status": "success","data": {"version": "%s"}}`, uc.Version)))
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf(`{"status": "success","data": {"version": "%s"}}`, uc.Version)))
+
+	json := jsoniter.ConfigFastest
+	stream := json.BorrowStream(nil)
+	defer json.ReturnStream(stream)
+	stream.WriteObjectStart()
+	stream.WriteObjectField("status")
+	stream.WriteString("success")
+	stream.WriteMore()
+
+	stream.WriteObjectField("data")
+	stream.WriteObjectStart()
+
+	stream.WriteObjectField("version")
+	stream.WriteString(uc.Version)
+
+	stream.WriteObjectEnd()
+	stream.WriteObjectEnd()
+
+	w.Write(stream.Buffer())
+
 }
