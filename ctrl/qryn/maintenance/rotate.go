@@ -20,7 +20,7 @@ func getSetting(db clickhouse.Conn, dist bool, tp string, name string) (string, 
 		settings += "_dist"
 	}
 	rows, err := db.Query(context.Background(),
-		fmt.Sprintf(`SELECT argMax(value, inserted_at) as _value FROM %s WHERE fingerprint = $1
+		fmt.Sprintf(`SELECT argMax(value, inserted_at) as _value FROM %s WHERE fingerprint = $1 
 GROUP BY fingerprint HAVING argMax(name, inserted_at) != ''`, settings), fp)
 	if err != nil {
 		return "", err
@@ -38,7 +38,8 @@ GROUP BY fingerprint HAVING argMax(name, inserted_at) != ''`, settings), fp)
 func putSetting(db clickhouse.Conn, tp string, name string, value string) error {
 	_name := fmt.Sprintf(`{"type":%s, "name":%s`, strconv.Quote(tp), strconv.Quote(name))
 	fp := heputils.FingerprintLabelsDJBHashPrometheus([]byte(_name))
-	err := db.Exec(context.Background(), "INSERT INTO settings (fingerprint, type, name, value, inserted_at)\nVALUES ($1, $2, $3, $4, NOW())", fp, tp, name, value)
+	err := db.Exec(context.Background(), `INSERT INTO settings (fingerprint, type, name, value, inserted_at)
+VALUES ($1, $2, $3, $4, NOW())`, fp, tp, name, value)
 	return err
 }
 
@@ -89,7 +90,6 @@ MODIFY SETTING ttl_only_drop_parts = 1, merge_with_ttl_timeout = 3600, index_gra
 		logger.Debug("Request OK")
 	}
 	return putSetting(db, "rotate", settingName, rotateTTLStr)
-
 }
 
 func storagePolicyUpdate(db clickhouse.Conn, clusterName string,
@@ -110,7 +110,6 @@ func storagePolicyUpdate(db clickhouse.Conn, clusterName string,
 		}
 	}
 	return putSetting(db, "rotate", setting, storagePolicy)
-
 }
 
 type RotatePolicy struct {

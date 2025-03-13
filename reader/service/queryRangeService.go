@@ -58,7 +58,6 @@ func hashLabelsMap(labels map[string]string) string {
 	}
 	sort.Strings(_labels)
 	return fmt.Sprintf("{%s}", strings.Join(_labels, ","))
-
 }
 
 func onErr(err error, res chan model.QueryRangeOutput) {
@@ -213,7 +212,6 @@ func (q *QueryRangeService) QueryRange(ctx context.Context, query string, fromNs
 				res <- model.QueryRangeOutput{
 					Str: fmt.Sprintf(`[%f, "%s"]`, float64(e.TimestampNS)/1e9, val),
 				}
-
 			}
 		}
 

@@ -142,7 +142,6 @@ func UpgradeAll(config []config.ClokiBaseDataBase, logger logger.ILogger) error 
 func RotateAll(base []config.ClokiBaseDataBase, logger logger.ILogger) error {
 	for _, dbObject := range base {
 		logger.Info(fmt.Sprintf("Rotating %s:%d/%s", dbObject.Host, dbObject.Port, dbObject.Name))
-
 		err := rotateDB(&dbObject)
 		if err != nil {
 			return err

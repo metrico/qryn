@@ -59,7 +59,6 @@ func (s *SelectSeriesPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, 
 			break
 		}
 	}
-
 	main := sql.NewSelect().
 		With(withLabels).
 		Select(

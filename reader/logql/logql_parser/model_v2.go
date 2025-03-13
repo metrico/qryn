@@ -197,7 +197,6 @@ type Parser struct {
 func (p *Parser) String() string {
 	if p.ParserParams == nil {
 		return fmt.Sprintf("| %s", p.Fn)
-
 	}
 	params := make([]string, len(p.ParserParams))
 	for i, param := range p.ParserParams {
@@ -223,9 +222,7 @@ type LineFormat struct {
 }
 
 func (f *LineFormat) String() string {
-
 	return fmt.Sprintf("| line_format %s", f.Val.String())
-
 }
 
 type LabelFormat struct {
@@ -238,7 +235,6 @@ func (l *LabelFormat) String() string {
 		ops[i] = op.String()
 	}
 	return fmt.Sprintf("| label_format %s", strings.Join(ops, ", "))
-
 }
 
 type LabelFormatOp struct {
@@ -279,7 +275,6 @@ func (d *Drop) String() string {
 		params[i] = param.String()
 	}
 	return fmt.Sprintf("| %s %s", d.Fn, strings.Join(params, ","))
-
 }
 
 type DropParam struct {
@@ -344,7 +339,6 @@ func (l ByOrWithout) String() string {
 		labels[i] = label.String()
 	}
 	return fmt.Sprintf("%s (%s)", l.Fn, strings.Join(labels, ","))
-
 }
 
 func (l ByOrWithout) LabelNames() []string {
@@ -390,7 +384,6 @@ func (l MacrosOp) String() string {
 		params[i] = p.String()
 	}
 	return fmt.Sprintf("%s(%s)", l.Name, strings.Join(params, ","))
-
 }
 
 type TopK struct {
@@ -415,7 +408,6 @@ func (l TopK) String() string {
 		cmp = l.Comparison.String()
 	}
 	return fmt.Sprintf("%s(%s, %s)%s", l.Fn, l.Param, fn, cmp)
-
 }
 
 type QuantileOverTime struct {

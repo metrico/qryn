@@ -1,5 +1,7 @@
 package controllerv1
 
+import "html"
+
 import (
 	"encoding/json"
 	"fmt"
@@ -8,7 +10,6 @@ import (
 	"github.com/metrico/qryn/reader/service"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
-	"html"
 	"io"
 	"net/http"
 	"strconv"

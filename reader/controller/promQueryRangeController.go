@@ -243,7 +243,6 @@ func writeMatrix(res *promql.Result, w http.ResponseWriter) error {
 		w.Write([]byte("]}"))
 	}
 	return nil
-
 }
 
 func writeVector(res *promql.Result, w http.ResponseWriter) error {
@@ -262,7 +261,6 @@ func writeVector(res *promql.Result, w http.ResponseWriter) error {
 		w.Write([]byte(fmt.Sprintf(`},"value":[%f,"%f"]}`, float64(s.T/1000), s.V)))
 	}
 	return nil
-
 }
 
 func parseDuration(s string) (time.Duration, error) {

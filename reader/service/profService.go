@@ -292,7 +292,6 @@ func (ps *ProfService) TimeSeries(ctx context.Context, strScripts []string, labe
 		ls.Labels = append(ls.Labels, &v1.LabelPair{Name: "__period_unit__", Value: parsedTypeId.PeriodUnit})
 		ls.Labels = append(ls.Labels, &v1.LabelPair{Name: "__sample_type__", Value: sampleTypeUnit[0].(string)})
 		ls.Labels = append(ls.Labels, &v1.LabelPair{Name: "__sample_unit__", Value: sampleTypeUnit[1].(string)})
-
 		ls.Labels = append(ls.Labels, &v1.LabelPair{Name: "__profile_type__", Value: fmt.Sprintf(
 			"%s:%s:%s:%s:%s",
 			parsedTypeId.Tp,
@@ -333,7 +332,6 @@ func (ps *ProfService) ProfileStats(ctx context.Context) (*v1.GetProfileStatsRes
 			}
 			return fmt.Sprintf("(%s)", strObject), nil
 		})
-
 	}
 
 	dateToNS := func(object sql.SQLObject) sql.SQLObject {
@@ -344,7 +342,6 @@ func (ps *ProfService) ProfileStats(ctx context.Context) (*v1.GetProfileStatsRes
 			}
 			return fmt.Sprintf("toUnixTimestamp((%s)) * 1000000000", strObject), nil
 		})
-
 	}
 
 	nonEmptyReq := sql.NewSelect().

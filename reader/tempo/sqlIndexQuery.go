@@ -125,7 +125,6 @@ func (s *SQLIndexQuery) String(ctx *sql.Ctx, options ...int) (string, error) {
 		))
 	}
 	if s.Ver.IsVersionSupported("tempo_v2", s.FromNS, s.ToNS) && s.Limit > 0 {
-
 		request.OrderBy(sql.NewOrderBy(sql.NewRawObject("subsel_0.timestamp_ns"), sql.ORDER_BY_DIRECTION_DESC)).
 			Limit(sql.NewRawObject(fmt.Sprintf("%d", s.Limit)))
 	}
@@ -157,7 +156,6 @@ var opRegistry = map[string]func(val sql.SQLObject) sql.SQLCondition{
 			}
 			return fmt.Sprintf("match(val, %s)", strVal), nil
 		}), sql.NewRawObject("1"))
-
 	},
 	"!~": func(val sql.SQLObject) sql.SQLCondition {
 		return sql.Neq(sql.NewCustomCol(func(ctx *sql.Ctx, options ...int) (string, error) {
