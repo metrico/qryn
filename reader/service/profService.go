@@ -145,6 +145,7 @@ func (ps *ProfService) MergeStackTraces(ctx context.Context, strScript string, s
 	}
 
 	sampleTypeUnit := fmt.Sprintf("%s:%s", typeId.SampleType, typeId.SampleUnit)
+
 	levels := tree.BFS(sampleTypeUnit)
 
 	res := &prof.SelectMergeStacktracesResponse{

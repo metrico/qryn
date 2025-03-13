@@ -72,25 +72,10 @@ func (s *SQLIndexQuery) String(ctx *sql.Ctx, options ...int) (string, error) {
 				sqlTagRequests[i].AndWhere(
 					sql.Ge(sql.NewRawObject("timestamp_ns"), sql.NewIntVal(s.FromNS)))
 			}
-
-			sqlTagRequests[i].AndWhere(
-				sql.Ge(sql.NewRawObject("date"), sql.NewRawObject(date)),
-			)
-			if s.Ver.IsVersionSupported("tempo_v2", s.FromNS, s.ToNS) {
-				sqlTagRequests[i].AndWhere(
-					sql.Ge(sql.NewRawObject("timestamp_ns"), sql.NewIntVal(s.FromNS)))
-			}
 		}
 		if s.ToNS > 0 {
 			to := time.Unix(s.ToNS/1e9, s.ToNS%1e9)
 			date := fmt.Sprintf("toDate('%s')", to.Format("2006-01-02"))
-			sqlTagRequests[i].AndWhere(
-				sql.Le(sql.NewRawObject("date"), sql.NewRawObject(date)),
-			)
-			if s.Ver.IsVersionSupported("tempo_v2", s.FromNS, s.ToNS) {
-				sqlTagRequests[i].AndWhere(
-					sql.Le(sql.NewRawObject("timestamp_ns"), sql.NewIntVal(s.ToNS)))
-			}
 			sqlTagRequests[i].AndWhere(
 				sql.Le(sql.NewRawObject("date"), sql.NewRawObject(date)),
 			)

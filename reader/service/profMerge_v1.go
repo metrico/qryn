@@ -211,6 +211,7 @@ func GetMappingKey(m *prof.Mapping) uint64 {
 	} else if m.Filename != 0 {
 		buildIdOrFile = m.Filename
 	}
+
 	str := fmt.Sprintf("%d:%d:%d", size, m.FileOffset, buildIdOrFile)
 	return cityhash102.CityHash64([]byte(str), uint32(len(str)))
 }
