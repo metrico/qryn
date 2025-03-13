@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gorilla/schema"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/service"
 	"github.com/metrico/qryn/reader/utils/logger"
 	"github.com/pkg/errors"
@@ -161,100 +162,98 @@ func parseQueryRangeProps(ctx *fiber.Ctx) (QueryRangeProps, error) {
 	return res, err
 }
 
+//func PromError(code int, msg string, w http.ResponseWriter) {
+//	w.WriteHeader(code)
+//	w.Header().Set("Content-Type", "application/json")
+//	w.Write([]byte(fmt.Sprintf(`{"status": "error", "errorType":"error", "error": %s}`,
+//		strconv.Quote(msg))))
+//}
+
 func PromError(code int, msg string, w http.ResponseWriter) {
 	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(fmt.Sprintf(`{"status": "error", "errorType":"error", "error": %s}`,
-		strconv.Quote(msg))))
 
-	//json := jsoniter.ConfigFastest
-	//stream := json.BorrowStream(nil)
-	//defer json.ReturnStream(stream)
-	//
-	//stream.WriteObjectStart()
-	//stream.WriteObjectField("status")
-	//stream.WriteString("error")
-	//stream.WriteMore()
-	//
-	//stream.WriteObjectField("errorType")
-	//stream.WriteString("error")
-	//stream.WriteMore()
-	//
-	//stream.WriteObjectField("error")
-	//stream.WriteString(msg)
-	//stream.WriteObjectEnd()
-	//
-	//w.Write(stream.Buffer())
+	json := jsoniter.ConfigFastest
+	stream := json.BorrowStream(nil)
+	defer json.ReturnStream(stream)
 
+	stream.WriteObjectStart()
+	stream.WriteObjectField("status")
+	stream.WriteString("error")
+	stream.WriteMore()
+	stream.WriteObjectField("errorType")
+	stream.WriteString("error")
+	stream.WriteMore()
+	stream.WriteObjectField("error")
+	stream.WriteString(msg)
+	stream.WriteObjectEnd()
+
+	w.Write(stream.Buffer())
 }
 
 //func writeResponse(res *promql.Result, w http.ResponseWriter) error {
 //	var err error
 //	w.Header().Set("Content-Type", "application/json")
-//	var json = jsoniter.ConfigFastest
-//	stream := json.BorrowStream(nil)
-//	defer json.ReturnStream(stream)
-//
-//	stream.WriteObjectStart()
-//	stream.WriteObjectField("status")
-//	stream.WriteString("success")
-//	stream.WriteMore()
-//	stream.WriteObjectField("data")
-//	stream.WriteObjectStart()
-//	stream.WriteObjectField("resultType")
-//	stream.WriteString(string(res.Value.Type()))
-//	stream.WriteMore()
-//	stream.WriteObjectField("result")
-//	stream.WriteArrayStart()
-//
-//	_, err = w.Write(stream.Buffer())
+//	_, err = w.Write([]byte(fmt.Sprintf(`{"status" : "success", "data" : {"resultType" : "%s", "result" : [`,
+//		res.Value.Type())))
 //	if err != nil {
 //		return err
 //	}
-//	stream.Reset(nil) // Reset the stream to avoid duplication
 //	switch res.Value.(type) {
 //	case promql.Matrix:
 //		err = writeMatrix(res, w)
+//		break
 //	case promql.Vector:
 //		err = writeVector(res, w)
+//		break
 //	case promql.Scalar:
 //		err = writeScalar(res, w)
 //	}
-//
 //	if err != nil {
 //		return err
 //	}
-//
-//	//w.Write([]byte("]}}"))
-//	//return nil
-//	if _, err := w.Write([]byte("]}}")); err != nil {
-//		return err
-//	}
-//
+//	w.Write([]byte("]}}"))
 //	return nil
 //}
 
 func writeResponse(res *promql.Result, w http.ResponseWriter) error {
-	var err error
 	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write([]byte(fmt.Sprintf(`{"status" : "success", "data" : {"resultType" : "%s", "result" : [`,
-		res.Value.Type())))
+
+	json := jsoniter.ConfigFastest
+	stream := json.BorrowStream(nil)
+	defer json.ReturnStream(stream)
+
+	stream.WriteObjectStart()
+	stream.WriteObjectField("status")
+	stream.WriteString("success")
+	stream.WriteMore()
+	stream.WriteObjectField("data")
+	stream.WriteObjectStart()
+	stream.WriteObjectField("resultType")
+	stream.WriteString(string(res.Value.Type()))
+	stream.WriteMore()
+	stream.WriteObjectField("result")
+	stream.WriteArrayStart()
+
+	_, err := w.Write(stream.Buffer())
 	if err != nil {
 		return err
 	}
+	stream.Reset(nil)
+
 	switch res.Value.(type) {
 	case promql.Matrix:
 		err = writeMatrix(res, w)
-		break
 	case promql.Vector:
 		err = writeVector(res, w)
-		break
 	case promql.Scalar:
 		err = writeScalar(res, w)
 	}
+
 	if err != nil {
 		return err
 	}
+
 	w.Write([]byte("]}}"))
 	return nil
 }
@@ -265,131 +264,138 @@ func writeScalar(res *promql.Result, w http.ResponseWriter) error {
 	return nil
 }
 
+//	func writeMatrix(res *promql.Result, w http.ResponseWriter) error {
+//		val := res.Value.(promql.Matrix)
+//		for i, s := range val {
+//			if i > 0 {
+//				w.Write([]byte(","))
+//			}
+//			w.Write([]byte(`{"metric": {`))
+//			for j, v := range s.Metric {
+//				if j > 0 {
+//					w.Write([]byte(","))
+//				}
+//				w.Write([]byte(fmt.Sprintf("%s:%s", strconv.Quote(v.Name), strconv.Quote(v.Value))))
+//			}
+//			w.Write([]byte(`},"values": [`))
+//			for j, v := range s.Points {
+//				if j > 0 {
+//					w.Write([]byte(","))
+//				}
+//				w.Write([]byte(fmt.Sprintf(`[%f,"%f"]`, float64(v.T)/1000, v.V)))
+//			}
+//			w.Write([]byte("]}"))
+//		}
+//		return nil
+//	}
 func writeMatrix(res *promql.Result, w http.ResponseWriter) error {
 	val := res.Value.(promql.Matrix)
+
+	json := jsoniter.ConfigFastest
+
 	for i, s := range val {
 		if i > 0 {
 			w.Write([]byte(","))
 		}
-		w.Write([]byte(`{"metric": {`))
+
+		stream := json.BorrowStream(nil)
+
+		stream.WriteObjectStart()
+		stream.WriteObjectField("metric")
+		stream.WriteObjectStart()
+
 		for j, v := range s.Metric {
 			if j > 0 {
-				w.Write([]byte(","))
+				stream.WriteMore()
 			}
-			w.Write([]byte(fmt.Sprintf("%s:%s", strconv.Quote(v.Name), strconv.Quote(v.Value))))
+			stream.WriteObjectField(v.Name)
+			stream.WriteString(v.Value)
 		}
-		w.Write([]byte(`},"values": [`))
+
+		stream.WriteObjectEnd()
+		stream.WriteMore()
+		stream.WriteObjectField("values")
+		stream.WriteArrayStart()
+
 		for j, v := range s.Points {
 			if j > 0 {
-				w.Write([]byte(","))
+				stream.WriteMore()
 			}
-			w.Write([]byte(fmt.Sprintf(`[%f,"%f"]`, float64(v.T)/1000, v.V)))
+			stream.WriteArrayStart()
+			stream.WriteFloat64(float64(v.T) / 1000)
+			stream.WriteMore()
+			stream.WriteString(strconv.FormatFloat(v.V, 'f', -1, 64))
+			stream.WriteArrayEnd()
 		}
-		w.Write([]byte("]}"))
-	}
-	return nil
-}
 
-//func writeMatrix(res *promql.Result, w http.ResponseWriter) error {
-//	val := res.Value.(promql.Matrix)
-//	var json = jsoniter.ConfigFastest
-//	stream := json.BorrowStream(nil)
-//	defer json.ReturnStream(stream)
-//
-//	for i, s := range val {
-//		if i > 0 {
-//			w.Write([]byte(","))
-//		}
-//		stream.WriteObjectStart()
-//		stream.WriteObjectField("metric")
-//		stream.WriteObjectStart()
-//		for j, v := range s.Metric {
-//			if j > 0 {
-//				stream.WriteMore()
-//			}
-//			stream.WriteObjectField(v.Name)
-//			stream.WriteString(v.Value)
-//		}
-//		stream.WriteObjectEnd()
-//		stream.WriteMore()
-//		stream.WriteObjectField("values")
-//		stream.WriteArrayStart()
-//		for j, v := range s.Points {
-//			if j > 0 {
-//				stream.WriteMore()
-//			}
-//			stream.WriteArrayStart()
-//			stream.WriteFloat64(float64(v.T) / 1000)
-//			stream.WriteMore()
-//			stream.WriteFloat64(v.V)
-//			stream.WriteArrayEnd()
-//		}
-//		stream.WriteArrayEnd()
-//		stream.WriteObjectEnd()
-//
-//		// Write the current buffer to the response writer and reset the stream
-//		w.Write(stream.Buffer())
-//		stream.Reset(nil)
-//	}
-//
-//	return nil
-//}
+		stream.WriteArrayEnd()
+		stream.WriteObjectEnd()
 
-func writeVector(res *promql.Result, w http.ResponseWriter) error {
-	val := res.Value.(promql.Vector)
-	for i, s := range val {
-		if i > 0 {
-			w.Write([]byte(","))
-		}
-		w.Write([]byte(`{"metric":{`))
-		for j, lbl := range s.Metric {
-			if j > 0 {
-				w.Write([]byte(","))
-			}
-			w.Write([]byte(fmt.Sprintf("%s:%s", strconv.Quote(lbl.Name), strconv.Quote(lbl.Value))))
-		}
-		w.Write([]byte(fmt.Sprintf(`},"value":[%f,"%f"]}`, float64(s.T/1000), s.V)))
+		w.Write(stream.Buffer())
+		json.ReturnStream(stream)
 	}
+
 	return nil
 }
 
 //func writeVector(res *promql.Result, w http.ResponseWriter) error {
 //	val := res.Value.(promql.Vector)
-//	var json = jsoniter.ConfigFastest
-//	stream := json.BorrowStream(nil)
-//	defer json.ReturnStream(stream)
-//
 //	for i, s := range val {
 //		if i > 0 {
 //			w.Write([]byte(","))
 //		}
-//		stream.WriteObjectStart()
-//		stream.WriteObjectField("metric")
-//		stream.WriteObjectStart()
+//		w.Write([]byte(`{"metric":{`))
 //		for j, lbl := range s.Metric {
 //			if j > 0 {
 //				w.Write([]byte(","))
 //			}
-//			stream.WriteObjectField(lbl.Name)
-//			stream.WriteString(lbl.Value)
+//			w.Write([]byte(fmt.Sprintf("%s:%s", strconv.Quote(lbl.Name), strconv.Quote(lbl.Value))))
 //		}
-//		stream.WriteObjectEnd()
-//		stream.WriteMore()
-//		stream.WriteObjectField("value")
-//		stream.WriteArrayStart()
-//		stream.WriteFloat64(float64(s.T / 1000))
-//		stream.WriteMore()
-//		stream.WriteFloat64(s.V)
-//		stream.WriteArrayEnd()
-//		stream.WriteObjectEnd()
-//
-//		// Write the current buffer to the response writer and reset the stream
-//		w.Write(stream.Buffer())
-//		stream.Reset(nil)
+//		w.Write([]byte(fmt.Sprintf(`},"value":[%f,"%f"]}`, float64(s.T/1000), s.V)))
 //	}
-//
 //	return nil
 //}
+
+func writeVector(res *promql.Result, w http.ResponseWriter) error {
+	val := res.Value.(promql.Vector)
+
+	json := jsoniter.ConfigFastest
+
+	for i, s := range val {
+		if i > 0 {
+			w.Write([]byte(","))
+		}
+
+		stream := json.BorrowStream(nil)
+
+		stream.WriteObjectStart()
+		stream.WriteObjectField("metric")
+		stream.WriteObjectStart()
+
+		for j, lbl := range s.Metric {
+			if j > 0 {
+				stream.WriteMore()
+			}
+			stream.WriteObjectField(lbl.Name)
+			stream.WriteString(lbl.Value)
+		}
+
+		stream.WriteObjectEnd()
+		stream.WriteMore()
+		stream.WriteObjectField("value")
+		stream.WriteArrayStart()
+		stream.WriteFloat64(float64(s.T) / 1000)
+		stream.WriteMore()
+		stream.WriteString(strconv.FormatFloat(s.V, 'f', -1, 64))
+		stream.WriteArrayEnd()
+		stream.WriteObjectEnd()
+
+		w.Write(stream.Buffer())
+		json.ReturnStream(stream)
+	}
+
+	return nil
+}
 
 func parseDuration(s string) (time.Duration, error) {
 	if d, err := strconv.ParseFloat(s, 64); err == nil {
