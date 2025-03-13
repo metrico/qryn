@@ -40,7 +40,6 @@ func (p *ProfileSizePlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, e
 				return "", err
 			}
 			return fmt.Sprintf("(%s)", str), nil
-
 		})
 	}
 

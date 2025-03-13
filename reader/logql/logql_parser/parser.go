@@ -27,7 +27,6 @@ func ParseSeries(str string) (*LogQLScript, error) {
 			left = "}"
 		}
 		str = fmt.Sprintf("{__name__=\"%s\"%s", string(promExp[1]), left)
-
 	}
 	parser, err := participle.Build[LogQLScript](participle.Lexer(LogQLLexerDefinition), participle.UseLookahead(2))
 	if err != nil {

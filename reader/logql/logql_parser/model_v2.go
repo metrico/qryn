@@ -54,7 +54,6 @@ func (l StrSelector) String() string {
 	return fmt.Sprintf("{%s}%s",
 		strings.Join(sel, ","),
 		strings.Join(ppl, " "))
-
 }
 
 type StrSelCmd struct {

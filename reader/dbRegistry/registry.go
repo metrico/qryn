@@ -47,6 +47,7 @@ func initDataDBSession() {
 		dbObject := _dbObject
 		logger.Info(fmt.Sprintf("Connecting to [%s, %s, %s, %s, %d, %d, %d]\n", dbObject.Host, dbObject.User, dbObject.Name,
 			dbObject.Node, dbObject.Port, dbObject.ReadTimeout, dbObject.WriteTimeout))
+
 		getDB := func() *sqlx.DB {
 			opts := &clickhouse.Options{
 				TLS:  nil,

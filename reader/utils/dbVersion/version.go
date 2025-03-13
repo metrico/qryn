@@ -48,7 +48,7 @@ func GetVersionInfo(ctx context.Context, dist bool, db model.ISqlxDB) (VersionIn
 	}
 	_versions := map[string]int64{}
 	rows, err := db.QueryCtx(ctx, fmt.Sprintf(`SELECT argMax(name, inserted_at) as _name , argMax(value, inserted_at) as _value
-	FROM %s WHERE type='update' GROUP BY fingerprint HAVING _name!=''`, tableName))
+FROM %s WHERE type='update' GROUP BY fingerprint HAVING _name!=''`, tableName))
 	if err != nil {
 		return nil, err
 	}

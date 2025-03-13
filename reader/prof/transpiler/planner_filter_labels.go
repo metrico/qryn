@@ -35,7 +35,6 @@ func (f *FilterLabelsPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, 
 		}
 
 		return fmt.Sprintf("arrayFilter(x -> %s, tags)", strCond), nil
-
 	})
 
 	res := sql.NewSelect().

@@ -48,7 +48,6 @@ func (s *SelectSeriesPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, 
 				"sum(toFloat64(arrayFirst(x -> %s, p.values_agg).2)) / "+
 					"sum(toFloat64(arrayFirst(x -> x.1 == %s).3))",
 				strSampleTypeUnit, strSampleTypeUnit), nil
-
 		}), "value")
 	}
 

@@ -58,7 +58,6 @@ func (ps *ProfService) ProfileTypes(ctx context.Context, start time.Time, end ti
 			return nil, err
 		}
 		namePeriodTypeUnit := strings.SplitN(typeId, ":", 3)
-
 		result = append(result, &v1.ProfileType{
 			ID: fmt.Sprintf("%s:%s:%s:%s:%s",
 				namePeriodTypeUnit[0],

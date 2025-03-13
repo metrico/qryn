@@ -21,7 +21,7 @@ func getSetting(db clickhouse.Conn, dist bool, tp string, name string) (string, 
 	}
 	rows, err := db.Query(context.Background(),
 		fmt.Sprintf(`SELECT argMax(value, inserted_at) as _value FROM %s WHERE fingerprint = $1
-	GROUP BY fingerprint HAVING argMax(name, inserted_at) != ''`, settings), fp)
+GROUP BY fingerprint HAVING argMax(name, inserted_at) != ''`, settings), fp)
 	if err != nil {
 		return "", err
 	}
@@ -36,7 +36,6 @@ func getSetting(db clickhouse.Conn, dist bool, tp string, name string) (string, 
 }
 
 func putSetting(db clickhouse.Conn, tp string, name string, value string) error {
-
 	_name := fmt.Sprintf(`{"type":%s, "name":%s`, strconv.Quote(tp), strconv.Quote(name))
 	fp := heputils.FingerprintLabelsDJBHashPrometheus([]byte(_name))
 	err := db.Exec(context.Background(), "INSERT INTO settings (fingerprint, type, name, value, inserted_at)\nVALUES ($1, $2, $3, $4, NOW())", fp, tp, name, value)
@@ -74,7 +73,7 @@ func rotateTables(db clickhouse.Conn, clusterName string, distributed bool, days
 	}
 	for _, table := range tables {
 		q := fmt.Sprintf(`ALTER TABLE %s %s
-	MODIFY SETTING ttl_only_drop_parts = 1, merge_with_ttl_timeout = 3600, index_granularity = 8192`, table, onCluster)
+MODIFY SETTING ttl_only_drop_parts = 1, merge_with_ttl_timeout = 3600, index_granularity = 8192`, table, onCluster)
 		logger.Debug(q)
 		err = db.Exec(context.Background(), q)
 		if err != nil {

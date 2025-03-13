@@ -242,7 +242,6 @@ func (t *TempoController) ValuesV2(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			PromError(400, fmt.Sprintf("Invalid timestamp for %s: %v", req[0].(string), err), w)
 			return
-
 		}
 		timespan[i] = time.Unix(iT, 0)
 	}

@@ -186,7 +186,6 @@ func (q *QueryLabelsService) Prom2LogqlMatch(match string) (string, error) {
 	for i, m := range matchers {
 		strMatchers[i] = m.String()
 	}
-
 	return fmt.Sprintf("{%s}", strings.Join(strMatchers, ",")), nil
 }
 

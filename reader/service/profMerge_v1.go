@@ -195,7 +195,6 @@ func equalValueType(vt1, vt2 *prof.ValueType) bool {
 }
 
 func GetFunctionKey(f *prof.Function) uint64 {
-
 	str := fmt.Sprintf("%d:%d:%d:%d", f.StartLine, f.Name, f.SystemName, f.Filename)
 	return cityhash102.CityHash64([]byte(str), uint32(len(str)))
 }

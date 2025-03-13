@@ -2,9 +2,7 @@ package tempo
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/metrico/qryn/reader/utils/dbVersion"
 	sql "github.com/metrico/qryn/reader/utils/sql_select"
 	"time"
@@ -50,14 +48,7 @@ func (s *SQLIndexQuery) String(ctx *sql.Ctx, options ...int) (string, error) {
 		}
 		cond := opRegistry[tag.Condition]
 		if cond == nil {
-			//return "", fmt.Errorf("no condition '%s'", tag.Condition)
-			stream := jsoniter.ConfigFastest.BorrowStream(nil)
-			stream.WriteRaw("no condition '")
-			stream.WriteRaw(tag.Condition)
-			stream.WriteRaw("'")
-			errMsg := string(stream.Buffer())
-			jsoniter.ConfigFastest.ReturnStream(stream)
-			return "", errors.New(errMsg)
+			return "", fmt.Errorf("no condition '%s'", tag.Condition)
 		}
 		sqlTagRequests[i] = sql.NewSelect().
 			Select(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id")).

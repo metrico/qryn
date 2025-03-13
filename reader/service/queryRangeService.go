@@ -46,7 +46,6 @@ func hashLabels(labels [][]interface{}) string {
 		_labels[i] = fmt.Sprintf("\"%s\":%s", l[0].(string), val)
 	}
 	return fmt.Sprintf("{%s}", strings.Join(_labels, ","))
-
 }
 
 func hashLabelsMap(labels map[string]string) string {
