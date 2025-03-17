@@ -294,7 +294,8 @@ func (q *QueryRangeService) QueryRange(ctx context.Context, query string, fromNs
 
 				// Write value entry
 				stream.WriteArrayStart()
-				stream.WriteFloat64(float64(e.TimestampNS) / 1e9)
+				// Intentional WriteRaw to fix precision in response
+				stream.WriteRaw(fmt.Sprintf("%f", float64(e.TimestampNS)/1e9))
 				stream.WriteMore()
 				stream.WriteString(val)
 				stream.WriteArrayEnd()
