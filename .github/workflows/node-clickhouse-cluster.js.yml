@@ -4,13 +4,13 @@ name: QRYN CI CLUSTER
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, gigapipe ]
     paths-ignore:
       - '**.md'
       - '**.yml'
       - '**.yaml'
   pull_request:
-    branches: [ master ]
+    branches: [ master, gigapipe ]
     paths-ignore:
       - '**.md'
       - '**.yml'
