@@ -68,11 +68,79 @@ func onErr(err error, res chan model.QueryRangeOutput) {
 	}
 }
 
+// func (q *QueryRangeService) exportStreamsValue(out chan []shared.LogEntry,
+//
+//		res chan model.QueryRangeOutput) {
+//		defer close(res)
+//
+//		res <- model.QueryRangeOutput{Str: `{"status": "success","data": {"resultType": "streams", "result": [`}
+//
+//		var lastFp uint64
+//		i := 0
+//		j := 0
+//
+//		for entries := range out {
+//			for _, e := range entries {
+//				if e.Err == io.EOF {
+//					continue
+//				}
+//				if e.Err != nil {
+//					onErr(e.Err, res)
+//					return
+//				}
+//				if lastFp != e.Fingerprint {
+//					if i > 0 {
+//						res <- model.QueryRangeOutput{Str: "]},"}
+//					}
+//					lastFp = e.Fingerprint
+//					i = 1
+//					j = 0
+//					stream, _ := json.Marshal(e.Labels)
+//					res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{%s:%s, %s: [`,
+//						strconv.Quote("stream"), string(stream), strconv.Quote("values"))}
+//				}
+//				if j > 0 {
+//					res <- model.QueryRangeOutput{Str: ","}
+//				}
+//				j = 1
+//				msg, err := json.Marshal(e.Message)
+//				if err != nil {
+//					msg = []byte("error string")
+//				}
+//				res <- model.QueryRangeOutput{
+//					Str: fmt.Sprintf(`["%d", %s]`, e.TimestampNS, msg),
+//				}
+//			}
+//		}
+//
+//		if i > 0 {
+//			res <- model.QueryRangeOutput{Str: "]}"}
+//		}
+//		res <- model.QueryRangeOutput{Str: "]}}"}
+//	}
 func (q *QueryRangeService) exportStreamsValue(out chan []shared.LogEntry,
 	res chan model.QueryRangeOutput) {
 	defer close(res)
 
-	res <- model.QueryRangeOutput{Str: `{"status": "success","data": {"resultType": "streams", "result": [`}
+	json := jsoniter.ConfigFastest
+	stream := json.BorrowStream(nil)
+	defer json.ReturnStream(stream)
+
+	// Write initial part of response
+	stream.WriteObjectStart()
+	stream.WriteObjectField("status")
+	stream.WriteString("success")
+	stream.WriteMore()
+	stream.WriteObjectField("data")
+	stream.WriteObjectStart()
+	stream.WriteObjectField("resultType")
+	stream.WriteString("streams")
+	stream.WriteMore()
+	stream.WriteObjectField("result")
+	stream.WriteArrayStart()
+
+	res <- model.QueryRangeOutput{Str: string(stream.Buffer())}
+	stream.Reset(nil)
 
 	var lastFp uint64
 	i := 0
@@ -89,34 +157,236 @@ func (q *QueryRangeService) exportStreamsValue(out chan []shared.LogEntry,
 			}
 			if lastFp != e.Fingerprint {
 				if i > 0 {
-					res <- model.QueryRangeOutput{Str: "]},"}
+					// Close previous stream entry
+					stream.WriteArrayEnd()
+					stream.WriteObjectEnd()
+					stream.WriteMore()
+					res <- model.QueryRangeOutput{Str: string(stream.Buffer())}
+					stream.Reset(nil)
 				}
 				lastFp = e.Fingerprint
 				i = 1
 				j = 0
-				stream, _ := json.Marshal(e.Labels)
-				res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{%s:%s, %s: [`,
-					strconv.Quote("stream"), string(stream), strconv.Quote("values"))}
+
+				// Write new stream entry
+				stream.WriteObjectStart()
+				stream.WriteObjectField("stream")
+				writeMap(stream, e.Labels)
+				stream.WriteMore()
+				stream.WriteObjectField("values")
+				stream.WriteArrayStart()
 			}
 			if j > 0 {
-				res <- model.QueryRangeOutput{Str: ","}
+				stream.WriteMore()
 			}
 			j = 1
-			msg, err := json.Marshal(e.Message)
-			if err != nil {
-				msg = []byte("error string")
-			}
-			res <- model.QueryRangeOutput{
-				Str: fmt.Sprintf(`["%d", %s]`, e.TimestampNS, msg),
-			}
+
+			// Write value entry
+			stream.WriteArrayStart()
+			stream.WriteString(fmt.Sprintf("%d", e.TimestampNS))
+			stream.WriteMore()
+			stream.WriteString(e.Message)
+			stream.WriteArrayEnd()
+
+			res <- model.QueryRangeOutput{Str: string(stream.Buffer())}
+			stream.Reset(nil)
 		}
 	}
 
 	if i > 0 {
-		res <- model.QueryRangeOutput{Str: "]}"}
+		// Close last stream entry
+		stream.WriteArrayEnd()
+		stream.WriteObjectEnd()
 	}
-	res <- model.QueryRangeOutput{Str: "]}}"}
+
+	// Close result array and response object
+	stream.WriteArrayEnd()
+	stream.WriteObjectEnd()
+	stream.WriteObjectEnd()
+
+	res <- model.QueryRangeOutput{Str: string(stream.Buffer())}
 }
+
+func (q *QueryRangeService) QueryRange(ctx context.Context, query string, fromNs int64, toNs int64, stepMs int64,
+	limit int64, forward bool) (chan model.QueryRangeOutput, error) {
+	out, isMatrix, err := q.prepareOutput(ctx, query, fromNs, toNs, stepMs, limit, forward)
+	if err != nil {
+		return nil, err
+	}
+	res := make(chan model.QueryRangeOutput)
+
+	if !isMatrix {
+		go func() {
+			q.exportStreamsValue(out, res)
+		}()
+		return res, nil
+	}
+	go func() {
+		defer close(res)
+
+		json := jsoniter.ConfigFastest
+		stream := json.BorrowStream(nil)
+		defer json.ReturnStream(stream)
+
+		// Write initial part of response
+		stream.WriteObjectStart()
+		stream.WriteObjectField("status")
+		stream.WriteString("success")
+		stream.WriteMore()
+		stream.WriteObjectField("data")
+		stream.WriteObjectStart()
+		stream.WriteObjectField("resultType")
+		stream.WriteString("matrix")
+		stream.WriteMore()
+		stream.WriteObjectField("result")
+		stream.WriteArrayStart()
+
+		res <- model.QueryRangeOutput{Str: string(stream.Buffer())}
+		stream.Reset(nil)
+
+		var lastFp uint64
+		i := 0
+		j := 0
+
+		for entries := range out {
+			for _, e := range entries {
+				if e.Err != nil && e.Err != io.EOF {
+					onErr(e.Err, res)
+					return
+				}
+				if e.Err == io.EOF {
+					break
+				}
+				if i == 0 || lastFp != e.Fingerprint {
+					if i > 0 {
+
+						//]},
+						// Close previous metric entry
+						stream.WriteArrayEnd()
+						stream.WriteObjectEnd()
+						stream.WriteMore()
+						res <- model.QueryRangeOutput{Str: string(stream.Buffer())}
+						stream.Reset(nil)
+					}
+					lastFp = e.Fingerprint
+					i = 1
+					j = 0
+
+					// Write new metric entry
+					stream.WriteObjectStart()
+					stream.WriteObjectField("metric")
+					writeMap(stream, e.Labels)
+					stream.WriteMore()
+					stream.WriteObjectField("values")
+					stream.WriteArrayStart()
+				}
+				if j > 0 {
+					stream.WriteMore()
+				}
+				j = 1
+
+				// Format value
+				val := strconv.FormatFloat(e.Value, 'f', -1, 64)
+				if strings.Contains(val, ".") {
+					val = strings.TrimSuffix(val, "0")
+					val = strings.TrimSuffix(val, ".")
+				}
+
+				// Write value entry
+				stream.WriteArrayStart()
+				// Intentional WriteRaw to fix precision in response
+				stream.WriteRaw(fmt.Sprintf("%f", float64(e.TimestampNS)/1e9))
+				stream.WriteMore()
+				stream.WriteString(val)
+				stream.WriteArrayEnd()
+
+				res <- model.QueryRangeOutput{Str: string(stream.Buffer())}
+				stream.Reset(nil)
+			}
+		}
+
+		if i > 0 {
+			// Close last metric entry
+			stream.WriteArrayEnd()
+			stream.WriteObjectEnd()
+		}
+
+		// Close result array and response object
+		stream.WriteArrayEnd()
+		stream.WriteObjectEnd()
+		stream.WriteObjectEnd()
+
+		res <- model.QueryRangeOutput{Str: string(stream.Buffer())}
+	}()
+	return res, nil
+}
+
+//func (q *QueryRangeService) QueryRange(ctx context.Context, query string, fromNs int64, toNs int64, stepMs int64,
+//	limit int64, forward bool) (chan model.QueryRangeOutput, error) {
+//	out, isMatrix, err := q.prepareOutput(ctx, query, fromNs, toNs, stepMs, limit, forward)
+//	if err != nil {
+//		return nil, err
+//	}
+//	res := make(chan model.QueryRangeOutput)
+//
+//	if !isMatrix {
+//		go func() {
+//			q.exportStreamsValue(out, res)
+//		}()
+//		return res, nil
+//	}
+//	go func() {
+//		defer close(res)
+//
+//		res <- model.QueryRangeOutput{Str: `{"status": "success","data": {"resultType": "matrix", "result": [`}
+//
+//		var lastFp uint64
+//		i := 0
+//		j := 0
+//
+//		for entries := range out {
+//			for _, e := range entries {
+//				if e.Err != nil && e.Err != io.EOF {
+//					onErr(e.Err, res)
+//					return
+//				}
+//				if e.Err == io.EOF {
+//					break
+//				}
+//				if i == 0 || lastFp != e.Fingerprint {
+//					if i > 0 {
+//						res <- model.QueryRangeOutput{Str: "]},"}
+//					}
+//					lastFp = e.Fingerprint
+//					i = 1
+//					j = 0
+//					stream, _ := json.Marshal(e.Labels)
+//					res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{%s:%s, %s: [`,
+//						strconv.Quote("metric"), string(stream), strconv.Quote("values"))}
+//				}
+//				if j > 0 {
+//					res <- model.QueryRangeOutput{Str: ","}
+//				}
+//				j = 1
+//				val := strconv.FormatFloat(e.Value, 'f', -1, 64)
+//				if strings.Contains(val, ".") {
+//					val := strings.TrimSuffix(val, "0")
+//					val = strings.TrimSuffix(val, ".")
+//				}
+//
+//				res <- model.QueryRangeOutput{
+//					Str: fmt.Sprintf(`[%f, "%s"]`, float64(e.TimestampNS)/1e9, val),
+//				}
+//			}
+//		}
+//
+//		if i > 0 {
+//			res <- model.QueryRangeOutput{Str: "]}"}
+//		}
+//		res <- model.QueryRangeOutput{Str: "]}}"}
+//	}()
+//	return res, nil
+//}
 
 func (q *QueryRangeService) prepareOutput(ctx context.Context, query string, fromNs int64, toNs int64, stepMs int64,
 	limit int64, forward bool) (chan []shared.LogEntry, bool, error) {
@@ -155,74 +425,6 @@ func (q *QueryRangeService) prepareOutput(ctx context.Context, query string, fro
 	res, err := chain[0].Process(plannerCtx, nil)
 	return res, chain[0].IsMatrix(), err
 }
-
-func (q *QueryRangeService) QueryRange(ctx context.Context, query string, fromNs int64, toNs int64, stepMs int64,
-	limit int64, forward bool) (chan model.QueryRangeOutput, error) {
-	out, isMatrix, err := q.prepareOutput(ctx, query, fromNs, toNs, stepMs, limit, forward)
-	if err != nil {
-		return nil, err
-	}
-	res := make(chan model.QueryRangeOutput)
-
-	if !isMatrix {
-		go func() {
-			q.exportStreamsValue(out, res)
-		}()
-		return res, nil
-	}
-	go func() {
-		defer close(res)
-
-		res <- model.QueryRangeOutput{Str: `{"status": "success","data": {"resultType": "matrix", "result": [`}
-
-		var lastFp uint64
-		i := 0
-		j := 0
-
-		for entries := range out {
-			for _, e := range entries {
-				if e.Err != nil && e.Err != io.EOF {
-					onErr(e.Err, res)
-					return
-				}
-				if e.Err == io.EOF {
-					break
-				}
-				if i == 0 || lastFp != e.Fingerprint {
-					if i > 0 {
-						res <- model.QueryRangeOutput{Str: "]},"}
-					}
-					lastFp = e.Fingerprint
-					i = 1
-					j = 0
-					stream, _ := json.Marshal(e.Labels)
-					res <- model.QueryRangeOutput{Str: fmt.Sprintf(`{%s:%s, %s: [`,
-						strconv.Quote("metric"), string(stream), strconv.Quote("values"))}
-				}
-				if j > 0 {
-					res <- model.QueryRangeOutput{Str: ","}
-				}
-				j = 1
-				val := strconv.FormatFloat(e.Value, 'f', -1, 64)
-				if strings.Contains(val, ".") {
-					val := strings.TrimSuffix(val, "0")
-					val = strings.TrimSuffix(val, ".")
-				}
-
-				res <- model.QueryRangeOutput{
-					Str: fmt.Sprintf(`[%f, "%s"]`, float64(e.TimestampNS)/1e9, val),
-				}
-			}
-		}
-
-		if i > 0 {
-			res <- model.QueryRangeOutput{Str: "]}"}
-		}
-		res <- model.QueryRangeOutput{Str: "]}}"}
-	}()
-	return res, nil
-}
-
 func (q *QueryRangeService) QueryInstant(ctx context.Context, query string, timeNs int64, stepMs int64,
 	limit int64) (chan model.QueryRangeOutput, error) {
 	out, isMatrix, err := q.prepareOutput(ctx, query, timeNs-300000000000, timeNs, stepMs, limit, false)
