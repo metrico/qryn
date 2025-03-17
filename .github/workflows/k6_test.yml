@@ -118,7 +118,7 @@ jobs:
         run: |
           sed -i 's/[^[:print:]]/*/' *_summary.txt
           sed -i 's/[\d128-\d255]//g' *_summary.txt
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: results
           path: |
