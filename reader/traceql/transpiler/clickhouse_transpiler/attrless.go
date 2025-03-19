@@ -19,9 +19,6 @@ func NewAttrlessConditionPlanner() shared.SQLRequestPlanner {
 
 func (a *AttrlessConditionPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, error) {
 	tracesTable := ctx.TracesTable
-	if ctx.IsCluster {
-		tracesTable = ctx.TracesDistTable
-	}
 	traceIds := sql.NewSelect().Select(sql.NewSimpleCol("trace_id", "trace_id")).
 		Distinct(true).
 		From(sql.NewSimpleCol(tracesTable, "traces")).
