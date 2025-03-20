@@ -37,6 +37,7 @@ func initFlags() {
 	appFlags.ShowVersion = flag.Bool("version", false, "show version")
 	appFlags.ConfigPath = flag.String("config", "", "the path to the config file")
 	flag.Parse()
+
 }
 
 func boolEnv(key string) (bool, error) {
