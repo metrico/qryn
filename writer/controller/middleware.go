@@ -2,6 +2,7 @@ package controllerv1
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -178,14 +179,14 @@ var WithOverallContextMiddleware = WithPreRequest(func(w http.ResponseWriter, r 
 	case "":
 		// No encoding, do nothing
 	case "gzip":
-		body, err := io.ReadAll(r.Body)
+		reader, err := gzip.NewReader(r.Body)
 		if err != nil {
-			//http.Error(w, err.Error(), http.StatusInternalServerError)
 			return err
 		}
-		reader := bytes.NewReader(body)
 		r.Body = readColser{reader}
 	case "snappy":
+		reader := snappy.NewReader(r.Body)
+		r.Body = readColser{reader}
 		// Handle snappy encoding if needed
 		break
 	default:
