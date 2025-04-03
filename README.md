@@ -15,13 +15,13 @@
 
 > ... it's pronounced /ˈkwɪr..ɪŋ/ or just _querying_
 
-* **Polyglot**: All-in-one, Drop-in compatible with **Loki**, **Prometheus**, **Tempo**, **Pyroscope** 
+* **Polyglot**: All-in-one, drop-in compatible with **Loki**, **Prometheus**, **Tempo**, **Pyroscope** 
 * **Lightweight**: Powered by **Bun** - the fast, all-in-one JavaScript runtime + ClickHouse **OLAP** Engine
 * **Familiar**: Use stable & popular **LogQL**, **PromQL**, **TempoQL** languages to _query and visualize data_
-* **Voracious**: Ingest using **Opentelemetry, Loki, Prometheus, Tempo, Influx, Datadog, Elastic** _+ more_
+* **Voracious**: Ingest using **OpenTelemetry, Loki, Prometheus, Tempo, Influx, Datadog, Elastic** _+ more_
 * **Versatile**: Explore data with qryn's **built-in Explorer** and CLI or native **Grafana** datasource compatibility
 * **Secure**: Retain total control of data, using **ClickHouse**, **DuckDB** or **InfluxDB** IOx with **S3** object storage
-* **Indepentent**: Opensource, Community powered, Anti lock-in alternative to Vendor controlled stacks
+* **Independent**: Open source, community powered, anti lock-in alternative to vendor controlled stacks
 
 <!-- ![lgtm_vs_qryn](https://github.com/metrico/qryn/assets/1423657/2e9071ba-c578-49fc-be1d-d91944a5891e) -->
 
@@ -60,10 +60,10 @@
 
 ## ➡️ Ingest
 ### 📚 OpenTelemetry
-⚡ **qryn** is officially integrated with [opentelemetry](https://github.com/metrico/otel-collector) supports _any log, trace or metric format_<br>
-Ingested data can be queried using any of the avialable qryn APIs _(LogQL, PromQL, TraceQL)_
+⚡ **qryn** is officially integrated with [OpenTelemetry](https://github.com/metrico/otel-collector) and supports _any log, trace or metric format_<br>
+Ingested data can be queried using any of the available qryn APIs _(LogQL, PromQL, TraceQL)_
 
-> 💡 _No modifications required to your opentelemetry instrumentation!_
+> 💡 _No modifications required to your OpenTelemetry instrumentation!_
 
 ### 📚 Native
 **qryn** supports [native ingestion](https://qryn.metrico.in/#/support) for Loki, Prometheus, Tempo/Zipkin and _[many other protocols](https://qryn.metrico.in/#/support)_<br>
@@ -116,7 +116,7 @@ The Grafana Prometheus datasource can be used to natively to query _metrics_ and
 
 ⚡ **qryn** implements the [Tempo API](https://github.com/lmangani/qryn/wiki/LogQL-Supported-Queries) for transparent compatibility with **[TraceQL](https://grafana.com/docs/tempo/latest/traceql/)** clients.<br>
 
-> Any Tempo/Opentelemetry compatible client or application can be used with qryn out of the box
+> Any Tempo/OpenTelemetry compatible client or application can be used with qryn out of the box
 
 The Tempo datasource can be used to natively query _traces_ including _**TraceQL**_ and supporting _service graphs_<br>
 
@@ -148,7 +148,7 @@ The Tempo datasource can be used to natively query _traces_ including _**TraceQL
 
 <br>
 
-With **qryn** and **grafana** everything _just works_ right out of the box: 
+With **qryn** and **Grafana** everything _just works_ right out of the box: 
 
 - Native datasource support without any plugin or extension
 - Advanced Correlation between Logs, Metrics and Traces
