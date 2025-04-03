@@ -1,5 +1,0 @@
-id: output_format
-name: Format Output
-description: Change output format
-loader: index.js
-type: custom_processor

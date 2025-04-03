@@ -1,3 +1,4 @@
+# TODO! Change the way qryn runs
 name: K6 Test qxip/qryn
 on:
   push:
@@ -117,7 +118,7 @@ jobs:
         run: |
           sed -i 's/[^[:print:]]/*/' *_summary.txt
           sed -i 's/[\d128-\d255]//g' *_summary.txt
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4.6.2
         with:
           name: results
           path: |
