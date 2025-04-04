@@ -15,13 +15,13 @@
 
 :rocket: Gigapipe is a _lighweight, multi-standard, polyglot **observability** stack for **Logs, Metrics**, **Traces** and **Profiling**_<br/>
 
-* **Polyglot**: All-in-one, Drop-in compatible with **Loki**, **Prometheus**, **Tempo**, **Pyroscope** 
+* **Polyglot**: All-in-one, drop-in compatible with **Loki**, **Prometheus**, **Tempo**, **Pyroscope** 
 * **Lightweight**: Powered by **Bun** - the fast, all-in-one JavaScript runtime + ClickHouse **OLAP** Engine
 * **Familiar**: Use stable & popular **LogQL**, **PromQL**, **TempoQL** languages to _query and visualize data_
-* **Voracious**: Ingest using **Opentelemetry, Loki, Prometheus, Tempo, Influx, Datadog, Elastic** _+ more_
+* **Voracious**: Ingest using **OpenTelemetry, Loki, Prometheus, Tempo, Influx, Datadog, Elastic** _+ more_
 * **Versatile**: Explore data with qryn's **built-in Explorer** and CLI or native **Grafana** datasource compatibility
 * **Secure**: Retain total control of data, using **ClickHouse**, **DuckDB** or **InfluxDB** IOx with **S3** object storage
-* **Indepentent**: Opensource, Community powered, Anti lock-in alternative to Vendor controlled stacks
+* **Independent**: Open source, community powered, anti lock-in alternative to vendor controlled stacks
 
 💡 _**gigapipe** independently implements popular observability standards, protocols and query languages_
 
@@ -36,10 +36,11 @@
 
 ## ➡️ Ingestion
 ### 📚 OpenTelemetry
-⚡ **gigapipe** is officially integrated with [opentelemetry](https://github.com/metrico/otel-collector) supports _any log, trace or metric format_<br>
-Ingested data can be queried using any of the avialable gigapipe APIs _(LogQL, PromQL, TraceQL)_
 
-> 💡 _No modifications required to your opentelemetry instrumentation!_
+⚡ **gigapipe** is officially integrated with [OpenTelemetry](https://github.com/metrico/otel-collector) supports _any log, trace or metric format_<br>
+Ingested data can be queried using any of the available gigapipe APIs _(LogQL, PromQL, TraceQL)_
+
+> 💡 _No modifications required to your OpenTelemetry instrumentation!_
 
 ### 📚 Native APIs
 **gigapipe** supports [native ingestion](https://gigapipe.com/docs/api) for Loki, Prometheus, Tempo/Zipkin, Pyroscope and _[many other protocols](https://gigapipe.com/docs/api)_<br>
@@ -92,7 +93,7 @@ The Grafana Prometheus datasource can be used to natively to query _metrics_ and
 
 ⚡ **gigapipe** implements the **Tempo API** for transparent compatibility with **[TraceQL](https://grafana.com/docs/tempo/latest/traceql/)** clients.<br>
 
-> Any Tempo/Opentelemetry compatible client or application can be used with gigapipe out of the box
+> Any Tempo/OpenTelemetry compatible client or application can be used with gigapipe out of the box
 
 The Tempo datasource can be used to natively query _traces_ including _**TraceQL**_ and supporting _service graphs_<br>
 
@@ -134,7 +135,8 @@ The Tempo datasource can be used to natively query _traces_ including _**TraceQL
 
 <br>
 
-With **gigapipe** and **grafana** everything _just works_ right out of the box: 
+
+With **gigapipe** and **Grafana** everything _just works_ right out of the box: 
 
 - Native datasource support without any plugin or extension
 - Advanced Correlation between Logs, Metrics and Traces
