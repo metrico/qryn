@@ -1,15 +1,15 @@
-# qryn
-FROM node:20.17-slim
+FROM golang:1.24.0-alpine as builder
+COPY . /src
+WORKDIR /src
+ARG VIEW
+RUN if [ "$VIEW" = "1" ]; then \
+        go build -tags view -o gigapipe . ; \
+    else \
+        go build -o gigapipe . ; \
+    fi
 
-COPY . /app
-WORKDIR /app
-
-RUN groupadd -r qryn && useradd -r -g qryn -m qryn && chown -R qryn:qryn /app
-USER qryn
-
-RUN npm install --omit=dev
-
-# Expose Ports
+FROM alpine:3.21
+COPY --from=builder /src/gigapipe /gigapipe
+ENV PORT 3100
 EXPOSE 3100
-
-CMD [ "npm", "--offline", "--logs-max=0", "start" ]
+CMD /gigapipe

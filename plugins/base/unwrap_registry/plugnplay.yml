@@ -1,4 +1,0 @@
-id: unwrap_registry
-name: First Plugin
-description: This is the first plugin to be tested.
-loader: index.js
