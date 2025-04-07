@@ -52,7 +52,7 @@ func OTLPPushV2(cfg MiddlewareConfig) func(w http.ResponseWriter, r *http.Reques
 			}),
 			withSimpleParser("*", Parser(unmarshal.UnmarshalOTLPV2)),
 			withOkStatusAndBody(200, func() []byte {
-				res, _ := ptraceotlp.NewResponse().MarshalProto()
+				res, _ := ptraceotlp.NewExportResponse().MarshalProto()
 				return res
 			}()),
 		)...)

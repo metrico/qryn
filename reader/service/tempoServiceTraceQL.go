@@ -2,12 +2,12 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"github.com/metrico/qryn/reader/logql/logql_transpiler_v2/shared"
 	"github.com/metrico/qryn/reader/model"
 	traceql_parser "github.com/metrico/qryn/reader/traceql/parser"
 	traceql_transpiler "github.com/metrico/qryn/reader/traceql/transpiler"
 	"github.com/metrico/qryn/reader/utils/dbVersion"
+	"github.com/metrico/qryn/reader/utils/tables"
 	"time"
 )
 
@@ -32,27 +32,19 @@ func (t *TempoService) SearchTraceQL(ctx context.Context,
 
 	ctx, cancel := context.WithCancel(ctx)
 
-	var (
-		tracesAttrsTable     = fmt.Sprintf("`%s`.tempo_traces_attrs_gin", conn.Config.Name)
-		tracesAttrsDistTable = fmt.Sprintf("`%s`.tempo_traces_attrs_gin_dist", conn.Config.Name)
-		tracesTable          = fmt.Sprintf("`%s`.tempo_traces", conn.Config.Name)
-		tracesDistTable      = fmt.Sprintf("`%s`.tempo_traces_dist", conn.Config.Name)
-	)
+	sqlCtx := &shared.PlannerContext{
+		IsCluster:   conn.Config.ClusterName != "",
+		From:        from,
+		To:          to,
+		Limit:       int64(limit),
+		Ctx:         ctx,
+		CHDb:        conn.Session,
+		CancelCtx:   cancel,
+		VersionInfo: versionInfo,
+	}
+	tables.PopulateTableNames(sqlCtx, conn)
 
-	ch, err := planner.Process(&shared.PlannerContext{
-		IsCluster:            conn.Config.ClusterName != "",
-		From:                 from,
-		To:                   to,
-		Limit:                int64(limit),
-		TracesAttrsTable:     tracesAttrsTable,
-		TracesAttrsDistTable: tracesAttrsDistTable,
-		TracesTable:          tracesTable,
-		TracesDistTable:      tracesDistTable,
-		Ctx:                  ctx,
-		CHDb:                 conn.Session,
-		CancelCtx:            cancel,
-		VersionInfo:          versionInfo,
-	})
+	ch, err := planner.Process(sqlCtx)
 
 	if err != nil {
 		return nil, err

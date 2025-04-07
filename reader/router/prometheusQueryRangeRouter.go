@@ -18,7 +18,7 @@ import (
 func RoutePrometheusQueryRange(app *mux.Router, dataSession model.IDBRegistry,
 	stats bool) {
 	eng := promql.NewEngine(promql.EngineOpts{
-		Logger:                   kitlog.NewLogrusLogger(logger.Logger),
+		Logger:                   kitlog.NewLogger(logger.Logger),
 		Reg:                      nil,
 		MaxSamples:               config.Cloki.Setting.SYSTEM_SETTINGS.MetricsMaxSamples,
 		Timeout:                  time.Second * 30,

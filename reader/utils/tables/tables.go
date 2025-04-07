@@ -33,6 +33,8 @@ func init() {
 	tableNames["profiles_series"] = "profiles_series"
 	tableNames["profiles_series_gin"] = "profiles_series_gin"
 	tableNames["profiles"] = "profiles"
+	tableNames["tempo_traces_attrs_gin"] = "tempo_traces_attrs_gin"
+	tableNames["tempo_traces_attrs_gin_dist"] = "tempo_traces_attrs_gin_dist"
 }
 
 func GetTableName(name string) string {
