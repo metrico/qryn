@@ -2,7 +2,7 @@
 <img src='https://github.com/user-attachments/assets/fc8c7ca9-7a18-403d-b2a6-17899a534d33' style="margin-left:-10px;width:200px;" width=200/>
 </a>
 
-# <img src='https://avatars.githubusercontent.com/u/76224143?s=400&u=4e207cf756a7146392f9f04c6beb3940a417369d&v=4' style="margin-left:-10px" width=28 /> [gigapipe: polyglot observability](https://gigapipe.com)
+# <img src='https://avatars.githubusercontent.com/u/76224143?s=400&u=4e207cf756a7146392f9f04c6beb3940a417369d&v=4' style="margin-left:-10px" width=28 /> [Gigapipe: All-In-One Polyglot Observability](https://gigapipe.com)
 
 > formerly known as _qryn_
 
@@ -180,7 +180,7 @@ Whether it's code, documentation or grammar, we ❤️ all contributions. Not su
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/AGPLv3_Logo.svg/2560px-AGPLv3_Logo.svg.png" width=200>
 
-©️ GIGAPIPE, HEPVEST BV, released under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE) for details.
+©️ HEPVEST BV, All Rights Reserves. Released under the GNU Affero General Public License v3.0
 
 
 [^1]: Gigapipe is a 100% clear-room api implementation and does not fork, use or derivate from Grafana code or design concepts.[^1]
