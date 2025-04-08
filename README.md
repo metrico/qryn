@@ -169,11 +169,11 @@ Whether it's code, documentation or grammar, we ❤️ all contributions. Not su
 
 #### Contributors
 
-&nbsp;&nbsp;&nbsp;&nbsp;[![Contributors for @metrico/qryn](https://contributors-img.web.app/image?repo=lmangani/cloki)](https://github.com/metrico/qryn/graphs/contributors)
+&nbsp;&nbsp;&nbsp;&nbsp;[![Contributors for @metrico/gigapipe](https://contributors-img.web.app/image?repo=metrico/gigapipe)](https://github.com/metrico/gigapipe/graphs/contributors)
 
-[![Stargazers repo roster for @metrico/qryn](https://bytecrank.com/nastyox/reporoster/php/stargazersSVG.php?user=metrico&repo=qryn)](https://github.com/metrico/qryn/stargazers)
+[![Stargazers repo roster for @metrico/gigapipe](https://bytecrank.com/nastyox/reporoster/php/stargazersSVG.php?user=metrico&repo=gigapipe)](https://github.com/metrico/gigapipe/stargazers)
 
-[![Forkers repo roster for @metrico/qryn](https://bytecrank.com/nastyox/reporoster/php/forkersSVG.php?user=metrico&repo=qryn)](https://github.com/metrico/qryn/network/members)
+[![Forkers repo roster for @metrico/gigapipe](https://bytecrank.com/nastyox/reporoster/php/forkersSVG.php?user=metrico&repo=gigapipe)](https://github.com/metrico/gigapipe/network/members)
 
 
 #### License
