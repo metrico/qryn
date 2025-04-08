@@ -23,8 +23,6 @@
 * **Secure**: Retain total control of data, using **ClickHouse**, **DuckDB** or **InfluxDB** IOx with **S3** object storage
 * **Independent**: Open source, community powered, anti lock-in alternative to vendor controlled stacks
 
-💡 _**gigapipe** independently implements popular observability standards, protocols and query languages_
-
 <br>
 
 # 🚀 Get Started
@@ -33,6 +31,7 @@
 * Looking for a quick test before installing? Signup for a free trial at [gigapipe.com](https://gigapipe.com)
 
 ## Features
+💡 _**gigapipe** independently implements popular observability standards, protocols and query languages_
 
 ## ➡️ Ingestion
 ### 📚 OpenTelemetry
