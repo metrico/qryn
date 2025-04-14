@@ -50,7 +50,7 @@ jobs:
             VIEW=1
           file: ./Dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64
           tags: |
              ghcr.io/metrico/gigapipe:latest
              ghcr.io/metrico/gigapipe:${{ (github.event_name == 'workflow_dispatch') && github.event.inputs.ref_name || github.ref_name }}
