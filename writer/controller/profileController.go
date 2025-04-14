@@ -34,6 +34,10 @@ func PushProfileV2(cfg MiddlewareConfig) func(w http.ResponseWriter, r *http.Req
 				_ctx = context.WithValue(_ctx, "until", untilValue)
 				return _ctx, nil
 			}),
-			withSimpleParser("*", Parser(unmarshal.UnmarshalProfileProtoV2)),
+			// Register parser for multipart/form-data content type
+			withSimpleParser("multipart/form-data", Parser(unmarshal.UnmarshalProfileProtoV2)),
+			// Register parser for binary/octet-stream content type
+			withSimpleParser("binary/octet-stream", Parser(unmarshal.UnmarshalBinaryStreamProfileProtoV2)),
+			//withSimpleParser("*", Parser(unmarshal.UnmarshalProfileProtoV2)),
 			withOkStatusAndBody(200, []byte("{}")))...)
 }
