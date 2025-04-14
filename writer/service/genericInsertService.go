@@ -11,7 +11,6 @@ import (
 	"github.com/metrico/qryn/writer/utils/logger"
 	"github.com/metrico/qryn/writer/utils/promise"
 	"github.com/metrico/qryn/writer/utils/stat"
-	"golang.org/x/sync/semaphore"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -106,8 +105,6 @@ type InsertServiceV2 struct {
 	client ch_wrapper.IChClient
 
 	state int32
-
-	bandwithLimiter *semaphore.Weighted
 }
 
 func (svc *InsertServiceV2) PlanFlush() {
@@ -206,14 +203,6 @@ func (svc *InsertServiceV2) Request(req helpers.SizeGetter, insertMode int) *pro
 	}
 	var size int64
 	size = req.GetSize()
-	to, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	err := svc.bandwithLimiter.Acquire(to, size)
-	if err != nil {
-		logger.Info("service overflow")
-		p.Done(0, fmt.Errorf("service overflow"))
-		return p
-	}
 	func() {
 		var (
 			inserted int
@@ -226,7 +215,6 @@ func (svc *InsertServiceV2) Request(req helpers.SizeGetter, insertMode int) *pro
 
 		if err != nil || inserted == 0 {
 			p.Done(0, err)
-			svc.bandwithLimiter.Release(size)
 			return
 		}
 		svc.size += size
@@ -292,7 +280,6 @@ func (svc *InsertServiceV2) fetchLoopIteration() {
 		input[i] = c.Input()
 		size += int64(svc.IngestSize(&input[i]))
 	}
-	svc.bandwithLimiter.Release(portion.size)
 
 	svc.setState(INSERT_STATE_INSERTING)
 	defer svc.setState(INSERT_STATE_IDLE)
@@ -420,25 +407,20 @@ func (svc *InsertServiceV2RoundRobin) init() {
 	logger.Info(fmt.Sprintf("creating %d services", svc.svcNum))
 	svc.services = make([]*InsertServiceV2, svc.svcNum)
 	svc.rand = rand.New(rand.NewSource(time.Now().UnixNano()))
-	var bandwidthLimit int64 = BANDWITH_LIMIT
-	if svc.maxQueueSize*2 > BANDWITH_LIMIT {
-		bandwidthLimit = svc.maxQueueSize * 2
-	}
 	for i := range svc.services {
 		svc.services[i] = &InsertServiceV2{
-			ID:              fmt.Sprintf("%s-%s-%v", svc.DatabaseNode.Node, svc.insertRequest, svc.AsyncInsert),
-			ServiceData:     ServiceData{},
-			V3Session:       svc.V3Session,
-			DatabaseNode:    svc.DatabaseNode,
-			AsyncInsert:     svc.AsyncInsert,
-			OnBeforeInsert:  svc.OnBeforeInsert,
-			pushInterval:    svc.pushInterval,
-			maxQueueSize:    svc.maxQueueSize,
-			insertRequest:   svc.insertRequest,
-			acquireColumns:  svc.acquireColumns,
-			processRequest:  svc.processRequest,
-			bandwithLimiter: semaphore.NewWeighted(bandwidthLimit),
-			serviceType:     svc.serviceType,
+			ID:             fmt.Sprintf("%s-%s-%v", svc.DatabaseNode.Node, svc.insertRequest, svc.AsyncInsert),
+			ServiceData:    ServiceData{},
+			V3Session:      svc.V3Session,
+			DatabaseNode:   svc.DatabaseNode,
+			AsyncInsert:    svc.AsyncInsert,
+			OnBeforeInsert: svc.OnBeforeInsert,
+			pushInterval:   svc.pushInterval,
+			maxQueueSize:   svc.maxQueueSize,
+			insertRequest:  svc.insertRequest,
+			acquireColumns: svc.acquireColumns,
+			processRequest: svc.processRequest,
+			serviceType:    svc.serviceType,
 		}
 		svc.services[i].Init()
 	}
