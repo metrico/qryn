@@ -65,7 +65,7 @@ require (
 	github.com/valyala/fasthttp v1.52.0
 	github.com/valyala/fastjson v1.6.4
 	go.opentelemetry.io/collector/pdata v1.25.0
-	go.opentelemetry.io/proto/otlp v1.4.0
+	go.opentelemetry.io/proto/otlp v1.5.0
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
 	golang.org/x/sync v0.12.0
 	google.golang.org/grpc v1.70.0
