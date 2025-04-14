@@ -24,8 +24,8 @@ replace (
 )
 
 require (
-	github.com/ClickHouse/ch-go v0.64.1
-	github.com/ClickHouse/clickhouse-go/v2 v2.30.3
+	github.com/ClickHouse/ch-go v0.65.1
+	github.com/ClickHouse/clickhouse-go/v2 v2.34.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/VictoriaMetrics/fastcache v1.12.2
 	github.com/alecthomas/participle/v2 v2.1.1
@@ -169,9 +169,9 @@ require (
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.59.0 // indirect
-	go.opentelemetry.io/otel v1.34.0 // indirect
-	go.opentelemetry.io/otel/metric v1.34.0 // indirect
-	go.opentelemetry.io/otel/trace v1.34.0 // indirect
+	go.opentelemetry.io/otel v1.35.0 // indirect
+	go.opentelemetry.io/otel/metric v1.35.0 // indirect
+	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	go.step.sm/crypto v0.59.1 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/goleak v1.3.0 // indirect
