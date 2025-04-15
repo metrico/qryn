@@ -1,0 +1,23 @@
+name: Go Build CI
+
+on:
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24'
+
+    - name: Build Gigapipe
+      run: |
+        go mod tidy
+        CGO_ENABLED=0 go build -ldflags="-extldflags=-static" -o gigapipe .
+
