@@ -1,0 +1,19 @@
+name: "gigapipe"
+arch: "amd64"
+platform: "linux"
+version: "v0.0.0"
+section: "default"
+priority: "extra"
+replaces:
+- gigapipe
+provides:
+- gigapipe
+maintainer: "GIGAPIPE <support@gigapipe.com>"
+description: |
+    GIGAPIPE: Polyglot Observability Stack
+vendor: "GIGAPIPE"
+homepage: "http://gigapipe.com"
+license: "AGPLv3"
+contents:
+  - src: ./gigapipe
+    dst: /usr/local/bin/gigapipe
