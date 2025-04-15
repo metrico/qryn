@@ -9,7 +9,7 @@ on:
       branch:
         description: Release Branch
         type: string
-        default: 'main'
+        default: 'master'
         required: true
       release:
         required: true
@@ -42,6 +42,28 @@ jobs:
         run: |
           go mod tidy
           VIEW=1 CGO_ENABLED=0 go build -ldflags="-extldflags=-static" -o gigapipe_arm64 .
+
+      - name: get NFPM
+        if:  github.event_name == 'release' || ${{ inputs.release }}
+        run: |
+            wget -qO- https://github.com/goreleaser/nfpm/releases/download/v2.41.3/nfpm_2.41.3_Linux_arm64.tar.gz | tar --directory ./ -xz nfpm
+            chmod +x nfpm
+  
+      - name: Create Packages ${{ matrix.goarch }}
+        if:  github.event_name == 'release' || ${{ inputs.release }}
+        env:
+            VERSION: ${{ env.VERSION }}
+            PACKAGE: "gigapipe"
+            RELEASE: ${{ env.VERSION }}
+            ARCH: arm64
+            OS: ${{ matrix.goos }}
+        run: |
+            sed -i 's|v0.0.0|${{ env.VERSION }}|g' nfpm.yaml
+            sed -i 's|amd64|arm64|g' nfpm.yaml
+            cp gigapipe_arm64 gigapipe
+            ./nfpm pkg --config nfpm.yaml --target "./${PACKAGE}_${RELEASE}_${ARCH}.deb"
+            ./nfpm pkg --config nfpm.yaml --target "./${PACKAGE}_${RELEASE}_${ARCH}.rpm"
+            
       - name: Upload release
         if:  github.event_name == 'release' || ${{ inputs.release }}
         uses: boxpositron/upload-multiple-releases@1.0.7
@@ -50,6 +72,8 @@ jobs:
         with:
           release_config: |
               gigapipe_arm64
+              gigapipe*.deb
+              gigapipe*.rpm
           tag_name: ${{ env.VERSION }}
           release_name: ${{ env.VERSION }}
           draft: false
@@ -80,6 +104,35 @@ jobs:
         run: |
           go mod tidy
           VIEW=1 CGO_ENABLED=0 go build -ldflags="-extldflags=-static" -o gigapipe .
+          
+      - name: glibc polyfill
+        if: ${{ matrix.goarch == 'amd64' }}
+        run: |
+          CONTAINER_ID=$(docker create ghcr.io/lmangani/polyfill-glibc-action:latest) 
+          docker cp $CONTAINER_ID:/usr/local/bin/polyfill-glibc ./polyfill-glibc
+          docker rm $CONTAINER_ID
+          chmod +x ./polyfill-glibc
+          ./polyfill-glibc --target-glibc=2.17 ./gigapipe
+          
+      - name: get NFPM
+        if:  github.event_name == 'release' || ${{ inputs.release }}
+        run: |
+            wget -qO- https://github.com/goreleaser/nfpm/releases/download/v2.41.3/nfpm_2.41.3_Linux_x86_64.tar.gz | tar --directory ./ -xz nfpm
+            chmod +x nfpm
+  
+      - name: Create Packages ${{ matrix.goarch }}
+        if:  github.event_name == 'release' || ${{ inputs.release }}
+        env:
+            VERSION: ${{ env.VERSION }}
+            PACKAGE: "gigapipe"
+            RELEASE: ${{ env.VERSION }}
+            ARCH: amd64
+            OS: ${{ matrix.goos }}
+        run: |
+            sed -i 's|v0.0.0|${{ env.VERSION }}|g' nfpm.yaml
+            ./nfpm pkg --config nfpm.yaml --target "./${PACKAGE}_${RELEASE}_${ARCH}.deb"
+            ./nfpm pkg --config nfpm.yaml --target "./${PACKAGE}_${RELEASE}_${ARCH}.rpm"
+            
       - name: Upload release
         if:  github.event_name == 'release' || ${{ inputs.release }}
         uses: boxpositron/upload-multiple-releases@1.0.7
@@ -88,6 +141,8 @@ jobs:
         with:
           release_config: |
               gigapipe
+              gigapipe*.deb
+              gigapipe*.rpm
           tag_name: ${{ env.VERSION }}
           release_name: ${{ env.VERSION }}
           draft: false
