@@ -64,12 +64,12 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0
 	github.com/valyala/fasthttp v1.52.0
 	github.com/valyala/fastjson v1.6.4
-	go.opentelemetry.io/collector/pdata v1.25.0
+	go.opentelemetry.io/collector/pdata v1.30.0
 	go.opentelemetry.io/proto/otlp v1.4.0
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
 	golang.org/x/sync v0.12.0
-	google.golang.org/grpc v1.70.0
-	google.golang.org/protobuf v1.36.5
+	google.golang.org/grpc v1.71.1
+	google.golang.org/protobuf v1.36.6
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -179,7 +179,7 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/mod v0.23.0 // indirect
-	golang.org/x/net v0.36.0 // indirect
+	golang.org/x/net v0.37.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
