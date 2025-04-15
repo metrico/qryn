@@ -18,12 +18,12 @@ on:
     types: [created]
 
 jobs:
-  node:
+  go_arm64:
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04-arm]
     runs-on: ${{ matrix.os }}
-    name: 'Build & Publish'
+    name: 'Build & Publish arm64'
     steps:
       - uses: actions/checkout@v4.1.1
         with:
@@ -32,7 +32,82 @@ jobs:
         uses: ./.github/actions/get-view
         env:
           TAG: v3.3.2
-      - run: bash -c 'pwd && ls view/dist'
+      - run: |
+          echo "VERSION=${{ (github.event_name == 'workflow_dispatch') && github.event.inputs.ref_name || github.ref_name }}" >> $GITHUB_ENV
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+      - name: build static
+        run: |
+          go mod tidy
+          VIEW=1 CGO_ENABLED=0 go build -ldflags="-extldflags=-static" -o gigapipe_arm64 .
+      - name: Upload release
+        if:  github.event_name == 'release' || ${{ inputs.release }}
+        uses: boxpositron/upload-multiple-releases@1.0.7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_config: |
+              gigapipe_arm64
+          tag_name: ${{ env.VERSION }}
+          release_name: ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          overwrite: true
+          
+  go_amd64:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    name: 'Build & Publish amd64'
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          ref: ${{ (github.event_name == 'workflow_dispatch') && github.event.inputs.branch || github.ref }}
+      - name: build qryn-view
+        uses: ./.github/actions/get-view
+        env:
+          TAG: v3.3.2
+      - run: |
+          echo "VERSION=${{ (github.event_name == 'workflow_dispatch') && github.event.inputs.ref_name || github.ref_name }}" >> $GITHUB_ENV
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+      - name: build static
+        run: |
+          go mod tidy
+          VIEW=1 CGO_ENABLED=0 go build -ldflags="-extldflags=-static" -o gigapipe .
+      - name: Upload release
+        if:  github.event_name == 'release' || ${{ inputs.release }}
+        uses: boxpositron/upload-multiple-releases@1.0.7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_config: |
+              gigapipe
+          tag_name: ${{ env.VERSION }}
+          release_name: ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          overwrite: true
+          
+  docker:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    name: 'Docker Build & Publish'
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          ref: ${{ (github.event_name == 'workflow_dispatch') && github.event.inputs.branch || github.ref }}
+      - name: build qryn-view
+        uses: ./.github/actions/get-view
+        env:
+          TAG: v3.3.2
       - name: Log in to the GHCR registry
         uses: docker/login-action@v3.0.0
         with:
