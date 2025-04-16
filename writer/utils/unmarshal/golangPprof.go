@@ -125,6 +125,8 @@ func (p *pProfProtoDec) Decode() error {
 			}
 		}
 	}
+	start = ns(start)
+	end = ns(end)
 	name = name[:i]
 	durationNs = end - start
 	timestampNs = start
