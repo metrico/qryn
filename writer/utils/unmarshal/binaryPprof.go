@@ -15,6 +15,13 @@ type binaryStreamPProfProtoDec struct {
 	pProfProtoDec
 }
 
+func ns(timestamp uint64) uint64 {
+	for timestamp < 1000000000000000000 {
+		timestamp *= 10
+	}
+	return timestamp
+}
+
 // Decode implements the specific decoding logic for binary/octet-stream content type
 func (b *binaryStreamPProfProtoDec) Decode() error {
 	var timestampNs uint64
@@ -58,6 +65,8 @@ func (b *binaryStreamPProfProtoDec) Decode() error {
 			}
 		}
 	}
+	start = ns(start)
+	end = ns(end)
 	name = name[:i]
 	durationNs = end - start
 	timestampNs = start
@@ -74,24 +83,9 @@ func (b *binaryStreamPProfProtoDec) Decode() error {
 		fmt.Println("Error reading from reader:", err)
 		return err
 	}
-	//f, err := processMIMEData(string(data))
-	//if err != nil {
-	//	fmt.Println("Error processMIMEData:", err)
-	//	return err
-	//}
-	//// Convert bytes to string
-	//err = b.decompressor.Decompress(f, Gzip, buf)
-	//if err != nil {
-	//	return fmt.Errorf("failed to decompress body: %w", err)
-	//}
 
 	// Create a reader from the binary data
 	reader := bytes.NewReader(data)
-	// Decompress the data
-	//err = b.decompressor.Decompress(reader, Gzip, buf)
-	//if err != nil {
-	//	return fmt.Errorf("failed to decompress body: %w", err)
-	//}
 	_, err = io.Copy(buf, reader)
 	if err != nil {
 		fmt.Println("Error copying data:", err)
@@ -178,6 +172,5 @@ var UnmarshalBinaryStreamProfileProtoV2 = Build(
 	withStringValueFromCtx("until"),
 	withProfileParser(func(ctx *ParserCtx) iProfilesParser {
 		dec := &binaryStreamPProfProtoDec{pProfProtoDec{ctx: ctx}}
-		dec.SetOnProfile(nil) // This will be set later by the caller
 		return dec
 	}))
