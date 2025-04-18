@@ -151,6 +151,9 @@ func (p *pushRequestDec) decodeStreamValue(d *jx.Decoder) error {
 			tp |= model.SAMPLE_TYPE_LOG
 			return err
 		case 2:
+			if d.Next() != jx.Number {
+				return d.Skip()
+			}
 			val, err = d.Float64()
 			tp |= model.SAMPLE_TYPE_METRIC
 			return err
