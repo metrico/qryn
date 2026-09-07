@@ -40,6 +40,10 @@ func Init() error {
 	return initErr
 }
 
+// Reload re-reads the environment, bypassing the once guard. It exists for
+// tests, which need to exercise both layouts in one process.
+func Reload() error { return load() }
+
 func load() error {
 	var err error
 	if splitBySignal, err = boolEnv("SAMPLES_SPLIT_BY_SIGNAL", false); err != nil {

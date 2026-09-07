@@ -261,6 +261,7 @@ func doParse(r *http.Request, parser Parser) error {
 	svcs := InsertServices{
 		Ts:        getService(r, utils.ContextKeyTsService),
 		Spl:       getService(r, utils.ContextKeySplService),
+		Mtr:       getService(r, utils.ContextKeyMtrService),
 		SpanAttrs: getService(r, utils.ContextKeySpanAttrsService),
 		Spans:     getService(r, utils.ContextKeySpansService),
 		Profile:   getService(r, utils.ContextKeyProfileService),
