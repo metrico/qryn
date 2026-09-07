@@ -74,6 +74,30 @@ func TestSplitByType(t *testing.T) {
 	}
 }
 
+// samples_metrics has no string column, so a dual-typed row's message bytes
+// must count toward the logs half's Size only -- the metrics half never
+// writes them and must not flush early over bytes it doesn't send.
+func TestSplitByTypeSizeCountsMessageOnceOnLogsHalf(t *testing.T) {
+	src := &model.TimeSamplesData{
+		MFingerprint: []uint64{1, 2},
+		MTimestampNS: []int64{1, 2},
+		MMessage:     []string{"twelve chars", ""},
+		MValue:       []float64{0, 5},
+		MTTLDays:     []uint16{7, 7},
+		MType:        []uint8{model.SAMPLE_TYPE_LOG_AND_METRIC, model.SAMPLE_TYPE_UNDEF},
+	}
+	logs, metrics := splitByType(src)
+
+	wantLogs := 26 + len("twelve chars") + 26
+	if logs.Size != wantLogs {
+		t.Errorf("logs.Size = %d, want %d", logs.Size, wantLogs)
+	}
+	wantMetrics := 26 + 26
+	if metrics.Size != wantMetrics {
+		t.Errorf("metrics.Size = %d, want %d (message bytes must not count)", metrics.Size, wantMetrics)
+	}
+}
+
 // A half with no rows must come back nil so doPush skips it entirely rather
 // than sending an empty insert.
 func TestSplitByTypeEmptyHalf(t *testing.T) {

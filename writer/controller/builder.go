@@ -238,14 +238,14 @@ func splitByType(s *model.TimeSamplesData) (*model.TimeSamplesData, *model.TimeS
 	metrics := &model.TimeSamplesData{}
 	for i, tp := range s.MType {
 		if tp&model.SAMPLE_TYPE_LOG != 0 {
-			appendSample(logs, s, i, model.SAMPLE_TYPE_LOG)
+			appendSample(logs, s, i, model.SAMPLE_TYPE_LOG, true)
 		}
 		if tp&model.SAMPLE_TYPE_METRIC != 0 {
-			appendSample(metrics, s, i, model.SAMPLE_TYPE_METRIC)
+			appendSample(metrics, s, i, model.SAMPLE_TYPE_METRIC, false)
 		}
 		if tp == model.SAMPLE_TYPE_UNDEF {
-			appendSample(logs, s, i, model.SAMPLE_TYPE_UNDEF)
-			appendSample(metrics, s, i, model.SAMPLE_TYPE_UNDEF)
+			appendSample(logs, s, i, model.SAMPLE_TYPE_UNDEF, true)
+			appendSample(metrics, s, i, model.SAMPLE_TYPE_UNDEF, false)
 		}
 	}
 	if len(logs.MFingerprint) == 0 {
@@ -259,15 +259,22 @@ func splitByType(s *model.TimeSamplesData) (*model.TimeSamplesData, *model.TimeS
 
 // appendSample copies row i of src into dst under type tp. Size follows the
 // same per-row formula the parser uses (unmarshal/builder.go:368), so queue
-// accounting stays comparable across the split.
-func appendSample(dst, src *model.TimeSamplesData, i int, tp uint8) {
+// accounting stays comparable across the split. hasMessage tells it whether
+// dst is the logs half: samples_metrics has no string column and
+// NewMetricsInsertService's insert never writes one, so the message length is
+// only real for the logs half, not for tp (an undefined row is written to
+// both halves under the same tp).
+func appendSample(dst, src *model.TimeSamplesData, i int, tp uint8, hasMessage bool) {
 	dst.MFingerprint = append(dst.MFingerprint, src.MFingerprint[i])
 	dst.MTimestampNS = append(dst.MTimestampNS, src.MTimestampNS[i])
 	dst.MValue = append(dst.MValue, src.MValue[i])
 	dst.MMessage = append(dst.MMessage, src.MMessage[i])
 	dst.MTTLDays = append(dst.MTTLDays, src.MTTLDays[i])
 	dst.MType = append(dst.MType, tp)
-	dst.Size += len(src.MMessage[i]) + 26
+	dst.Size += 26
+	if hasMessage {
+		dst.Size += len(src.MMessage[i])
+	}
 }
 
 // IngestParsed runs parser and pushes each ParserResponse to the given
