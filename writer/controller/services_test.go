@@ -88,11 +88,13 @@ func reloadSamplesConfig(t *testing.T) {
 }
 
 // installRegistry points the package-global Registry at recorder services and
-// restores the previous one on cleanup.
+// restores the previous one on cleanup. profile is a plain recorder since
+// withTSAndSampleService also resolves it, and a nil service there would
+// panic on GetNodeName rather than exercise anything this test cares about.
 func installRegistry(t *testing.T, spl, ts, mtr service.IInsertServiceV2) {
 	t.Helper()
 	old := Registry
-	Registry = &metricsFakeRegistry{samples: spl, timeSeries: ts, mtr: mtr}
+	Registry = &metricsFakeRegistry{samples: spl, timeSeries: ts, mtr: mtr, profile: &recorderSvc{}}
 	t.Cleanup(func() { Registry = old })
 }
 
@@ -161,18 +163,46 @@ func TestResolveMetricServicesWithSplit(t *testing.T) {
 	}
 }
 
-// doParse rebuilds InsertServices from context keys rather than from what
-// Resolve*Services returned, so the metrics service needs a key of its own.
-// Without it every HTTP ingest route hands IngestParsed a nil Mtr and doPush
-// silently drops the metric half.
-func TestMetricsServiceSurvivesTheContext(t *testing.T) {
-	mtr := &recorderSvc{}
-	req := httptest.NewRequest(http.MethodPost, "/", nil)
-	ctx := context.WithValue(req.Context(), utils.ContextKeyMtrService,
-		service.IInsertServiceV2(mtr))
-	req = req.WithContext(ctx)
+// withTSAndSampleService is the only thing that puts the metrics service where
+// doParse can find it: doParse rebuilds InsertServices from context keys rather
+// than from what ResolveLogServices returned. Asserting through the real
+// middleware means reverting either half of that wiring fails this test.
+func TestMiddlewarePlantsTheMetricsService(t *testing.T) {
+	t.Setenv("SAMPLES_SPLIT_BY_SIGNAL", "true")
+	reloadSamplesConfig(t)
 
+	spl, ts, mtr := &recorderSvc{}, &recorderSvc{}, &recorderSvc{}
+	installRegistry(t, spl, ts, mtr)
+
+	req := httptest.NewRequest(http.MethodPost, "/", nil)
+	req = req.WithContext(context.WithValue(req.Context(), utils.ContextKeyDSN, ""))
+
+	pusher := withTSAndSampleService(&PusherCtx{})
+	if err := pusher.PreRequest[0](httptest.NewRecorder(), req); err != nil {
+		t.Fatalf("pre-request: %v", err)
+	}
 	if got := getService(req, utils.ContextKeyMtrService); got != mtr {
-		t.Errorf("getService returned %v, want the metrics service", got)
+		t.Errorf("metrics service = %v, want the registry's", got)
+	}
+}
+
+// Without the split the key is planted nil, which doPush reads as nothing to
+// send — the pre-split behaviour, unchanged.
+func TestMiddlewarePlantsNoMetricsServiceWithoutSplit(t *testing.T) {
+	t.Setenv("SAMPLES_SPLIT_BY_SIGNAL", "false")
+	reloadSamplesConfig(t)
+
+	spl, ts, mtr := &recorderSvc{}, &recorderSvc{}, &recorderSvc{}
+	installRegistry(t, spl, ts, mtr)
+
+	req := httptest.NewRequest(http.MethodPost, "/", nil)
+	req = req.WithContext(context.WithValue(req.Context(), utils.ContextKeyDSN, ""))
+
+	pusher := withTSAndSampleService(&PusherCtx{})
+	if err := pusher.PreRequest[0](httptest.NewRecorder(), req); err != nil {
+		t.Fatalf("pre-request: %v", err)
+	}
+	if got := getService(req, utils.ContextKeyMtrService); got != nil {
+		t.Errorf("metrics service = %v, want nil", got)
 	}
 }

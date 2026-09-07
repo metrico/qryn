@@ -15,7 +15,7 @@ type InsertServices struct {
 	Ts  service.IInsertServiceV2
 	Spl service.IInsertServiceV2
 	// Mtr is the metrics half of a split store, nil when logs and metrics share
-	// one table. doPush treats a nil service as nothing to send.
+	// one table.
 	Mtr       service.IInsertServiceV2
 	SpanAttrs service.IInsertServiceV2
 	Spans     service.IInsertServiceV2
