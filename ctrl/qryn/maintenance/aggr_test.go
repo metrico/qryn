@@ -39,6 +39,30 @@ func TestParseAggrIntervalRejectsGarbage(t *testing.T) {
 	}
 }
 
+// A state string this code did not write is treated as absent, mirroring
+// parseAggrInterval: the caller must not assume "was disabled" when it really
+// means "no prior run".
+func TestParseAggrEnabledRoundTrip(t *testing.T) {
+	for _, tc := range []bool{true, false} {
+		state := aggrStateString(tc, 15*time.Second)
+		got, ok := parseAggrEnabled(state)
+		if !ok {
+			t.Fatalf("parseAggrEnabled(%q) failed", state)
+		}
+		if got != tc {
+			t.Errorf("%q: enabled = %v, want %v", state, got, tc)
+		}
+	}
+}
+
+func TestParseAggrEnabledRejectsGarbage(t *testing.T) {
+	for _, s := range []string{"", "interval=15", "enabled=maybe", "nonsense"} {
+		if _, ok := parseAggrEnabled(s); ok {
+			t.Errorf("parseAggrEnabled(%q) accepted", s)
+		}
+	}
+}
+
 // Growing the bucket by a whole factor is safe: stored rows are aggregate
 // states and the read path re-buckets them onto the coarser grid. Anything else
 // leaves buckets coarser than the interval the read path assumes -- a 15s step

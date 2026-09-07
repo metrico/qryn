@@ -86,6 +86,24 @@ func aggrDropDays(configured, fallback int) int {
 	return configured
 }
 
+// parseAggrEnabled reads the enabled flag back out of a stored state string.
+// ok is false for an absent or unrecognised string, which the caller reads as
+// "no prior state" rather than "was disabled".
+func parseAggrEnabled(state string) (enabled bool, ok bool) {
+	for _, field := range strings.Fields(state) {
+		raw, found := strings.CutPrefix(field, "enabled=")
+		if !found {
+			continue
+		}
+		v, err := strconv.ParseBool(raw)
+		if err != nil {
+			return false, false
+		}
+		return v, true
+	}
+	return false, false
+}
+
 // SyncMetricsAggrMV brings metrics_aggr_mv in line with the configuration,
 // doing nothing when it already matches. It must run after the split tables
 // exist, since a materialized view needs both its source and its target.
@@ -114,6 +132,12 @@ func SyncMetricsAggrMV(db clickhouse.Conn, dbname, clusterName string,
 		return err
 	}
 	if samplesconfig.MetricsAggrEnabled() {
+		if wasEnabled, ok := parseAggrEnabled(have); !ok || !wasEnabled {
+			logger.Info(
+				"metrics_aggr_mv re-enabled: metrics_aggr holds nothing for the period " +
+					"it was absent (or has never run); queries over it will read that " +
+					"period as empty until it is rebuilt from samples_metrics")
+		}
 		logger.Info(fmt.Sprintf("Creating metrics_aggr_mv at %s buckets", interval))
 		if err := exec(metricsAggrMVQuery); err != nil {
 			return err
