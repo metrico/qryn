@@ -19,6 +19,9 @@ func TestLoadDefaults(t *testing.T) {
 	if got := MetricsAggrInterval(); got != 15*time.Second {
 		t.Errorf("interval = %v, want 15s", got)
 	}
+	if got := MetricsAggrIntervalMs(); got != 15000 {
+		t.Errorf("interval ms = %d, want 15000", got)
+	}
 	if got := MetricsAggrDays(); got != 0 {
 		t.Errorf("days = %d, want 0 (inherit)", got)
 	}
@@ -91,6 +94,9 @@ func TestTableNames(t *testing.T) {
 	if got := SamplesTable(true); got != "samples_v3" {
 		t.Errorf("metrics samples table = %q", got)
 	}
+	if got := AggrTable(false); got != "metrics_15s" {
+		t.Errorf("logs aggr table = %q", got)
+	}
 	if got := AggrTable(true); got != "metrics_15s" {
 		t.Errorf("metrics aggr table = %q", got)
 	}
@@ -136,6 +142,21 @@ func TestMetricsAggrAvailable(t *testing.T) {
 			t.Errorf("split=%v enabled=%v: available = %v, want %v",
 				tc.split, tc.enabled, got, tc.want)
 		}
+	}
+}
+
+// Init reports the same result to every caller, not just the first: it runs
+// load exactly once, so a later caller must not read a failed load as success.
+func TestInitReportsTheLoadErrorToEveryCaller(t *testing.T) {
+	reset(t)
+	t.Setenv("METRICS_AGGR_INTERVAL", "not a duration")
+
+	first := Init()
+	if first == nil {
+		t.Fatal("first Init accepted a malformed interval")
+	}
+	if second := Init(); second == nil {
+		t.Error("second Init returned nil after a failed load")
 	}
 }
 

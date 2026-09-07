@@ -26,16 +26,18 @@ var (
 	aggrInterval  = logsAggrInterval
 	aggrDays      int
 	metricsOrder  string
+	initErr       error
 
 	once sync.Once
 )
 
 // Init reads the environment once at startup. Call it before anything reads a
-// getter, and before tables.InitDistTableNames.
+// getter, and before tables.InitDistTableNames. Every call reports the result
+// of the single load, so a later caller cannot mistake a failed load for a
+// successful one.
 func Init() error {
-	var err error
-	once.Do(func() { err = load() })
-	return err
+	once.Do(func() { initErr = load() })
+	return initErr
 }
 
 func load() error {
