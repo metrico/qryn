@@ -10,6 +10,7 @@ import (
 	"github.com/metrico/qryn/v5/reader/promql/promql_parser"
 	dbversion "github.com/metrico/qryn/v5/reader/utils/dbVersion"
 	sql "github.com/metrico/qryn/v5/reader/utils/sql_select"
+	"github.com/metrico/qryn/v5/shared/samplesconfig"
 )
 
 // rangeTestCtxCap builds a planner context. staleness selects whether the server
@@ -400,5 +401,60 @@ func TestMetrics15ShortcutUsesContextInterval(t *testing.T) {
 	}
 	if _, err := sel.String(sql.DefaultCtx()); err != nil {
 		t.Fatalf("String with zero interval: %v", err)
+	}
+}
+
+// With no metrics preaggregate the optimizers must not fire. They rewrite range
+// functions into Substitutes that select from the aggregate table, and
+// transpileLabelMatchers resolves a substitute before it ever consults
+// useRawData -- so leaving them on aims every accelerated query at a view that
+// does not exist.
+func TestOptimizersOffWithoutAggregate(t *testing.T) {
+	t.Setenv("SAMPLES_SPLIT_BY_SIGNAL", "true")
+	t.Setenv("METRICS_AGGR_ENABLED", "false")
+	if err := samplesconfig.Reload(); err != nil {
+		t.Fatalf("reload: %v", err)
+	}
+	t.Cleanup(func() {
+		t.Setenv("SAMPLES_SPLIT_BY_SIGNAL", "false")
+		t.Setenv("METRICS_AGGR_ENABLED", "true")
+		_ = samplesconfig.Reload()
+	})
+
+	expr, err := promql_parser.Parse(`rate(test_metric[5m])`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expr, err = TranspileExpressionV2(expr)
+	if err != nil {
+		t.Fatalf("TranspileExpressionV2: %v", err)
+	}
+	if len(expr.Substitutes) != 0 {
+		t.Errorf("got %d substitutes, want 0 with the aggregate off", len(expr.Substitutes))
+	}
+}
+
+// With an aggregate present the optimizers still fire: this is the accelerated
+// path and it must not regress.
+func TestOptimizersOnWithAggregate(t *testing.T) {
+	t.Setenv("SAMPLES_SPLIT_BY_SIGNAL", "false")
+	if err := samplesconfig.Reload(); err != nil {
+		t.Fatalf("reload: %v", err)
+	}
+	t.Cleanup(func() {
+		t.Setenv("SAMPLES_SPLIT_BY_SIGNAL", "false")
+		_ = samplesconfig.Reload()
+	})
+
+	expr, err := promql_parser.Parse(`rate(test_metric[5m])`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expr, err = TranspileExpressionV2(expr)
+	if err != nil {
+		t.Fatalf("TranspileExpressionV2: %v", err)
+	}
+	if len(expr.Substitutes) != 1 {
+		t.Errorf("got %d substitutes, want 1", len(expr.Substitutes))
 	}
 }
