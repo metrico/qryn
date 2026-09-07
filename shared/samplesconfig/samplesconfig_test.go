@@ -70,6 +70,8 @@ func TestLoadRejectsMalformed(t *testing.T) {
 		{"METRICS_AGGR_INTERVAL", "15 seconds"},
 		{"METRICS_AGGR_INTERVAL", "0s"},
 		{"METRICS_AGGR_INTERVAL", "-5s"},
+		{"METRICS_AGGR_INTERVAL", "100us"},
+		{"METRICS_AGGR_INTERVAL", "1500ms"},
 		{"METRICS_AGGR_DAYS", "many"},
 		{"METRICS_AGGR_DAYS", "-1"},
 	} {

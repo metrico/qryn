@@ -58,8 +58,12 @@ func load() error {
 		if err != nil {
 			return fmt.Errorf("METRICS_AGGR_INTERVAL: %w", err)
 		}
-		if d <= 0 {
-			return fmt.Errorf("METRICS_AGGR_INTERVAL must be positive, got %s", v)
+		// Whole seconds only. The view buckets on nanoseconds while the read
+		// path snaps the step grid on milliseconds, so a width that is not a
+		// round number of milliseconds would have the two disagree, and a
+		// sub-millisecond one would truncate to a zero divisor.
+		if d < time.Second || d%time.Second != 0 {
+			return fmt.Errorf("METRICS_AGGR_INTERVAL must be a whole number of seconds, got %s", v)
 		}
 		aggrInterval = d
 	}
