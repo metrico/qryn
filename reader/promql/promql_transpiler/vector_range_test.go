@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/clickhouse_planner"
 	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
 	"github.com/metrico/qryn/v5/reader/promql/promql_parser"
 	dbversion "github.com/metrico/qryn/v5/reader/utils/dbVersion"
@@ -356,5 +357,48 @@ func assertOuterUnionOrdered(t *testing.T, got string) {
 	}
 	if !strings.Contains(got, "FROM ((") {
 		t.Errorf("union must be wrapped in its own parens:\n%s", got)
+	}
+}
+
+// The LogQL shortcut and the bucket read must use the configured window, not a
+// baked-in 15s. A context that does not set AggrInterval (every hand-built test
+// context) must still render, since a zero would divide by zero.
+func TestMetrics15ShortcutUsesContextInterval(t *testing.T) {
+	from := time.Unix(1700000000, 0)
+	ctx := &shared.PlannerContext{
+		From:                    from.Add(-time.Hour),
+		To:                      from,
+		Step:                    time.Minute,
+		Metrics15sTableName:     "metrics_aggr",
+		Metrics15sDistTableName: "metrics_aggr",
+		Type:                    shared.SAMPLES_TYPE_LOGS,
+		AggrInterval:            time.Minute,
+	}
+	planner := clickhouse_planner.NewMetrics15ShortcutPlanner("count_over_time", time.Minute, nil)
+	sel, err := planner.Process(ctx)
+	if err != nil {
+		t.Fatalf("Process: %v", err)
+	}
+	got, err := sel.String(sql.DefaultCtx())
+	if err != nil {
+		t.Fatalf("String: %v", err)
+	}
+	// The read window must snap to the 1m bucket grid carried by the context,
+	// not the 15s grid: from/to truncate to different literals under each.
+	if !strings.Contains(got, "1699996380000000000") || !strings.Contains(got, "1699999980000000000") {
+		t.Errorf("read window is not snapped to the configured 1m grid:\n%s", got)
+	}
+	if strings.Contains(got, "1699996395000000000") || strings.Contains(got, "1699999995000000000") {
+		t.Errorf("read window still snapped to the 15s grid:\n%s", got)
+	}
+
+	// A context with no interval falls back rather than dividing by zero.
+	ctx.AggrInterval = 0
+	sel, err = planner.Process(ctx)
+	if err != nil {
+		t.Fatalf("Process with zero interval: %v", err)
+	}
+	if _, err := sel.String(sql.DefaultCtx()); err != nil {
+		t.Fatalf("String with zero interval: %v", err)
 	}
 }
