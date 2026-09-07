@@ -237,10 +237,10 @@ func splitByType(s *model.TimeSamplesData) (*model.TimeSamplesData, *model.TimeS
 	logs := &model.TimeSamplesData{}
 	metrics := &model.TimeSamplesData{}
 	for i, tp := range s.MType {
-		if tp == model.SAMPLE_TYPE_LOG_AND_METRIC || tp&model.SAMPLE_TYPE_LOG != 0 {
+		if tp&model.SAMPLE_TYPE_LOG != 0 {
 			appendSample(logs, s, i, model.SAMPLE_TYPE_LOG)
 		}
-		if tp == model.SAMPLE_TYPE_LOG_AND_METRIC || tp&model.SAMPLE_TYPE_METRIC != 0 {
+		if tp&model.SAMPLE_TYPE_METRIC != 0 {
 			appendSample(metrics, s, i, model.SAMPLE_TYPE_METRIC)
 		}
 		if tp == model.SAMPLE_TYPE_UNDEF {
