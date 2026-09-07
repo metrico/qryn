@@ -63,6 +63,11 @@ func UpdateWithReadCluster(db clickhouse.Conn, dbname string, clusterName string
 				return err
 			}
 		}
+		err = SyncMetricsAggrMV(db, dbname, clusterName,
+			checkMode(CLUST_MODE_DISTRIBUTED), checkMode(CLUST_MODE_CLOUD), logger)
+		if err != nil {
+			return err
+		}
 	}
 	err = updateScripts(db, dbname, clusterName, 2, sql.TracesScript,
 		checkMode(CLUST_MODE_CLOUD), ttlDays, storagePolicy, advancedSamplesOrdering, skipUnavailableShards, logger)

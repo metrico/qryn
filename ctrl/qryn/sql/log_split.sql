@@ -4,7 +4,6 @@
 ## APPEND ONLY!!!!!
 ## Templating tokens: see log.sql, plus
 ##   {{.METRICS_ORDER_RUL}} - ordering rule for samples_metrics
-##   {{.AGGR_INTERVAL_NS}}  - metrics aggregation bucket width, nanoseconds
 
 CREATE TABLE IF NOT EXISTS {{.DB}}.samples_logs {{.OnCluster}} (
   type UInt8,
