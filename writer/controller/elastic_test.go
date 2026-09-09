@@ -91,3 +91,30 @@ func TestElasticDocTakesTheIDFromThePath(t *testing.T) {
 		t.Errorf("labels = %v, want _index=idx1 _id=42", got[0])
 	}
 }
+
+// The path supplies the default index for a bulk request, and the action line
+// overrides it, as in Elasticsearch.
+func TestElasticBulkActionLineOverridesThePathIndex(t *testing.T) {
+	router, ts := newElasticRouter(t)
+
+	ingest(t, router, http.MethodPost, "/idx1/_bulk", strings.Join([]string{
+		`{"index":{"_id":"1"}}`,
+		`{"message":"one"}`,
+		`{"create":{"_index":"other","_id":"2"}}`,
+		`{"message":"two"}`,
+	}, "\n"))
+
+	byID := map[string]map[string]string{}
+	for _, labels := range labelSets(t, ts) {
+		byID[labels["_id"]] = labels
+	}
+	if len(byID) != 2 {
+		t.Fatalf("got %d series, want 2: %v", len(byID), byID)
+	}
+	if got := byID["1"]["_index"]; got != "idx1" {
+		t.Errorf("_index of the doc without one = %q, want the path's %q", got, "idx1")
+	}
+	if got := byID["2"]["_index"]; got != "other" {
+		t.Errorf("_index of the doc with its own = %q, want %q", got, "other")
+	}
+}
