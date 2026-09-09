@@ -3,10 +3,10 @@ package controller
 import (
 	"context"
 	"encoding/json"
-	"maps"
 	"net/http"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/metrico/qryn/v5/writer/utils"
 	"github.com/metrico/qryn/v5/writer/utils/unmarshal"
 )
@@ -16,16 +16,18 @@ func TargetDocV2(cfg MiddlewareConfig) func(w http.ResponseWriter, r *http.Reque
 		append(cfg.ExtraMiddleware,
 			withTSAndSampleService,
 			withParserContext(func(w http.ResponseWriter, req *http.Request, parserCtx context.Context) (context.Context, error) {
-				params := getRequestParams(req)
-				// Access individual parameter values
-				target := params["target"]
-				id := params["id"]
+				vars := mux.Vars(req)
+				target := vars["target"]
 				firstSlash := strings.Index(target, "/")
 				if firstSlash != -1 {
 					target = target[:firstSlash]
 				}
 				_ctx := context.WithValue(parserCtx, utils.ContextKeyTarget, target)
-				_ctx = context.WithValue(_ctx, utils.ContextKeyID, id)
+				// An absent {id} must not reach the parser: an empty value there
+				// is still a value, and the document gets an _id="" label.
+				if id := vars["id"]; id != "" {
+					_ctx = context.WithValue(_ctx, utils.ContextKeyID, id)
+				}
 				return _ctx, nil
 			}),
 			withSimpleParser("*", Parser(unmarshal.ElasticDocUnmarshalV2)),
@@ -63,10 +65,7 @@ func TargetBulkV2(cfg MiddlewareConfig) func(w http.ResponseWriter, r *http.Requ
 	return Build(append(cfg.ExtraMiddleware,
 		withTSAndSampleService,
 		withParserContext(func(w http.ResponseWriter, req *http.Request, parserCtx context.Context) (context.Context, error) {
-			params := getRequestParams(req)
-			// Access individual parameter values
-			target := params["target"]
-			_ctx := context.WithValue(parserCtx, utils.ContextKeyTarget, target)
+			_ctx := context.WithValue(parserCtx, utils.ContextKeyTarget, mux.Vars(req)["target"])
 			return _ctx, nil
 		}),
 		withSimpleParser("*", Parser(unmarshal.ElasticBulkUnmarshalV2)),
@@ -133,12 +132,3 @@ func TargetBulkV2(cfg MiddlewareConfig) func(w http.ResponseWriter, r *http.Requ
 //			}
 //			return nil
 //		}))...)
-
-func getRequestParams(r *http.Request) map[string]string {
-	params := make(map[string]string)
-	ctx := r.Context()
-	if ctxParams, ok := ctx.Value(utils.ContextKeyParams).(map[string]string); ok {
-		maps.Copy(params, ctxParams)
-	}
-	return params
-}
