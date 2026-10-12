@@ -5,6 +5,7 @@ import (
 
 	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
 	"github.com/metrico/qryn/v5/reader/model"
+	"github.com/metrico/qryn/v5/reader/traceql/traceql_transpiler/clickhouse_transpiler"
 	"github.com/metrico/qryn/v5/reader/utils/logger"
 	"github.com/metrico/qryn/v5/reader/utils/sql_select"
 )
@@ -27,65 +28,76 @@ func (t TraceQLRequestProcessor) Process(ctx *shared.PlannerContext) (chan []mod
 		return nil, err
 	}
 
+	traces, err := t.read(ctx, strReq)
+	if err != nil {
+		return nil, clickhouse_transpiler.UnresolvedAncestryError(ctx, err)
+	}
+	res := make(chan []model.TraceInfo)
+	go func() {
+		defer close(res)
+		for _, trace := range traces {
+			res <- []model.TraceInfo{trace}
+		}
+	}()
+	return res, nil
+}
+
+// read runs the search query and reads every trace, so that an error raised
+// while ClickHouse streams the result fails the request.
+func (t TraceQLRequestProcessor) read(ctx *shared.PlannerContext, strReq string) ([]model.TraceInfo, error) {
 	rows, err := ctx.CHDb.QueryCtx(ctx.Ctx, strReq)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	res := make(chan []model.TraceInfo)
-
-	go func() {
-		defer rows.Close()
-		defer close(res)
-
-		for rows.Next() {
-			var (
-				traceId           string
-				spanIds           []string
-				durationsNs       []int64
-				timestampsNs      []int64
-				startTimeUnixNano int64
-				traceDurationMs   int64
-				rootServiceName   string
-				rootTraceName     string
-				matched           int64
-			)
-			err = rows.Scan(&traceId, &spanIds, &durationsNs, &timestampsNs,
-				&startTimeUnixNano, &traceDurationMs, &rootServiceName, &rootTraceName, &matched)
-			if err != nil {
-				logger.Error("ERROR[TRP#1]: ", err)
-				return
-			}
-			for i := range durationsNs {
-				if durationsNs[i] == timestampsNs[i] {
-					durationsNs[i] = -1
-				}
-			}
-			trace := model.TraceInfo{
-				TraceID:           traceId,
-				RootServiceName:   rootServiceName,
-				RootTraceName:     rootTraceName,
-				StartTimeUnixNano: fmt.Sprintf("%d", startTimeUnixNano),
-				DurationMs:        traceDurationMs,
-				SpanSet: model.SpanSet{
-					Spans: make([]model.SpanInfo, len(spanIds)),
-				},
-			}
-			for i, spanId := range spanIds {
-				trace.SpanSet.Spans[i].SpanID = spanId
-				trace.SpanSet.Spans[i].DurationNanos = fmt.Sprintf("%d", durationsNs[i])
-				if durationsNs[i] == -1 {
-					trace.SpanSet.Spans[i].DurationNanos = "n/a"
-				}
-				trace.SpanSet.Spans[i].StartTimeUnixNano = fmt.Sprintf("%d", timestampsNs[i])
-				trace.SpanSet.Spans[i].Attributes = make([]model.SpanAttr, 0)
-			}
-			trace.SpanSet.Matched = int(matched)
-			trace.SpanSets = []model.SpanSet{trace.SpanSet}
-			sortSpans(trace.SpanSet.Spans)
-			res <- []model.TraceInfo{trace}
+	var res []model.TraceInfo
+	for rows.Next() {
+		var (
+			traceId           string
+			spanIds           []string
+			durationsNs       []int64
+			timestampsNs      []int64
+			startTimeUnixNano int64
+			traceDurationMs   int64
+			rootServiceName   string
+			rootTraceName     string
+			matched           int64
+		)
+		err = rows.Scan(&traceId, &spanIds, &durationsNs, &timestampsNs,
+			&startTimeUnixNano, &traceDurationMs, &rootServiceName, &rootTraceName, &matched)
+		if err != nil {
+			logger.Error("ERROR[TRP#1]: ", err)
+			return nil, err
 		}
-	}()
-
-	return res, nil
+		for i := range durationsNs {
+			if durationsNs[i] == timestampsNs[i] {
+				durationsNs[i] = -1
+			}
+		}
+		trace := model.TraceInfo{
+			TraceID:           traceId,
+			RootServiceName:   rootServiceName,
+			RootTraceName:     rootTraceName,
+			StartTimeUnixNano: fmt.Sprintf("%d", startTimeUnixNano),
+			DurationMs:        traceDurationMs,
+			SpanSet: model.SpanSet{
+				Spans: make([]model.SpanInfo, len(spanIds)),
+			},
+		}
+		for i, spanId := range spanIds {
+			trace.SpanSet.Spans[i].SpanID = spanId
+			trace.SpanSet.Spans[i].DurationNanos = fmt.Sprintf("%d", durationsNs[i])
+			if durationsNs[i] == -1 {
+				trace.SpanSet.Spans[i].DurationNanos = "n/a"
+			}
+			trace.SpanSet.Spans[i].StartTimeUnixNano = fmt.Sprintf("%d", timestampsNs[i])
+			trace.SpanSet.Spans[i].Attributes = make([]model.SpanAttr, 0)
+		}
+		trace.SpanSet.Matched = int(matched)
+		trace.SpanSets = []model.SpanSet{trace.SpanSet}
+		sortSpans(trace.SpanSet.Spans)
+		res = append(res, trace)
+	}
+	return res, rows.Err()
 }

@@ -76,8 +76,9 @@ func TestParseSpansetOperators(t *testing.T) {
 	a := func() Selector { return sel(term(".a", "=", str(`"b"`))) }
 	c := func() Selector { return sel(term(".c", "=", str(`"d"`))) }
 	for _, op := range []string{
-		"&&", "||", "&>>", "!>>",
+		"&&", "||",
 		">", "<", "~", "!>", "!<", "!~", "&>", "&<", "&~",
+		">>", "<<", "!>>", "!<<", "&>>", "&<<",
 	} {
 		t.Run(op, func(t *testing.T) {
 			want := &TraceQLScript{Head: a(), Op: op, Tail: &TraceQLScript{Head: c()}}
@@ -148,11 +149,6 @@ func TestParseSpansetOperators(t *testing.T) {
 	}
 
 	for _, q := range []string{
-		// Transitive operators are rejected.
-		`{.a = "b"} >> {.c = "d"}`,
-		`{.a = "b"} << {.c = "d"}`,
-		`{.a = "b"} &<< {.c = "d"}`,
-		`{.a = "b"} !<< {.c = "d"}`,
 		// Split spellings.
 		`{.a = "b"} ! > {.c = "d"}`,
 		`{.a = "b"} ! < {.c = "d"}`,
@@ -164,6 +160,11 @@ func TestParseSpansetOperators(t *testing.T) {
 		`{.a = "b"} < < {.c = "d"}`,
 		`{.a = "b"} & >> {.c = "d"}`,
 		`{.a = "b"} ! >> {.c = "d"}`,
+		`{.a = "b"} & << {.c = "d"}`,
+		`{.a = "b"} ! << {.c = "d"}`,
+		`{.a = "b"} > >> {.c = "d"}`,
+		`{.a = "b"} << < {.c = "d"}`,
+		`{.a >> 1}`,
 		// Structural operators inside a selector.
 		`{.a > {.c = "d"}}`,
 		`{.a &> 1}`,

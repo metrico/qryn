@@ -434,7 +434,7 @@ func parseMetricsQuery(query string) (*traceql_ir.Query, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid query: %w", err)
 	}
-	if tq.HasOneHop() {
+	if tq.HasStructural() {
 		return nil, errMetricsStructural
 	}
 	return tq, nil

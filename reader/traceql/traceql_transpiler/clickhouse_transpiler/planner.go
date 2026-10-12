@@ -56,7 +56,7 @@ func (p *planner) plan() (shared.SQLRequestPlanner, error) {
 
 	res = &IndexLimitPlanner{res}
 
-	if p.query.HasOneHop() {
+	if p.query.HasStructural() {
 		res = &StructuralQueryPlanner{Main: res}
 	}
 	return res, nil
@@ -80,18 +80,19 @@ func (p *planner) planEval() (shared.SQLRequestPlanner, error) {
 }
 
 // planSpansetExpr plans a spanset operator tree into span rows.
-// `&>>` and `!>>` evaluate as `&&`.
 func (p *planner) planSpansetExpr(expr traceql_ir.SpansetExpr) (shared.SQLRequestPlanner, error) {
 	return planSpansetTree(p, expr,
 		func(op *simpleExpressionPlanner) (shared.SQLRequestPlanner, error) { return op.planner() },
 		func(op traceql_ir.SpansetOperator, lhs, rhs shared.SQLRequestPlanner) shared.SQLRequestPlanner {
-			if op == traceql_ir.OpOr {
+			switch {
+			case op == traceql_ir.OpAnd:
+				return &TraceAndPlanner{LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
+			case op == traceql_ir.OpOr:
 				return &TraceOrPlanner{LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
-			}
-			if op.IsOneHop() {
+			case op.IsOneHop():
 				return &OneHopPlanner{Op: op, LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
 			}
-			return &TraceAndPlanner{LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
+			return &TransitivePlanner{Op: op, LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
 		})
 }
 

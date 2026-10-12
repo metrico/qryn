@@ -20,6 +20,8 @@ func describePlan(t *testing.T, p shared.SQLRequestPlanner) string {
 		return fmt.Sprintf("or(%s,%s)", describePlan(t, p.LHS), describePlan(t, p.RHS))
 	case *OneHopPlanner:
 		return fmt.Sprintf("%s(%s,%s)", p.Op, describePlan(t, p.LHS), describePlan(t, p.RHS))
+	case *TransitivePlanner:
+		return fmt.Sprintf("%s(%s,%s)", p.Op, describePlan(t, p.LHS), describePlan(t, p.RHS))
 	case *AllSpansPlanner:
 		return "{}"
 	case *AggregatorPlanner:

@@ -7,16 +7,13 @@ import (
 
 	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
 	traceql_ir "github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
+	"github.com/metrico/qryn/v5/reader/traceql/traceqlconfig"
 	dbversion "github.com/metrico/qryn/v5/reader/utils/dbVersion"
 	sql "github.com/metrico/qryn/v5/reader/utils/sql_select"
 )
 
 var errStructuralVersion = errors.New(
 	"TraceQL structural operators need ClickHouse 24.9 or newer")
-
-// reachRounds is the number of pointer-jumping rounds that resolve root
-// reachability: chains up to 2^reachRounds spans deep.
-const reachRounds = 20
 
 // zeroSpanID is the parent of a root span.
 const zeroSpanID = "toFixedString('', 8)"
@@ -156,9 +153,245 @@ func (o *OneHopPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, error)
 		AndWhere(rawCond(cond)), nil
 }
 
+// transitive relates a RHS span to a LHS span among its ancestors
+// (descendant) or its descendants (ancestor).
+type transitive struct {
+	descendant bool
+	result     spanResult
+}
+
+var transitiveOps = map[traceql_ir.SpansetOperator]transitive{
+	traceql_ir.OpDescendant:      {descendant: true, result: resultRHS},
+	traceql_ir.OpAncestor:        {result: resultRHS},
+	traceql_ir.OpNotDescendant:   {descendant: true, result: resultNot},
+	traceql_ir.OpNotAncestor:     {result: resultNot},
+	traceql_ir.OpUnionDescendant: {descendant: true, result: resultUnion},
+	traceql_ir.OpUnionAncestor:   {result: resultUnion},
+}
+
+// TransitivePlanner relates the span rows of LHS and RHS by ancestry. Only
+// spans that reach a root relate.
+type TransitivePlanner struct {
+	Op     traceql_ir.SpansetOperator
+	LHS    shared.SQLRequestPlanner
+	RHS    shared.SQLRequestPlanner
+	Prefix string
+}
+
+func (t *TransitivePlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, error) {
+	rel, ok := transitiveOps[t.Op]
+	if !ok {
+		return nil, fmt.Errorf("%s is not a transitive operator", t.Op)
+	}
+	alias := t.Prefix + "transitive"
+	lhs, rhs, err := processSides(ctx, t.LHS, t.RHS, alias)
+	if err != nil {
+		return nil, err
+	}
+	sides := sql.NewWith(sql.NewSelect().
+		Select(append(spanRowCols(), sql.NewSimpleCol("side", "side"))...).
+		From(sql.NewCol(&union{selects: []sql.ISelect{
+			spanRows(lhs, sql.NewSimpleCol("toUInt8(1)", "side")),
+			spanRows(rhs, sql.NewSimpleCol("toUInt8(2)", "side")),
+		}}, alias+"_operands")),
+		alias+"_sides")
+
+	// up marks spans with an ancestor on the up side, down spans with a
+	// descendant on the down side. A RHS span matches by up for a descendant
+	// relation and by down for an ancestor relation; a LHS span the other way.
+	upSide, downSide, rhsFlag, lhsFlag := 1, 2, "up", "down"
+	if !rel.descendant {
+		upSide, downSide, rhsFlag, lhsFlag = 2, 1, "down", "up"
+	}
+	needUp := rhsFlag == "up" || rel.result == resultUnion
+	needDown := rhsFlag == "down" || rel.result == resultUnion
+	resolved := resolvedAncestry(ctx, alias, lhs, rhs, sides, upSide, downSide, needUp, needDown)
+
+	matched := sql.NewWith(sql.NewSelect().
+		Select(
+			sql.NewSimpleCol("s.trace_id", "trace_id"),
+			sql.NewSimpleCol("s.span_id", "span_id"),
+			sql.NewSimpleCol("s.timestamp_ns", "timestamp_ns"),
+			sql.NewSimpleCol("s.side", "side"),
+			sql.NewSimpleCol(fmt.Sprintf("toUInt8(r.reachable = 1 AND r.%s = 1)", rhsFlag), "rhs_match"),
+			sql.NewSimpleCol(fmt.Sprintf("toUInt8(r.reachable = 1 AND r.%s = 1)", lhsFlag), "lhs_match")).
+		From(sql.NewCol(sql.NewWithRef(sides), "s")).
+		Join(sql.NewJoin("left", sql.NewCol(sql.NewWithRef(resolved), "r"), sameSpan("r.span_id", "s.span_id"))),
+		alias+"_matched")
+
+	var cond string
+	switch rel.result {
+	case resultRHS:
+		cond = "side = 2 AND rhs_match = 1"
+	case resultUnion:
+		cond = "(side = 2 AND rhs_match = 1) OR (side = 1 AND lhs_match = 1)"
+	case resultNot:
+		cond = "side = 2 AND rhs_match = 0"
+	}
+	return sql.NewSelect().
+		With(lhs, rhs).
+		AddWith(sides, resolved, matched).
+		Distinct(true).
+		Select(spanRowCols()...).
+		From(sql.NewWithRef(matched)).
+		AndWhere(rawCond(cond)), nil
+}
+
+// resolvedAncestry is <alias>_resolved: every span of the traces where lhs and
+// rhs both return spans, with whether it reaches a root (reachable), has an
+// ancestor among the upSide spans (up) and has a descendant among the downSide
+// spans (down). Flags that are not needed stay 0.
+func resolvedAncestry(ctx *shared.PlannerContext, alias string, lhs, rhs, sides *sql.With,
+	upSide, downSide int, needUp, needDown bool) *sql.With {
+	tree, flags := traceTree(ctx, alias, lhs, rhs)
+	rounds := ancestryRounds(ctx)
+
+	members := sql.NewWith(sql.NewSelect().
+		Select(
+			sql.NewSimpleCol("trace_id", "trace_id"),
+			sql.NewSimpleCol("span_id", "span_id"),
+			sql.NewSimpleCol(fmt.Sprintf("max(side = %d)", upSide), "up"),
+			sql.NewSimpleCol(fmt.Sprintf("max(side = %d)", downSide), "down")).
+		From(sql.NewWithRef(sides)).
+		GroupBy(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id")),
+		alias+"_members")
+	withs := append(tree, flags, members)
+
+	// The anchor holds every span: anc is its parent (zero for a root or a
+	// missing parent), cut marks a missing parent, up an up-side parent and
+	// down a down-side child.
+	cols := []sql.SQLObject{
+		sql.NewSimpleCol("f.trace_id", "trace_id"),
+		sql.NewSimpleCol("f.span_id", "node"),
+		sql.NewSimpleCol(fmt.Sprintf("if(f.is_root = 1 OR f.dangling = 1, %s, f.parent)", zeroSpanID), "anc"),
+		sql.NewSimpleCol("f.dangling", "cut"),
+		sql.NewSimpleCol("toUInt8(0)", "up"),
+		sql.NewSimpleCol("toUInt8(0)", "down"),
+		sql.NewSimpleCol("toUInt32(0)", "k"),
+	}
+	var joins []*sql.Join
+	if needUp {
+		cols[4] = sql.NewSimpleCol("toUInt8(ifNull(p.up, 0) = 1)", "up")
+		joins = append(joins, sql.NewJoin("left", sql.NewCol(sql.NewWithRef(members), "p"), sameSpan("p.span_id", "f.parent")))
+	}
+	if needDown {
+		children := sql.NewWith(sql.NewSelect().
+			Select(
+				sql.NewSimpleCol("l.trace_id", "trace_id"),
+				sql.NewSimpleCol("l.parent", "span_id"),
+				sql.NewSimpleCol("toUInt8(1)", "down")).
+			From(sql.NewCol(sql.NewWithRef(flags), "l")).
+			Join(sql.NewJoin("inner", sql.NewCol(sql.NewWithRef(members), "m"), sameSpan("m.span_id", "l.span_id"))).
+			AndWhere(rawCond("m.down = 1")).
+			GroupBy(sql.NewRawObject("l.trace_id"), sql.NewRawObject("l.parent")),
+			alias+"_children")
+		withs = append(withs, children)
+		cols[5] = sql.NewSimpleCol("toUInt8(ifNull(c.down, 0) = 1)", "down")
+		joins = append(joins, sql.NewJoin("left", sql.NewCol(sql.NewWithRef(children), "c"), sameSpan("c.span_id", "f.span_id")))
+	}
+	anchor := sql.NewSelect().Select(cols...).From(sql.NewCol(sql.NewWithRef(flags), "f")).Join(joins...)
+
+	// Each round doubles the distance anc points at: up gains the flags of the
+	// ancestors it skips, down marks the ancestors of marked spans (fan-in).
+	jump := sql.NewRecursiveWith(anchor, alias+"_jump", func(self *sql.WithRef) sql.ISelect {
+		down := sql.NewSimpleCol("x.down", "down")
+		step := sql.NewSelect().
+			From(sql.NewCol(self, "x")).
+			Join(sql.NewJoin("left", sql.NewCol(self, "y"), sameSpan("y.node", "x.anc")))
+		if needDown {
+			down = sql.NewSimpleCol("toUInt8(x.down = 1 OR ifNull(d.hit, 0) = 1)", "down")
+			marked := sql.NewSelect().
+				Select(
+					sql.NewSimpleCol("trace_id", "trace_id"),
+					sql.NewSimpleCol("anc", "node"),
+					sql.NewSimpleCol("toUInt8(1)", "hit")).
+				From(self).
+				AndWhere(rawCond(fmt.Sprintf("down = 1 AND anc != %s", zeroSpanID))).
+				GroupBy(sql.NewRawObject("trace_id"), sql.NewRawObject("anc"))
+			step = step.AddJoin(sql.NewJoin("left",
+				sql.NewCol(&union{selects: []sql.ISelect{marked}}, "d"), sameSpan("d.node", "x.node")))
+		}
+		return step.
+			Select(
+				sql.NewSimpleCol("x.trace_id", "trace_id"),
+				sql.NewSimpleCol("x.node", "node"),
+				jumpAnc(),
+				jumpOr("cut", "y"),
+				jumpOr("up", "y"),
+				down,
+				sql.NewSimpleCol("toUInt32(x.k + 1)", "k")).
+			AndWhere(sql.Lt(sql.NewRawObject("x.k"), sql.NewIntVal(int64(rounds))))
+	})
+
+	return sql.NewWith(sql.NewSelect().
+		With(append(withs, jump)...).
+		Select(
+			sql.NewSimpleCol("trace_id", "trace_id"),
+			sql.NewSimpleCol("node", "span_id"),
+			sql.NewSimpleCol("toUInt8(cut = 0)", "reachable"),
+			sql.NewSimpleCol("up", "up"),
+			sql.NewSimpleCol("down", "down")).
+		From(sql.NewWithRef(jump)).
+		AndWhere(unresolvedGuard(rounds), rawCond(fmt.Sprintf("k = %d", rounds))),
+		alias+"_resolved")
+}
+
 // reachableSpans is <alias>_reach: the spans that reach a root, with their
 // parent, in traces where lhs and rhs both return spans.
 func reachableSpans(ctx *shared.PlannerContext, alias string, lhs, rhs *sql.With) *sql.With {
+	tree, flags := traceTree(ctx, alias, lhs, rhs)
+	rounds := ancestryRounds(ctx)
+
+	// jump runs on traces with a root and a missing parent: anc is the 2^k-th
+	// ancestor (zero past the chain's end), cut marks a missing parent on it.
+	jump := sql.NewRecursiveWith(
+		sql.NewSelect().
+			Select(
+				sql.NewSimpleCol("trace_id", "trace_id"),
+				sql.NewSimpleCol("span_id", "node"),
+				sql.NewSimpleCol(fmt.Sprintf("if(is_root = 1 OR dangling = 1, %s, parent)", zeroSpanID), "anc"),
+				sql.NewSimpleCol("dangling", "cut"),
+				sql.NewSimpleCol("toUInt32(0)", "k")).
+			From(sql.NewWithRef(flags)).
+			AndWhere(rawCond("has_root = 1 AND has_dangling = 1")),
+		alias+"_jump",
+		func(self *sql.WithRef) sql.ISelect {
+			return sql.NewSelect().
+				Select(
+					sql.NewSimpleCol("x.trace_id", "trace_id"),
+					sql.NewSimpleCol("x.node", "node"),
+					jumpAnc(),
+					jumpOr("cut", "y"),
+					sql.NewSimpleCol("toUInt32(x.k + 1)", "k")).
+				From(sql.NewCol(self, "x")).
+				Join(sql.NewJoin("left", sql.NewCol(self, "y"), sameSpan("y.node", "x.anc"))).
+				AndWhere(sql.Lt(sql.NewRawObject("x.k"), sql.NewIntVal(int64(rounds))))
+		})
+	// A cut chain reaches no root.
+	unreachable := sql.NewWith(sql.NewSelect().
+		Select(sql.NewSimpleCol("trace_id", "trace_id"), sql.NewSimpleCol("node", "node")).
+		From(sql.NewWithRef(jump)).
+		AndWhere(unresolvedGuard(rounds), rawCond(fmt.Sprintf("k = %d AND cut = 1", rounds))),
+		alias+"_unreachable")
+
+	return sql.NewWith(sql.NewSelect().
+		With(append(tree, flags, jump, unreachable)...).
+		Select(
+			sql.NewSimpleCol("f.trace_id", "trace_id"),
+			sql.NewSimpleCol("f.span_id", "span_id"),
+			sql.NewSimpleCol("f.parent", "parent"),
+			sql.NewSimpleCol("toUInt8(1)", "reachable")).
+		From(sql.NewCol(sql.NewWithRef(flags), "f")).
+		Join(sql.NewJoin("left anti", sql.NewCol(sql.NewWithRef(unreachable), "u"), sameSpan("u.node", "f.span_id"))).
+		AndWhere(rawCond("f.has_root = 1")),
+		alias+"_reach")
+}
+
+// traceTree returns the CTEs that load the span tree of the traces where lhs
+// and rhs both return spans, and <alias>_flags, built on them: every span of
+// those traces with its parent, whether it is a root, whether its parent is
+// missing (dangling), and whether its trace has a root or a dangling span.
+func traceTree(ctx *shared.PlannerContext, alias string, lhs, rhs *sql.With) ([]*sql.With, *sql.With) {
 	traceIds := func(w *sql.With) sql.ISelect {
 		return sql.NewSelect().Select(sql.NewRawObject("trace_id")).From(sql.NewWithRef(w))
 	}
@@ -182,7 +415,6 @@ func reachableSpans(ctx *shared.PlannerContext, alias string, lhs, rhs *sql.With
 			sql.NewSimpleCol("toUInt8(1)", "found")).
 		From(sql.NewWithRef(edges)),
 		alias+"_spans")
-	// links flags roots and spans whose parent is not in the trace.
 	links := sql.NewWith(sql.NewSelect().
 		Select(
 			sql.NewSimpleCol("e.trace_id", "trace_id"),
@@ -204,50 +436,51 @@ func reachableSpans(ctx *shared.PlannerContext, alias string, lhs, rhs *sql.With
 			sql.NewSimpleCol("max(dangling) OVER (PARTITION BY trace_id)", "has_dangling")).
 		From(sql.NewWithRef(links)),
 		alias+"_flags")
+	return []*sql.With{edges, spans, links}, flags
+}
 
-	// jump runs on traces with a root and a missing parent: anc is the 2^k-th
-	// ancestor (zero past the chain's end), cut marks a missing parent on it.
-	jump := sql.NewRecursiveWith(
-		sql.NewSelect().
-			Select(
-				sql.NewSimpleCol("trace_id", "trace_id"),
-				sql.NewSimpleCol("span_id", "node"),
-				sql.NewSimpleCol(fmt.Sprintf("if(is_root = 1 OR dangling = 1, %s, parent)", zeroSpanID), "anc"),
-				sql.NewSimpleCol("dangling", "cut"),
-				sql.NewSimpleCol("toUInt32(0)", "k")).
-			From(sql.NewWithRef(flags)).
-			AndWhere(rawCond("has_root = 1 AND has_dangling = 1")),
-		alias+"_jump",
-		func(self *sql.WithRef) sql.ISelect {
-			return sql.NewSelect().
-				Select(
-					sql.NewSimpleCol("x.trace_id", "trace_id"),
-					sql.NewSimpleCol("x.node", "node"),
-					sql.NewSimpleCol(fmt.Sprintf("if(x.anc = %[1]s, %[1]s, ifNull(y.anc, %[1]s))", zeroSpanID), "anc"),
-					sql.NewSimpleCol(fmt.Sprintf("toUInt8(x.cut = 1 OR (x.anc != %s AND ifNull(y.cut, 0) = 1))", zeroSpanID), "cut"),
-					sql.NewSimpleCol("toUInt32(x.k + 1)", "k")).
-				From(sql.NewCol(self, "x")).
-				Join(sql.NewJoin("left", sql.NewCol(self, "y"), sameSpan("y.node", "x.anc"))).
-				AndWhere(sql.Lt(sql.NewRawObject("x.k"), sql.NewIntVal(reachRounds)))
-		})
-	// A cut chain, or one unresolved after the last round, reaches no root.
-	unreachable := sql.NewWith(sql.NewSelect().
-		Select(sql.NewSimpleCol("trace_id", "trace_id"), sql.NewSimpleCol("node", "node")).
-		From(sql.NewWithRef(jump)).
-		AndWhere(rawCond(fmt.Sprintf("k = %d AND (cut = 1 OR anc != %s)", reachRounds, zeroSpanID))),
-		alias+"_unreachable")
+// jumpAnc is the next round's anc of jump row x joined to y, the row of
+// x.anc: the ancestor twice as far, zero once past the chain's end.
+func jumpAnc() sql.SQLObject {
+	return sql.NewSimpleCol(fmt.Sprintf("if(x.anc = %[1]s, %[1]s, ifNull(y.anc, %[1]s))", zeroSpanID), "anc")
+}
 
-	return sql.NewWith(sql.NewSelect().
-		With(edges, spans, links, flags, jump, unreachable).
-		Select(
-			sql.NewSimpleCol("f.trace_id", "trace_id"),
-			sql.NewSimpleCol("f.span_id", "span_id"),
-			sql.NewSimpleCol("f.parent", "parent"),
-			sql.NewSimpleCol("toUInt8(1)", "reachable")).
-		From(sql.NewCol(sql.NewWithRef(flags), "f")).
-		Join(sql.NewJoin("left anti", sql.NewCol(sql.NewWithRef(unreachable), "u"), sameSpan("u.node", "f.span_id"))).
-		AndWhere(rawCond("f.has_root = 1")),
-		alias+"_reach")
+// jumpOr is the next round's flag col: set on x, or on its ancestor y.
+func jumpOr(col, y string) sql.SQLObject {
+	return sql.NewSimpleCol(fmt.Sprintf("toUInt8(x.%[1]s = 1 OR (x.anc != %[2]s AND ifNull(%[3]s.%[1]s, 0) = 1))",
+		col, zeroSpanID, y), col)
+}
+
+// ancestryRounds is the number of pointer-jumping rounds: chains up to 2^R
+// spans deep resolve.
+func ancestryRounds(ctx *shared.PlannerContext) int {
+	if ctx.AncestryRounds > 0 {
+		return ctx.AncestryRounds
+	}
+	return traceqlconfig.DefaultAncestryRounds
+}
+
+func unresolvedAncestryMessage(rounds int) string {
+	return fmt.Sprintf("TraceQL structural query: a trace is deeper than the round limit of %d rounds "+
+		"(%d spans) or its parent links form a cycle; raise %s",
+		rounds, 1<<rounds, traceqlconfig.AncestryRoundsEnv)
+}
+
+// unresolvedGuard fails the query on a jump row whose ancestor pointer is
+// still set after the last round.
+func unresolvedGuard(rounds int) sql.SQLCondition {
+	return rawCond(fmt.Sprintf("throwIf(k = %d AND anc != %s, '%s') = 0",
+		rounds, zeroSpanID, unresolvedAncestryMessage(rounds)))
+}
+
+// UnresolvedAncestryError returns the unresolved-ancestry error that err, a
+// ClickHouse error from a query planned with ctx, carries, or err itself.
+func UnresolvedAncestryError(ctx *shared.PlannerContext, err error) error {
+	msg := unresolvedAncestryMessage(ancestryRounds(ctx))
+	if err != nil && strings.Contains(err.Error(), msg) {
+		return errors.New(msg)
+	}
+	return err
 }
 
 // sameSpan joins two aliased rows on trace id and the given span id columns.

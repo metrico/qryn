@@ -80,8 +80,12 @@ func TestLowerSpansetOperators(t *testing.T) {
 	}{
 		{`{.a = "a"} && {.b = "b"}`, op(OpAnd, a(), b())},
 		{`{.a = "a"} || {.b = "b"}`, op(OpOr, a(), b())},
-		{`{.a = "a"} &>> {.b = "b"}`, op("&>>", a(), b())},
-		{`{.a = "a"} !>> {.b = "b"}`, op("!>>", a(), b())},
+		{`{.a = "a"} >> {.b = "b"}`, op(OpDescendant, a(), b())},
+		{`{.a = "a"} << {.b = "b"}`, op(OpAncestor, a(), b())},
+		{`{.a = "a"} !>> {.b = "b"}`, op(OpNotDescendant, a(), b())},
+		{`{.a = "a"} !<< {.b = "b"}`, op(OpNotAncestor, a(), b())},
+		{`{.a = "a"} &>> {.b = "b"}`, op(OpUnionDescendant, a(), b())},
+		{`{.a = "a"} &<< {.b = "b"}`, op(OpUnionAncestor, a(), b())},
 		{`{.a = "a"} ~ {.b = "b"}`, op(OpSibling, a(), b())},
 		{`{.a = "a"} > {.b = "b"}`, op(OpChild, a(), b())},
 		{`{.a = "a"} < {.b = "b"}`, op(OpParent, a(), b())},
@@ -100,9 +104,13 @@ func TestLowerSpansetOperators(t *testing.T) {
 		{`{.a = "a"} ~ {.b = "b"} && {.c = "c"} || {.d = "d"}`,
 			op(OpOr, op(OpAnd, op("~", a(), b()), c()), d())},
 		{`{.a = "a"} || {.b = "b"} &>> {.c = "c"} || {.d = "d"}`,
-			op(OpOr, op(OpOr, a(), op("&>>", b(), c())), d())},
+			op(OpOr, op(OpOr, a(), op(OpUnionDescendant, b(), c())), d())},
 		{`{.a = "a"} && {.b = "b"} &>> {.c = "c"} !>> {.d = "d"}`,
-			op(OpAnd, a(), op("!>>", op("&>>", b(), c()), d()))},
+			op(OpAnd, a(), op(OpNotDescendant, op(OpUnionDescendant, b(), c()), d()))},
+		{`{.a = "a"} >> {.b = "b"} < {.c = "c"} << {.d = "d"}`,
+			op(OpAncestor, op(OpParent, op(OpDescendant, a(), b()), c()), d())},
+		{`{.a = "a"} << {.b = "b"} || {.c = "c"} >> {.d = "d"}`,
+			op(OpOr, op(OpAncestor, a(), b()), op(OpDescendant, c(), d()))},
 		{`{.a = "a"} > {.b = "b"} > {.c = "c"}`, op(OpChild, op(OpChild, a(), b()), c())},
 		{`{.a = "a"} > ({.b = "b"} > {.c = "c"})`, op(OpChild, a(), &Group{Expr: op(OpChild, b(), c())})},
 		{`{.a = "a"} !~ {.b = "b"} &< {.c = "c"} &~ {.d = "d"}`,
@@ -143,7 +151,7 @@ func TestLowerMetrics(t *testing.T) {
 		{`{.a = "a"} | compare({})`, &Query{Pipeline: pipeline(a()),
 			Metrics: &MetricsFn{Fn: "compare", Compare: &CompareArgs{}}}},
 		{`({.a = "a"} &>> {.b = "b"}) | rate()`, &Query{
-			Pipeline: pipeline(&Group{Expr: op("&>>", a(), b())}), Metrics: &MetricsFn{Fn: "rate"}}},
+			Pipeline: pipeline(&Group{Expr: op(OpUnionDescendant, a(), b())}), Metrics: &MetricsFn{Fn: "rate"}}},
 		{`({.a = "a"} | rate())`, &Query{
 			Pipeline: pipeline(&Group{Expr: a()}), Metrics: &MetricsFn{Fn: "rate"}}},
 		// A metrics function after a later chain operand is not the query's.
@@ -178,4 +186,18 @@ func TestValueUnquote(t *testing.T) {
 func TestParseError(t *testing.T) {
 	_, err := Parse(`{`)
 	require.Error(t, err)
+}
+
+func TestHasStructural(t *testing.T) {
+	for query, want := range map[string]bool{
+		`{.a = "a"}`:                                false,
+		`{.a = "a"} && {.b = "b"} || {.c = "c"}`:    false,
+		`{.a = "a"} > {.b = "b"}`:                   true,
+		`{.a = "a"} !~ {.b = "b"}`:                  true,
+		`{.a = "a"} >> {.b = "b"}`:                  true,
+		`{.a = "a"} && ({.b = "b"} &<< {.c = "c"})`: true,
+		`({.a = "a"} !<< {.b = "b"}) | rate()`:      true,
+	} {
+		require.Equal(t, want, mustParse(t, query).HasStructural(), query)
+	}
 }

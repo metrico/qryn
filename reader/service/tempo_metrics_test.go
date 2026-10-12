@@ -19,7 +19,7 @@ func TestMetricsExtractAllFilters(t *testing.T) {
 			[]string{".a", "duration"}, []string{"=", ">"}, []string{"x", "1ms"}},
 		{`{ false } | rate()`, []string{"__false__"}, []string{"="}, []string{"0"}},
 		{`{ true && .a } | rate()`, nil, nil, nil},
-		{`({.a = 1} || {.b = 2} &>> {status = error}) | rate()`,
+		{`({.a = 1} || {.b = 2} && {status = error}) | rate()`,
 			[]string{".a", ".b", "status"}, []string{"=", "=", "="}, []string{"1", "2", "error"}},
 	} {
 		t.Run(c.query, func(t *testing.T) {
@@ -47,10 +47,16 @@ func TestMetricsCompareRequestFilters(t *testing.T) {
 }
 
 func TestMetricsRejectsStructuralOperators(t *testing.T) {
-	for _, q := range []string{`({.a = 1} > {.b = 2}) | rate()`, `({.a = 1} || ({.b = 2} !~ {.c = 3})) | rate()`} {
+	for _, q := range []string{
+		`({.a = 1} > {.b = 2}) | rate()`,
+		`({.a = 1} || ({.b = 2} !~ {.c = 3})) | rate()`,
+		`({.a = 1} >> {.b = 2}) | rate()`,
+		`({.a = 1} &>> {.b = 2}) | rate()`,
+		`({.a = 1} && ({.b = 2} !<< {.c = 3})) | count_over_time()`,
+	} {
 		_, err := parseMetricsQuery(q)
 		require.Equal(t, errMetricsStructural, err, q)
 	}
-	_, err := parseMetricsQuery(`({.a = 1} &>> {.b = 2}) | rate()`)
+	_, err := parseMetricsQuery(`({.a = 1} || {.b = 2}) | rate()`)
 	require.NoError(t, err)
 }

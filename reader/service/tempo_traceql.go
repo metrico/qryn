@@ -8,6 +8,7 @@ import (
 	"github.com/metrico/qryn/v5/reader/model"
 	traceql_ir "github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
 	traceql_transpiler "github.com/metrico/qryn/v5/reader/traceql/traceql_transpiler"
+	"github.com/metrico/qryn/v5/reader/traceql/traceqlconfig"
 	"github.com/metrico/qryn/v5/reader/utils/dbVersion"
 	"github.com/metrico/qryn/v5/reader/utils/tables"
 )
@@ -68,6 +69,8 @@ func traceQLPlannerContext(ctx context.Context, conn *model.DataDatabasesMap,
 		Ctx:         ctx,
 		CHDb:        conn.Session,
 		VersionInfo: versionInfo,
+
+		AncestryRounds: traceqlconfig.AncestryRounds(),
 	}
 	tables.PopulateTableNames(planCtx, conn)
 	return planCtx, nil

@@ -24,15 +24,25 @@ var plainSearchQueries = []string{
 	`({.a = 1} || {.b = 2}) && {.c = 3}`,
 	`{.a = 1} | count() > 1 && {.b = 2}`,
 	`{nestedSetParent < 0 && .a = 1}`,
-	`{.a = 1} &>> {.b = 2}`,
 }
 
-// structuralQueries hold operators evaluated on the span tree.
-var structuralQueries = []string{
+// oneHopQueries relate spans to their parent or siblings.
+var oneHopQueries = []string{
 	`{.a = 1} > {.b = 2}`,
 	`{.a = 1} !~ {}`,
 	`{} &< {.b = 2} || {.c = 3}`,
 }
+
+// transitiveQueries relate spans to their ancestors or descendants.
+var transitiveQueries = []string{
+	`{.a = 1} >> {.b = 2}`,
+	`{.a = 1} !<< {}`,
+	`{} &>> {.b = 2} && {.c = 3}`,
+	`{.a = 1} &<< ({.b = 2} !>> {.c = 3})`,
+}
+
+// structuralQueries hold operators evaluated on the span tree.
+var structuralQueries = append(append([]string{}, oneHopQueries...), transitiveQueries...)
 
 var searchQueries = append(append([]string{}, plainSearchQueries...), structuralQueries...)
 

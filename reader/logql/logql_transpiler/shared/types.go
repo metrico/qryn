@@ -32,6 +32,9 @@ type PlannerContext struct {
 	Offset    time.Duration
 	// SpansPerSpanSet caps the spans listed per TraceQL search spanset; 0 means the default.
 	SpansPerSpanSet int64
+	// AncestryRounds is the pointer-jumping rounds of TraceQL structural
+	// operators; 0 means the default.
+	AncestryRounds int
 
 	TimeSeriesGinTableName     string
 	TimeSeriesGinDistTableName string

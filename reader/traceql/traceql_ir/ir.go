@@ -61,8 +61,12 @@ const (
 	OpUnionParent  SpansetOperator = "&<"
 	OpUnionSibling SpansetOperator = "&~"
 
-	OpUnionDescendant SpansetOperator = "&>>"
+	OpDescendant      SpansetOperator = ">>"
+	OpAncestor        SpansetOperator = "<<"
 	OpNotDescendant   SpansetOperator = "!>>"
+	OpNotAncestor     SpansetOperator = "!<<"
+	OpUnionDescendant SpansetOperator = "&>>"
+	OpUnionAncestor   SpansetOperator = "&<<"
 )
 
 // IsOneHop reports whether o relates a span to its parent or siblings.
@@ -75,22 +79,36 @@ func (o SpansetOperator) IsOneHop() bool {
 	return false
 }
 
-// HasOneHop reports whether any spanset expression of q uses a one-hop operator.
-func (q *Query) HasOneHop() bool {
+// IsTransitive reports whether o relates a span to its ancestors or descendants.
+func (o SpansetOperator) IsTransitive() bool {
+	switch o {
+	case OpDescendant, OpAncestor, OpNotDescendant, OpNotAncestor, OpUnionDescendant, OpUnionAncestor:
+		return true
+	}
+	return false
+}
+
+// IsStructural reports whether o relates spans through the span tree.
+func (o SpansetOperator) IsStructural() bool {
+	return o.IsOneHop() || o.IsTransitive()
+}
+
+// HasStructural reports whether any spanset expression of q uses a structural operator.
+func (q *Query) HasStructural() bool {
 	for _, element := range q.Pipeline.Elements {
-		if expr, ok := element.(SpansetExpr); ok && hasOneHop(expr) {
+		if expr, ok := element.(SpansetExpr); ok && hasStructural(expr) {
 			return true
 		}
 	}
 	return false
 }
 
-func hasOneHop(expr SpansetExpr) bool {
+func hasStructural(expr SpansetExpr) bool {
 	switch expr := expr.(type) {
 	case *Group:
-		return hasOneHop(expr.Expr)
+		return hasStructural(expr.Expr)
 	case *SpansetOp:
-		return expr.Op.IsOneHop() || hasOneHop(expr.LHS) || hasOneHop(expr.RHS)
+		return expr.Op.IsStructural() || hasStructural(expr.LHS) || hasStructural(expr.RHS)
 	}
 	return false
 }
