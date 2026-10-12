@@ -30,7 +30,7 @@ func (a *AttrConditionPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect,
 	}
 	a.alias = "bsCond"
 
-	err = a.maybeCreateWhere(ctx)
+	err = a.createWhere(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -61,10 +61,9 @@ func (a *AttrConditionPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect,
 	return res, nil
 }
 
-func (a *AttrConditionPlanner) maybeCreateWhere(ctx *shared.PlannerContext) error {
-	if len(a.sqlConds) > 0 {
-		return nil
-	}
+// createWhere builds the terms on ctx; their traces-table conditions go to ctx.
+func (a *AttrConditionPlanner) createWhere(ctx *shared.PlannerContext) error {
+	a.sqlConds, a.where = nil, nil
 	for _, t := range a.Terms {
 		sqlTerm, err := a.getTerm(t, ctx)
 		if err != nil {

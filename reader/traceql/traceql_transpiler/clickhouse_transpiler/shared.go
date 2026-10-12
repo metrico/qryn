@@ -63,6 +63,14 @@ func tracesTable(ctx *shared.PlannerContext) string {
 	return ctx.TracesTable
 }
 
+// attrsTable is the attribute index search reads: Distributed on a cluster.
+func attrsTable(ctx *shared.PlannerContext) string {
+	if ctx.IsCluster {
+		return ctx.TracesAttrsDistTable
+	}
+	return ctx.TracesAttrsTable
+}
+
 // randomFilter keeps the traces of the current complexity portion and the
 // traces already returned, or is nil outside portioned evaluation.
 func randomFilter(ctx *shared.PlannerContext) sql.SQLCondition {

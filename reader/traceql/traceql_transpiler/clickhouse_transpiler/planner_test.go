@@ -120,19 +120,6 @@ func TestComplexPlanner(t *testing.T) {
 	fmt.Println(res)
 }
 
-func TestAutocompleteRejectsChains(t *testing.T) {
-	q, err := traceql_ir.Parse(`{.a = 1} && {.b = 2}`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := PlanTagsV2(q); err != errComplexAutocomp {
-		t.Errorf("PlanTagsV2 error = %v, want %v", err, errComplexAutocomp)
-	}
-	if _, err := PlanValuesV2(q, "x"); err != errComplexAutocomp {
-		t.Errorf("PlanValuesV2 error = %v, want %v", err, errComplexAutocomp)
-	}
-}
-
 func TestPlanRejectsPipelineStages(t *testing.T) {
 	sel := &traceql_ir.Selector{Filter: &traceql_ir.Comparison{
 		Attr: ".a", Op: "=", Value: traceql_ir.Value{Kind: traceql_ir.ValueNumber, Text: "1"}}}

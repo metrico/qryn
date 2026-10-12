@@ -19,49 +19,6 @@ type simpleExpressionPlanner struct {
 	terms map[string]int
 }
 
-func (p *simpleExpressionPlanner) tagsV2Planner() (shared.SQLRequestPlanner, error) {
-	err := p.check()
-	if err != nil {
-		return nil, err
-	}
-
-	p.analyze()
-
-	var res shared.SQLRequestPlanner = &AttrConditionPlanner{
-		Main:           NewInitIndexPlanner(false),
-		Terms:          p.termIdx,
-		Conds:          p.cond,
-		AggregatedAttr: p.aggAttr,
-	}
-	res = &SelectTagsPlanner{Main: res}
-	return res, nil
-}
-
-func (p *simpleExpressionPlanner) valuesV2Planner(key string) (shared.SQLRequestPlanner, error) {
-	err := p.check()
-	if err != nil {
-		return nil, err
-	}
-
-	p.analyze()
-
-	if p.cond == nil {
-		return &AllValuesRequestPlanner{Key: key}, nil
-	}
-
-	var res shared.SQLRequestPlanner = &AttrConditionPlanner{
-		Main:           NewInitIndexPlanner(false),
-		Terms:          p.termIdx,
-		Conds:          p.cond,
-		AggregatedAttr: p.aggAttr,
-	}
-	res = &SelectValuesRequestPlanner{
-		Main: res,
-		Key:  key,
-	}
-	return res, nil
-}
-
 func (p *simpleExpressionPlanner) planner() (shared.SQLRequestPlanner, error) {
 	err := p.check()
 	if err != nil {

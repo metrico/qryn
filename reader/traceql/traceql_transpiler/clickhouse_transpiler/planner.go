@@ -16,18 +16,55 @@ func PlanEval(query *traceql_ir.Query) (shared.SQLRequestPlanner, error) {
 	return (&planner{query: query}).planEval()
 }
 
+// PlanTagsV2 plans the attribute keys of the spans a search for query
+// returns, or of every span in range when AllSpans(query).
 func PlanTagsV2(query *traceql_ir.Query) (shared.SQLRequestPlanner, error) {
-	return (&planner{query: query}).planTagsV2()
+	if AllSpans(query) {
+		return &AllTagsRequestPlanner{}, nil
+	}
+	p := &planner{query: query}
+	result, err := p.autocompleteResult()
+	if err != nil {
+		return nil, err
+	}
+	return p.structuralGate(&SelectTagsPlanner{Result: result, Prefix: p.getPrefix()}), nil
 }
 
+// PlanValuesV2 plans the values of attribute key of the spans a search for
+// query returns, or of every span in range when AllSpans(query).
 func PlanValuesV2(query *traceql_ir.Query, key string) (shared.SQLRequestPlanner, error) {
-	return (&planner{query: query}).planValuesV2(key)
+	if AllSpans(query) {
+		return &AllValuesRequestPlanner{Key: key}, nil
+	}
+	p := &planner{query: query}
+	result, err := p.autocompleteResult()
+	if err != nil {
+		return nil, err
+	}
+	return p.structuralGate(&SelectValuesRequestPlanner{Result: result, Prefix: p.getPrefix(), Key: key}), nil
 }
 
-var (
-	errEmptyAggregated = errors.New("requests like `{} | ....` are not supported")
-	errComplexAutocomp = errors.New("complex requests `{} || {} ...` are not supported")
-)
+// AllSpans reports whether query selects every span: no query, or a lone `{}`.
+func AllSpans(query *traceql_ir.Query) bool {
+	if query == nil {
+		return true
+	}
+	expr, err := (&planner{query: query}).spansetExpr()
+	if err != nil {
+		return false
+	}
+	for {
+		group, ok := expr.(*traceql_ir.Group)
+		if !ok {
+			break
+		}
+		expr = group.Expr
+	}
+	selector, ok := expr.(*traceql_ir.Selector)
+	return ok && selector.Filter == nil && selector.Aggregator == nil
+}
+
+var errEmptyAggregated = errors.New("requests like `{} | ....` are not supported")
 
 type planner struct {
 	query  *traceql_ir.Query
@@ -56,10 +93,7 @@ func (p *planner) plan() (shared.SQLRequestPlanner, error) {
 
 	res = &IndexLimitPlanner{res}
 
-	if p.query.HasStructural() {
-		res = &StructuralQueryPlanner{Main: res}
-	}
-	return res, nil
+	return p.structuralGate(res), nil
 }
 
 func (p *planner) planEval() (shared.SQLRequestPlanner, error) {
@@ -150,32 +184,14 @@ func (p *planner) operand(selector *traceql_ir.Selector) (*simpleExpressionPlann
 	return res, nil
 }
 
-func (p *planner) planTagsV2() (shared.SQLRequestPlanner, error) {
-	ep, err := p.autocompletePlanner()
-	if err != nil {
-		return nil, err
-	}
-	return ep.tagsV2Planner()
-}
-
-func (p *planner) planValuesV2(key string) (shared.SQLRequestPlanner, error) {
-	ep, err := p.autocompletePlanner()
-	if err != nil {
-		return nil, err
-	}
-	return ep.valuesV2Planner(key)
-}
-
-// autocompletePlanner plans a lone operand; chains are not supported.
-func (p *planner) autocompletePlanner() (*simpleExpressionPlanner, error) {
+// autocompleteResult plans the result spans of the query's spanset
+// expression for autocomplete.
+func (p *planner) autocompleteResult() (shared.SQLRequestPlanner, error) {
 	expr, err := p.spansetExpr()
 	if err != nil {
 		return nil, err
 	}
-	if _, ok := expr.(*traceql_ir.SpansetOp); ok {
-		return nil, errComplexAutocomp
-	}
-	return &simpleExpressionPlanner{selector: operandSelector(expr)}, nil
+	return p.planSpansetExpr(expr)
 }
 
 // spansetExpr returns the query's only pipeline element.
@@ -207,6 +223,15 @@ func (p *planner) searchExpr() (traceql_ir.SpansetExpr, error) {
 		}
 		expr = group.Expr
 	}
+}
+
+// structuralGate wraps res in StructuralQueryPlanner when the query has
+// structural operators.
+func (p *planner) structuralGate(res shared.SQLRequestPlanner) shared.SQLRequestPlanner {
+	if p.query.HasStructural() {
+		return &StructuralQueryPlanner{Main: res}
+	}
+	return res
 }
 
 func (p *planner) getPrefix() string {

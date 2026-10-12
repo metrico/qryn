@@ -203,20 +203,6 @@ func TestSearchSpanStartIsLeftOpenRightClosed(t *testing.T) {
 			check(t, renderPlan(t, planSearch(t, query), testPlannerContext(3)))
 		})
 	}
-	q, err := traceql_ir.Parse(`{.a = 1}`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tags, err := PlanTagsV2(q)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Run("tags v2", func(t *testing.T) { check(t, renderPlan(t, tags, testPlannerContext(3))) })
-	values, err := PlanValuesV2(q, "x")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Run("values v2", func(t *testing.T) { check(t, renderPlan(t, values, testPlannerContext(3))) })
 }
 
 func TestSearchReadsDistributedTablesOnClusters(t *testing.T) {

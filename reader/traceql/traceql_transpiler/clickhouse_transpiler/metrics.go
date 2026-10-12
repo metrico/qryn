@@ -28,7 +28,7 @@ func PlanMetrics(query *traceql_ir.Query, build MetricsBuild) (shared.SQLRequest
 	if err != nil {
 		return nil, err
 	}
-	return p.metricsQuery(&metricsPlanner{Spans: spans, Build: build}), nil
+	return p.structuralGate(&metricsPlanner{Spans: spans, Build: build}), nil
 }
 
 // PlanCompare plans compare(): the query's result spans over
@@ -53,7 +53,7 @@ func PlanCompare(query *traceql_ir.Query, selection traceql_ir.FilterExpr,
 		}
 		res.Selection = &metricsSpansPlanner{Result: filter, Prefix: p.getPrefix()}
 	}
-	return p.metricsQuery(res), nil
+	return p.structuralGate(res), nil
 }
 
 // metricsSpans plans the metrics spans of the query's spanset expression.
@@ -69,15 +69,6 @@ func (p *planner) metricsSpans() (*metricsSpansPlanner, error) {
 	return &metricsSpansPlanner{Result: result, Prefix: p.getPrefix()}, nil
 }
 
-// metricsQuery wraps res in StructuralQueryPlanner when the query has
-// structural operators.
-func (p *planner) metricsQuery(res shared.SQLRequestPlanner) shared.SQLRequestPlanner {
-	if p.query.HasStructural() {
-		return &StructuralQueryPlanner{Main: res}
-	}
-	return res
-}
-
 // metricsSpansPlanner reads the traces table for the result spans of Result,
 // an evaluated spanset expression: one row per span, as MetricsBuild reads.
 type metricsSpansPlanner struct {
@@ -86,22 +77,10 @@ type metricsSpansPlanner struct {
 }
 
 func (m *metricsSpansPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, error) {
-	// Result's selectors set their traces-table conditions on a context of its own.
-	resultCtx := *ctx
-	resultCtx.TracesIntrinsicWhere = nil
-	ctx = &resultCtx
-	main, err := m.Result.Process(ctx)
+	withResult, withIds, err := resultSpanIds(ctx, m.Result, m.Prefix)
 	if err != nil {
 		return nil, err
 	}
-	withResult := sql.NewWith(main, m.Prefix+"result_spans")
-	ids := sql.NewSelect().
-		Select(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id")).
-		From(sql.NewWithRef(withResult))
-	if cond := intrinsicFilter(ctx, withResult); cond != nil {
-		ids.AndWhere(cond)
-	}
-	withIds := sql.NewWith(ids, m.Prefix+"result_span_ids")
 	tsFrom, tsTo := timerange.SpanStart("traces.timestamp_ns", ctx.From.UnixNano(), ctx.To.UnixNano())
 	return sql.NewSelect().
 		With(withResult, withIds).
@@ -120,6 +99,28 @@ func (m *metricsSpansPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, 
 				sql.NewSelect().Select(sql.NewRawObject("trace_id")).From(sql.NewWithRef(withIds))),
 			inSubquery(ctx, sql.NewRawObject("(traces.trace_id, traces.span_id)"), sql.NewWithRef(withIds))).
 		GroupBy(sql.NewRawObject("traces.trace_id"), sql.NewRawObject("traces.span_id")), nil
+}
+
+// resultSpanIds evaluates result, a spanset expression, and returns its span
+// rows and the (trace_id, span_id) pairs of those that pass the traces-table
+// conditions its selectors set.
+func resultSpanIds(ctx *shared.PlannerContext, result shared.SQLRequestPlanner, prefix string) (
+	withResult *sql.With, withIds *sql.With, err error) {
+	// The selectors set their traces-table conditions on a context of their own.
+	resultCtx := *ctx
+	resultCtx.TracesIntrinsicWhere = nil
+	main, err := result.Process(&resultCtx)
+	if err != nil {
+		return nil, nil, err
+	}
+	withResult = sql.NewWith(main, prefix+"result_spans")
+	ids := sql.NewSelect().
+		Select(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id")).
+		From(sql.NewWithRef(withResult))
+	if cond := intrinsicFilter(&resultCtx, withResult); cond != nil {
+		ids.AndWhere(cond)
+	}
+	return withResult, sql.NewWith(ids, prefix+"result_span_ids"), nil
 }
 
 // metricsPlanner builds a metrics query over the metrics spans.

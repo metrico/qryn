@@ -260,7 +260,7 @@ func (t *TempoService) ValuesV2(ctx context.Context, key string, query string, f
 		return nil, err
 	}
 
-	planner, err := traceql_transpiler.PlanValuesV2(oQuery, key)
+	planner, err := traceql_transpiler.PlanValuesV2(oQuery, unscopedTag(key))
 	if err != nil {
 		return nil, err
 	}
@@ -297,15 +297,20 @@ func (t *TempoService) GetValuesRequest(ctx context.Context, tag string, conn *m
 	return oRequest
 }
 
+// unscopedTag is the attribute key of a tag: span and resource attributes
+// share one namespace.
+func unscopedTag(tag string) string {
+	tag = strings.TrimPrefix(tag, "span.")
+	tag = strings.TrimPrefix(tag, ".")
+	return strings.TrimPrefix(tag, "resource.")
+}
+
 func (t *TempoService) Values(ctx context.Context, tag string) (chan string, error) {
 	conn, err := t.Session.GetDB(ctx)
 	if err != nil {
 		return nil, err
 	}
-	tag = strings.TrimPrefix(tag, "span.")
-	tag = strings.TrimPrefix(tag, ".")
-	tag = strings.TrimPrefix(tag, "resource.")
-	oRequest := t.GetValuesRequest(ctx, tag, conn)
+	oRequest := t.GetValuesRequest(ctx, unscopedTag(tag), conn)
 	query, err := oRequest.String(sqlselect.DefaultCtx())
 	if err != nil {
 		return nil, err
