@@ -7,6 +7,7 @@ import (
 	"time"
 
 	model "github.com/metrico/qryn/v5/reader/model"
+	"github.com/metrico/qryn/v5/reader/traceql/timerange"
 	sql "github.com/metrico/qryn/v5/reader/utils/sql_select"
 )
 
@@ -66,10 +67,7 @@ func BuildMetricsRangeQuery(
 	// Build the main query on tempo_traces
 	query := sql.NewSelect().
 		From(sql.NewCol(sql.NewRawObject(tracesTable), "main")).
-		AndWhere(
-			sql.Ge(sql.NewRawObject("main.timestamp_ns"), sql.NewIntVal(fromNS)),
-			sql.Lt(sql.NewRawObject("main.timestamp_ns"), sql.NewIntVal(toNS)),
-		)
+		AndWhere(timerange.SpanStart("main.timestamp_ns", fromNS, toNS))
 
 	// Add intrinsic filters (e.g., nestedSetParent<0 → root spans) directly on tempo_traces
 	for _, cond := range buildIntrinsicConditions(filterKeys, filterOps, filterVals) {
@@ -168,10 +166,7 @@ func BuildMetricsInstantQuery(
 
 	query := sql.NewSelect().
 		From(sql.NewCol(sql.NewRawObject(tracesTable), "main")).
-		AndWhere(
-			sql.Ge(sql.NewRawObject("main.timestamp_ns"), sql.NewIntVal(fromNS)),
-			sql.Lt(sql.NewRawObject("main.timestamp_ns"), sql.NewIntVal(toNS)),
-		)
+		AndWhere(timerange.SpanStart("main.timestamp_ns", fromNS, toNS))
 
 	// Add intrinsic filters
 	for _, cond := range buildIntrinsicConditions(filterKeys, filterOps, filterVals) {
@@ -521,10 +516,7 @@ func BuildHistogramRangeQuery(req *HistogramRequest) (sql.ISelect, error) {
 			sql.NewCol(sql.NewRawObject("count(*)"), "cnt"),
 		).
 		From(sql.NewCol(sql.NewRawObject(req.TracesTable), "main")).
-		AndWhere(
-			sql.Ge(sql.NewRawObject("main.timestamp_ns"), sql.NewIntVal(req.FromNS)),
-			sql.Lt(sql.NewRawObject("main.timestamp_ns"), sql.NewIntVal(req.ToNS)),
-		).
+		AndWhere(timerange.SpanStart("main.timestamp_ns", req.FromNS, req.ToNS)).
 		GroupBy(sql.NewRawObject("ts"), sql.NewRawObject("bucket_ns")).
 		OrderBy(
 			sql.NewOrderBy(sql.NewRawObject("ts"), sql.ORDER_BY_DIRECTION_ASC),
@@ -580,10 +572,7 @@ func BuildHistogramExemplarsQuery(req *HistogramRequest) (sql.ISelect, error) {
 			sql.NewCol(sql.NewRawObject("any(main.timestamp_ns)"), "span_ts"),
 		).
 		From(sql.NewCol(sql.NewRawObject(req.TracesTable), "main")).
-		AndWhere(
-			sql.Ge(sql.NewRawObject("main.timestamp_ns"), sql.NewIntVal(req.FromNS)),
-			sql.Lt(sql.NewRawObject("main.timestamp_ns"), sql.NewIntVal(req.ToNS)),
-		).
+		AndWhere(timerange.SpanStart("main.timestamp_ns", req.FromNS, req.ToNS)).
 		GroupBy(sql.NewRawObject("ts"), sql.NewRawObject("bucket_ns")).
 		OrderBy(
 			sql.NewOrderBy(sql.NewRawObject("ts"), sql.ORDER_BY_DIRECTION_ASC),
@@ -654,10 +643,7 @@ func BuildGenericExemplarsQuery(req *GenericExemplarsRequest) (sql.ISelect, []st
 
 	query := sql.NewSelect().
 		From(sql.NewCol(sql.NewRawObject(req.TracesTable), "main")).
-		AndWhere(
-			sql.Ge(sql.NewRawObject("main.timestamp_ns"), sql.NewIntVal(req.FromNS)),
-			sql.Lt(sql.NewRawObject("main.timestamp_ns"), sql.NewIntVal(req.ToNS)),
-		)
+		AndWhere(timerange.SpanStart("main.timestamp_ns", req.FromNS, req.ToNS))
 
 	for _, cond := range buildIntrinsicConditions(req.FilterKeys, req.FilterOps, req.FilterVals) {
 		query.AndWhere(cond)
@@ -769,10 +755,7 @@ func BuildCompareQuery(req *CompareRequest) (sql.ISelect, error) {
 	allSpansQuery := sql.NewSelect().
 		Select(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id")).
 		From(sql.NewCol(sql.NewRawObject(req.TracesTable), "main")).
-		AndWhere(
-			sql.Ge(sql.NewRawObject("main.timestamp_ns"), sql.NewIntVal(baselineFromNS)),
-			sql.Lt(sql.NewRawObject("main.timestamp_ns"), sql.NewIntVal(baselineToNS)),
-		)
+		AndWhere(timerange.SpanStart("main.timestamp_ns", baselineFromNS, baselineToNS))
 
 	for _, cond := range buildIntrinsicConditions(req.OuterKeys, req.OuterOps, req.OuterVals) {
 		allSpansQuery.AndWhere(cond)
@@ -800,10 +783,7 @@ func BuildCompareQuery(req *CompareRequest) (sql.ISelect, error) {
 		selectionQuery := sql.NewSelect().
 			Select(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id")).
 			From(sql.NewCol(sql.NewRawObject(req.TracesTable), "sel_main")).
-			AndWhere(
-				sql.Ge(sql.NewRawObject("sel_main.timestamp_ns"), sql.NewIntVal(req.FromNS)),
-				sql.Lt(sql.NewRawObject("sel_main.timestamp_ns"), sql.NewIntVal(req.ToNS)),
-			)
+			AndWhere(timerange.SpanStart("sel_main.timestamp_ns", req.FromNS, req.ToNS))
 
 		for _, cond := range buildIntrinsicConditions(req.InnerKeys, req.InnerOps, req.InnerVals, "sel_main") {
 			selectionQuery.AndWhere(cond)

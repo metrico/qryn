@@ -2,6 +2,7 @@ package clickhouse_transpiler
 
 import (
 	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
+	"github.com/metrico/qryn/v5/reader/traceql/timerange"
 	sql "github.com/metrico/qryn/v5/reader/utils/sql_select"
 )
 
@@ -29,6 +30,7 @@ func (i *SelectTagsPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, er
 	preSelectTags := sql.NewSelect().Select(sql.NewRawObject("span_id")).From(sql.NewWithRef(withMain))
 	withPreSelectTags := sql.NewWith(preSelectTags, "pre_select_tags")
 
+	tsFrom, tsTo := timerange.SpanStart("traces_idx.timestamp_ns", ctx.From.UnixNano(), ctx.To.UnixNano())
 	res := sql.NewSelect().
 		With(withMain, withPreSelectTags).
 		Select(sql.NewSimpleCol("key", "key")).
@@ -36,8 +38,8 @@ func (i *SelectTagsPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, er
 		AndWhere(sql.And(
 			sql.Ge(sql.NewRawObject("date"), sql.NewStringVal(ctx.From.Format("2006-01-02"))),
 			sql.Le(sql.NewRawObject("date"), sql.NewStringVal(ctx.To.Format("2006-01-02"))),
-			sql.Ge(sql.NewRawObject("traces_idx.timestamp_ns"), sql.NewIntVal(ctx.From.UnixNano())),
-			sql.Lt(sql.NewRawObject("traces_idx.timestamp_ns"), sql.NewIntVal(ctx.To.UnixNano())),
+			tsFrom,
+			tsTo,
 			sql.NewIn(sql.NewRawObject("span_id"), sql.NewWithRef(withPreSelectTags)),
 		)).GroupBy(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id"))
 	if ctx.Limit > 0 {

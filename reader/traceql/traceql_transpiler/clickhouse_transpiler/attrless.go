@@ -3,6 +3,7 @@ package clickhouse_transpiler
 import (
 	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
 	"github.com/metrico/qryn/v5/reader/plugins"
+	"github.com/metrico/qryn/v5/reader/traceql/timerange"
 	sql "github.com/metrico/qryn/v5/reader/utils/sql_select"
 )
 
@@ -19,12 +20,15 @@ func NewAttrlessConditionPlanner() shared.SQLRequestPlanner {
 
 func (a *AttrlessConditionPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, error) {
 	tracesTable := ctx.TracesTable
+	from, to := ctx.From.UnixNano(), ctx.To.UnixNano()
+	pickFrom, pickTo := timerange.TracePick("timestamp_ns", from, to)
+	tsFrom, tsTo := timerange.SpanStart("timestamp_ns", from, to)
 	traceIds := sql.NewSelect().Select(sql.NewSimpleCol("trace_id", "trace_id")).
 		Distinct(true).
 		From(sql.NewSimpleCol(tracesTable, "traces")).
 		AndWhere(sql.And(
-			sql.Ge(sql.NewRawObject("timestamp_ns"), sql.NewIntVal(ctx.From.UnixNano())),
-			sql.Le(sql.NewRawObject("timestamp_ns"), sql.NewIntVal(ctx.To.UnixNano())),
+			pickFrom,
+			pickTo,
 		)).OrderBy(sql.NewOrderBy(sql.NewRawObject("timestamp_ns"), sql.ORDER_BY_DIRECTION_DESC)).
 		Limit(sql.NewIntVal(ctx.Limit))
 	withTraceIds := sql.NewWith(traceIds, "trace_ids")
@@ -34,8 +38,8 @@ func (a *AttrlessConditionPlanner) Process(ctx *shared.PlannerContext) (sql.ISel
 			sql.NewSimpleCol("groupArray(100)(span_id)", "span_id")).
 		From(sql.NewSimpleCol(tracesTable, "traces")).
 		AndWhere(sql.And(
-			sql.Ge(sql.NewRawObject("timestamp_ns"), sql.NewIntVal(ctx.From.UnixNano())),
-			sql.Lt(sql.NewRawObject("timestamp_ns"), sql.NewIntVal(ctx.To.UnixNano())),
+			tsFrom,
+			tsTo,
 			sql.NewIn(sql.NewRawObject("trace_id"), sql.NewWithRef(withTraceIds)),
 		)).
 		GroupBy(sql.NewRawObject("trace_id"))
@@ -56,8 +60,8 @@ func (a *AttrlessConditionPlanner) Process(ctx *shared.PlannerContext) (sql.ISel
 			sql.NewSimpleCol("timestamp_ns", "timestamp_ns")).
 		From(sql.NewSimpleCol(tracesTable, "traces")).
 		AndWhere(sql.And(
-			sql.Ge(sql.NewRawObject("timestamp_ns"), sql.NewIntVal(ctx.From.UnixNano())),
-			sql.Lt(sql.NewRawObject("timestamp_ns"), sql.NewIntVal(ctx.To.UnixNano())),
+			tsFrom,
+			tsTo,
 			sql.NewIn(
 				sql.NewRawObject("(traces.trace_id, traces.span_id)"),
 				sql.NewWithRef(withTraceAndSpanIdsUnnested)))).
