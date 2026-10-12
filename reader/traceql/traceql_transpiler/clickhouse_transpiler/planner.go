@@ -26,7 +26,6 @@ func PlanValuesV2(query *traceql_ir.Query, key string) (shared.SQLRequestPlanner
 
 var (
 	errEmptyAggregated = errors.New("requests like `{} | ....` are not supported")
-	errEmptyOperand    = errors.New("`{}` is not supported as an operand of a spanset operator")
 	errComplexAutocomp = errors.New("complex requests `{} || {} ...` are not supported")
 )
 
@@ -57,6 +56,9 @@ func (p *planner) plan() (shared.SQLRequestPlanner, error) {
 
 	res = &IndexLimitPlanner{res}
 
+	if isStructural(expr) {
+		res = &StructuralQueryPlanner{Main: res}
+	}
 	return res, nil
 }
 
@@ -78,13 +80,16 @@ func (p *planner) planEval() (shared.SQLRequestPlanner, error) {
 }
 
 // planSpansetExpr plans a spanset operator tree into span rows.
-// Structural operators evaluate as `&&`.
+// `&>>` and `!>>` evaluate as `&&`.
 func (p *planner) planSpansetExpr(expr traceql_ir.SpansetExpr) (shared.SQLRequestPlanner, error) {
 	return planSpansetTree(p, expr,
 		func(op *simpleExpressionPlanner) (shared.SQLRequestPlanner, error) { return op.planner() },
 		func(op traceql_ir.SpansetOperator, lhs, rhs shared.SQLRequestPlanner) shared.SQLRequestPlanner {
 			if op == traceql_ir.OpOr {
 				return &TraceOrPlanner{LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
+			}
+			if _, ok := oneHopOps[op]; ok {
+				return &OneHopPlanner{Op: op, LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
 			}
 			return &TraceAndPlanner{LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
 		})
@@ -134,14 +139,11 @@ func planSpansetTree[T any](p *planner, expr traceql_ir.SpansetExpr,
 	return leaf(op)
 }
 
-// operand plans one selector of a spanset operator; `{}` is not supported there.
+// operand plans one selector of a spanset operator.
 func (p *planner) operand(selector *traceql_ir.Selector) (*simpleExpressionPlanner, error) {
-	res := &simpleExpressionPlanner{selector: selector, prefix: p.getPrefix()}
+	res := &simpleExpressionPlanner{selector: selector, prefix: p.getPrefix(), operand: true}
 	if err := res.check(); err != nil {
 		return nil, err
-	}
-	if selector.Filter == nil {
-		return nil, errEmptyOperand
 	}
 	return res, nil
 }

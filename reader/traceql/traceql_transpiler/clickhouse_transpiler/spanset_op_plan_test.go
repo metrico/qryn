@@ -9,8 +9,9 @@ import (
 	traceql_ir "github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
 )
 
-// describePlan prints the expression planner tree: and(…), or(…), a selector
-// as {attr…} and a selector with a scalar filter as agg{attr…}.
+// describePlan prints the expression planner tree: and(…), or(…), op(…) for a
+// one-hop operator, a selector as {attr…} and a selector with a scalar filter
+// as agg{attr…}.
 func describePlan(t *testing.T, p shared.SQLRequestPlanner) string {
 	t.Helper()
 	switch p := p.(type) {
@@ -18,6 +19,10 @@ func describePlan(t *testing.T, p shared.SQLRequestPlanner) string {
 		return fmt.Sprintf("and(%s,%s)", describePlan(t, p.LHS), describePlan(t, p.RHS))
 	case *TraceOrPlanner:
 		return fmt.Sprintf("or(%s,%s)", describePlan(t, p.LHS), describePlan(t, p.RHS))
+	case *OneHopPlanner:
+		return fmt.Sprintf("%s(%s,%s)", p.Op, describePlan(t, p.LHS), describePlan(t, p.RHS))
+	case *AllSpansPlanner:
+		return "{}"
 	case *AggregatorPlanner:
 		return "agg" + describePlan(t, p.Main)
 	case *AttrConditionPlanner:
@@ -84,10 +89,10 @@ func TestSpansetOperandChecks(t *testing.T) {
 		query string
 		err   error
 	}{
-		{`{} && {.a = 1}`, errEmptyOperand},
-		{`{.a = 1} || {}`, errEmptyOperand},
-		{`({}) && {.a = 1}`, errEmptyOperand},
-		{`{.a = 1} && ({.b = 2} || {})`, errEmptyOperand},
+		{`{} && {.a = 1}`, nil},
+		{`{.a = 1} || {}`, nil},
+		{`({}) > {.a = 1}`, nil},
+		{`{.a = 1} && ({.b = 2} || {})`, nil},
 		{`{} | count() > 1 && {.a = 1}`, errEmptyAggregated},
 		{`{.a = 1} && ({.b = 2})`, nil},
 		{`({.a = 1} || {.b = 2}) && {.c = 3}`, nil},

@@ -8,6 +8,8 @@ import (
 type simpleExpressionPlanner struct {
 	selector *traceql_ir.Selector
 	prefix   string
+	// operand is set for a selector under a spanset operator.
+	operand bool
 
 	//Analyze results
 	termIdx []*traceql_ir.Comparison
@@ -75,6 +77,8 @@ func (p *simpleExpressionPlanner) planner() (shared.SQLRequestPlanner, error) {
 			Conds:          p.cond,
 			AggregatedAttr: p.aggAttr,
 		}
+	} else if p.operand {
+		res = &AllSpansPlanner{}
 	} else {
 		res = NewAttrlessConditionPlanner()
 	}
@@ -110,6 +114,8 @@ func (p *simpleExpressionPlanner) planEval() (shared.SQLRequestPlanner, error) {
 			},
 			Prefix: p.prefix,
 		}
+	} else if p.operand {
+		res = &AllSpansEvaluatorPlanner{Prefix: p.prefix}
 	} else {
 		res = &AttrlessEvaluatorPlanner{
 			Prefix: p.prefix,

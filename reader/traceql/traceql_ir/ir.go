@@ -50,6 +50,19 @@ type SpansetOperator string
 const (
 	OpAnd SpansetOperator = "&&"
 	OpOr  SpansetOperator = "||"
+
+	OpChild        SpansetOperator = ">"
+	OpParent       SpansetOperator = "<"
+	OpSibling      SpansetOperator = "~"
+	OpNotChild     SpansetOperator = "!>"
+	OpNotParent    SpansetOperator = "!<"
+	OpNotSibling   SpansetOperator = "!~"
+	OpUnionChild   SpansetOperator = "&>"
+	OpUnionParent  SpansetOperator = "&<"
+	OpUnionSibling SpansetOperator = "&~"
+
+	OpUnionDescendant SpansetOperator = "&>>"
+	OpNotDescendant   SpansetOperator = "!>>"
 )
 
 // SpansetOp is `LHS Op RHS` over spanset expressions.

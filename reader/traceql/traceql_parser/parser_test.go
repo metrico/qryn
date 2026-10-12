@@ -75,11 +75,18 @@ func TestParseSelectors(t *testing.T) {
 func TestParseSpansetOperators(t *testing.T) {
 	a := func() Selector { return sel(term(".a", "=", str(`"b"`))) }
 	c := func() Selector { return sel(term(".c", "=", str(`"d"`))) }
-	for _, op := range []string{"&&", "||", "&>>", "!>>", "<<&", "<<~", "~"} {
+	for _, op := range []string{
+		"&&", "||", "&>>", "!>>",
+		">", "<", "~", "!>", "!<", "!~", "&>", "&<", "&~",
+	} {
 		t.Run(op, func(t *testing.T) {
+			want := &TraceQLScript{Head: a(), Op: op, Tail: &TraceQLScript{Head: c()}}
 			got, err := Parse(`{.a = "b"} ` + op + ` {.c = "d"}`)
 			require.NoError(t, err)
-			require.Equal(t, &TraceQLScript{Head: a(), Op: op, Tail: &TraceQLScript{Head: c()}}, got)
+			require.Equal(t, want, got)
+			got, err = Parse(`{.a = "b"}` + op + `{.c = "d"}`)
+			require.NoError(t, err)
+			require.Equal(t, want, got)
 		})
 	}
 
@@ -108,18 +115,69 @@ func TestParseSpansetOperators(t *testing.T) {
 		}, got)
 	})
 
+	// Inside {…} >, < and !~ compare; between spansets they are structural.
+	for _, c := range []struct {
+		query string
+		want  *TraceQLScript
+	}{
+		{`{ .x > 3 } > { .y !~ "a.*" }`, &TraceQLScript{
+			Head: sel(term(".x", ">", Value{FVal: "3"})), Op: ">",
+			Tail: &TraceQLScript{Head: sel(term(".y", "!~", str(`"a.*"`)))},
+		}},
+		{`{.x<3}<{.y<4}`, &TraceQLScript{
+			Head: sel(term(".x", "<", Value{FVal: "3"})), Op: "<",
+			Tail: &TraceQLScript{Head: sel(term(".y", "<", Value{FVal: "4"}))},
+		}},
+		{`{ .x !~ "a" } !~ { .y =~ "b" }`, &TraceQLScript{
+			Head: sel(term(".x", "!~", str(`"a"`))), Op: "!~",
+			Tail: &TraceQLScript{Head: sel(term(".y", "=~", str(`"b"`)))},
+		}},
+		{`{ .x >= 1 } &> { .y <= 2 }`, &TraceQLScript{
+			Head: sel(term(".x", ">=", Value{FVal: "1"})), Op: "&>",
+			Tail: &TraceQLScript{Head: sel(term(".y", "<=", Value{FVal: "2"}))},
+		}},
+		{`{ .x = "<<&" } > {}`, &TraceQLScript{
+			Head: sel(term(".x", "=", str(`"<<&"`))), Op: ">", Tail: &TraceQLScript{},
+		}},
+	} {
+		t.Run(c.query, func(t *testing.T) {
+			got, err := Parse(c.query)
+			require.NoError(t, err)
+			require.Equal(t, c.want, got)
+		})
+	}
+
 	for _, q := range []string{
-		`{.a = "b"} > {.c = "d"}`,
+		// Transitive operators are not accepted yet.
 		`{.a = "b"} >> {.c = "d"}`,
-		`{.a = "b"} < {.c = "d"}`,
 		`{.a = "b"} << {.c = "d"}`,
-		`{.a = "b"} !~ {.c = "d"}`,
-		`{.a = "b"} &> {.c = "d"}`,
 		`{.a = "b"} &<< {.c = "d"}`,
+		`{.a = "b"} !<< {.c = "d"}`,
+		// Split spellings.
+		`{.a = "b"} ! > {.c = "d"}`,
+		`{.a = "b"} ! < {.c = "d"}`,
+		`{.a = "b"} ! ~ {.c = "d"}`,
+		`{.a = "b"} & > {.c = "d"}`,
+		`{.a = "b"} & < {.c = "d"}`,
+		`{.a = "b"} & ~ {.c = "d"}`,
+		`{.a = "b"} > > {.c = "d"}`,
+		`{.a = "b"} < < {.c = "d"}`,
+		`{.a = "b"} & >> {.c = "d"}`,
+		`{.a = "b"} ! >> {.c = "d"}`,
+		// Structural operators inside a selector.
+		`{.a > {.c = "d"}}`,
+		`{.a &> 1}`,
 	} {
 		t.Run("rejects "+q, func(t *testing.T) {
 			_, err := Parse(q)
 			require.Error(t, err)
+		})
+	}
+
+	for op, tempo := range map[string]string{"<<&": "&<<", "<<~": "!<<"} {
+		t.Run("rejects legacy "+op, func(t *testing.T) {
+			_, err := Parse(`{.a = "b"} ` + op + ` {.c = "d"}`)
+			require.EqualError(t, err, op+" is not a TraceQL operator, use "+tempo)
 		})
 	}
 }

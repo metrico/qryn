@@ -15,21 +15,29 @@ var TraceQLLexerRulesV2 = []lexer.SimpleRule{
 
 	{"Ge", `>=`},
 	{"Le", `<=`},
-	// Structural operators: <<& and <<~ must come before Lt (<) to avoid partial match
-	{"Ancestor", `<<&`},
-	{"NotAncestor", `<<~`},
+	// Compound operators come before their prefixes (maximal munch). <<& and
+	// <<~ are not TraceQL operators; they lex only to be rejected by name.
+	{"LegacyAncestor", `<<&`},
+	{"LegacyNotAncestor", `<<~`},
+	{"Desc", `>>`},
+	{"Anc", `<<`},
 	{"Gt", `>`},
 	{"Lt", `<`},
 
-	// !>> must come before != to avoid partial match
-	{"NotDescendant", `!>>`},
+	{"NotDesc", `!>>`},
+	{"NotAnc", `!<<`},
+	{"NotChild", `!>`},
+	{"NotParent", `!<`},
 	{"Neq", `!=`},
 	{"Re", `=~`},
 	{"Nre", `!~`},
 	{"Eq", `=`},
 
-	// &>> must come before && to avoid partial match
-	{"Descendant", `&>>`},
+	{"UnionDesc", `&>>`},
+	{"UnionAnc", `&<<`},
+	{"UnionChild", `&>`},
+	{"UnionParent", `&<`},
+	{"UnionSibling", `&~`},
 	{"Sibling", `~`},
 
 	// Label_name supports dotted names and colon intrinsics (span:duration).

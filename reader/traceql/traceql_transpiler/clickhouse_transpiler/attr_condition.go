@@ -52,23 +52,8 @@ func (a *AttrConditionPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect,
 		res = res.AndHaving(having)
 	}
 
-	if ctx.RandomFilter.Max != 0 && len(ctx.CachedTraceIds) > 0 {
-		rawCachedTraceIds := make([]sql.SQLObject, len(ctx.CachedTraceIds))
-		for i, tid := range ctx.CachedTraceIds {
-			rawCachedTraceIds[i] = sql.NewRawObject(fmt.Sprintf("unhex('%s')", tid))
-		}
-		res.AndWhere(sql.Or(
-			sql.Eq(
-				sql.NewRawObject(fmt.Sprintf("cityHash64(trace_id) %% %d", ctx.RandomFilter.Max)),
-				sql.NewIntVal(int64(ctx.RandomFilter.I)),
-			),
-			sql.NewIn(sql.NewRawObject("trace_id"), rawCachedTraceIds...),
-		))
-	} else if ctx.RandomFilter.Max != 0 {
-		res.AndWhere(sql.Eq(
-			sql.NewRawObject(fmt.Sprintf("cityHash64(trace_id) %% %d", ctx.RandomFilter.Max)),
-			sql.NewIntVal(int64(ctx.RandomFilter.I)),
-		))
+	if cond := randomFilter(ctx); cond != nil {
+		res.AndWhere(cond)
 	}
 
 	a.isAliased = false

@@ -2,16 +2,18 @@ package clickhouse_transpiler
 
 import (
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
 	traceql_ir "github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
+	dbversion "github.com/metrico/qryn/v5/reader/utils/dbVersion"
 	sql "github.com/metrico/qryn/v5/reader/utils/sql_select"
 )
 
-var searchQueries = []string{
+var plainSearchQueries = []string{
 	`{.a = 1}`,
 	`{}`,
 	`{.a = 1} | count() > 1`,
@@ -22,7 +24,17 @@ var searchQueries = []string{
 	`({.a = 1} || {.b = 2}) && {.c = 3}`,
 	`{.a = 1} | count() > 1 && {.b = 2}`,
 	`{nestedSetParent < 0 && .a = 1}`,
+	`{.a = 1} &>> {.b = 2}`,
 }
+
+// structuralQueries hold operators evaluated on the span tree.
+var structuralQueries = []string{
+	`{.a = 1} > {.b = 2}`,
+	`{.a = 1} !~ {}`,
+	`{} &< {.b = 2} || {.c = 3}`,
+}
+
+var searchQueries = append(append([]string{}, plainSearchQueries...), structuralQueries...)
 
 func testPlannerContext(spss int64) *shared.PlannerContext {
 	return &shared.PlannerContext{
@@ -34,7 +46,7 @@ func testPlannerContext(spss int64) *shared.PlannerContext {
 		TracesAttrsDistTable: "tempo_traces_attrs_gin_dist",
 		TracesTable:          "tempo_traces",
 		TracesDistTable:      "tempo_traces_dist",
-		VersionInfo:          map[string]int64{},
+		VersionInfo:          map[string]int64{dbversion.CapStructuralQueries: 0},
 	}
 }
 
@@ -81,6 +93,9 @@ func searchStages(t *testing.T, plan shared.SQLRequestPlanner) (stages []string,
 	t.Helper()
 	for {
 		switch p := plan.(type) {
+		case *StructuralQueryPlanner:
+			stages = append(stages, "structural")
+			plan = p.Main
 		case *IndexLimitPlanner:
 			stages = append(stages, "limit")
 			plan = p.Main
@@ -101,6 +116,9 @@ func TestSearchCapsAndLimitsAfterEvaluation(t *testing.T) {
 		t.Run(query, func(t *testing.T) {
 			stages, expr := searchStages(t, planSearch(t, query))
 			want := []string{"limit", "traces", "limit", "spanset"}
+			if slices.Contains(structuralQueries, query) {
+				want = append([]string{"structural"}, want...)
+			}
 			if strings.Join(stages, ",") != strings.Join(want, ",") {
 				t.Errorf("stages = %v, want %v", stages, want)
 			}
@@ -194,7 +212,7 @@ func TestSearchSpanStartIsLeftOpenRightClosed(t *testing.T) {
 func TestSearchReadsDistributedTablesOnClusters(t *testing.T) {
 	local := regexp.MustCompile(`\btempo_traces(_attrs_gin)?\b[^_]`)
 	localJoin := regexp.MustCompile(`[^l] any left JOIN`)
-	plainIn := regexp.MustCompile(`[^L] IN \((trace_ids|trace_span_ids|attrless_trace_ids| SELECT trace_id FROM result_spans)\)`)
+	plainIn := regexp.MustCompile(`[^L] IN \((trace_ids|trace_span_ids|attrless_trace_ids| SELECT trace_id FROM \w+)\)`)
 	for _, query := range searchQueries {
 		t.Run(query, func(t *testing.T) {
 			ctx := testPlannerContext(3)
