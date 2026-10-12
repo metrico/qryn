@@ -148,7 +148,7 @@ func TestParseSpansetOperators(t *testing.T) {
 	}
 
 	for _, q := range []string{
-		// Transitive operators are not accepted yet.
+		// Transitive operators are rejected.
 		`{.a = "b"} >> {.c = "d"}`,
 		`{.a = "b"} << {.c = "d"}`,
 		`{.a = "b"} &<< {.c = "d"}`,
@@ -174,10 +174,10 @@ func TestParseSpansetOperators(t *testing.T) {
 		})
 	}
 
-	for op, tempo := range map[string]string{"<<&": "&<<", "<<~": "!<<"} {
-		t.Run("rejects legacy "+op, func(t *testing.T) {
+	for op, spelling := range map[string]string{"<<&": "&<<", "<<~": "!<<"} {
+		t.Run("rejects misspelt "+op, func(t *testing.T) {
 			_, err := Parse(`{.a = "b"} ` + op + ` {.c = "d"}`)
-			require.EqualError(t, err, op+" is not a TraceQL operator, use "+tempo)
+			require.EqualError(t, err, op+" is not a TraceQL operator, use "+spelling)
 		})
 	}
 }

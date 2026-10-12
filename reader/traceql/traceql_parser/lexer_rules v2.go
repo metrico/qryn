@@ -16,16 +16,16 @@ var TraceQLLexerRulesV2 = []lexer.SimpleRule{
 	{"Ge", `>=`},
 	{"Le", `<=`},
 	// Compound operators come before their prefixes (maximal munch). <<& and
-	// <<~ are not TraceQL operators; they lex only to be rejected by name.
-	{"LegacyAncestor", `<<&`},
-	{"LegacyNotAncestor", `<<~`},
-	{"Desc", `>>`},
-	{"Anc", `<<`},
+	// <<~ lex only to be rejected with their TraceQL spelling.
+	{"MisspeltUnionAncestor", `<<&`},
+	{"MisspeltNotAncestor", `<<~`},
+	{"Descendant", `>>`},
+	{"Ancestor", `<<`},
 	{"Gt", `>`},
 	{"Lt", `<`},
 
-	{"NotDesc", `!>>`},
-	{"NotAnc", `!<<`},
+	{"NotDescendant", `!>>`},
+	{"NotAncestor", `!<<`},
 	{"NotChild", `!>`},
 	{"NotParent", `!<`},
 	{"Neq", `!=`},
@@ -33,8 +33,8 @@ var TraceQLLexerRulesV2 = []lexer.SimpleRule{
 	{"Nre", `!~`},
 	{"Eq", `=`},
 
-	{"UnionDesc", `&>>`},
-	{"UnionAnc", `&<<`},
+	{"UnionDescendant", `&>>`},
+	{"UnionAncestor", `&<<`},
 	{"UnionChild", `&>`},
 	{"UnionParent", `&<`},
 	{"UnionSibling", `&~`},

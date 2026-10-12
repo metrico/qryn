@@ -71,8 +71,8 @@ func withSuffix(withs map[string]*sql.With, suffix string) []*sql.With {
 	return res
 }
 
-// One-hop operators relate spans in one pass over their parent keys. The only
-// recursion is root reachability, seeded from traces with a missing parent.
+// One-hop operators relate spans in one pass over their keys; only root
+// reachability recurses, over traces with a missing parent.
 func TestOneHopRecursesOnlyForIncompleteTraces(t *testing.T) {
 	for _, query := range structuralQueries {
 		t.Run(query, func(t *testing.T) {
@@ -169,8 +169,7 @@ func TestStructuralQueriesNeedClickHouse249(t *testing.T) {
 	}
 }
 
-// `{}` under a spanset operator is every span in range, not the attribute-less
-// planner's trace pre-pick.
+// `{}` under a spanset operator is every span in range.
 func TestEmptyOperandReadsEverySpanInRange(t *testing.T) {
 	for _, query := range []string{`{} > {.a = 1}`, `{.a = 1} && {}`} {
 		t.Run(query, func(t *testing.T) {

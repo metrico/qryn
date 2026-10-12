@@ -45,3 +45,12 @@ func TestMetricsCompareRequestFilters(t *testing.T) {
 	require.Equal(t, []string{"y", "3"}, got.InnerVals)
 	require.Equal(t, 5, got.TopN)
 }
+
+func TestMetricsRejectsStructuralOperators(t *testing.T) {
+	for _, q := range []string{`({.a = 1} > {.b = 2}) | rate()`, `({.a = 1} || ({.b = 2} !~ {.c = 3})) | rate()`} {
+		_, err := parseMetricsQuery(q)
+		require.Equal(t, errMetricsStructural, err, q)
+	}
+	_, err := parseMetricsQuery(`({.a = 1} &>> {.b = 2}) | rate()`)
+	require.NoError(t, err)
+}

@@ -10,7 +10,7 @@ type TraceQLScript struct {
 	ParenExpr *TraceQLScript `( "(" @@ ")"`
 	Head      Selector       `| @@ )`
 	// Op is a spanset operator; Gt, Lt and Nre are structural between spansets.
-	Op   string         `( @(Gt|Lt|Sibling|NotChild|NotParent|Nre|UnionChild|UnionParent|UnionSibling|UnionDesc|NotDesc|And|Or)`
+	Op   string         `( @(Gt|Lt|Sibling|NotChild|NotParent|Nre|UnionChild|UnionParent|UnionSibling|UnionDescendant|NotDescendant|And|Or)`
 	Tail *TraceQLScript `@@? )?`
 	// MetricsFn at the script level supports: ({A} &>> {B}) | rate()
 	MetricsFn   *MetricsPipelineStage `@@?`

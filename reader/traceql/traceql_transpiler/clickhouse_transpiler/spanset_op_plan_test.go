@@ -9,9 +9,8 @@ import (
 	traceql_ir "github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
 )
 
-// describePlan prints the expression planner tree: and(…), or(…), op(…) for a
-// one-hop operator, a selector as {attr…} and a selector with a scalar filter
-// as agg{attr…}.
+// describePlan prints the planner tree: and(…), or(…), a one-hop op(…), a
+// selector as {attr…} and one with a scalar filter as agg{attr…}.
 func describePlan(t *testing.T, p shared.SQLRequestPlanner) string {
 	t.Helper()
 	switch p := p.(type) {

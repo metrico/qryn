@@ -65,6 +65,36 @@ const (
 	OpNotDescendant   SpansetOperator = "!>>"
 )
 
+// IsOneHop reports whether o relates a span to its parent or siblings.
+func (o SpansetOperator) IsOneHop() bool {
+	switch o {
+	case OpChild, OpParent, OpSibling, OpNotChild, OpNotParent, OpNotSibling,
+		OpUnionChild, OpUnionParent, OpUnionSibling:
+		return true
+	}
+	return false
+}
+
+// HasOneHop reports whether any spanset expression of q uses a one-hop operator.
+func (q *Query) HasOneHop() bool {
+	for _, element := range q.Pipeline.Elements {
+		if expr, ok := element.(SpansetExpr); ok && hasOneHop(expr) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasOneHop(expr SpansetExpr) bool {
+	switch expr := expr.(type) {
+	case *Group:
+		return hasOneHop(expr.Expr)
+	case *SpansetOp:
+		return expr.Op.IsOneHop() || hasOneHop(expr.LHS) || hasOneHop(expr.RHS)
+	}
+	return false
+}
+
 // SpansetOp is `LHS Op RHS` over spanset expressions.
 type SpansetOp struct {
 	Op  SpansetOperator

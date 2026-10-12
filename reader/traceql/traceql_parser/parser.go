@@ -11,22 +11,22 @@ import (
 var parser = participle.MustBuild[TraceQLScript](
 	participle.Lexer(TraceQLLexerDefinition), participle.UseLookahead(5))
 
-// legacyOperators maps operators TraceQL does not have to its spelling.
-var legacyOperators = map[string]string{"<<&": "&<<", "<<~": "!<<"}
+// misspeltOperators maps operators TraceQL lacks to the TraceQL spelling.
+var misspeltOperators = map[string]string{"<<&": "&<<", "<<~": "!<<"}
 
 func Parse(str string) (*TraceQLScript, error) {
 	res, err := parser.ParseString("", str+" ")
 	if err != nil {
-		if legacy := legacyOperatorError(str); legacy != nil {
-			return nil, legacy
+		if misspelt := misspeltOperatorError(str); misspelt != nil {
+			return nil, misspelt
 		}
 		return nil, err
 	}
 	return res, nil
 }
 
-// legacyOperatorError names the TraceQL spelling of a legacy operator in str.
-func legacyOperatorError(str string) error {
+// misspeltOperatorError names the TraceQL spelling of a misspelt operator in str.
+func misspeltOperatorError(str string) error {
 	lex, err := TraceQLLexerDefinition.Lex("", strings.NewReader(str))
 	if err != nil {
 		return nil
@@ -36,8 +36,8 @@ func legacyOperatorError(str string) error {
 		return nil
 	}
 	for _, tok := range tokens {
-		if tempo, ok := legacyOperators[tok.Value]; ok {
-			return fmt.Errorf("%s is not a TraceQL operator, use %s", tok.Value, tempo)
+		if spelling, ok := misspeltOperators[tok.Value]; ok {
+			return fmt.Errorf("%s is not a TraceQL operator, use %s", tok.Value, spelling)
 		}
 	}
 	return nil

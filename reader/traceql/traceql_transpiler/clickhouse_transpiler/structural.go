@@ -3,6 +3,7 @@ package clickhouse_transpiler
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
 	traceql_ir "github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
@@ -32,37 +33,31 @@ const (
 	resultNot
 )
 
-// oneHop is a structural operator that relates a span to its parent or
-// siblings. A LHS span and a RHS span are related when their keys
-// (span_id or parent) are equal; siblings must be different spans.
+// hopKey is the id a span is related by.
+type hopKey int
+
+const (
+	keySpan hopKey = iota
+	keyParent
+)
+
+// oneHop relates a LHS and a RHS span with equal keys; siblings must differ.
 type oneHop struct {
-	lhsKey, rhsKey string
+	lhsKey, rhsKey hopKey
 	sibling        bool
 	result         spanResult
 }
 
 var oneHopOps = map[traceql_ir.SpansetOperator]oneHop{
-	traceql_ir.OpChild:        {lhsKey: "span_id", rhsKey: "parent", result: resultRHS},
-	traceql_ir.OpParent:       {lhsKey: "parent", rhsKey: "span_id", result: resultRHS},
-	traceql_ir.OpSibling:      {lhsKey: "parent", rhsKey: "parent", sibling: true, result: resultRHS},
-	traceql_ir.OpNotChild:     {lhsKey: "span_id", rhsKey: "parent", result: resultNot},
-	traceql_ir.OpNotParent:    {lhsKey: "parent", rhsKey: "span_id", result: resultNot},
-	traceql_ir.OpNotSibling:   {lhsKey: "parent", rhsKey: "parent", sibling: true, result: resultNot},
-	traceql_ir.OpUnionChild:   {lhsKey: "span_id", rhsKey: "parent", result: resultUnion},
-	traceql_ir.OpUnionParent:  {lhsKey: "parent", rhsKey: "span_id", result: resultUnion},
-	traceql_ir.OpUnionSibling: {lhsKey: "parent", rhsKey: "parent", sibling: true, result: resultUnion},
-}
-
-// isStructural reports whether expr holds an operator evaluated on the span tree.
-func isStructural(expr traceql_ir.SpansetExpr) bool {
-	switch expr := expr.(type) {
-	case *traceql_ir.Group:
-		return isStructural(expr.Expr)
-	case *traceql_ir.SpansetOp:
-		_, ok := oneHopOps[expr.Op]
-		return ok || isStructural(expr.LHS) || isStructural(expr.RHS)
-	}
-	return false
+	traceql_ir.OpChild:        {lhsKey: keySpan, rhsKey: keyParent, result: resultRHS},
+	traceql_ir.OpParent:       {lhsKey: keyParent, rhsKey: keySpan, result: resultRHS},
+	traceql_ir.OpSibling:      {lhsKey: keyParent, rhsKey: keyParent, sibling: true, result: resultRHS},
+	traceql_ir.OpNotChild:     {lhsKey: keySpan, rhsKey: keyParent, result: resultNot},
+	traceql_ir.OpNotParent:    {lhsKey: keyParent, rhsKey: keySpan, result: resultNot},
+	traceql_ir.OpNotSibling:   {lhsKey: keyParent, rhsKey: keyParent, sibling: true, result: resultNot},
+	traceql_ir.OpUnionChild:   {lhsKey: keySpan, rhsKey: keyParent, result: resultUnion},
+	traceql_ir.OpUnionParent:  {lhsKey: keyParent, rhsKey: keySpan, result: resultUnion},
+	traceql_ir.OpUnionSibling: {lhsKey: keyParent, rhsKey: keyParent, sibling: true, result: resultUnion},
 }
 
 // StructuralQueryPlanner runs Main, a plan with structural operators, on
@@ -82,9 +77,8 @@ func (s *StructuralQueryPlanner) Process(ctx *shared.PlannerContext) (sql.ISelec
 	return main.SetSetting("enable_analyzer", "1"), nil
 }
 
-// OneHopPlanner is a one-hop structural operator over the span rows of LHS
-// and RHS. Only spans whose ancestor chain reaches a root take part in a
-// relation; parents and siblings count wherever they start in time.
+// OneHopPlanner relates the span rows of LHS and RHS by parent or sibling.
+// Only spans that reach a root relate.
 type OneHopPlanner struct {
 	Op     traceql_ir.SpansetOperator
 	LHS    shared.SQLRequestPlanner
@@ -104,10 +98,9 @@ func (o *OneHopPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, error)
 	}
 	reach := reachableSpans(ctx, alias, lhs, rhs)
 
-	// keyed tags each operand span with its side and relation key; spans that
-	// do not reach a root are kept, unrelated, for `!` operators.
-	key := func(k string) string {
-		if k == "parent" {
+	// keyed tags each operand span with its side, reachability and key.
+	key := func(k hopKey) string {
+		if k == keyParent {
 			return fmt.Sprintf("ifNull(r.parent, %s)", zeroSpanID)
 		}
 		return "o.span_id"
@@ -124,13 +117,10 @@ func (o *OneHopPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, error)
 			spanRows(lhs, sql.NewSimpleCol("toUInt8(1)", "side")),
 			spanRows(rhs, sql.NewSimpleCol("toUInt8(2)", "side")),
 		}}, "o")).
-		Join(sql.NewJoin("left", sql.NewCol(sql.NewWithRef(reach), "r"), sql.And(
-			sql.Eq(sql.NewRawObject("r.trace_id"), sql.NewRawObject("o.trace_id")),
-			sql.Eq(sql.NewRawObject("r.span_id"), sql.NewRawObject("o.span_id"))))),
+		Join(sql.NewJoin("left", sql.NewCol(sql.NewWithRef(reach), "r"), sameSpan("r.span_id", "o.span_id"))),
 		alias+"_keyed")
 
-	// lhs_n and rhs_n count each side's spans sharing a span's key; for
-	// siblings, self_lhs and self_rhs discount the span itself.
+	// lhs_n and rhs_n count each side's spans per key; self_* discount the span.
 	group := "PARTITION BY trace_id, reachable, key"
 	cols := append(spanRowCols(),
 		sql.NewSimpleCol("side", "side"),
@@ -166,28 +156,26 @@ func (o *OneHopPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, error)
 		AndWhere(rawCond(cond)), nil
 }
 
-// reachableSpans is the CTE <alias>_reach of (trace_id, span_id, parent,
-// reachable = 1) for every span whose ancestor chain ends at a root, in the
-// traces where both lhs and rhs return spans. Edges come from the traces
-// table with no time bound. Only traces with a missing parent need pointer
-// jumping: elsewhere every span reaches a root when the trace has one.
+// reachableSpans is <alias>_reach: the spans that reach a root, with their
+// parent, in traces where lhs and rhs both return spans.
 func reachableSpans(ctx *shared.PlannerContext, alias string, lhs, rhs *sql.With) *sql.With {
 	traceIds := func(w *sql.With) sql.ISelect {
 		return sql.NewSelect().Select(sql.NewRawObject("trace_id")).From(sql.NewWithRef(w))
 	}
+	// edges holds one parent per span, read with no time bound.
 	edges := sql.NewWith(sql.NewSelect().
-		Distinct(true).
 		Select(
 			sql.NewSimpleCol("traces.trace_id", "trace_id"),
 			sql.NewSimpleCol("traces.span_id", "span_id"),
-			sql.NewSimpleCol("toFixedString(substring(traces.parent_id, 1, 8), 8)", "parent")).
+			sql.NewSimpleCol("any(toFixedString(substring(traces.parent_id, 1, 8), 8))", "parent")).
 		From(sql.NewSimpleCol(tracesTable(ctx), "traces")).
 		AndWhere(
 			inSubquery(ctx, sql.NewRawObject("traces.trace_id"), traceIds(lhs)),
-			inSubquery(ctx, sql.NewRawObject("traces.trace_id"), traceIds(rhs))),
+			inSubquery(ctx, sql.NewRawObject("traces.trace_id"), traceIds(rhs))).
+		GroupBy(sql.NewRawObject("traces.trace_id"), sql.NewRawObject("traces.span_id")),
 		alias+"_edges")
 
-	spans := sql.NewWith(sql.NewSelect().Distinct(true).
+	spans := sql.NewWith(sql.NewSelect().
 		Select(
 			sql.NewSimpleCol("trace_id", "trace_id"),
 			sql.NewSimpleCol("span_id", "span_id"),
@@ -203,10 +191,7 @@ func reachableSpans(ctx *shared.PlannerContext, alias string, lhs, rhs *sql.With
 			sql.NewSimpleCol(fmt.Sprintf("toUInt8(e.parent = %s)", zeroSpanID), "is_root"),
 			sql.NewSimpleCol(fmt.Sprintf("toUInt8(e.parent != %s AND ifNull(p.found, 0) = 0)", zeroSpanID), "dangling")).
 		From(sql.NewCol(sql.NewWithRef(edges), "e")).
-		Join(sql.NewJoin("left", sql.NewCol(sql.NewWithRef(spans), "p"),
-			sql.And(
-				sql.Eq(sql.NewRawObject("p.trace_id"), sql.NewRawObject("e.trace_id")),
-				sql.Eq(sql.NewRawObject("p.span_id"), sql.NewRawObject("e.parent"))))),
+		Join(sql.NewJoin("left", sql.NewCol(sql.NewWithRef(spans), "p"), sameSpan("p.span_id", "e.parent"))),
 		alias+"_links")
 	flags := sql.NewWith(sql.NewSelect().
 		Select(
@@ -220,9 +205,8 @@ func reachableSpans(ctx *shared.PlannerContext, alias string, lhs, rhs *sql.With
 		From(sql.NewWithRef(links)),
 		alias+"_flags")
 
-	// jump holds, per span of a trace with a root and a missing parent, its
-	// 2^k-th ancestor (anc, zero once the chain ended) and whether a span on
-	// the chain so far has a missing parent (cut).
+	// jump runs on traces with a root and a missing parent: anc is the 2^k-th
+	// ancestor (zero past the chain's end), cut marks a missing parent on it.
 	jump := sql.NewRecursiveWith(
 		sql.NewSelect().
 			Select(
@@ -243,13 +227,10 @@ func reachableSpans(ctx *shared.PlannerContext, alias string, lhs, rhs *sql.With
 					sql.NewSimpleCol(fmt.Sprintf("toUInt8(x.cut = 1 OR (x.anc != %s AND ifNull(y.cut, 0) = 1))", zeroSpanID), "cut"),
 					sql.NewSimpleCol("toUInt32(x.k + 1)", "k")).
 				From(sql.NewCol(self, "x")).
-				Join(sql.NewJoin("left", sql.NewCol(self, "y"), sql.And(
-					sql.Eq(sql.NewRawObject("y.trace_id"), sql.NewRawObject("x.trace_id")),
-					sql.Eq(sql.NewRawObject("y.node"), sql.NewRawObject("x.anc"))))).
+				Join(sql.NewJoin("left", sql.NewCol(self, "y"), sameSpan("y.node", "x.anc"))).
 				AndWhere(sql.Lt(sql.NewRawObject("x.k"), sql.NewIntVal(reachRounds)))
 		})
-	// A chain that is cut or still unresolved after the last round (a parent
-	// cycle) does not reach a root.
+	// A cut chain, or one unresolved after the last round, reaches no root.
 	unreachable := sql.NewWith(sql.NewSelect().
 		Select(sql.NewSimpleCol("trace_id", "trace_id"), sql.NewSimpleCol("node", "node")).
 		From(sql.NewWithRef(jump)).
@@ -264,9 +245,15 @@ func reachableSpans(ctx *shared.PlannerContext, alias string, lhs, rhs *sql.With
 			sql.NewSimpleCol("f.parent", "parent"),
 			sql.NewSimpleCol("toUInt8(1)", "reachable")).
 		From(sql.NewCol(sql.NewWithRef(flags), "f")).
-		Join(sql.NewJoin("left anti", sql.NewCol(sql.NewWithRef(unreachable), "u"), sql.And(
-			sql.Eq(sql.NewRawObject("u.trace_id"), sql.NewRawObject("f.trace_id")),
-			sql.Eq(sql.NewRawObject("u.node"), sql.NewRawObject("f.span_id"))))).
+		Join(sql.NewJoin("left anti", sql.NewCol(sql.NewWithRef(unreachable), "u"), sameSpan("u.node", "f.span_id"))).
 		AndWhere(rawCond("f.has_root = 1")),
 		alias+"_reach")
+}
+
+// sameSpan joins two aliased rows on trace id and the given span id columns.
+func sameSpan(left, right string) sql.SQLCondition {
+	alias := func(col string) string { return strings.SplitN(col, ".", 2)[0] }
+	return sql.And(
+		sql.Eq(sql.NewRawObject(alias(left)+".trace_id"), sql.NewRawObject(alias(right)+".trace_id")),
+		sql.Eq(sql.NewRawObject(left), sql.NewRawObject(right)))
 }

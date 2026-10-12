@@ -56,7 +56,7 @@ func (p *planner) plan() (shared.SQLRequestPlanner, error) {
 
 	res = &IndexLimitPlanner{res}
 
-	if isStructural(expr) {
+	if p.query.HasOneHop() {
 		res = &StructuralQueryPlanner{Main: res}
 	}
 	return res, nil
@@ -88,7 +88,7 @@ func (p *planner) planSpansetExpr(expr traceql_ir.SpansetExpr) (shared.SQLReques
 			if op == traceql_ir.OpOr {
 				return &TraceOrPlanner{LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
 			}
-			if _, ok := oneHopOps[op]; ok {
+			if op.IsOneHop() {
 				return &OneHopPlanner{Op: op, LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
 			}
 			return &TraceAndPlanner{LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}

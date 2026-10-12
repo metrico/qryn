@@ -3,6 +3,7 @@ package service
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"strconv"
@@ -30,9 +31,9 @@ func (t *TempoService) MetricsQueryRange(ctx context.Context, req *model.Metrics
 		attrsTable = fmt.Sprintf("`%s`.%s", conn.Config.Name, tables.GetTableName("tempo_traces_attrs_gin_dist"))
 	}
 
-	tq, err := traceql_ir.Parse(req.Query)
+	tq, err := parseMetricsQuery(req.Query)
 	if err != nil {
-		return nil, fmt.Errorf("invalid query: %w", err)
+		return nil, err
 	}
 
 	metricsFn := tq.Metrics
@@ -334,9 +335,9 @@ func (t *TempoService) MetricsQueryInstant(ctx context.Context, req *model.Metri
 		attrsTable = fmt.Sprintf("`%s`.%s", conn.Config.Name, tables.GetTableName("tempo_traces_attrs_gin_dist"))
 	}
 
-	tq, err := traceql_ir.Parse(req.Query)
+	tq, err := parseMetricsQuery(req.Query)
 	if err != nil {
-		return nil, fmt.Errorf("invalid query: %w", err)
+		return nil, err
 	}
 
 	metricsFn := tq.Metrics
@@ -423,6 +424,20 @@ func (t *TempoService) MetricsQueryInstant(ctx context.Context, req *model.Metri
 		Series:  result,
 		Metrics: []byte(`{}`),
 	}, nil
+}
+
+var errMetricsStructural = errors.New("structural operators are not supported in metrics queries")
+
+// parseMetricsQuery parses a metrics query; structural operators are rejected.
+func parseMetricsQuery(query string) (*traceql_ir.Query, error) {
+	tq, err := traceql_ir.Parse(query)
+	if err != nil {
+		return nil, fmt.Errorf("invalid query: %w", err)
+	}
+	if tq.HasOneHop() {
+		return nil, errMetricsStructural
+	}
+	return tq, nil
 }
 
 // metricsExtractAllFilters flattens the filters of every selector in the
