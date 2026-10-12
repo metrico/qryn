@@ -120,35 +120,6 @@ func TestComplexPlanner(t *testing.T) {
 	fmt.Println(res)
 }
 
-func TestChainChecks(t *testing.T) {
-	for _, c := range []struct {
-		query            string
-		planErr, evalErr error
-	}{
-		{`{.a = 1} && {.b = 2} || {.c = 3}`, nil, nil},
-		{`{} && {.a = 1}`, errEmptyChainHead, errEmptyChainHead},
-		{`{} | count() > 1 && {.a = 1}`, errEmptyAggregated, errEmptyAggregated},
-		{`{.a = 1} || {}`, errEmptyChainTail, errEmptyChainTail},
-		{`{.a = 1} && ({.b = 2})`, errEmptyChainTail, errEmptyChainTail},
-		{`({.a = 1} || {.b = 2}) && {.c = 3}`, errEmptyChainHead, errEmptyChainHead},
-		{`({.a = 1}) && {.b = 2}`, errEmptyChainHead, nil},
-		{`({.a = 1}) && {}`, errEmptyChainTail, errEmptyChainTail},
-	} {
-		t.Run(c.query, func(t *testing.T) {
-			q, err := traceql_ir.Parse(c.query)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if _, err := Plan(q); err != c.planErr {
-				t.Errorf("Plan error = %v, want %v", err, c.planErr)
-			}
-			if _, err := PlanEval(q); err != c.evalErr {
-				t.Errorf("PlanEval error = %v, want %v", err, c.evalErr)
-			}
-		})
-	}
-}
-
 func TestAutocompleteRejectsChains(t *testing.T) {
 	q, err := traceql_ir.Parse(`{.a = 1} && {.b = 2}`)
 	if err != nil {

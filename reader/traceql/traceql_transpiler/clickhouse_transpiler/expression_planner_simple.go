@@ -17,20 +17,6 @@ type simpleExpressionPlanner struct {
 	terms map[string]int
 }
 
-func (p *simpleExpressionPlanner) addOp(selector iExpressionPlanner) {
-}
-
-func (p *simpleExpressionPlanner) setOps(selector []iExpressionPlanner) {
-}
-
-func (p *simpleExpressionPlanner) fn() string {
-	return ""
-}
-
-func (p *simpleExpressionPlanner) operands() []iExpressionPlanner {
-	return nil
-}
-
 func (p *simpleExpressionPlanner) tagsV2Planner() (shared.SQLRequestPlanner, error) {
 	err := p.check()
 	if err != nil {

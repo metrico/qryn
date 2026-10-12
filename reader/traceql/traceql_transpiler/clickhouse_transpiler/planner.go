@@ -26,8 +26,7 @@ func PlanValuesV2(query *traceql_ir.Query, key string) (shared.SQLRequestPlanner
 
 var (
 	errEmptyAggregated = errors.New("requests like `{} | ....` are not supported")
-	errEmptyChainHead  = errors.New("requests like `{} || .....` are not supported")
-	errEmptyChainTail  = errors.New("requests like `... || {}` are not supported")
+	errEmptyOperand    = errors.New("`{}` is not supported as an operand of a spanset operator")
 	errComplexAutocomp = errors.New("complex requests `{} || {} ...` are not supported")
 )
 
@@ -37,11 +36,16 @@ type planner struct {
 }
 
 func (p *planner) plan() (shared.SQLRequestPlanner, error) {
-	ep, err := p.searchPlanner(false)
+	expr, err := p.searchExpr()
 	if err != nil {
 		return nil, err
 	}
-	res, err := ep.planner()
+	var res shared.SQLRequestPlanner
+	if _, ok := expr.(*traceql_ir.SpansetOp); ok {
+		res, err = p.planSpansetExpr(expr)
+	} else {
+		res, err = (&simpleExpressionPlanner{selector: operandSelector(expr)}).planner()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -57,39 +61,90 @@ func (p *planner) plan() (shared.SQLRequestPlanner, error) {
 }
 
 func (p *planner) planEval() (shared.SQLRequestPlanner, error) {
-	ep, err := p.searchPlanner(true)
-	if err != nil {
-		return nil, err
-	}
-	res, err := ep.planEval()
-	if err != nil {
-		return nil, err
-	}
-	res = &EvalFinalizerPlanner{Main: res}
-	return res, nil
-}
-
-// searchPlanner builds the expression planner for search or, with eval set,
-// for its complexity estimate.
-func (p *planner) searchPlanner(eval bool) (iExpressionPlanner, error) {
 	expr, err := p.searchExpr()
 	if err != nil {
 		return nil, err
 	}
-	if _, ok := expr.(*traceql_ir.SpansetOp); !ok {
-		res := &simpleExpressionPlanner{selector: operandSelector(expr)}
-		if eval {
-			res.prefix = p.getPrefix()
-		}
-		return res, nil
+	var res shared.SQLRequestPlanner
+	if _, ok := expr.(*traceql_ir.SpansetOp); ok {
+		res, err = p.planOperandsEval(expr)
+	} else {
+		res, err = (&simpleExpressionPlanner{selector: operandSelector(expr), prefix: p.getPrefix()}).planEval()
 	}
-	selectors, ops, err := flattenChain(expr, eval)
 	if err != nil {
 		return nil, err
 	}
-	root := &rootExpressionPlanner{}
-	p.planChain(root, root, selectors, ops)
-	return root, nil
+	return &EvalFinalizerPlanner{Main: res}, nil
+}
+
+// planSpansetExpr plans a spanset operator tree into span rows.
+// Structural operators evaluate as `&&`.
+func (p *planner) planSpansetExpr(expr traceql_ir.SpansetExpr) (shared.SQLRequestPlanner, error) {
+	switch expr := expr.(type) {
+	case *traceql_ir.Group:
+		return p.planSpansetExpr(expr.Expr)
+	case *traceql_ir.SpansetOp:
+		lhs, err := p.planSpansetExpr(expr.LHS)
+		if err != nil {
+			return nil, err
+		}
+		rhs, err := p.planSpansetExpr(expr.RHS)
+		if err != nil {
+			return nil, err
+		}
+		if expr.Op == traceql_ir.OpOr {
+			return &TraceOrPlanner{LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}, nil
+		}
+		return &TraceAndPlanner{LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}, nil
+	}
+	op, err := p.operand(expr.(*traceql_ir.Selector))
+	if err != nil {
+		return nil, err
+	}
+	return op.planner()
+}
+
+// planOperandsEval estimates the cost of every operand of a spanset operator tree.
+func (p *planner) planOperandsEval(expr traceql_ir.SpansetExpr) (shared.SQLRequestPlanner, error) {
+	var operands []shared.SQLRequestPlanner
+	var walk func(expr traceql_ir.SpansetExpr) error
+	walk = func(expr traceql_ir.SpansetExpr) error {
+		switch expr := expr.(type) {
+		case *traceql_ir.Group:
+			return walk(expr.Expr)
+		case *traceql_ir.SpansetOp:
+			if err := walk(expr.LHS); err != nil {
+				return err
+			}
+			return walk(expr.RHS)
+		}
+		op, err := p.operand(expr.(*traceql_ir.Selector))
+		if err != nil {
+			return err
+		}
+		eval, err := op.planEval()
+		if err != nil {
+			return err
+		}
+		operands = append(operands, eval)
+		return nil
+	}
+	if err := walk(expr); err != nil {
+		return nil, err
+	}
+	return &ComplexEvalOrPlanner{Operands: operands, Prefix: p.getPrefix()}, nil
+}
+
+// operand plans one selector of a spanset operator; `{}` is not supported there.
+func (p *planner) operand(selector *traceql_ir.Selector) (*simpleExpressionPlanner, error) {
+	res := &simpleExpressionPlanner{selector: selector, prefix: p.getPrefix()}
+	if err := res.check(); err != nil {
+		return nil, err
+	}
+	if selector.Filter == nil {
+		return nil, errEmptyOperand
+	}
+	return res, nil
 }
 
 func (p *planner) planTagsV2() (shared.SQLRequestPlanner, error) {
@@ -139,98 +194,21 @@ func (p *planner) searchExpr() (traceql_ir.SpansetExpr, error) {
 		return nil, err
 	}
 	q := p.query
-	if group, ok := expr.(*traceql_ir.Group); ok && q.Metrics == nil && len(q.Hints) == 0 && q.SecondStage == nil {
+	if q.Metrics != nil || len(q.Hints) > 0 || q.SecondStage != nil {
+		return expr, nil
+	}
+	for {
+		group, ok := expr.(*traceql_ir.Group)
+		if !ok {
+			return expr, nil
+		}
 		expr = group.Expr
 	}
-	return expr, nil
 }
 
 func (p *planner) getPrefix() string {
 	p.prefix++
 	return fmt.Sprintf("_%d", p.prefix)
-}
-
-// planChain plans a flattened chain from left to right. Every structural operator
-// is evaluated as `&&`. An `&&` operand nests into the first operand of the
-// current node, and `||` wraps everything planned so far.
-func (p *planner) planChain(root iExpressionPlanner, current iExpressionPlanner,
-	selectors []*traceql_ir.Selector, ops []traceql_ir.SpansetOperator) {
-	selector := selectors[0]
-	switch {
-	case len(ops) == 0:
-		current.addOp(&simpleExpressionPlanner{selector: selector, prefix: p.getPrefix()})
-	case ops[0] == traceql_ir.OpOr:
-		current.addOp(&simpleExpressionPlanner{
-			selector: selector,
-			prefix:   p.getPrefix(),
-		})
-		root.setOps([]iExpressionPlanner{&complexExpressionPlanner{
-			prefix:    p.getPrefix(),
-			_fn:       string(traceql_ir.OpOr),
-			_operands: root.operands(),
-		}})
-		p.planChain(root, root.operands()[0], selectors[1:], ops[1:])
-	default:
-		current.addOp(&complexExpressionPlanner{
-			prefix: p.getPrefix(),
-			_fn:    string(traceql_ir.OpAnd),
-			_operands: []iExpressionPlanner{&simpleExpressionPlanner{
-				selector: selector,
-				prefix:   p.getPrefix(),
-			}},
-		})
-		p.planChain(root, current.operands()[0], selectors[1:], ops[1:])
-	}
-}
-
-// flattenChain returns a chain's selectors and the operators between them. Every
-// operand must be a non-empty selector without parentheses, except that a
-// parenthesised selector is accepted as the head when groupedHead is set.
-func flattenChain(expr traceql_ir.SpansetExpr, groupedHead bool) (
-	[]*traceql_ir.Selector, []traceql_ir.SpansetOperator, error) {
-	operands, ops := chainOf(expr)
-	head := operands[0]
-	for {
-		group, ok := head.(*traceql_ir.Group)
-		if !ok {
-			break
-		}
-		if _, ok := group.Expr.(*traceql_ir.SpansetOp); ok {
-			return nil, nil, errEmptyChainHead
-		}
-		head = group.Expr
-	}
-	headSelector := head.(*traceql_ir.Selector)
-	if headSelector.Filter == nil {
-		if headSelector.Aggregator != nil {
-			return nil, nil, errEmptyAggregated
-		}
-		return nil, nil, errEmptyChainHead
-	}
-	selectors := []*traceql_ir.Selector{headSelector}
-	for _, operand := range operands[1:] {
-		selector, ok := operand.(*traceql_ir.Selector)
-		if !ok || selector.Filter == nil {
-			return nil, nil, errEmptyChainTail
-		}
-		selectors = append(selectors, selector)
-	}
-	if _, ok := operands[0].(*traceql_ir.Group); ok && !groupedHead {
-		return nil, nil, errEmptyChainHead
-	}
-	return selectors, ops, nil
-}
-
-// chainOf lists a chain's operands and operators in query order; groups stay whole.
-func chainOf(expr traceql_ir.SpansetExpr) ([]traceql_ir.SpansetExpr, []traceql_ir.SpansetOperator) {
-	op, ok := expr.(*traceql_ir.SpansetOp)
-	if !ok {
-		return []traceql_ir.SpansetExpr{expr}, nil
-	}
-	lhs, lhsOps := chainOf(op.LHS)
-	rhs, rhsOps := chainOf(op.RHS)
-	ops := append(append(lhsOps, op.Op), rhsOps...)
-	return append(lhs, rhs...), ops
 }
 
 // operandSelector is the selector a lone operand plans as. A group plans as `{}`.
