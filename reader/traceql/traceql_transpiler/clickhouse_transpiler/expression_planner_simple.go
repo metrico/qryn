@@ -31,7 +31,7 @@ func (p *simpleExpressionPlanner) operands() []iExpressionPlanner {
 	return nil
 }
 
-func (p *simpleExpressionPlanner) tagsV2Planner()(shared.SQLRequestPlanner, error) {
+func (p *simpleExpressionPlanner) tagsV2Planner() (shared.SQLRequestPlanner, error) {
 	err := p.check()
 	if err != nil {
 		return nil, err

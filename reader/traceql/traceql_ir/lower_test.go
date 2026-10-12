@@ -85,16 +85,18 @@ func TestLowerSpansetOperators(t *testing.T) {
 		{`{.a = "a"} <<& {.b = "b"}`, op("<<&", a(), b())},
 		{`{.a = "a"} <<~ {.b = "b"}`, op("<<~", a(), b())},
 		{`{.a = "a"} ~ {.b = "b"}`, op("~", a(), b())},
-		// `&&` and the structural operators bind tighter than `||`;
-		// `&&`-level chains nest right, `||` chains nest left.
-		{`{.a = "a"} && {.b = "b"} && {.c = "c"}`, op(OpAnd, a(), op(OpAnd, b(), c()))},
+		// Structural operators bind tighter than `&&` = `||`; all left-associative.
+		{`{.a = "a"} && {.b = "b"} && {.c = "c"}`, op(OpAnd, op(OpAnd, a(), b()), c())},
 		{`{.a = "a"} || {.b = "b"} || {.c = "c"}`, op(OpOr, op(OpOr, a(), b()), c())},
 		{`{.a = "a"} && {.b = "b"} || {.c = "c"}`, op(OpOr, op(OpAnd, a(), b()), c())},
-		{`{.a = "a"} || {.b = "b"} && {.c = "c"}`, op(OpOr, a(), op(OpAnd, b(), c()))},
+		{`{.a = "a"} || {.b = "b"} && {.c = "c"}`, op(OpAnd, op(OpOr, a(), b()), c())},
+		{`{.a = "a"} ~ {.b = "b"} ~ {.c = "c"}`, op("~", op("~", a(), b()), c())},
 		{`{.a = "a"} ~ {.b = "b"} && {.c = "c"} || {.d = "d"}`,
-			op(OpOr, op("~", a(), op(OpAnd, b(), c())), d())},
+			op(OpOr, op(OpAnd, op("~", a(), b()), c()), d())},
 		{`{.a = "a"} || {.b = "b"} &>> {.c = "c"} || {.d = "d"}`,
 			op(OpOr, op(OpOr, a(), op("&>>", b(), c())), d())},
+		{`{.a = "a"} && {.b = "b"} &>> {.c = "c"} !>> {.d = "d"}`,
+			op(OpAnd, a(), op("!>>", op("&>>", b(), c()), d()))},
 		{`{.a = "a"} &&`, a()},
 		{`({.a = "a"})`, &Group{Expr: a()}},
 		{`(({.a = "a"}))`, &Group{Expr: &Group{Expr: a()}}},

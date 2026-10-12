@@ -26,36 +26,39 @@ func Lower(script *traceql_parser.TraceQLScript) *Query {
 	return q
 }
 
-// lowerSpansetExpr turns the script's operand chain into a tree. `&&` and the
-// structural operators bind tighter than `||`; `&&`-level chains nest to the
-// right and `||` chains to the left.
+// lowerSpansetExpr turns the script's operand chain into a tree. Structural
+// operators bind tighter than `&&` and `||`, which share one level; all are
+// left-associative.
 func lowerSpansetExpr(script *traceql_parser.TraceQLScript) SpansetExpr {
 	var (
-		res     SpansetExpr
-		pending []SpansetExpr
-		ops     []SpansetOperator
+		res    SpansetExpr
+		term   SpansetExpr
+		joinOp SpansetOperator
+		prevOp SpansetOperator
 	)
 	flush := func() {
-		term := pending[len(pending)-1]
-		for i := len(ops) - 1; i >= 0; i-- {
-			term = &SpansetOp{Op: ops[i], LHS: pending[i], RHS: term}
-		}
 		if res == nil {
 			res = term
 		} else {
-			res = &SpansetOp{Op: OpOr, LHS: res, RHS: term}
+			res = &SpansetOp{Op: joinOp, LHS: res, RHS: term}
 		}
-		pending, ops = nil, nil
 	}
 	for s := script; s != nil; s = s.Tail {
-		pending = append(pending, lowerOperand(s))
+		operand := lowerOperand(s)
+		if term == nil {
+			term = operand
+		} else {
+			term = &SpansetOp{Op: prevOp, LHS: term, RHS: operand}
+		}
 		if s.Op == "" || s.Tail == nil {
 			break
 		}
-		if s.Op == string(OpOr) {
+		op := SpansetOperator(s.Op)
+		if op == OpAnd || op == OpOr {
 			flush()
+			term, joinOp = nil, op
 		} else {
-			ops = append(ops, SpansetOperator(s.Op))
+			prevOp = op
 		}
 	}
 	flush()
