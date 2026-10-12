@@ -80,59 +80,58 @@ func (p *planner) planEval() (shared.SQLRequestPlanner, error) {
 // planSpansetExpr plans a spanset operator tree into span rows.
 // Structural operators evaluate as `&&`.
 func (p *planner) planSpansetExpr(expr traceql_ir.SpansetExpr) (shared.SQLRequestPlanner, error) {
-	switch expr := expr.(type) {
-	case *traceql_ir.Group:
-		return p.planSpansetExpr(expr.Expr)
-	case *traceql_ir.SpansetOp:
-		lhs, err := p.planSpansetExpr(expr.LHS)
-		if err != nil {
-			return nil, err
-		}
-		rhs, err := p.planSpansetExpr(expr.RHS)
-		if err != nil {
-			return nil, err
-		}
-		if expr.Op == traceql_ir.OpOr {
-			return &TraceOrPlanner{LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}, nil
-		}
-		return &TraceAndPlanner{LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}, nil
-	}
-	op, err := p.operand(expr.(*traceql_ir.Selector))
-	if err != nil {
-		return nil, err
-	}
-	return op.planner()
+	return planSpansetTree(p, expr,
+		func(op *simpleExpressionPlanner) (shared.SQLRequestPlanner, error) { return op.planner() },
+		func(op traceql_ir.SpansetOperator, lhs, rhs shared.SQLRequestPlanner) shared.SQLRequestPlanner {
+			if op == traceql_ir.OpOr {
+				return &TraceOrPlanner{LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
+			}
+			return &TraceAndPlanner{LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
+		})
 }
 
 // planOperandsEval estimates the cost of every operand of a spanset operator tree.
 func (p *planner) planOperandsEval(expr traceql_ir.SpansetExpr) (shared.SQLRequestPlanner, error) {
-	var operands []shared.SQLRequestPlanner
-	var walk func(expr traceql_ir.SpansetExpr) error
-	walk = func(expr traceql_ir.SpansetExpr) error {
-		switch expr := expr.(type) {
-		case *traceql_ir.Group:
-			return walk(expr.Expr)
-		case *traceql_ir.SpansetOp:
-			if err := walk(expr.LHS); err != nil {
-				return err
-			}
-			return walk(expr.RHS)
-		}
-		op, err := p.operand(expr.(*traceql_ir.Selector))
-		if err != nil {
-			return err
-		}
-		eval, err := op.planEval()
-		if err != nil {
-			return err
-		}
-		operands = append(operands, eval)
-		return nil
-	}
-	if err := walk(expr); err != nil {
+	operands, err := planSpansetTree(p, expr,
+		func(op *simpleExpressionPlanner) ([]shared.SQLRequestPlanner, error) {
+			eval, err := op.planEval()
+			return []shared.SQLRequestPlanner{eval}, err
+		},
+		func(_ traceql_ir.SpansetOperator, lhs, rhs []shared.SQLRequestPlanner) []shared.SQLRequestPlanner {
+			return append(lhs, rhs...)
+		})
+	if err != nil {
 		return nil, err
 	}
 	return &ComplexEvalOrPlanner{Operands: operands, Prefix: p.getPrefix()}, nil
+}
+
+// planSpansetTree folds a spanset operator tree: leaf plans each operand and
+// join combines the two sides of an operator. Groups plan as their content.
+func planSpansetTree[T any](p *planner, expr traceql_ir.SpansetExpr,
+	leaf func(*simpleExpressionPlanner) (T, error),
+	join func(traceql_ir.SpansetOperator, T, T) T) (T, error) {
+	switch expr := expr.(type) {
+	case *traceql_ir.Group:
+		return planSpansetTree(p, expr.Expr, leaf, join)
+	case *traceql_ir.SpansetOp:
+		var zero T
+		lhs, err := planSpansetTree(p, expr.LHS, leaf, join)
+		if err != nil {
+			return zero, err
+		}
+		rhs, err := planSpansetTree(p, expr.RHS, leaf, join)
+		if err != nil {
+			return zero, err
+		}
+		return join(expr.Op, lhs, rhs), nil
+	}
+	op, err := p.operand(expr.(*traceql_ir.Selector))
+	if err != nil {
+		var zero T
+		return zero, err
+	}
+	return leaf(op)
 }
 
 // operand plans one selector of a spanset operator; `{}` is not supported there.

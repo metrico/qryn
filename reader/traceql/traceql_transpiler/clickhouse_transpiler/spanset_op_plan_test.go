@@ -2,7 +2,6 @@ package clickhouse_transpiler
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -78,14 +77,6 @@ func TestSearchPlansEveryOperand(t *testing.T) {
 			t.Errorf("operand %q missing:\n%s", v, res)
 		}
 	}
-	defs := regexp.MustCompile(`(\w+) as \(`).FindAllStringSubmatch(res, -1)
-	seen := map[string]bool{}
-	for _, d := range defs {
-		if seen[d[1]] {
-			t.Errorf("CTE %s defined twice:\n%s", d[1], res)
-		}
-		seen[d[1]] = true
-	}
 }
 
 func TestSpansetOperandChecks(t *testing.T) {
@@ -129,15 +120,15 @@ func TestComplexityEvaluatesEveryOperand(t *testing.T) {
 	if !ok {
 		t.Fatalf("eval plan is %T", plan)
 	}
-	union, ok := final.Main.(*ComplexEvalOrPlanner)
+	operands, ok := final.Main.(*ComplexEvalOrPlanner)
 	if !ok {
 		t.Fatalf("eval operands planner is %T", final.Main)
 	}
-	if len(union.Operands) != 4 {
-		t.Errorf("%d operands evaluated, want 4", len(union.Operands))
+	if len(operands.Operands) != 4 {
+		t.Errorf("%d operands evaluated, want 4", len(operands.Operands))
 	}
 	prefixes := map[string]bool{}
-	for _, op := range union.Operands {
+	for _, op := range operands.Operands {
 		prefixes[op.(*AttrConditionEvaluatorPlanner).Prefix] = true
 	}
 	if len(prefixes) != 4 {

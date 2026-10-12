@@ -70,7 +70,7 @@ func processSides(ctx *shared.PlannerContext, lhs, rhs shared.SQLRequestPlanner,
 	return sql.NewWith(l, alias+"_lhs"), sql.NewWith(r, alias+"_rhs"), nil
 }
 
-// spanRowCols are the columns every expression planner yields.
+// spanRowCols are the span-row columns every spanset planner returns.
 func spanRowCols() []sql.SQLObject {
 	return []sql.SQLObject{
 		sql.NewSimpleCol("trace_id", "trace_id"),
