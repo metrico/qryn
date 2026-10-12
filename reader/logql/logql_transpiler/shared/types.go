@@ -30,6 +30,8 @@ type PlannerContext struct {
 	OrderASC  bool
 	Limit     int64
 	Offset    time.Duration
+	// SpansPerSpanSet caps the spans listed per TraceQL search spanset; 0 means the default.
+	SpansPerSpanSet int64
 
 	TimeSeriesGinTableName     string
 	TimeSeriesGinDistTableName string

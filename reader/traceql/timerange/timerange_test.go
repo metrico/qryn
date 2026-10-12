@@ -15,13 +15,13 @@ func render(t *testing.T, c sql.SQLCondition) string {
 }
 
 func TestSpanStart(t *testing.T) {
-	lower, upper := SpanStart("main.timestamp_ns", 10, 20)
-	require.Equal(t, "(main.timestamp_ns) >= (10)", render(t, lower))
-	require.Equal(t, "(main.timestamp_ns) < (20)", render(t, upper))
+	lower, upper := SpanStart("traces_idx.timestamp_ns", 10, 20)
+	require.Equal(t, "(traces_idx.timestamp_ns) > (10)", render(t, lower))
+	require.Equal(t, "(traces_idx.timestamp_ns) <= (20)", render(t, upper))
 }
 
-func TestSpanStartClosed(t *testing.T) {
-	lower, upper := SpanStartClosed("timestamp_ns", 10, 20)
-	require.Equal(t, "(timestamp_ns) >= (10)", render(t, lower))
-	require.Equal(t, "(timestamp_ns) <= (20)", render(t, upper))
+func TestSpanStartFromInclusive(t *testing.T) {
+	lower, upper := SpanStartFromInclusive("main.timestamp_ns", 10, 20)
+	require.Equal(t, "(main.timestamp_ns) >= (10)", render(t, lower))
+	require.Equal(t, "(main.timestamp_ns) < (20)", render(t, upper))
 }

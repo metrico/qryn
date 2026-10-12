@@ -84,7 +84,7 @@ func (p *simpleExpressionPlanner) planner() (shared.SQLRequestPlanner, error) {
 	var res shared.SQLRequestPlanner
 	if p.selector.Filter != nil {
 		res = &AttrConditionPlanner{
-			Main:           NewInitIndexPlanner(false),
+			Main:           NewInitIndexPlanner(true),
 			Terms:          p.termIdx,
 			Conds:          p.cond,
 			AggregatedAttr: p.aggAttr,
@@ -92,8 +92,6 @@ func (p *simpleExpressionPlanner) planner() (shared.SQLRequestPlanner, error) {
 	} else {
 		res = NewAttrlessConditionPlanner()
 	}
-
-	res = &IndexGroupByPlanner{Main: res, Prefix: p.prefix}
 
 	if agg := p.selector.Aggregator; agg != nil {
 		res = &AggregatorPlanner{

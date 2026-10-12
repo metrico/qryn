@@ -8,6 +8,7 @@ import (
 	sql "github.com/metrico/qryn/v5/reader/utils/sql_select"
 )
 
+// ComplexOrPlanner returns the spans any operand returns.
 type ComplexOrPlanner struct {
 	Operands []shared.SQLRequestPlanner
 	Prefix   string
@@ -15,33 +16,28 @@ type ComplexOrPlanner struct {
 
 func (c ComplexOrPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, error) {
 	selects := make([]sql.ISelect, len(c.Operands))
-	var err error
 	for i, op := range c.Operands {
-		selects[i], err = op.Process(ctx)
+		main, err := op.Process(ctx)
 		if err != nil {
 			return nil, err
 		}
-		selects[i].Select(
-			append(selects[i].GetSelect(),
-				sql.NewSimpleCol("max(timestamp_ns)", "max_timestamp_ns"))...)
-		with := sql.NewWith(selects[i], fmt.Sprintf("_%d_pre_", i))
+		with := sql.NewWith(main, fmt.Sprintf("_%d_pre_", i))
 		selects[i] = sql.NewSelect().
 			With(with).
 			Select(sql.NewSimpleCol("trace_id", "trace_id"),
-				sql.NewSimpleCol("_span_id", "span_id"),
-				sql.NewSimpleCol("max_timestamp_ns", "max_timestamp_ns")).
-			From(sql.NewWithRef(with)).
-			Join(sql.NewJoin("array", sql.NewSimpleCol(with.GetAlias()+".span_id", "_span_id"), nil))
+				sql.NewSimpleCol("span_id", "span_id"),
+				sql.NewSimpleCol("timestamp_ns", "timestamp_ns")).
+			From(sql.NewWithRef(with))
 	}
 
 	return sql.NewSelect().
+		Distinct(true).
 		Select(sql.NewSimpleCol("trace_id", "trace_id"),
-			sql.NewSimpleCol("groupUniqArray(100)(span_id)", "span_id")).
+			sql.NewSimpleCol("span_id", "span_id"),
+			sql.NewSimpleCol("timestamp_ns", "timestamp_ns")).
 		From(sql.NewCol(&union{
 			selects: selects,
-		}, c.Prefix+"a")).
-		GroupBy(sql.NewRawObject("trace_id")).
-		OrderBy(sql.NewOrderBy(sql.NewRawObject("max(max_timestamp_ns)"), sql.ORDER_BY_DIRECTION_DESC)), nil
+		}, c.Prefix+"a")), nil
 }
 
 type union struct {

@@ -7,15 +7,15 @@ import (
 )
 
 // SpanStart returns the lower and upper bounds restricting col, a span start
-// time in ns, to [fromNs, toNs).
+// time in ns, to (fromNs, toNs].
 func SpanStart(col string, fromNs, toNs int64) (lower, upper sql.SQLCondition) {
 	c := sql.NewRawObject(col)
-	return sql.Ge(c, sql.NewIntVal(fromNs)), sql.Lt(c, sql.NewIntVal(toNs))
+	return sql.Gt(c, sql.NewIntVal(fromNs)), sql.Le(c, sql.NewIntVal(toNs))
 }
 
-// SpanStartClosed returns the lower and upper bounds restricting col, a span
-// start time in ns, to [fromNs, toNs].
-func SpanStartClosed(col string, fromNs, toNs int64) (lower, upper sql.SQLCondition) {
+// SpanStartFromInclusive returns the lower and upper bounds restricting col,
+// a span start time in ns, to [fromNs, toNs). Metrics use it.
+func SpanStartFromInclusive(col string, fromNs, toNs int64) (lower, upper sql.SQLCondition) {
 	c := sql.NewRawObject(col)
-	return sql.Ge(c, sql.NewIntVal(fromNs)), sql.Le(c, sql.NewIntVal(toNs))
+	return sql.Ge(c, sql.NewIntVal(fromNs)), sql.Lt(c, sql.NewIntVal(toNs))
 }

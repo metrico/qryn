@@ -6,6 +6,8 @@ import (
 	sql "github.com/metrico/qryn/v5/reader/utils/sql_select"
 )
 
+// TracesDataPlanner reads the listed spans and trace summaries of Main's
+// (trace_id, span_id[], matched) rows.
 type TracesDataPlanner struct {
 	Main shared.SQLRequestPlanner
 }
@@ -24,9 +26,10 @@ func (t *TracesDataPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, er
 		return nil, err
 	}
 
-	table := ctx.TracesTable
+	table := tracesTable(ctx)
+	join := "any left"
 	if ctx.IsCluster {
-		table = ctx.TracesDistTable
+		join = "global any left"
 	}
 
 	withMain := sql.NewWith(main, "index_grouped")
@@ -49,8 +52,8 @@ func (t *TracesDataPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, er
 				sql.NewSimpleCol("intDiv(max(traces.timestamp_ns + traces.duration_ns) - min(traces.timestamp_ns), 1000000)", "_duration_ms"),
 				sql.NewSimpleCol("argMin(traces.service_name, traces.timestamp_ns)", "_root_service_name"),
 				sql.NewSimpleCol("argMin(traces.name, traces.timestamp_ns)", "_root_trace_name")).
-			From(sql.NewSimpleCol(ctx.TracesTable, "traces")).
-			AndWhere(sql.NewIn(sql.NewRawObject("traces.trace_id"), withTraceIdsRef)).
+			From(sql.NewSimpleCol(table, "traces")).
+			AndWhere(inSubquery(ctx, sql.NewRawObject("traces.trace_id"), withTraceIdsRef)).
 			GroupBy(sql.NewRawObject("traces.trace_id")),
 		"traces_info")
 	res := sql.NewSelect().
@@ -64,23 +67,23 @@ func (t *TracesDataPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, er
 			sql.NewSimpleCol("min(_duration_ms)", "duration_ms"),
 			sql.NewSimpleCol("min(_root_service_name)", "root_service_name"),
 			sql.NewSimpleCol("min(_root_trace_name)", "root_trace_name"),
+			sql.NewSimpleCol("min(index_grouped.matched)", "matched"),
 		).
 		From(sql.NewSimpleCol(table, "traces")).
 		Join(sql.NewJoin(
-			"any left",
+			join,
 			sql.NewWithRef(withTracesInfo),
 			sql.Eq(sql.NewRawObject("traces.trace_id"), sql.NewRawObject(withTracesInfo.GetAlias()+".trace_id"))),
+			sql.NewJoin(
+				join,
+				sql.NewWithRef(withMain),
+				sql.Eq(sql.NewRawObject("traces.trace_id"), sql.NewRawObject(withMain.GetAlias()+".trace_id"))),
 		).
 		AndWhere(
-			sql.NewIn(sql.NewRawObject("traces.trace_id"), withTraceIdsRef),
-			sql.NewIn(sql.NewRawObject("(traces.trace_id, traces.span_id)"), withTraceIdsSpanIdsRef)).
+			inSubquery(ctx, sql.NewRawObject("traces.trace_id"), withTraceIdsRef),
+			inSubquery(ctx, sql.NewRawObject("(traces.trace_id, traces.span_id)"), withTraceIdsSpanIdsRef)).
 		GroupBy(sql.NewRawObject("traces.trace_id")).
 		OrderBy(sql.NewOrderBy(sql.NewRawObject("start_time_unix_nano"), sql.ORDER_BY_DIRECTION_DESC))
-
-	// Apply intrinsic filters (e.g., nestedSetParent<0 → parent_id = '')
-	for _, cond := range ctx.TracesIntrinsicWhere {
-		res.AndWhere(cond)
-	}
 
 	return res, nil
 }

@@ -48,9 +48,10 @@ func (t TraceQLRequestProcessor) Process(ctx *shared.PlannerContext) (chan []mod
 				traceDurationMs   int64
 				rootServiceName   string
 				rootTraceName     string
+				matched           int64
 			)
 			err = rows.Scan(&traceId, &spanIds, &durationsNs, &timestampsNs,
-				&startTimeUnixNano, &traceDurationMs, &rootServiceName, &rootTraceName)
+				&startTimeUnixNano, &traceDurationMs, &rootServiceName, &rootTraceName, &matched)
 			if err != nil {
 				logger.Error("ERROR[TRP#1]: ", err)
 				return
@@ -79,7 +80,7 @@ func (t TraceQLRequestProcessor) Process(ctx *shared.PlannerContext) (chan []mod
 				trace.SpanSet.Spans[i].StartTimeUnixNano = fmt.Sprintf("%d", timestampsNs[i])
 				trace.SpanSet.Spans[i].Attributes = make([]model.SpanAttr, 0)
 			}
-			trace.SpanSet.Matched = len(trace.SpanSet.Spans)
+			trace.SpanSet.Matched = int(matched)
 			trace.SpanSets = []model.SpanSet{trace.SpanSet}
 			sortSpans(trace.SpanSet.Spans)
 			res <- []model.TraceInfo{trace}

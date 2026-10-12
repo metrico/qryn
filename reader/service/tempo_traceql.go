@@ -13,7 +13,7 @@ import (
 )
 
 func (t *TempoService) SearchTraceQL(ctx context.Context,
-	q string, limit int, from time.Time, to time.Time) (chan []model.TraceInfo, error) {
+	q string, limit int, spss int, from time.Time, to time.Time) (chan []model.TraceInfo, error) {
 	conn, err := t.Session.GetDB(ctx)
 	if err != nil {
 		return nil, err
@@ -34,6 +34,7 @@ func (t *TempoService) SearchTraceQL(ctx context.Context,
 		return nil, err
 	}
 	sqlCtx.CancelCtx = cancel
+	sqlCtx.SpansPerSpanSet = int64(spss)
 
 	ch, err := planner.Process(sqlCtx)
 

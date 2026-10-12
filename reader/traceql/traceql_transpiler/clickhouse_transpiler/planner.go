@@ -45,6 +45,8 @@ func (p *planner) plan() (shared.SQLRequestPlanner, error) {
 	if err != nil {
 		return nil, err
 	}
+	res = &SearchSpansetPlanner{Main: res}
+
 	res = &IndexLimitPlanner{res}
 
 	res = NewTracesDataPlanner(res)

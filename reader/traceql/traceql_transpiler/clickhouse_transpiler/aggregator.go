@@ -9,6 +9,8 @@ import (
 	sql "github.com/metrico/qryn/v5/reader/utils/sql_select"
 )
 
+// AggregatorPlanner keeps the spans of the traces whose aggregate over Main's
+// spans passes the comparison.
 type AggregatorPlanner struct {
 	Main       shared.SQLRequestPlanner
 	Fn         string
@@ -41,7 +43,20 @@ func (a *AggregatorPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, er
 		return nil, err
 	}
 
-	return main.AndHaving(fn(agg, sql.NewFloatVal(a.fCmpVal))), nil
+	withMain := sql.NewWith(main, a.Prefix+"index_search")
+	passing := sql.NewSelect().
+		Select(sql.NewRawObject("trace_id")).
+		From(sql.NewWithRef(withMain)).
+		GroupBy(sql.NewRawObject("trace_id")).
+		AndHaving(fn(agg, sql.NewFloatVal(a.fCmpVal)))
+	return sql.NewSelect().
+		With(withMain).
+		Select(
+			sql.NewSimpleCol("trace_id", "trace_id"),
+			sql.NewSimpleCol("span_id", "span_id"),
+			sql.NewSimpleCol("timestamp_ns", "timestamp_ns")).
+		From(sql.NewWithRef(withMain)).
+		AndWhere(sql.NewIn(sql.NewRawObject("trace_id"), passing)), nil
 }
 
 func (a *AggregatorPlanner) cmpVal() error {
