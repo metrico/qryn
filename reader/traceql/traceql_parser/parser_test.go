@@ -92,6 +92,12 @@ func TestParseSpansetOperators(t *testing.T) {
 		}, got)
 	})
 
+	t.Run("trailing operator", func(t *testing.T) {
+		got, err := Parse(`{.a = "b"} &&`)
+		require.NoError(t, err)
+		require.Equal(t, &TraceQLScript{Head: a(), Op: "&&"}, got)
+	})
+
 	t.Run("parenthesised script", func(t *testing.T) {
 		got, err := Parse(`({.a = "b"} &>> {.c = "d"}) || {}`)
 		require.NoError(t, err)
@@ -263,6 +269,8 @@ func TestParseRejects(t *testing.T) {
 		`{.a + .b > 3}`,
 		`{!(.a = 1)}`,
 		`{} | {}`,
+		`{.a = "b"} {.c = "d"}`,
+		`({.a = "b"}) ({.c = "d"})`,
 	} {
 		t.Run(q, func(t *testing.T) {
 			_, err := Parse(q)

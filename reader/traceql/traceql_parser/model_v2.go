@@ -9,8 +9,8 @@ import (
 type TraceQLScript struct {
 	ParenExpr *TraceQLScript `( "(" @@ ")"`
 	Head      Selector       `| @@ )`
-	Op        string         `@(Descendant|NotDescendant|Ancestor|NotAncestor|Sibling|And|Or)?`
-	Tail      *TraceQLScript `@@?`
+	Op        string         `( @(Descendant|NotDescendant|Ancestor|NotAncestor|Sibling|And|Or)`
+	Tail      *TraceQLScript `@@? )?`
 	// MetricsFn at the script level supports: ({A} &>> {B}) | rate()
 	MetricsFn   *MetricsPipelineStage `@@?`
 	WithHints   *WithClause           `@@?`
