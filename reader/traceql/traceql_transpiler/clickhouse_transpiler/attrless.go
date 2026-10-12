@@ -21,14 +21,14 @@ func NewAttrlessConditionPlanner() shared.SQLRequestPlanner {
 func (a *AttrlessConditionPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, error) {
 	tracesTable := ctx.TracesTable
 	from, to := ctx.From.UnixNano(), ctx.To.UnixNano()
-	pickFrom, pickTo := timerange.TracePick("timestamp_ns", from, to)
+	closedFrom, closedTo := timerange.SpanStartClosed("timestamp_ns", from, to)
 	tsFrom, tsTo := timerange.SpanStart("timestamp_ns", from, to)
 	traceIds := sql.NewSelect().Select(sql.NewSimpleCol("trace_id", "trace_id")).
 		Distinct(true).
 		From(sql.NewSimpleCol(tracesTable, "traces")).
 		AndWhere(sql.And(
-			pickFrom,
-			pickTo,
+			closedFrom,
+			closedTo,
 		)).OrderBy(sql.NewOrderBy(sql.NewRawObject("timestamp_ns"), sql.ORDER_BY_DIRECTION_DESC)).
 		Limit(sql.NewIntVal(ctx.Limit))
 	withTraceIds := sql.NewWith(traceIds, "trace_ids")

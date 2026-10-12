@@ -20,8 +20,8 @@ func TestSpanStart(t *testing.T) {
 	require.Equal(t, "(main.timestamp_ns) < (20)", render(t, upper))
 }
 
-func TestTracePick(t *testing.T) {
-	lower, upper := TracePick("timestamp_ns", 10, 20)
+func TestSpanStartClosed(t *testing.T) {
+	lower, upper := SpanStartClosed("timestamp_ns", 10, 20)
 	require.Equal(t, "(timestamp_ns) >= (10)", render(t, lower))
 	require.Equal(t, "(timestamp_ns) <= (20)", render(t, upper))
 }

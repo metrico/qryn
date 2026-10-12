@@ -38,7 +38,7 @@ func TestServerCapabilities(t *testing.T) {
 	}{
 		{"24.8.14.39", nil},
 		{"24.9.1.3278", []string{CapStructuralQueries}},
-		{"24.11.1.0", []string{CapStaleness, CapStructuralQueries}},
+		{"24.11.1.0", []string{CapStructuralQueries, CapStaleness}},
 		{"garbage", nil},
 	} {
 		got := serverCapabilities(c.version)

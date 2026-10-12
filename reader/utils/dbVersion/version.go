@@ -62,11 +62,11 @@ const CapStructuralQueries = "ch_structural_queries"
 // like "24.9.1.3278".
 func serverCapabilities(version string) []string {
 	var caps []string
-	if versionAtLeast(version, 24, 11) {
-		caps = append(caps, CapStaleness)
-	}
 	if versionAtLeast(version, 24, 9) {
 		caps = append(caps, CapStructuralQueries)
+	}
+	if versionAtLeast(version, 24, 11) {
+		caps = append(caps, CapStaleness)
 	}
 	return caps
 }

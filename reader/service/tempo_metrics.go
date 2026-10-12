@@ -34,14 +34,14 @@ func (t *TempoService) MetricsQueryRange(ctx context.Context, req *model.Metrics
 	if err != nil {
 		return nil, fmt.Errorf("invalid query: %w", err)
 	}
-	planCtx, err := traceQLPlannerContext(ctx, conn, req.From, req.To, 0)
-	if err != nil {
-		return nil, err
-	}
 
 	metricsFn := script.ResolvedMetricsFn()
 	if metricsFn == nil {
 		return nil, fmt.Errorf("query must contain a metrics function (e.g. | rate())")
+	}
+	planCtx, err := traceQLPlannerContext(ctx, conn, req.From, req.To, 0)
+	if err != nil {
+		return nil, err
 	}
 
 	// compare() has its own query and response format
@@ -341,14 +341,14 @@ func (t *TempoService) MetricsQueryInstant(ctx context.Context, req *model.Metri
 	if err != nil {
 		return nil, fmt.Errorf("invalid query: %w", err)
 	}
-	planCtx, err := traceQLPlannerContext(ctx, conn, req.From, req.To, 0)
-	if err != nil {
-		return nil, err
-	}
 
 	metricsFn := script.ResolvedMetricsFn()
 	if metricsFn == nil {
 		return nil, fmt.Errorf("query must contain a metrics function (e.g. | rate())")
+	}
+	planCtx, err := traceQLPlannerContext(ctx, conn, req.From, req.To, 0)
+	if err != nil {
+		return nil, err
 	}
 
 	if metricsFn.Fn == "compare" {
