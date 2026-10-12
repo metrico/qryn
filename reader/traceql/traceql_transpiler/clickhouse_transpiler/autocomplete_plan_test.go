@@ -28,8 +28,8 @@ func autocompletePlans(t *testing.T, query string) map[string]shared.SQLRequestP
 	return map[string]shared.SQLRequestPlanner{"tags": tags, "values": values}
 }
 
-// autocompleteResult unwraps an autocomplete plan down to its evaluated expression.
-func autocompleteResult(t *testing.T, plan shared.SQLRequestPlanner) (structural bool, expr shared.SQLRequestPlanner) {
+// unwrapAutocompletePlan unwraps an autocomplete plan down to its evaluated expression.
+func unwrapAutocompletePlan(t *testing.T, plan shared.SQLRequestPlanner) (structural bool, expr shared.SQLRequestPlanner) {
 	t.Helper()
 	if s, ok := plan.(*StructuralQueryPlanner); ok {
 		structural = true
@@ -38,7 +38,7 @@ func autocompleteResult(t *testing.T, plan shared.SQLRequestPlanner) (structural
 	switch p := plan.(type) {
 	case *SelectTagsPlanner:
 		return structural, p.Result
-	case *SelectValuesRequestPlanner:
+	case *SelectValuesPlanner:
 		return structural, p.Result
 	}
 	t.Fatalf("autocomplete plan is %T", plan)
@@ -57,7 +57,7 @@ func TestAutocompleteReadsTheSearchResultSpans(t *testing.T) {
 		want := describePlan(t, searchExpr)
 		for kind, plan := range autocompletePlans(t, query) {
 			t.Run(kind+" "+query, func(t *testing.T) {
-				structural, expr := autocompleteResult(t, plan)
+				structural, expr := unwrapAutocompletePlan(t, plan)
 				if got := describePlan(t, expr); got != want {
 					t.Errorf("autocomplete plan %s, search plan %s", got, want)
 				}
@@ -182,7 +182,7 @@ func TestAutocompleteSpanStartIsLeftOpenRightClosed(t *testing.T) {
 	}
 }
 
-// The root filter applies on every evaluation, as complexity portions run the plan repeatedly.
+// The root filter applies on every evaluation of a plan.
 func TestAutocompleteRootFilterAppliesToTheResultSpans(t *testing.T) {
 	for kind, plan := range autocompletePlans(t, `{nestedSetParent < 0 && .a = 1}`) {
 		for i := 0; i < 2; i++ {

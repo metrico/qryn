@@ -22,12 +22,9 @@ func PlanTagsV2(query *traceql_ir.Query) (shared.SQLRequestPlanner, error) {
 	if AllSpans(query) {
 		return &AllTagsRequestPlanner{}, nil
 	}
-	p := &planner{query: query}
-	result, err := p.autocompleteResult()
-	if err != nil {
-		return nil, err
-	}
-	return p.structuralGate(&SelectTagsPlanner{Result: result, Prefix: p.getPrefix()}), nil
+	return planAutocomplete(query, func(result shared.SQLRequestPlanner, prefix string) shared.SQLRequestPlanner {
+		return &SelectTagsPlanner{Result: result, Prefix: prefix}
+	})
 }
 
 // PlanValuesV2 plans the values of attribute key of the spans a search for
@@ -36,12 +33,24 @@ func PlanValuesV2(query *traceql_ir.Query, key string) (shared.SQLRequestPlanner
 	if AllSpans(query) {
 		return &AllValuesRequestPlanner{Key: key}, nil
 	}
+	return planAutocomplete(query, func(result shared.SQLRequestPlanner, prefix string) shared.SQLRequestPlanner {
+		return &SelectValuesPlanner{Result: result, Prefix: prefix, Key: key}
+	})
+}
+
+// planAutocomplete plans the result spans of query and reads them with attrs.
+func planAutocomplete(query *traceql_ir.Query,
+	attrs func(result shared.SQLRequestPlanner, prefix string) shared.SQLRequestPlanner) (shared.SQLRequestPlanner, error) {
 	p := &planner{query: query}
-	result, err := p.autocompleteResult()
+	expr, err := p.spansetExpr()
 	if err != nil {
 		return nil, err
 	}
-	return p.structuralGate(&SelectValuesRequestPlanner{Result: result, Prefix: p.getPrefix(), Key: key}), nil
+	result, err := p.planSpansetExpr(expr)
+	if err != nil {
+		return nil, err
+	}
+	return p.structuralGate(attrs(result, p.getPrefix())), nil
 }
 
 // AllSpans reports whether query selects every span: no query, or a lone `{}`.
@@ -182,16 +191,6 @@ func (p *planner) operand(selector *traceql_ir.Selector) (*simpleExpressionPlann
 		return nil, err
 	}
 	return res, nil
-}
-
-// autocompleteResult plans the result spans of the query's spanset
-// expression for autocomplete.
-func (p *planner) autocompleteResult() (shared.SQLRequestPlanner, error) {
-	expr, err := p.spansetExpr()
-	if err != nil {
-		return nil, err
-	}
-	return p.planSpansetExpr(expr)
 }
 
 // spansetExpr returns the query's only pipeline element.

@@ -297,8 +297,7 @@ func (t *TempoService) GetValuesRequest(ctx context.Context, tag string, conn *m
 	return oRequest
 }
 
-// unscopedTag is the attribute key of a tag: span and resource attributes
-// share one namespace.
+// unscopedTag is the attribute key of a tag, without its span or resource scope.
 func unscopedTag(tag string) string {
 	tag = strings.TrimPrefix(tag, "span.")
 	tag = strings.TrimPrefix(tag, ".")
