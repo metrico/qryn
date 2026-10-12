@@ -34,6 +34,10 @@ func (t *TempoService) MetricsQueryRange(ctx context.Context, req *model.Metrics
 	if err != nil {
 		return nil, fmt.Errorf("invalid query: %w", err)
 	}
+	planCtx, err := traceQLPlannerContext(ctx, conn, req.From, req.To, 0)
+	if err != nil {
+		return nil, err
+	}
 
 	metricsFn := script.ResolvedMetricsFn()
 	if metricsFn == nil {
@@ -56,8 +60,8 @@ func (t *TempoService) MetricsQueryRange(ctx context.Context, req *model.Metrics
 		byLabels = metricsFn.By.Labels
 	}
 
-	fromNS := req.From.UnixNano()
-	toNS := req.To.UnixNano()
+	fromNS := planCtx.From.UnixNano()
+	toNS := planCtx.To.UnixNano()
 	stepNS := req.Step.Nanoseconds()
 
 	query, resolvedByLabels, err := tempo.BuildMetricsRangeQuery(
@@ -337,6 +341,10 @@ func (t *TempoService) MetricsQueryInstant(ctx context.Context, req *model.Metri
 	if err != nil {
 		return nil, fmt.Errorf("invalid query: %w", err)
 	}
+	planCtx, err := traceQLPlannerContext(ctx, conn, req.From, req.To, 0)
+	if err != nil {
+		return nil, err
+	}
 
 	metricsFn := script.ResolvedMetricsFn()
 	if metricsFn == nil {
@@ -357,8 +365,8 @@ func (t *TempoService) MetricsQueryInstant(ctx context.Context, req *model.Metri
 		byLabels = metricsFn.By.Labels
 	}
 
-	fromNS := req.From.UnixNano()
-	toNS := req.To.UnixNano()
+	fromNS := planCtx.From.UnixNano()
+	toNS := planCtx.To.UnixNano()
 
 	query, resolvedByLabels, err := tempo.BuildMetricsInstantQuery(
 		metricsFn.Fn, metricsFn.Attr, byLabels,

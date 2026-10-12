@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
 	"github.com/metrico/qryn/v5/reader/model"
 	"github.com/metrico/qryn/v5/reader/plugins"
 	"github.com/metrico/qryn/v5/reader/tempo"
@@ -214,23 +213,17 @@ func (t *TempoService) TagsV2(ctx context.Context, query string, from time.Time,
 		}
 	}
 
-	planCtx := shared.PlannerContext{
-		IsCluster: conn.Config.ClusterName != "",
-		From:      from,
-		To:        to,
-		Limit:     int64(limit),
-		CHDb:      conn.Session,
-		Ctx:       ctx,
+	planCtx, err := traceQLPlannerContext(ctx, conn, from, to, limit)
+	if err != nil {
+		return nil, err
 	}
-
-	tables.PopulateTableNames(&planCtx, conn)
 
 	planner, err := traceql_transpiler.PlanTagsV2(oScript)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := planner.Process(&planCtx)
+	req, err := planner.Process(planCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -262,23 +255,17 @@ func (t *TempoService) ValuesV2(ctx context.Context, key string, query string, f
 		}
 	}
 
-	planCtx := shared.PlannerContext{
-		IsCluster: conn.Config.ClusterName != "",
-		From:      from,
-		To:        to,
-		Limit:     int64(limit),
-		CHDb:      conn.Session,
-		Ctx:       ctx,
+	planCtx, err := traceQLPlannerContext(ctx, conn, from, to, limit)
+	if err != nil {
+		return nil, err
 	}
-
-	tables.PopulateTableNames(&planCtx, conn)
 
 	planner, err := traceql_transpiler.PlanValuesV2(oScript, key)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := planner.Process(&planCtx)
+	req, err := planner.Process(planCtx)
 	if err != nil {
 		return nil, err
 	}
