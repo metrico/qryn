@@ -33,7 +33,7 @@ func describePlan(t *testing.T, p shared.SQLRequestPlanner) string {
 			case *spansetStage:
 				stages[i] = describePlan(t, stage.Expr)
 			case *scalarFilterStage:
-				stages[i] = fmt.Sprintf("%s %s %g", stage.Agg, stage.Op, stage.Value)
+				stages[i] = fmt.Sprintf("%s %s %g", stage.agg, stage.op, stage.value)
 			}
 		}
 		return strings.Join(stages, "|")

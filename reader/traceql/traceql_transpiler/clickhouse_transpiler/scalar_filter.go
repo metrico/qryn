@@ -14,7 +14,7 @@ import (
 	sql "github.com/metrico/qryn/v5/reader/utils/sql_select"
 )
 
-// The texts are verbatim, "%v" included.
+// The error texts hold a literal "%v".
 var (
 	errScalarFilterLHS = errors.New("scalar filter lhs of type (%v) not yet supported")
 	errScalarFilterRHS = errors.New("scalar filter rhs of type (%v) not yet supported")
@@ -37,12 +37,19 @@ const (
 	argAttribute
 )
 
+// The types of a spanset attribute's value; a duration is in nanoseconds.
+const (
+	AttrInt      = "int"
+	AttrFloat    = "float"
+	AttrDuration = "duration"
+)
+
 // scalarFilterStage keeps the spansets whose aggregate over their spans passes
-// `Agg Op Value` and appends the aggregate to their attributes.
+// `agg op value` and appends the aggregate to their attributes.
 type scalarFilterStage struct {
-	Agg   *traceql_ir.Aggregate
-	Op    string
-	Value float64
+	agg   *traceql_ir.Aggregate
+	op    string
+	value float64
 	arg   aggregateArg
 	key   string
 }
@@ -68,7 +75,7 @@ func newScalarFilterStage(f *traceql_ir.ScalarFilter) (*scalarFilterStage, error
 	if err != nil {
 		return nil, err
 	}
-	res := &scalarFilterStage{Agg: agg, Op: f.Op, Value: value}
+	res := &scalarFilterStage{agg: agg, op: f.Op, value: value}
 	res.arg, res.key = aggregateArgOf(agg)
 	return res, nil
 }
@@ -93,9 +100,11 @@ func checkAggregates(e traceql_ir.ScalarExpr) error {
 }
 
 // aggregateArgOf returns what agg reads per span and, for an attribute, its
-// unscoped key.
+// unscoped key. An unscoped word other than an intrinsic is an attribute key.
 func aggregateArgOf(agg *traceql_ir.Aggregate) (aggregateArg, string) {
 	switch agg.Attr {
+	case "":
+		return argNone, ""
 	case "duration", "span:duration":
 		return argDuration, ""
 	}
@@ -104,7 +113,10 @@ func aggregateArgOf(agg *traceql_ir.Aggregate) (aggregateArg, string) {
 			return argAttribute, agg.Attr[len(scope):]
 		}
 	}
-	return argNone, ""
+	if strings.Contains(agg.Attr, ":") || strings.HasPrefix(agg.Attr, "nestedSet") {
+		return argNone, ""
+	}
+	return argAttribute, agg.Attr
 }
 
 // staticValue is a literal as a float: a duration in nanoseconds.
@@ -131,7 +143,7 @@ func (s *scalarFilterStage) process(ctx *shared.PlannerContext, alias string, pr
 				sql.NewSimpleCol("attrs", "prev_attrs"),
 				sql.NewSimpleCol("toFloat64(uniqExact(span_id) "+window+")", "value"),
 				sql.NewSimpleCol("1", "n_present"),
-				sql.NewSimpleCol("'int'", "type"))...).
+				sql.NewSimpleCol(sqlString(AttrInt), "type"))...).
 			From(sql.NewWithRef(prev))
 	} else {
 		values := sql.NewWith(s.values(ctx, base), alias+"_values")
@@ -158,14 +170,16 @@ func (s *scalarFilterStage) process(ctx *shared.PlannerContext, alias string, pr
 	return sql.NewSelect().
 		With(withs...).
 		Select(append(spanRowCols(), sql.NewCol(
-			sql.NewRawObject(fmt.Sprintf("arrayPushBack(prev_attrs, tuple(%s, type, value))", quoteString(s.Agg.String()))),
+			sql.NewRawObject(fmt.Sprintf("arrayPushBack(prev_attrs, tuple(%s, type, value))", sqlString(s.agg.String()))),
 			"attrs"))...).
 		From(sql.NewWithRef(withValued)).
 		AndWhere(rawCond("n_present > 0 AND NOT isNaN(value) AND " + s.comparison("value"))), nil
 }
 
 // values reads the number of every span of base that has one: num, is_int
-// (whether the stored value is an integer) and present, always 1.
+// (whether the stored value is an integer) and present, 1; a span left out
+// reads present 0 through the left join. Base spans start in the query range,
+// which bounds the read.
 func (s *scalarFilterStage) values(ctx *shared.PlannerContext, base *sql.With) sql.ISelect {
 	baseSpans := sql.NewSelect().Select(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id")).From(sql.NewWithRef(base))
 	if s.arg == argDuration {
@@ -208,11 +222,11 @@ func (s *scalarFilterStage) aggregate(v, window string) (value string, typ strin
 	num, present, isInt := v+".num", v+".present = 1", v+".is_int"
 	numeric := func(intExpr string) string {
 		if s.arg == argDuration {
-			return "'duration'"
+			return sqlString(AttrDuration)
 		}
-		return fmt.Sprintf("if(%s %s = 1, 'int', 'float')", intExpr, window)
+		return fmt.Sprintf("if(%s %s = 1, %s, %s)", intExpr, window, sqlString(AttrInt), sqlString(AttrFloat))
 	}
-	switch s.Agg.Fn {
+	switch s.agg.Fn {
 	case "sum":
 		return fmt.Sprintf("sumIf(%s, %s) %s", num, present, window), numeric(fmt.Sprintf("minIf(%s, %s)", isInt, present))
 	case "min":
@@ -221,14 +235,14 @@ func (s *scalarFilterStage) aggregate(v, window string) (value string, typ strin
 		return fmt.Sprintf("maxIf(%s, %s) %s", num, present, window), numeric(fmt.Sprintf("argMaxIf(%s, %s, %s)", isInt, num, present))
 	}
 	if s.arg == argDuration {
-		return fmt.Sprintf("toFloat64(intDivOrZero(sumIf(toInt64(%s), %s) %s, countIf(%s) %s))", num, present, window, present, window), "'duration'"
+		return fmt.Sprintf("toFloat64(intDivOrZero(sumIf(toInt64(%s), %s) %s, countIf(%s) %s))", num, present, window, present, window), sqlString(AttrDuration)
 	}
-	return fmt.Sprintf("avgIf(%s, %s) %s", num, present, window), "'float'"
+	return fmt.Sprintf("avgIf(%s, %s) %s", num, present, window), sqlString(AttrFloat)
 }
 
 // comparison is `col Op Value`.
 func (s *scalarFilterStage) comparison(col string) string {
-	return fmt.Sprintf("%s %s %s", col, s.Op, floatLiteral(s.Value))
+	return fmt.Sprintf("%s %s %s", col, s.op, floatLiteral(s.value))
 }
 
 // floatLiteral renders f as a ClickHouse Float64.
@@ -242,7 +256,8 @@ func floatLiteral(f float64) string {
 	return "toFloat64(" + strconv.FormatFloat(f, 'g', -1, 64) + ")"
 }
 
-// quoteString renders s as a ClickHouse string literal.
-func quoteString(s string) string {
-	return "'" + strings.NewReplacer(`\`, `\\`, `'`, `\'`).Replace(s) + "'"
+// sqlString renders s as a ClickHouse string literal.
+func sqlString(s string) string {
+	res, _ := sql.NewStringVal(s).String(nil)
+	return res
 }

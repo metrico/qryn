@@ -109,8 +109,7 @@ func (t TraceQLRequestProcessor) read(ctx *shared.PlannerContext, strReq string)
 	return res, rows.Err()
 }
 
-// spanSetAttrs builds spanset attributes from their names, types ('int',
-// 'float' or 'duration') and values; a duration value is in nanoseconds.
+// spanSetAttrs builds spanset attributes from their names, types and values.
 func spanSetAttrs(names, types []string, values []float64) []model.SpanSetAttr {
 	if len(names) == 0 {
 		return nil
@@ -119,10 +118,10 @@ func spanSetAttrs(names, types []string, values []float64) []model.SpanSetAttr {
 	for i, name := range names {
 		res[i].Key = name
 		switch types[i] {
-		case "int":
+		case clickhouse_transpiler.AttrInt:
 			v := strconv.FormatInt(int64(values[i]), 10)
 			res[i].Value.IntValue = &v
-		case "duration":
+		case clickhouse_transpiler.AttrDuration:
 			v := time.Duration(int64(values[i])).String()
 			res[i].Value.StringValue = &v
 		default:

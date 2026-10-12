@@ -8,7 +8,7 @@ import (
 type simpleExpressionPlanner struct {
 	selector *traceql_ir.Selector
 	prefix   string
-	// operand is unset only for a whole-query `{}` read by the attribute-less planner.
+	// operand is unset only to estimate a whole-query `{}` as the attribute-less planner.
 	operand bool
 
 	//Analyze results

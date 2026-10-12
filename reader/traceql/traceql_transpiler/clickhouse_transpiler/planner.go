@@ -133,13 +133,11 @@ func (p *planner) planSpansetExpr(expr traceql_ir.SpansetExpr) (shared.SQLReques
 // of its spanset expressions, or every span in range for a leading scalar filter.
 func (p *planner) pipelineEvals(pipeline *traceql_ir.Pipeline) ([]shared.SQLRequestPlanner, error) {
 	var res []shared.SQLRequestPlanner
-	for i, element := range pipeline.Elements {
-		switch e := element.(type) {
-		case *traceql_ir.ScalarFilter:
-			if i == 0 {
-				res = append(res, &AllSpansEvaluatorPlanner{Prefix: p.getPrefix()})
-			}
-		case traceql_ir.SpansetExpr:
+	if readsEverySpan(pipeline) {
+		res = append(res, &AllSpansEvaluatorPlanner{Prefix: p.getPrefix()})
+	}
+	for _, element := range pipeline.Elements {
+		if e, ok := element.(traceql_ir.SpansetExpr); ok {
 			operands, err := planSpansetTree(p, e,
 				func(op *simpleExpressionPlanner) ([]shared.SQLRequestPlanner, error) {
 					return []shared.SQLRequestPlanner{op.planEval()}, nil

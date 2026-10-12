@@ -9,7 +9,7 @@ import (
 )
 
 // emptyAttrs is the spanset attributes column of a stage that sets none:
-// (name, type, value) per aggregate, type 'int', 'float' or 'duration'.
+// (name, type, value) per aggregate, type one of AttrInt, AttrFloat and AttrDuration.
 const emptyAttrs = "CAST([], 'Array(Tuple(String, String, Float64))')"
 
 // planResult plans the result span rows of the query's pipeline. With
@@ -24,19 +24,25 @@ func (p *planner) planResult(prepick bool) (shared.SQLRequestPlanner, error) {
 	return p.planPipeline(&p.query.Pipeline)
 }
 
-// planPipeline plans a pipeline into its result span rows. A leading scalar
-// filter reads every span in range.
+// readsEverySpan reports whether a pipeline starts with a scalar filter, which
+// reads every span in range.
+func readsEverySpan(pipeline *traceql_ir.Pipeline) bool {
+	_, ok := pipeline.Elements[0].(*traceql_ir.ScalarFilter)
+	return ok
+}
+
+// planPipeline plans a pipeline into its result span rows.
 func (p *planner) planPipeline(pipeline *traceql_ir.Pipeline) (shared.SQLRequestPlanner, error) {
 	var stages []pipelineStage
+	if readsEverySpan(pipeline) {
+		stages = append(stages, &spansetStage{Expr: &AllSpansPlanner{}})
+	}
 	for i, element := range pipeline.Elements {
 		switch e := element.(type) {
 		case *traceql_ir.ScalarFilter:
 			stage, err := newScalarFilterStage(e)
 			if err != nil {
 				return nil, err
-			}
-			if i == 0 {
-				stages = append(stages, &spansetStage{Expr: &AllSpansPlanner{}})
 			}
 			stages = append(stages, stage)
 		case traceql_ir.SpansetExpr:

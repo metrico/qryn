@@ -131,7 +131,8 @@ func TestScalarFilterErrors(t *testing.T) {
 		{`{} | max(span:kind) > 1`, "aggregate field expressions must resolve to a number type: max(span:kind)"},
 		{`{} | 1 < avg(rootServiceName) + 1`, "aggregate field expressions must resolve to a number type: avg(rootServiceName)"},
 		{`({} | min(statusMessage) > 1) && {.a = 1}`, "aggregate field expressions must resolve to a number type: min(statusMessage)"},
-		{`{} | count() > 1 | avg(foo) > 1`, "unsupported attribute foo"},
+		{`{} | count() > 1 | avg(span:childCount) > 1`, "unsupported attribute span:childCount"},
+		{`{} | max(nestedSetLeft) > 1`, "unsupported attribute nestedSetLeft"},
 	} {
 		t.Run(c.query, func(t *testing.T) {
 			q, err := traceql_ir.Parse(c.query)
@@ -172,7 +173,7 @@ func TestScalarFiltersGateMetrics(t *testing.T) {
 
 // Every stage reads the date-partitioned tables within the query range.
 func TestScalarFilterValuesReadTheQueryRange(t *testing.T) {
-	queries := []string{`{.a = 1} | avg(.b) > 1`, `{.a = 1} | max(duration) > 1ms`}
+	queries := []string{`{.a = 1} | avg(.b) > 1`, `{.a = 1} | avg(b) > 1`, `{.a = 1} | max(duration) > 1ms`}
 	for _, query := range queries {
 		res := renderPlan(t, planSearch(t, query), testPlannerContext(3))
 		if slices.Contains(spanStartBounds(res), ">=86390") {

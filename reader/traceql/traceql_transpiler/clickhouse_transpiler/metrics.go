@@ -43,11 +43,11 @@ func PlanCompare(query *traceql_ir.Query, selection traceql_ir.FilterExpr,
 	}
 	res := &comparePlanner{Baseline: baseline, BaselineFrom: baselineFrom, BaselineTo: baselineTo, Build: build}
 	if selection != nil {
-		filter := p.operand(&traceql_ir.Selector{Filter: selection}).planner()
-		res.Selection = &metricsSpansPlanner{Result: &pipelinePlanner{
-			Stages: []pipelineStage{&spansetStage{Expr: filter}},
+		filter := &pipelinePlanner{
+			Stages: []pipelineStage{&spansetStage{Expr: p.operand(&traceql_ir.Selector{Filter: selection}).planner()}},
 			Prefix: p.getPrefix(),
-		}, Prefix: p.getPrefix()}
+		}
+		res.Selection = &metricsSpansPlanner{Result: filter, Prefix: p.getPrefix()}
 	}
 	return p.structuralGate(res), nil
 }
