@@ -24,8 +24,8 @@ var searchQueries = []string{
 
 func testPlannerContext(spss int64) *shared.PlannerContext {
 	return &shared.PlannerContext{
-		From:                 time.Unix(10, 0).UTC(),
-		To:                   time.Unix(20, 0).UTC(),
+		From:                 time.Unix(86390, 0).UTC(),
+		To:                   time.Unix(86410, 0).UTC(),
 		Limit:                5,
 		SpansPerSpanSet:      spss,
 		TracesAttrsTable:     "tempo_traces_attrs_gin",
@@ -140,10 +140,10 @@ func TestSearchRootFilterBeforeSpanCap(t *testing.T) {
 	}
 }
 
-// spanStartBounds lists the span start-time comparisons against the 10s..20s
-// test range.
+// spanStartBounds lists the span start-time comparisons against the test
+// range, which spans midnight of 1970-01-01.
 func spanStartBounds(res string) []string {
-	re := regexp.MustCompile(`timestamp_ns\) (>=|>|<=|<) \((10|20)000000000\)`)
+	re := regexp.MustCompile(`timestamp_ns\) (>=|>|<=|<) \((86390|86410)000000000\)`)
 	var out []string
 	for _, m := range re.FindAllStringSubmatch(res, -1) {
 		out = append(out, m[1]+m[2])
@@ -159,12 +159,12 @@ func TestSearchSpanStartIsLeftOpenRightClosed(t *testing.T) {
 			t.Fatalf("no span start bounds:\n%s", res)
 		}
 		for _, b := range bounds {
-			if b != ">10" && b != "<=20" {
-				t.Errorf("span start bound %s, want >10 or <=20:\n%s", b, res)
+			if b != ">86390" && b != "<=86410" {
+				t.Errorf("span start bound %s, want >86390 or <=86410:\n%s", b, res)
 			}
 		}
 		if strings.Contains(res, "(date)") &&
-			(!strings.Contains(res, "(date) >= ('1970-01-01')") || !strings.Contains(res, "(date) <= ('1970-01-01')")) {
+			(!strings.Contains(res, "(date) >= ('1970-01-01')") || !strings.Contains(res, "(date) <= ('1970-01-02')")) {
 			t.Errorf("date pruning is not toDate(from)..toDate(to):\n%s", res)
 		}
 	}
@@ -191,6 +191,7 @@ func TestSearchSpanStartIsLeftOpenRightClosed(t *testing.T) {
 
 func TestSearchReadsDistributedTablesOnClusters(t *testing.T) {
 	local := regexp.MustCompile(`\btempo_traces(_attrs_gin)?\b[^_]`)
+	localJoin := regexp.MustCompile(`[^l] any left JOIN`)
 	plainIn := regexp.MustCompile(`[^L] IN \((trace_ids|trace_span_ids|attrless_trace_ids| SELECT trace_id FROM result_spans)\)`)
 	for _, query := range searchQueries {
 		t.Run(query, func(t *testing.T) {
@@ -203,7 +204,7 @@ func TestSearchReadsDistributedTablesOnClusters(t *testing.T) {
 			if m := plainIn.FindString(res); m != "" {
 				t.Errorf("distributed subquery under a plain IN (%q):\n%s", m, res)
 			}
-			if regexp.MustCompile(`[^l] any left JOIN`).MatchString(res) {
+			if localJoin.MatchString(res) {
 				t.Errorf("distributed join is not GLOBAL:\n%s", res)
 			}
 		})
