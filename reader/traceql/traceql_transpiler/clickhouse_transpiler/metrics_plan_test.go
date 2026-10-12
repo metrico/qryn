@@ -68,8 +68,8 @@ func TestMetricsReadTheSearchResultSpans(t *testing.T) {
 		})
 	}
 	_, expr := metricsResult(t, planMetrics(t, `{}`))
-	if _, ok := expr.(*AllSpansPlanner); !ok {
-		t.Errorf("{} | rate() reads %T, want every span in range", expr)
+	if got := describePlan(t, expr); got != "{}" {
+		t.Errorf("{} | rate() reads %s, want every span in range", got)
 	}
 }
 
@@ -119,7 +119,7 @@ func TestMetricsRootFilterAppliesToTheResultSpans(t *testing.T) {
 	if len(ctx.TracesIntrinsicWhere) != 0 {
 		t.Errorf("metrics planning left %d conditions on the caller's context", len(ctx.TracesIntrinsicWhere))
 	}
-	if !strings.Contains(res, "(_2result_spans.trace_id, _2result_spans.span_id) IN (") ||
+	if !regexp.MustCompile(`\(_\d+stage0_expr\.trace_id, _\d+stage0_expr\.span_id\) IN \(`).MatchString(res) ||
 		!strings.Contains(res, "traces.parent_id") {
 		t.Errorf("root filter missing from the metrics spans:\n%s", res)
 	}

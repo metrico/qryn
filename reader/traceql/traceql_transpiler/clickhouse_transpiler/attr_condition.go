@@ -12,10 +12,9 @@ import (
 )
 
 type AttrConditionPlanner struct {
-	Main           shared.SQLRequestPlanner
-	Terms          []*traceql_ir.Comparison
-	Conds          *condition
-	AggregatedAttr string
+	Main  shared.SQLRequestPlanner
+	Terms []*traceql_ir.Comparison
+	Conds *condition
 
 	sqlConds  []sql.SQLCondition
 	isAliased bool
@@ -40,10 +39,6 @@ func (a *AttrConditionPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect,
 		return nil, err
 	}
 
-	err = a.aggregator(main)
-	if err != nil {
-		return nil, err
-	}
 	res := main
 	if len(a.where) > 0 {
 		res = res.AndWhere(sql.Or(a.where...))
@@ -79,28 +74,6 @@ func (a *AttrConditionPlanner) createWhere(ctx *shared.PlannerContext) error {
 		}
 		a.where = append(a.where, sqlTerm)
 	}
-	return nil
-}
-
-func (a *AttrConditionPlanner) aggregator(main sql.ISelect) error {
-	if a.AggregatedAttr == "" {
-		return nil
-	}
-
-	s := main.GetSelect()
-	if a.AggregatedAttr == "duration" {
-		s = append(s, sql.NewSimpleCol("toFloat64(duration)", "agg_val"))
-		main.Select(s...)
-		return nil
-	}
-
-	a.AggregatedAttr = strings.TrimPrefix(a.AggregatedAttr, "span.")
-	a.AggregatedAttr = strings.TrimPrefix(a.AggregatedAttr, "resource.")
-	a.AggregatedAttr = strings.TrimPrefix(a.AggregatedAttr, ".")
-
-	s = append(s, sql.NewCol(&sqlAttrValue{a.AggregatedAttr}, "agg_val"))
-	main.Select(s...)
-	a.where = append(a.where, sql.Eq(sql.NewRawObject("key"), sql.NewStringVal(a.AggregatedAttr)))
 	return nil
 }
 
@@ -391,17 +364,4 @@ func (m matchRe) String(ctx *sql.Ctx, options ...int) (string, error) {
 		return "", err
 	}
 	return fmt.Sprintf("match(%s,%s)", field, strRe), nil
-}
-
-type sqlAttrValue struct {
-	attr string
-}
-
-func (s *sqlAttrValue) String(ctx *sql.Ctx, options ...int) (string, error) {
-	attr, err := sql.NewStringVal(s.attr).String(ctx, options...)
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("anyIf(toFloat64OrNull(val), key == %s)", attr), nil
 }

@@ -87,7 +87,7 @@ func TestTracesDataDurationMsSQL(t *testing.T) {
 }
 
 func TestComplexPlanner(t *testing.T) {
-	script, err := traceql_ir.Parse(`{.randomContainer=~"admiring" && .randomFloat > 10} | count() > 2 || {.randomContainer=~"boring" && .randomFloat < 10}`)
+	script, err := traceql_ir.Parse(`({.randomContainer=~"admiring" && .randomFloat > 10} | count() > 2) || {.randomContainer=~"boring" && .randomFloat < 10}`)
 	if err != nil {
 		t.Fatal(err)
 	}

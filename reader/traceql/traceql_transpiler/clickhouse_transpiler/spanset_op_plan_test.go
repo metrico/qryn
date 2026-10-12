@@ -9,8 +9,8 @@ import (
 	traceql_ir "github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
 )
 
-// describePlan prints the planner tree: and(…), or(…), a one-hop op(…), a
-// selector as {attr…} and one with a scalar filter as agg{attr…}.
+// describePlan prints the planner tree: and(…), or(…), a structural op(…), a
+// selector as {attr…} and a pipeline as its stages joined by |.
 func describePlan(t *testing.T, p shared.SQLRequestPlanner) string {
 	t.Helper()
 	switch p := p.(type) {
@@ -24,8 +24,19 @@ func describePlan(t *testing.T, p shared.SQLRequestPlanner) string {
 		return fmt.Sprintf("%s(%s,%s)", p.Op, describePlan(t, p.LHS), describePlan(t, p.RHS))
 	case *AllSpansPlanner:
 		return "{}"
-	case *AggregatorPlanner:
-		return "agg" + describePlan(t, p.Main)
+	case *AttrlessConditionPlanner:
+		return "attrless"
+	case *pipelinePlanner:
+		stages := make([]string, len(p.Stages))
+		for i, stage := range p.Stages {
+			switch stage := stage.(type) {
+			case *spansetStage:
+				stages[i] = describePlan(t, stage.Expr)
+			case *scalarFilterStage:
+				stages[i] = fmt.Sprintf("%s %s %g", stage.Agg, stage.Op, stage.Value)
+			}
+		}
+		return strings.Join(stages, "|")
 	case *AttrConditionPlanner:
 		attrs := make([]string, len(p.Terms))
 		for i, term := range p.Terms {
@@ -49,7 +60,9 @@ func TestSearchPlansSpansetOperatorTree(t *testing.T) {
 		{`({.a = 1}) && {.b = 2}`, `and({.a},{.b})`},
 		{`(({.a = 1} && {.b = 2}))`, `and({.a},{.b})`},
 		{`(({.a = 1}))`, `{.a}`},
-		{`{.a = 1} | count() > 1 && {.b = 2}`, `and(agg{.a},{.b})`},
+		{`({.a = 1} | count() > 1) && {.b = 2}`, `and({.a}|count() > 1,{.b})`},
+		{`{.a = 1} && {.b = 2} | count() > 1`, `and({.a},{.b})|count() > 1`},
+		{`count() > 1`, `{}|count() > 1`},
 		{`{.a = 1 && .x = 2} || {.b = 2} && ({.c = 3} || {.d = 4})`, `and(or({.a,.x},{.b}),or({.c},{.d}))`},
 	} {
 		t.Run(c.query, func(t *testing.T) {
@@ -94,7 +107,7 @@ func TestSpansetOperandChecks(t *testing.T) {
 		{`{.a = 1} || {}`, nil},
 		{`({}) > {.a = 1}`, nil},
 		{`{.a = 1} && ({.b = 2} || {})`, nil},
-		{`{} | count() > 1 && {.a = 1}`, errEmptyAggregated},
+		{`({} | count() > 1) && {.a = 1}`, nil},
 		{`{.a = 1} && ({.b = 2})`, nil},
 		{`({.a = 1} || {.b = 2}) && {.c = 3}`, nil},
 	} {

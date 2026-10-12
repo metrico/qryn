@@ -7,7 +7,8 @@ import (
 )
 
 // TracesDataPlanner reads the listed spans and trace summaries of Main's
-// (trace_id, span_id[], matched) rows.
+// (trace_id, span_id[], matched, attrs) rows. The spanset attributes come out
+// as three arrays: names, types and values.
 type TracesDataPlanner struct {
 	Main shared.SQLRequestPlanner
 }
@@ -68,6 +69,9 @@ func (t *TracesDataPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, er
 			sql.NewSimpleCol("min(_root_service_name)", "root_service_name"),
 			sql.NewSimpleCol("min(_root_trace_name)", "root_trace_name"),
 			sql.NewSimpleCol("min(index_grouped.matched)", "matched"),
+			sql.NewSimpleCol("arrayMap(x -> x.1, any(index_grouped.attrs))", "attr_names"),
+			sql.NewSimpleCol("arrayMap(x -> x.2, any(index_grouped.attrs))", "attr_types"),
+			sql.NewSimpleCol("arrayMap(x -> x.3, any(index_grouped.attrs))", "attr_values"),
 		).
 		From(sql.NewSimpleCol(table, "traces")).
 		Join(sql.NewJoin(

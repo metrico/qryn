@@ -8,93 +8,52 @@ import (
 type simpleExpressionPlanner struct {
 	selector *traceql_ir.Selector
 	prefix   string
-	// operand is set for a selector under a spanset operator.
+	// operand is unset only for a whole-query `{}` read by the attribute-less planner.
 	operand bool
 
 	//Analyze results
 	termIdx []*traceql_ir.Comparison
 	cond    *condition
-	aggAttr string
 
 	terms map[string]int
 }
 
-func (p *simpleExpressionPlanner) planner() (shared.SQLRequestPlanner, error) {
-	err := p.check()
-	if err != nil {
-		return nil, err
-	}
-
+// planner plans the selector's span rows: every span in range for `{}`.
+func (p *simpleExpressionPlanner) planner() shared.SQLRequestPlanner {
 	p.analyze()
-	var res shared.SQLRequestPlanner
 	if p.selector.Filter != nil {
-		res = &AttrConditionPlanner{
-			Main:           NewInitIndexPlanner(true),
-			Terms:          p.termIdx,
-			Conds:          p.cond,
-			AggregatedAttr: p.aggAttr,
-		}
-	} else if p.operand {
-		res = &AllSpansPlanner{}
-	} else {
-		res = NewAttrlessConditionPlanner()
-	}
-
-	if agg := p.selector.Aggregator; agg != nil {
-		res = &AggregatorPlanner{
-			Main:       res,
-			Fn:         agg.Fn,
-			Attr:       p.aggAttr,
-			CompareFn:  agg.Cmp,
-			CompareVal: agg.Value,
-			Prefix:     p.prefix,
+		return &AttrConditionPlanner{
+			Main:  NewInitIndexPlanner(true),
+			Terms: p.termIdx,
+			Conds: p.cond,
 		}
 	}
-	return res, nil
+	return &AllSpansPlanner{}
 }
 
-func (p *simpleExpressionPlanner) planEval() (shared.SQLRequestPlanner, error) {
-	err := p.check()
-	if err != nil {
-		return nil, err
-	}
-
+// planEval estimates the selector's cost; a whole-query `{}` (operand unset)
+// estimates the attribute-less planner.
+func (p *simpleExpressionPlanner) planEval() shared.SQLRequestPlanner {
 	p.analyze()
-	var res shared.SQLRequestPlanner
 	if p.selector.Filter != nil {
-		res = &AttrConditionEvaluatorPlanner{
+		return &AttrConditionEvaluatorPlanner{
 			Main: &AttrConditionPlanner{
-				Main:           NewInitIndexPlanner(true),
-				Terms:          p.termIdx,
-				Conds:          p.cond,
-				AggregatedAttr: p.aggAttr,
+				Main:  NewInitIndexPlanner(true),
+				Terms: p.termIdx,
+				Conds: p.cond,
 			},
 			Prefix: p.prefix,
 		}
-	} else if p.operand {
-		res = &AllSpansEvaluatorPlanner{Prefix: p.prefix}
-	} else {
-		res = &AttrlessEvaluatorPlanner{
-			Prefix: p.prefix,
-		}
 	}
-
-	return res, nil
-}
-
-func (p *simpleExpressionPlanner) check() error {
-	if p.selector.Filter == nil && p.selector.Aggregator != nil {
-		return errEmptyAggregated
+	if p.operand {
+		return &AllSpansEvaluatorPlanner{Prefix: p.prefix}
 	}
-	return nil
+	return &AttrlessEvaluatorPlanner{Prefix: p.prefix}
 }
 
 func (p *simpleExpressionPlanner) analyze() {
 	p.terms = make(map[string]int)
 	p.cond = p.analyzeCond(p.selector.Filter)
-	if p.selector.Aggregator != nil {
-		p.aggAttr = p.selector.Aggregator.Attr
-	}
 }
 
 func (p *simpleExpressionPlanner) analyzeCond(exp traceql_ir.FilterExpr) *condition {

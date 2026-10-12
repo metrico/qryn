@@ -54,6 +54,11 @@ var TraceQLLexerRulesV2 = []lexer.SimpleRule{
 	{"Ticked_string", "`([^`\\\\]|\\\\.)*`"},
 
 	{"Minus", "-"},
+	{"Plus", `\+`},
+	{"Mul", `\*`},
+	{"Div", `/`},
+	{"Mod", `%`},
+	{"Pow", `\^`},
 	// Float must come before Integer to correctly lex 3.14 as a single token
 	{"Float", `[0-9]+\.[0-9]+`},
 	{"Integer", "[0-9]+"},

@@ -65,12 +65,67 @@ func TestLowerFilters(t *testing.T) {
 	}
 }
 
-func TestLowerAggregator(t *testing.T) {
-	got := mustParse(t, `{.a = "a"} | avg(duration) >= 1.5ms`)
-	require.Equal(t, &Query{Pipeline: pipeline(&Selector{
-		Filter:     strCmp(".a", "=", `"a"`),
-		Aggregator: &Aggregator{Fn: "avg", Attr: "duration", Cmp: ">=", Value: "1.5ms"},
-	})}, got)
+func stages(elements ...Element) Pipeline { return Pipeline{Elements: elements} }
+
+func count(op, value string) *ScalarFilter {
+	return &ScalarFilter{Op: op, LHS: &Aggregate{Fn: "count"}, RHS: &Static{Kind: ValueNumber, Text: value}}
+}
+
+func TestLowerScalarFilters(t *testing.T) {
+	for _, tc := range []struct {
+		query string
+		want  Pipeline
+	}{
+		{`{.a = "a"} | avg(duration) >= 1.5ms`, stages(a(), &ScalarFilter{Op: ">=",
+			LHS: &Aggregate{Fn: "avg", Attr: "duration"}, RHS: &Static{Kind: ValueDuration, Text: "1.5ms"}})},
+		{`count() > 2`, stages(count(">", "2"))},
+		{`{.a = "a"} >> {.b = "b"} | count() > 2 | max(span.x) < -3`, stages(op(OpDescendant, a(), b()), count(">", "2"),
+			&ScalarFilter{Op: "<", LHS: &Aggregate{Fn: "max", Attr: "span.x"}, RHS: &Static{Kind: ValueNumber, Text: "-3"}})},
+		{`{} | 2 < count()`, stages(sel(nil), &ScalarFilter{Op: "<", LHS: &Static{Kind: ValueNumber, Text: "2"}, RHS: &Aggregate{Fn: "count"}})},
+		// Arithmetic: `^` binds tightest and is right-associative, then `* / %`, then `+ -`.
+		{`{} | sum(.a) - 1 * 2 ^ 3 ^ 4 > (count() + 1) % 2`, stages(sel(nil), &ScalarFilter{Op: ">",
+			LHS: &ScalarOp{Op: "-", LHS: &Aggregate{Fn: "sum", Attr: ".a"}, RHS: &ScalarOp{Op: "*",
+				LHS: &Static{Kind: ValueNumber, Text: "1"},
+				RHS: &ScalarOp{Op: "^", LHS: &Static{Kind: ValueNumber, Text: "2"},
+					RHS: &ScalarOp{Op: "^", LHS: &Static{Kind: ValueNumber, Text: "3"}, RHS: &Static{Kind: ValueNumber, Text: "4"}}}}},
+			RHS: &ScalarOp{Op: "%", LHS: &ScalarOp{Op: "+", LHS: &Aggregate{Fn: "count"}, RHS: &Static{Kind: ValueNumber, Text: "1"}},
+				RHS: &Static{Kind: ValueNumber, Text: "2"}}})},
+	} {
+		t.Run(tc.query, func(t *testing.T) {
+			require.Equal(t, &Query{Pipeline: tc.want}, mustParse(t, tc.query))
+		})
+	}
+}
+
+func TestLowerPipelines(t *testing.T) {
+	for _, tc := range []struct {
+		query string
+		want  Pipeline
+	}{
+		{`{.a = "a"} | {.b = "b"}`, stages(a(), b())},
+		{`({.a = "a"} | count() > 2) >> {.b = "b"}`,
+			stages(op(OpDescendant, &Pipeline{Elements: []Element{a(), count(">", "2")}}, b()))},
+		{`{.b = "b"} || ({.a = "a"} && {.c = "c"} | count() > 2) | count() > 1`,
+			stages(op(OpOr, b(), &Pipeline{Elements: []Element{op(OpAnd, a(), c()), count(">", "2")}}), count(">", "1"))},
+		{`({.a = "a"})`, stages(&Group{Expr: a()})},
+	} {
+		t.Run(tc.query, func(t *testing.T) {
+			require.Equal(t, &Query{Pipeline: tc.want}, mustParse(t, tc.query))
+		})
+	}
+}
+
+func TestAggregateCanonicalForm(t *testing.T) {
+	for query, want := range map[string]string{
+		`{} | count() > 1`:              "count()",
+		`{} | avg(duration) > 1`:        "avg(duration)",
+		`{} | sum(span.a) > 1`:          "sum(span.a)",
+		`{} | min(.a) > 1`:              "min(.a)",
+		`{} | max(span:duration) > 1ms`: "max(span:duration)",
+	} {
+		f := mustParse(t, query).Pipeline.Elements[1].(*ScalarFilter)
+		require.Equal(t, want, f.LHS.String(), query)
+	}
 }
 
 func TestLowerSpansetOperators(t *testing.T) {
@@ -119,7 +174,6 @@ func TestLowerSpansetOperators(t *testing.T) {
 			op(OpAnd, op(OpOr, a(), op(OpChild, b(), c())), d())},
 		{`{.a = "a"} < {.b = "b"} || {.c = "c"} !< {.d = "d"}`,
 			op(OpOr, op(OpParent, a(), b()), op(OpNotParent, c(), d()))},
-		{`{.a = "a"} &&`, a()},
 		{`({.a = "a"})`, &Group{Expr: a()}},
 		{`(({.a = "a"}))`, &Group{Expr: &Group{Expr: a()}}},
 		{`({.a = "a"} || {.b = "b"}) && {.c = "c"}`,
@@ -152,10 +206,10 @@ func TestLowerMetrics(t *testing.T) {
 			Metrics: &MetricsFn{Fn: "compare", Compare: &CompareArgs{}}}},
 		{`({.a = "a"} &>> {.b = "b"}) | rate()`, &Query{
 			Pipeline: pipeline(&Group{Expr: op(OpUnionDescendant, a(), b())}), Metrics: &MetricsFn{Fn: "rate"}}},
-		{`({.a = "a"} | rate())`, &Query{
-			Pipeline: pipeline(&Group{Expr: a()}), Metrics: &MetricsFn{Fn: "rate"}}},
-		// `|` binds looser than spanset operators: stages after the last
-		// operand end the whole query.
+		{`count() > 1 | rate()`, &Query{Pipeline: stages(count(">", "1")), Metrics: &MetricsFn{Fn: "rate"}}},
+		{`{.a = "a"} >> {.b = "b"} | count() > 1 | rate()`, &Query{
+			Pipeline: stages(op(OpDescendant, a(), b()), count(">", "1")), Metrics: &MetricsFn{Fn: "rate"}}},
+		// `|` binds looser than spanset operators.
 		{`{.a = "a"} && {.b = "b"} | rate()`, &Query{Pipeline: pipeline(op(OpAnd, a(), b())), Metrics: &MetricsFn{Fn: "rate"}}},
 		{`{.a = "a"} >> {.b = "b"} | count_over_time() by (name) with(sample=0.1) | topk(2)`, &Query{
 			Pipeline:    pipeline(op(OpDescendant, a(), b())),
@@ -163,7 +217,6 @@ func TestLowerMetrics(t *testing.T) {
 			Hints:       []Hint{{Key: "sample", Value: "0.1"}},
 			SecondStage: &SecondStage{Fn: "topk", Count: 2},
 		}},
-		{`{.a = "a"} > ({.b = "b"} | rate())`, &Query{Pipeline: pipeline(op(OpChild, a(), &Group{Expr: b()}))}},
 		{`{.a = "a"} > ({.b = "b"}) | rate()`, &Query{
 			Pipeline: pipeline(op(OpChild, a(), &Group{Expr: b()})), Metrics: &MetricsFn{Fn: "rate"}}},
 		{`{.a = "a"} | rate() with(sample=0.1, exemplars=false) | topk(5)`, &Query{
@@ -207,6 +260,9 @@ func TestHasStructural(t *testing.T) {
 		`{.a = "a"} >> {.b = "b"}`:                  true,
 		`{.a = "a"} && ({.b = "b"} &<< {.c = "c"})`: true,
 		`({.a = "a"} !<< {.b = "b"}) | rate()`:      true,
+		`({.a = "a"} > {.b = "b"} | count() > 1)`:   true,
+		`({.a = "a"} | count() > 1) && {.b = "b"}`:  false,
+		`count() > 1`:                               false,
 	} {
 		require.Equal(t, want, mustParse(t, query).HasStructural(), query)
 	}

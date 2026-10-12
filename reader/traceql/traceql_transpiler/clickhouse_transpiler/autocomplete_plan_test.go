@@ -107,19 +107,6 @@ func TestAutocompleteWithoutSelectorReadsEverySpan(t *testing.T) {
 	}
 }
 
-func TestAutocompleteRejectsAnAggregatedEmptySelector(t *testing.T) {
-	q, err := traceql_ir.Parse(`{} | count() > 1`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := PlanTagsV2(q); err != errEmptyAggregated {
-		t.Errorf("PlanTagsV2 error = %v, want %v", err, errEmptyAggregated)
-	}
-	if _, err := PlanValuesV2(q, "x"); err != errEmptyAggregated {
-		t.Errorf("PlanValuesV2 error = %v, want %v", err, errEmptyAggregated)
-	}
-}
-
 func TestAutocompleteJoinsResultSpansOnTraceAndSpan(t *testing.T) {
 	join := regexp.MustCompile(`\(traces_idx\.trace_id, traces_idx\.span_id\) IN \(_\d+result_span_ids\)`)
 	for _, query := range filteredQueries() {
@@ -191,7 +178,7 @@ func TestAutocompleteRootFilterAppliesToTheResultSpans(t *testing.T) {
 			if len(ctx.TracesIntrinsicWhere) != 0 {
 				t.Errorf("%s: planning left %d conditions on the caller's context", kind, len(ctx.TracesIntrinsicWhere))
 			}
-			if !regexp.MustCompile(`\(_\d+result_spans\.trace_id, _\d+result_spans\.span_id\) IN \(`).MatchString(res) ||
+			if !regexp.MustCompile(`\(_\d+stage0_expr\.trace_id, _\d+stage0_expr\.span_id\) IN \(`).MatchString(res) ||
 				!strings.Contains(res, "traces.parent_id") {
 				t.Errorf("%s, evaluation %d: root filter missing from the result spans:\n%s", kind, i+1, res)
 			}

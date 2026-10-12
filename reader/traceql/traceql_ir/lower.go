@@ -15,45 +15,45 @@ func Parse(query string) (*Query, error) {
 
 // Lower converts a parsed script into its IR.
 func Lower(script *traceql_parser.TraceQLScript) *Query {
-	stages, metrics := trailingStages(script)
 	q := &Query{
-		Pipeline: Pipeline{Elements: []Element{lowerSpansetExpr(script)}},
-		Metrics:  lowerMetricsFn(metrics),
-		Hints:    lowerHints(stages.WithHints),
+		Pipeline: lowerPipeline(script.Pipeline.Head, script.Pipeline.Stages),
+		Metrics:  lowerMetricsFn(script.MetricsFn),
+		Hints:    lowerHints(script.WithHints),
 	}
-	if s := stages.SecondStage; s != nil {
+	if s := script.SecondStage; s != nil {
 		q.SecondStage = &SecondStage{Fn: s.Fn, Count: s.Count, Labels: s.Labels, Hints: lowerHints(s.WithHints)}
 	}
 	return q
 }
 
-// trailingStages returns the script holding the stages that end the query
-// and its metrics function: the script itself when it has them, else the last
-// operand of its chain, since `|` binds looser than every spanset operator.
-func trailingStages(script *traceql_parser.TraceQLScript) (*traceql_parser.TraceQLScript, *traceql_parser.MetricsPipelineStage) {
-	if m := script.ResolvedMetricsFn(); m != nil || script.WithHints != nil || script.SecondStage != nil {
-		return script, m
-	}
-	last := script
-	for last.Op != "" && last.Tail != nil {
-		last = last.Tail
-	}
-	if last.ParenExpr != nil {
-		return last, last.MetricsFn
-	}
-	return last, last.ResolvedMetricsFn()
+func lowerPipeline(head traceql_parser.PipelineElement, stages []traceql_parser.PipelineElement) Pipeline {
+	return lowerStages(lowerElement(head), stages)
 }
 
-// lowerSpansetExpr turns the script's operand chain into a tree. Structural
-// operators bind tighter than `&&` and `||`, which share one level; all are
+func lowerStages(head Element, stages []traceql_parser.PipelineElement) Pipeline {
+	res := Pipeline{Elements: []Element{head}}
+	for _, stage := range stages {
+		res.Elements = append(res.Elements, lowerElement(stage))
+	}
+	return res
+}
+
+func lowerElement(e traceql_parser.PipelineElement) Element {
+	if e.ScalarFilter != nil {
+		return lowerScalarFilter(e.ScalarFilter)
+	}
+	return lowerSpansetExpr(e.Spanset)
+}
+
+// lowerSpansetExpr turns an operand chain into a tree. Structural operators
+// bind tighter than `&&` and `||`, which share one level; all are
 // left-associative.
-func lowerSpansetExpr(script *traceql_parser.TraceQLScript) SpansetExpr {
+func lowerSpansetExpr(expr *traceql_parser.SpansetExpr) SpansetExpr {
 	var (
 		res    SpansetExpr
-		term   SpansetExpr
 		joinOp SpansetOperator
-		prevOp SpansetOperator
 	)
+	term := lowerOperand(expr.Head)
 	flush := func() {
 		if res == nil {
 			res = term
@@ -61,37 +61,73 @@ func lowerSpansetExpr(script *traceql_parser.TraceQLScript) SpansetExpr {
 			res = &SpansetOp{Op: joinOp, LHS: res, RHS: term}
 		}
 	}
-	for s := script; s != nil; s = s.Tail {
-		operand := lowerOperand(s)
-		if term == nil {
-			term = operand
-		} else {
-			term = &SpansetOp{Op: prevOp, LHS: term, RHS: operand}
-		}
-		if s.Op == "" || s.Tail == nil {
-			break
-		}
-		op := SpansetOperator(s.Op)
+	for _, next := range expr.Ops {
+		op := SpansetOperator(next.Op)
+		operand := lowerOperand(next.Operand)
 		if op == OpAnd || op == OpOr {
 			flush()
-			term, joinOp = nil, op
+			term, joinOp = operand, op
 		} else {
-			prevOp = op
+			term = &SpansetOp{Op: op, LHS: term, RHS: operand}
 		}
 	}
 	flush()
 	return res
 }
 
-func lowerOperand(s *traceql_parser.TraceQLScript) SpansetExpr {
-	if s.ParenExpr != nil {
-		return &Group{Expr: lowerSpansetExpr(s.ParenExpr)}
+// lowerOperand lowers a selector, or a parenthesised pipeline: a Group when
+// it is a lone spanset expression, else a Pipeline.
+func lowerOperand(o traceql_parser.Operand) SpansetExpr {
+	if o.Paren == nil {
+		return &Selector{Filter: lowerFilter(o.Selector.AttrSelector)}
 	}
-	res := &Selector{Filter: lowerFilter(s.Head.AttrSelector)}
-	if agg := s.Head.Aggregator; agg != nil {
-		res.Aggregator = &Aggregator{Fn: agg.Fn, Attr: agg.Attr, Cmp: agg.Cmp, Value: agg.Num + agg.Measurement}
+	head := lowerSpansetExpr(&o.Paren.Head)
+	if len(o.Paren.Stages) == 0 {
+		return &Group{Expr: head}
+	}
+	res := lowerStages(head, o.Paren.Stages)
+	return &res
+}
+
+func lowerScalarFilter(f *traceql_parser.ScalarFilter) *ScalarFilter {
+	return &ScalarFilter{Op: f.Op, LHS: lowerScalarExpr(f.LHS), RHS: lowerScalarExpr(f.RHS)}
+}
+
+func lowerScalarExpr(e traceql_parser.ScalarExpr) ScalarExpr {
+	res := lowerScalarTerm(e.Head)
+	for _, op := range e.Ops {
+		res = &ScalarOp{Op: op.Op, LHS: res, RHS: lowerScalarTerm(op.Term)}
 	}
 	return res
+}
+
+func lowerScalarTerm(t traceql_parser.ScalarTerm) ScalarExpr {
+	res := lowerScalarFactor(t.Head)
+	for _, op := range t.Ops {
+		res = &ScalarOp{Op: op.Op, LHS: res, RHS: lowerScalarFactor(op.Factor)}
+	}
+	return res
+}
+
+func lowerScalarFactor(f traceql_parser.ScalarFactor) ScalarExpr {
+	base := lowerScalarAtom(f.Base)
+	if f.Exp == nil {
+		return base
+	}
+	return &ScalarOp{Op: "^", LHS: base, RHS: lowerScalarFactor(*f.Exp)}
+}
+
+func lowerScalarAtom(a traceql_parser.ScalarAtom) ScalarExpr {
+	switch {
+	case a.Aggregate != nil:
+		return &Aggregate{Fn: a.Aggregate.Fn, Attr: a.Aggregate.Attr}
+	case a.Literal != nil:
+		if a.Literal.Unit != "" {
+			return &Static{Kind: ValueDuration, Text: a.Literal.Num + a.Literal.Unit}
+		}
+		return &Static{Kind: ValueNumber, Text: a.Literal.Num}
+	}
+	return lowerScalarExpr(*a.Paren)
 }
 
 func lowerFilter(exp *traceql_parser.AttrSelectorExp) FilterExpr {

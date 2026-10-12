@@ -22,7 +22,9 @@ var plainSearchQueries = []string{
 	`{.a = 1} || {.b = 2}`,
 	`{.a = 1} && {.b = 2} || {.c = 3}`,
 	`({.a = 1} || {.b = 2}) && {.c = 3}`,
-	`{.a = 1} | count() > 1 && {.b = 2}`,
+	`({.a = 1} | count() > 1) && {.b = 2}`,
+	`count() > 1`,
+	`{.a = 1} | count() > 1 | avg(duration) > 1ms | max(.b) < 3`,
 	`{nestedSetParent < 0 && .a = 1}`,
 }
 
@@ -39,6 +41,7 @@ var transitiveQueries = []string{
 	`{.a = 1} !<< {}`,
 	`{} &>> {.b = 2} && {.c = 3}`,
 	`{.a = 1} &<< ({.b = 2} !>> {.c = 3})`,
+	`{.a = 1} >> {.b = 2} | sum(.c) > 1`,
 }
 
 // structuralQueries hold operators evaluated on the span tree.

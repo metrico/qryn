@@ -2,6 +2,8 @@ package traceql_transpiler
 
 import (
 	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
 	"github.com/metrico/qryn/v5/reader/model"
@@ -63,9 +65,13 @@ func (t TraceQLRequestProcessor) read(ctx *shared.PlannerContext, strReq string)
 			rootServiceName   string
 			rootTraceName     string
 			matched           int64
+			attrNames         []string
+			attrTypes         []string
+			attrValues        []float64
 		)
 		err = rows.Scan(&traceId, &spanIds, &durationsNs, &timestampsNs,
-			&startTimeUnixNano, &traceDurationMs, &rootServiceName, &rootTraceName, &matched)
+			&startTimeUnixNano, &traceDurationMs, &rootServiceName, &rootTraceName, &matched,
+			&attrNames, &attrTypes, &attrValues)
 		if err != nil {
 			logger.Error("ERROR[TRP#1]: ", err)
 			return nil, err
@@ -95,9 +101,34 @@ func (t TraceQLRequestProcessor) read(ctx *shared.PlannerContext, strReq string)
 			trace.SpanSet.Spans[i].Attributes = make([]model.SpanAttr, 0)
 		}
 		trace.SpanSet.Matched = int(matched)
+		trace.SpanSet.Attributes = spanSetAttrs(attrNames, attrTypes, attrValues)
 		trace.SpanSets = []model.SpanSet{trace.SpanSet}
 		sortSpans(trace.SpanSet.Spans)
 		res = append(res, trace)
 	}
 	return res, rows.Err()
+}
+
+// spanSetAttrs builds spanset attributes from their names, types ('int',
+// 'float' or 'duration') and values; a duration value is in nanoseconds.
+func spanSetAttrs(names, types []string, values []float64) []model.SpanSetAttr {
+	if len(names) == 0 {
+		return nil
+	}
+	res := make([]model.SpanSetAttr, len(names))
+	for i, name := range names {
+		res[i].Key = name
+		switch types[i] {
+		case "int":
+			v := strconv.FormatInt(int64(values[i]), 10)
+			res[i].Value.IntValue = &v
+		case "duration":
+			v := time.Duration(int64(values[i])).String()
+			res[i].Value.StringValue = &v
+		default:
+			v := model.Double(values[i])
+			res[i].Value.DoubleValue = &v
+		}
+	}
+	return res
 }

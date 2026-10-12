@@ -6,28 +6,17 @@ import (
 	"strings"
 )
 
+// TraceQLScript is a pipeline followed by the optional metrics function,
+// hints and second stage.
 type TraceQLScript struct {
-	ParenExpr *TraceQLScript `( "(" @@ ")"`
-	Head      Selector       `| @@ )`
-	// Op is a spanset operator; Gt, Lt and Nre are structural between spansets.
-	Op   string         `( @(Gt|Lt|Sibling|NotChild|NotParent|Nre|UnionChild|UnionParent|UnionSibling|Descendant|Ancestor|NotDescendant|NotAncestor|UnionDescendant|UnionAncestor|And|Or)`
-	Tail *TraceQLScript `@@? )?`
-	// MetricsFn at the script level supports: ({A} || {B}) | rate()
+	Pipeline    Pipeline              `@@`
 	MetricsFn   *MetricsPipelineStage `@@?`
 	WithHints   *WithClause           `@@?`
 	SecondStage *SecondPipelineStage  `@@?`
 }
 
 func (l TraceQLScript) String() string {
-	var res string
-	if l.ParenExpr != nil {
-		res = "(" + l.ParenExpr.String() + ")"
-	} else {
-		res = l.Head.String()
-	}
-	if l.Op != "" && l.Tail != nil {
-		res += " " + l.Op + " " + l.Tail.String()
-	}
+	res := l.Pipeline.String()
 	if l.MetricsFn != nil {
 		res += " " + l.MetricsFn.String()
 	}
@@ -40,41 +29,190 @@ func (l TraceQLScript) String() string {
 	return res
 }
 
-// ResolvedHead returns the effective head selector, following ParenExpr if needed.
-func (l TraceQLScript) ResolvedHead() *Selector {
-	if l.ParenExpr != nil {
-		return l.ParenExpr.ResolvedHead()
-	}
-	return &l.Head
+// Pipeline is `element ('|' element)*`.
+type Pipeline struct {
+	Head   PipelineElement   `@@`
+	Stages []PipelineElement `( "|" @@ )*`
 }
 
-// ResolvedMetricsFn returns the MetricsFn from either the script level or the head selector.
-func (l TraceQLScript) ResolvedMetricsFn() *MetricsPipelineStage {
-	if l.MetricsFn != nil {
-		return l.MetricsFn
+func (p Pipeline) String() string {
+	return pipelineString(p.Head.String(), p.Stages)
+}
+
+func pipelineString(head string, stages []PipelineElement) string {
+	res := head
+	for _, s := range stages {
+		res += " | " + s.String()
 	}
-	head := l.ResolvedHead()
-	if head != nil {
-		return head.MetricsFn
+	return res
+}
+
+// PipelineElement is a spanset expression or a scalar filter.
+type PipelineElement struct {
+	Spanset      *SpansetExpr  `  @@`
+	ScalarFilter *ScalarFilter `| @@`
+}
+
+func (e PipelineElement) String() string {
+	if e.ScalarFilter != nil {
+		return e.ScalarFilter.String()
 	}
-	return nil
+	return e.Spanset.String()
+}
+
+// SpansetExpr is operands joined by spanset operators, in written order.
+type SpansetExpr struct {
+	Head Operand            `@@`
+	Ops  []SpansetOperation `@@*`
+}
+
+func (s SpansetExpr) String() string {
+	res := s.Head.String()
+	for _, op := range s.Ops {
+		res += " " + op.Op + " " + op.Operand.String()
+	}
+	return res
+}
+
+// SpansetOperation is a spanset operator and the operand after it. Gt, Lt and
+// Nre are structural between spansets.
+type SpansetOperation struct {
+	Op      string  `@(Gt|Lt|Sibling|NotChild|NotParent|Nre|UnionChild|UnionParent|UnionSibling|Descendant|Ancestor|NotDescendant|NotAncestor|UnionDescendant|UnionAncestor|And|Or)`
+	Operand Operand `@@`
+}
+
+// Operand is a selector or a parenthesised pipeline.
+type Operand struct {
+	Paren    *ParenPipeline `  "(" @@ ")"`
+	Selector Selector       `| @@`
+}
+
+func (o Operand) String() string {
+	if o.Paren != nil {
+		return "(" + o.Paren.String() + ")"
+	}
+	return o.Selector.String()
+}
+
+// ParenPipeline is a parenthesised pipeline; it starts with a spanset expression.
+type ParenPipeline struct {
+	Head   SpansetExpr       `@@`
+	Stages []PipelineElement `( "|" @@ )*`
+}
+
+func (p ParenPipeline) String() string {
+	return pipelineString(p.Head.String(), p.Stages)
 }
 
 type Selector struct {
-	AttrSelector *AttrSelectorExp      `"{" @@? "}"`
-	Aggregator   *Aggregator           `@@?`
-	MetricsFn    *MetricsPipelineStage `@@?`
+	AttrSelector *AttrSelectorExp `"{" @@? "}"`
 }
 
 func (s Selector) String() string {
-	res := "{" + s.AttrSelector.String() + "}"
-	if s.Aggregator != nil {
-		res += " " + s.Aggregator.String()
+	if s.AttrSelector == nil {
+		return "{}"
 	}
-	if s.MetricsFn != nil {
-		res += " " + s.MetricsFn.String()
+	return "{" + s.AttrSelector.String() + "}"
+}
+
+// ScalarFilter is `LHS Op RHS` over scalar expressions.
+type ScalarFilter struct {
+	LHS ScalarExpr `@@`
+	Op  string     `@("="|"!="|"<"|"<="|">"|">=")`
+	RHS ScalarExpr `@@`
+}
+
+func (f ScalarFilter) String() string {
+	return f.LHS.String() + " " + f.Op + " " + f.RHS.String()
+}
+
+// ScalarExpr is `term (('+'|'-') term)*`.
+type ScalarExpr struct {
+	Head ScalarTerm    `@@`
+	Ops  []ScalarSumOp `@@*`
+}
+
+func (e ScalarExpr) String() string {
+	res := e.Head.String()
+	for _, op := range e.Ops {
+		res += " " + op.Op + " " + op.Term.String()
 	}
 	return res
+}
+
+type ScalarSumOp struct {
+	Op   string     `@(Plus|Minus)`
+	Term ScalarTerm `@@`
+}
+
+// ScalarTerm is `factor (('*'|'/'|'%') factor)*`.
+type ScalarTerm struct {
+	Head ScalarFactor  `@@`
+	Ops  []ScalarMulOp `@@*`
+}
+
+func (t ScalarTerm) String() string {
+	res := t.Head.String()
+	for _, op := range t.Ops {
+		res += " " + op.Op + " " + op.Factor.String()
+	}
+	return res
+}
+
+type ScalarMulOp struct {
+	Op     string       `@(Mul|Div|Mod)`
+	Factor ScalarFactor `@@`
+}
+
+// ScalarFactor is `atom ('^' factor)?`, right-associative.
+type ScalarFactor struct {
+	Base ScalarAtom    `@@`
+	Exp  *ScalarFactor `( Pow @@ )?`
+}
+
+func (f ScalarFactor) String() string {
+	if f.Exp != nil {
+		return f.Base.String() + " ^ " + f.Exp.String()
+	}
+	return f.Base.String()
+}
+
+// ScalarAtom is an aggregate, a number or duration literal, or a
+// parenthesised scalar expression.
+type ScalarAtom struct {
+	Aggregate *Aggregate     `  @@`
+	Literal   *ScalarLiteral `| @@`
+	Paren     *ScalarExpr    `| "(" @@ ")"`
+}
+
+func (a ScalarAtom) String() string {
+	switch {
+	case a.Aggregate != nil:
+		return a.Aggregate.String()
+	case a.Literal != nil:
+		return a.Literal.String()
+	}
+	return "(" + a.Paren.String() + ")"
+}
+
+// Aggregate is `count()` or `avg|min|max|sum(attribute)`.
+type Aggregate struct {
+	Fn   string `( @"count" "(" ")" | @("avg"|"min"|"max"|"sum") "("`
+	Attr string `  @Label_name ")" )`
+}
+
+func (a Aggregate) String() string {
+	return a.Fn + "(" + a.Attr + ")"
+}
+
+// ScalarLiteral is a number, with its duration unit if any.
+type ScalarLiteral struct {
+	Num  string `@Minus? (@Float | @Integer @Dot? @Integer?)`
+	Unit string `@("ns"|"us"|"ms"|"s"|"m"|"h"|"d")?`
+}
+
+func (l ScalarLiteral) String() string {
+	return l.Num + l.Unit
 }
 
 type AttrSelectorExp struct {

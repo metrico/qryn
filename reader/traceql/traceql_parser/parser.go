@@ -9,7 +9,7 @@ import (
 )
 
 var parser = participle.MustBuild[TraceQLScript](
-	participle.Lexer(TraceQLLexerDefinition), participle.UseLookahead(5))
+	participle.Lexer(TraceQLLexerDefinition), participle.UseLookahead(participle.MaxLookahead))
 
 // misspeltOperators maps operators TraceQL lacks to the TraceQL spelling.
 var misspeltOperators = map[string]string{"<<&": "&<<", "<<~": "!<<"}

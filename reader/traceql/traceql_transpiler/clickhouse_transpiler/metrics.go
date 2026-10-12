@@ -43,26 +43,18 @@ func PlanCompare(query *traceql_ir.Query, selection traceql_ir.FilterExpr,
 	}
 	res := &comparePlanner{Baseline: baseline, BaselineFrom: baselineFrom, BaselineTo: baselineTo, Build: build}
 	if selection != nil {
-		op, err := p.operand(&traceql_ir.Selector{Filter: selection})
-		if err != nil {
-			return nil, err
-		}
-		filter, err := op.planner()
-		if err != nil {
-			return nil, err
-		}
-		res.Selection = &metricsSpansPlanner{Result: filter, Prefix: p.getPrefix()}
+		filter := p.operand(&traceql_ir.Selector{Filter: selection}).planner()
+		res.Selection = &metricsSpansPlanner{Result: &pipelinePlanner{
+			Stages: []pipelineStage{&spansetStage{Expr: filter}},
+			Prefix: p.getPrefix(),
+		}, Prefix: p.getPrefix()}
 	}
 	return p.structuralGate(res), nil
 }
 
-// metricsSpans plans the metrics spans of the query's spanset expression.
+// metricsSpans plans the metrics spans of the query's pipeline.
 func (p *planner) metricsSpans() (*metricsSpansPlanner, error) {
-	expr, err := p.spansetExpr()
-	if err != nil {
-		return nil, err
-	}
-	result, err := p.planSpansetExpr(expr)
+	result, err := p.planPipeline(&p.query.Pipeline)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +62,7 @@ func (p *planner) metricsSpans() (*metricsSpansPlanner, error) {
 }
 
 // metricsSpansPlanner reads the traces table for the result spans of Result,
-// an evaluated spanset expression: one row per span, as MetricsBuild reads.
+// an evaluated pipeline: one row per span, as MetricsBuild reads.
 type metricsSpansPlanner struct {
 	Result shared.SQLRequestPlanner
 	Prefix string
@@ -101,15 +93,11 @@ func (m *metricsSpansPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, 
 		GroupBy(sql.NewRawObject("traces.trace_id"), sql.NewRawObject("traces.span_id")), nil
 }
 
-// resultSpanIds evaluates result, a spanset expression, and returns its span
-// rows and the (trace_id, span_id) pairs of those that pass the traces-table
-// conditions its selectors set.
+// resultSpanIds evaluates result, a pipeline, and returns its span rows and
+// their (trace_id, span_id) pairs.
 func resultSpanIds(ctx *shared.PlannerContext, result shared.SQLRequestPlanner, prefix string) (
 	withResult *sql.With, withIds *sql.With, err error) {
-	// The selectors set their traces-table conditions on a context of their own.
-	resultCtx := *ctx
-	resultCtx.TracesIntrinsicWhere = nil
-	main, err := result.Process(&resultCtx)
+	main, err := result.Process(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -117,9 +105,6 @@ func resultSpanIds(ctx *shared.PlannerContext, result shared.SQLRequestPlanner, 
 	ids := sql.NewSelect().
 		Select(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id")).
 		From(sql.NewWithRef(withResult))
-	if cond := intrinsicFilter(&resultCtx, withResult); cond != nil {
-		ids.AndWhere(cond)
-	}
 	return withResult, sql.NewWith(ids, prefix+"result_span_ids"), nil
 }
 

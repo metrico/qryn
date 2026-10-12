@@ -15,28 +15,28 @@ type Query struct {
 	SecondStage *SecondStage
 }
 
-// Pipeline is a sequence of elements joined by `|`.
+// Pipeline is a sequence of elements joined by `|`. A parenthesised pipeline
+// of two or more elements is a spanset expression.
 type Pipeline struct {
 	Elements []Element
 }
 
-// Element is one stage of a pipeline.
+// Element is one stage of a pipeline: a spanset expression or a scalar filter.
 type Element interface {
 	isElement()
 }
 
-// SpansetExpr is an expression that yields spansets: a selector, a group or a
-// binary spanset operation.
+// SpansetExpr is an expression that yields spansets: a selector, a group, a
+// parenthesised pipeline or a binary spanset operation.
 type SpansetExpr interface {
 	Element
 	isSpansetExpr()
 }
 
-// Selector is `{filter}`, with the scalar filter written directly after it.
+// Selector is `{filter}`.
 type Selector struct {
 	// Filter is nil for `{}`.
-	Filter     FilterExpr
-	Aggregator *Aggregator
+	Filter FilterExpr
 }
 
 // Group is a parenthesised spanset expression.
@@ -95,7 +95,11 @@ func (o SpansetOperator) IsStructural() bool {
 
 // HasStructural reports whether any spanset expression of q uses a structural operator.
 func (q *Query) HasStructural() bool {
-	for _, element := range q.Pipeline.Elements {
+	return q.Pipeline.hasStructural()
+}
+
+func (p *Pipeline) hasStructural() bool {
+	for _, element := range p.Elements {
 		if expr, ok := element.(SpansetExpr); ok && hasStructural(expr) {
 			return true
 		}
@@ -107,6 +111,8 @@ func hasStructural(expr SpansetExpr) bool {
 	switch expr := expr.(type) {
 	case *Group:
 		return hasStructural(expr.Expr)
+	case *Pipeline:
+		return expr.hasStructural()
 	case *SpansetOp:
 		return expr.Op.IsStructural() || hasStructural(expr.LHS) || hasStructural(expr.RHS)
 	}
@@ -120,12 +126,15 @@ type SpansetOp struct {
 	RHS SpansetExpr
 }
 
-func (*Selector) isElement()  {}
-func (*Group) isElement()     {}
-func (*SpansetOp) isElement() {}
+func (*Selector) isElement()     {}
+func (*Group) isElement()        {}
+func (*Pipeline) isElement()     {}
+func (*SpansetOp) isElement()    {}
+func (*ScalarFilter) isElement() {}
 
 func (*Selector) isSpansetExpr()  {}
 func (*Group) isSpansetExpr()     {}
+func (*Pipeline) isSpansetExpr()  {}
 func (*SpansetOp) isSpansetExpr() {}
 
 // FilterExpr is the condition inside `{…}`.
@@ -179,14 +188,58 @@ func (v Value) Unquote() (string, error) {
 	return (&traceql_parser.QuotedString{Str: v.Text}).Unquote()
 }
 
-// Aggregator is a scalar filter `| fn(Attr) Cmp Value`.
-type Aggregator struct {
+// ScalarFilter is the pipeline stage `LHS Op RHS` over scalar expressions.
+type ScalarFilter struct {
+	Op  string
+	LHS ScalarExpr
+	RHS ScalarExpr
+}
+
+func (f *ScalarFilter) String() string {
+	return f.LHS.String() + " " + f.Op + " " + f.RHS.String()
+}
+
+// ScalarExpr is an aggregate, a number literal or arithmetic over them.
+type ScalarExpr interface {
+	isScalarExpr()
+	String() string
+}
+
+// Aggregate is `Fn(Attr)` over a spanset's spans; Attr is empty for count().
+type Aggregate struct {
 	Fn   string
 	Attr string
-	Cmp  string
-	// Value is the number as written, with its duration unit if any.
-	Value string
 }
+
+// String is the aggregate's canonical form, which names its value in results.
+func (a *Aggregate) String() string {
+	return a.Fn + "(" + a.Attr + ")"
+}
+
+// Static is a number literal as written: an integer, a float or a duration.
+type Static struct {
+	Kind ValueKind
+	Text string
+}
+
+func (s *Static) String() string {
+	return s.Text
+}
+
+// ScalarOp is `LHS Op RHS` with an arithmetic Op.
+type ScalarOp struct {
+	Op  string
+	LHS ScalarExpr
+	RHS ScalarExpr
+}
+
+func (o *ScalarOp) String() string {
+	return "(" + o.LHS.String() + " " + o.Op + " " + o.RHS.String() + ")"
+}
+
+func (*Aggregate) isScalarExpr() {}
+func (*Static) isScalarExpr()    {}
+func (*ScalarOp) isScalarExpr()  {}
 
 // MetricsFn is the terminal metrics function, e.g. `| rate() by (name)`.
 type MetricsFn struct {
