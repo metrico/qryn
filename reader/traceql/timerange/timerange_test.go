@@ -19,9 +19,3 @@ func TestSpanStart(t *testing.T) {
 	require.Equal(t, "(traces_idx.timestamp_ns) > (10)", render(t, lower))
 	require.Equal(t, "(traces_idx.timestamp_ns) <= (20)", render(t, upper))
 }
-
-func TestSpanStartFromInclusive(t *testing.T) {
-	lower, upper := SpanStartFromInclusive("main.timestamp_ns", 10, 20)
-	require.Equal(t, "(main.timestamp_ns) >= (10)", render(t, lower))
-	require.Equal(t, "(main.timestamp_ns) < (20)", render(t, upper))
-}

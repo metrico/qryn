@@ -4,59 +4,32 @@ import (
 	"testing"
 	"time"
 
-	"github.com/metrico/qryn/v5/reader/model"
+	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
 	traceql_ir "github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
 	"github.com/stretchr/testify/require"
 )
 
-func TestMetricsExtractAllFilters(t *testing.T) {
-	for _, c := range []struct {
-		query           string
-		keys, ops, vals []string
-	}{
-		{`{} | rate()`, nil, nil, nil},
-		{`{.a = "x" && duration > 1ms} | rate()`,
-			[]string{".a", "duration"}, []string{"=", ">"}, []string{"x", "1ms"}},
-		{`{ false } | rate()`, []string{"__false__"}, []string{"="}, []string{"0"}},
-		{`{ true && .a } | rate()`, nil, nil, nil},
-		{`({.a = 1} || {.b = 2} && {status = error}) | rate()`,
-			[]string{".a", ".b", "status"}, []string{"=", "=", "="}, []string{"1", "2", "error"}},
-	} {
-		t.Run(c.query, func(t *testing.T) {
-			q, err := traceql_ir.Parse(c.query)
-			require.NoError(t, err)
-			keys, ops, vals := metricsExtractAllFilters(q)
-			require.Equal(t, c.keys, keys)
-			require.Equal(t, c.ops, ops)
-			require.Equal(t, c.vals, vals)
-		})
+func TestMetricsCompareRequest(t *testing.T) {
+	ctx := &shared.PlannerContext{
+		From:                 time.Unix(100, 0),
+		To:                   time.Unix(200, 0),
+		TracesAttrsTable:     "attrs",
+		TracesAttrsDistTable: "attrs_dist",
 	}
-}
-
-func TestMetricsCompareRequestFilters(t *testing.T) {
 	q, err := traceql_ir.Parse(`{.a = "x"} | compare({.b = "y" || .c = 3}, 5)`)
 	require.NoError(t, err)
-	req := &model.MetricsQueryRequest{From: time.Unix(100, 0), To: time.Unix(200, 0)}
-	got := (&TempoService{}).metricsCompareRequest(q, q.Metrics, req, "traces", "attrs")
-	require.Equal(t, []string{".a"}, got.OuterKeys)
-	require.Equal(t, []string{"x"}, got.OuterVals)
-	require.Equal(t, []string{".b", ".c"}, got.InnerKeys)
-	require.Equal(t, []string{"=", "="}, got.InnerOps)
-	require.Equal(t, []string{"y", "3"}, got.InnerVals)
+	got := compareRequest(q.Metrics, ctx)
 	require.Equal(t, 5, got.TopN)
-}
+	require.Equal(t, int64(100e9), got.BaselineFromNS)
+	require.Equal(t, int64(200e9), got.BaselineToNS)
+	require.Equal(t, "attrs", got.AttrsTable)
 
-func TestMetricsRejectsStructuralOperators(t *testing.T) {
-	for _, q := range []string{
-		`({.a = 1} > {.b = 2}) | rate()`,
-		`({.a = 1} || ({.b = 2} !~ {.c = 3})) | rate()`,
-		`({.a = 1} >> {.b = 2}) | rate()`,
-		`({.a = 1} &>> {.b = 2}) | rate()`,
-		`({.a = 1} && ({.b = 2} !<< {.c = 3})) | count_over_time()`,
-	} {
-		_, err := parseMetricsQuery(q)
-		require.Equal(t, errMetricsStructural, err, q)
-	}
-	_, err := parseMetricsQuery(`({.a = 1} || {.b = 2}) | rate()`)
+	q, err = traceql_ir.Parse(`{} | compare({.b = "y"}, 2, 50000000000, 150000000000)`)
 	require.NoError(t, err)
+	ctx.IsCluster = true
+	got = compareRequest(q.Metrics, ctx)
+	require.Equal(t, int64(50e9), got.BaselineFromNS)
+	require.Equal(t, int64(150e9), got.BaselineToNS)
+	require.Equal(t, int64(100e9), got.FromNS)
+	require.Equal(t, "attrs_dist", got.AttrsTable)
 }

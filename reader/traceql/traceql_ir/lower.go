@@ -15,15 +15,33 @@ func Parse(query string) (*Query, error) {
 
 // Lower converts a parsed script into its IR.
 func Lower(script *traceql_parser.TraceQLScript) *Query {
+	stages, metrics := trailingStages(script)
 	q := &Query{
 		Pipeline: Pipeline{Elements: []Element{lowerSpansetExpr(script)}},
-		Metrics:  lowerMetricsFn(script.ResolvedMetricsFn()),
-		Hints:    lowerHints(script.WithHints),
+		Metrics:  lowerMetricsFn(metrics),
+		Hints:    lowerHints(stages.WithHints),
 	}
-	if s := script.SecondStage; s != nil {
+	if s := stages.SecondStage; s != nil {
 		q.SecondStage = &SecondStage{Fn: s.Fn, Count: s.Count, Labels: s.Labels, Hints: lowerHints(s.WithHints)}
 	}
 	return q
+}
+
+// trailingStages returns the script holding the stages that end the query
+// and its metrics function: the script itself when it has them, else the last
+// operand of its chain, since `|` binds looser than every spanset operator.
+func trailingStages(script *traceql_parser.TraceQLScript) (*traceql_parser.TraceQLScript, *traceql_parser.MetricsPipelineStage) {
+	if m := script.ResolvedMetricsFn(); m != nil || script.WithHints != nil || script.SecondStage != nil {
+		return script, m
+	}
+	last := script
+	for last.Op != "" && last.Tail != nil {
+		last = last.Tail
+	}
+	if last.ParenExpr != nil {
+		return last, last.MetricsFn
+	}
+	return last, last.ResolvedMetricsFn()
 }
 
 // lowerSpansetExpr turns the script's operand chain into a tree. Structural

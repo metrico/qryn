@@ -42,14 +42,24 @@ func (s *SearchSpansetPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect,
 			sql.NewOrderBy(sql.NewRawObject("max(timestamp_ns)"), sql.ORDER_BY_DIRECTION_DESC),
 			sql.NewOrderBy(sql.NewRawObject("trace_id"), sql.ORDER_BY_DIRECTION_DESC))
 
-	if len(ctx.TracesIntrinsicWhere) > 0 {
-		intrinsic := sql.NewSelect().
-			Select(sql.NewRawObject("traces.trace_id"), sql.NewRawObject("traces.span_id")).
-			From(sql.NewSimpleCol(tracesTable(ctx), "traces")).
-			AndWhere(inSubquery(ctx, sql.NewRawObject("traces.trace_id"),
-				sql.NewSelect().Select(sql.NewRawObject("trace_id")).From(sql.NewWithRef(withSpans)))).
-			AndWhere(ctx.TracesIntrinsicWhere...)
-		res.AndWhere(sql.NewIn(sql.NewRawObject("(result_spans.trace_id, result_spans.span_id)"), intrinsic))
+	if cond := intrinsicFilter(ctx, withSpans); cond != nil {
+		res.AndWhere(cond)
 	}
 	return res, nil
+}
+
+// intrinsicFilter keeps the rows of spans, evaluated span rows, that pass the
+// traces-table conditions the expression's selectors set, or is nil without any.
+func intrinsicFilter(ctx *shared.PlannerContext, spans *sql.With) sql.SQLCondition {
+	if len(ctx.TracesIntrinsicWhere) == 0 {
+		return nil
+	}
+	intrinsic := sql.NewSelect().
+		Select(sql.NewRawObject("traces.trace_id"), sql.NewRawObject("traces.span_id")).
+		From(sql.NewSimpleCol(tracesTable(ctx), "traces")).
+		AndWhere(inSubquery(ctx, sql.NewRawObject("traces.trace_id"),
+			sql.NewSelect().Select(sql.NewRawObject("trace_id")).From(sql.NewWithRef(spans)))).
+		AndWhere(ctx.TracesIntrinsicWhere...)
+	alias := spans.GetAlias()
+	return sql.NewIn(sql.NewRawObject(fmt.Sprintf("(%s.trace_id, %s.span_id)", alias, alias)), intrinsic)
 }

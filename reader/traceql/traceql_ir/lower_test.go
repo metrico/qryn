@@ -154,8 +154,18 @@ func TestLowerMetrics(t *testing.T) {
 			Pipeline: pipeline(&Group{Expr: op(OpUnionDescendant, a(), b())}), Metrics: &MetricsFn{Fn: "rate"}}},
 		{`({.a = "a"} | rate())`, &Query{
 			Pipeline: pipeline(&Group{Expr: a()}), Metrics: &MetricsFn{Fn: "rate"}}},
-		// A metrics function after a later chain operand is not the query's.
-		{`{.a = "a"} && {.b = "b"} | rate()`, &Query{Pipeline: pipeline(op(OpAnd, a(), b()))}},
+		// `|` binds looser than spanset operators: stages after the last
+		// operand end the whole query.
+		{`{.a = "a"} && {.b = "b"} | rate()`, &Query{Pipeline: pipeline(op(OpAnd, a(), b())), Metrics: &MetricsFn{Fn: "rate"}}},
+		{`{.a = "a"} >> {.b = "b"} | count_over_time() by (name) with(sample=0.1) | topk(2)`, &Query{
+			Pipeline:    pipeline(op(OpDescendant, a(), b())),
+			Metrics:     &MetricsFn{Fn: "count_over_time", By: []string{"name"}},
+			Hints:       []Hint{{Key: "sample", Value: "0.1"}},
+			SecondStage: &SecondStage{Fn: "topk", Count: 2},
+		}},
+		{`{.a = "a"} > ({.b = "b"} | rate())`, &Query{Pipeline: pipeline(op(OpChild, a(), &Group{Expr: b()}))}},
+		{`{.a = "a"} > ({.b = "b"}) | rate()`, &Query{
+			Pipeline: pipeline(op(OpChild, a(), &Group{Expr: b()})), Metrics: &MetricsFn{Fn: "rate"}}},
 		{`{.a = "a"} | rate() with(sample=0.1, exemplars=false) | topk(5)`, &Query{
 			Pipeline:    pipeline(a()),
 			Metrics:     &MetricsFn{Fn: "rate"},
