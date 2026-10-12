@@ -37,6 +37,8 @@ func describePlan(t *testing.T, p shared.SQLRequestPlanner) string {
 			}
 		}
 		return strings.Join(stages, "|")
+	case *FieldFilterPlanner:
+		return "pivot{" + p.Filter.String() + "}"
 	case *AttrConditionPlanner:
 		attrs := make([]string, len(p.Terms))
 		for i, term := range p.Terms {

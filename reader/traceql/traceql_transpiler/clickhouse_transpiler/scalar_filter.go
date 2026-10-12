@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"math"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
-	"github.com/metrico/qryn/v5/reader/traceql/timerange"
 	traceql_ir "github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
 	sql "github.com/metrico/qryn/v5/reader/utils/sql_select"
 )
@@ -18,23 +16,6 @@ import (
 var (
 	errScalarFilterLHS = errors.New("scalar filter lhs of type (%v) not yet supported")
 	errScalarFilterRHS = errors.New("scalar filter rhs of type (%v) not yet supported")
-)
-
-// nonNumericIntrinsics are the intrinsics an aggregate cannot take.
-var nonNumericIntrinsics = map[string]bool{
-	"name": true, "span:name": true, "status": true, "span:status": true, "kind": true, "span:kind": true,
-	"statusMessage": true, "span:statusMessage": true, "rootName": true, "rootServiceName": true,
-	"trace:rootName": true, "trace:rootService": true, "true": true, "false": true, "nil": true,
-}
-
-// aggregateArg is the kind of value an aggregate reads per span; count()
-// reads none.
-type aggregateArg int
-
-const (
-	argNone aggregateArg = iota
-	argDuration
-	argAttribute
 )
 
 // The types of a spanset attribute's value; a duration is in nanoseconds.
@@ -50,8 +31,8 @@ type scalarFilterStage struct {
 	agg   *traceql_ir.Aggregate
 	op    string
 	value float64
-	arg   aggregateArg
-	key   string
+	// duration is whether the aggregate's argument is a duration.
+	duration bool
 }
 
 // newScalarFilterStage validates f: an aggregate over a number compared with
@@ -75,12 +56,11 @@ func newScalarFilterStage(f *traceql_ir.ScalarFilter) (*scalarFilterStage, error
 	if err != nil {
 		return nil, err
 	}
-	res := &scalarFilterStage{agg: agg, op: f.Op, value: value}
-	res.arg, res.key = aggregateArgOf(agg)
-	return res, nil
+	duration := agg.Arg != nil && traceql_ir.TypeOf(agg.Arg) == traceql_ir.TypeDuration
+	return &scalarFilterStage{agg: agg, op: f.Op, value: value, duration: duration}, nil
 }
 
-// checkAggregates checks that every aggregate of e reads a number.
+// checkAggregates checks that every aggregate of e reads a number of the span.
 func checkAggregates(e traceql_ir.ScalarExpr) error {
 	switch e := e.(type) {
 	case *traceql_ir.ScalarOp:
@@ -89,34 +69,15 @@ func checkAggregates(e traceql_ir.ScalarExpr) error {
 		}
 		return checkAggregates(e.RHS)
 	case *traceql_ir.Aggregate:
-		if nonNumericIntrinsics[e.Attr] {
-			return fmt.Errorf("aggregate field expressions must resolve to a number type: %s", e)
+		if err := traceql_ir.CheckAggregate(e); err != nil {
+			return err
 		}
-		if arg, _ := aggregateArgOf(e); arg == argNone && e.Fn != "count" {
-			return fmt.Errorf("unsupported attribute %s", e.Attr)
+		if e.Arg != nil {
+			_, err := fieldKeys(e.Arg)
+			return err
 		}
 	}
 	return nil
-}
-
-// aggregateArgOf returns what agg reads per span and, for an attribute, its
-// unscoped key. An unscoped word other than an intrinsic is an attribute key.
-func aggregateArgOf(agg *traceql_ir.Aggregate) (aggregateArg, string) {
-	switch agg.Attr {
-	case "":
-		return argNone, ""
-	case "duration", "span:duration":
-		return argDuration, ""
-	}
-	for _, scope := range []string{"span.", "resource.", "."} {
-		if strings.HasPrefix(agg.Attr, scope) {
-			return argAttribute, agg.Attr[len(scope):]
-		}
-	}
-	if strings.Contains(agg.Attr, ":") || strings.HasPrefix(agg.Attr, "nestedSet") {
-		return argNone, ""
-	}
-	return argAttribute, agg.Attr
 }
 
 // staticValue is a literal as a float: a duration in nanoseconds.
@@ -137,7 +98,7 @@ func (s *scalarFilterStage) process(ctx *shared.PlannerContext, alias string, pr
 		valued sql.ISelect
 	)
 	window := "OVER (PARTITION BY trace_id)"
-	if s.arg == argNone {
+	if s.agg.Arg == nil {
 		valued = sql.NewSelect().
 			Select(append(spanRowCols(),
 				sql.NewSimpleCol("attrs", "prev_attrs"),
@@ -146,7 +107,11 @@ func (s *scalarFilterStage) process(ctx *shared.PlannerContext, alias string, pr
 				sql.NewSimpleCol(sqlString(AttrInt), "type"))...).
 			From(sql.NewWithRef(prev))
 	} else {
-		values := sql.NewWith(s.values(ctx, base), alias+"_values")
+		sel, err := s.values(ctx, alias, base)
+		if err != nil {
+			return nil, err
+		}
+		values := sql.NewWith(sel, alias+"_values")
 		withs = append(withs, values)
 		p, v := prev.GetAlias(), values.GetAlias()
 		window = fmt.Sprintf("OVER (PARTITION BY %s.trace_id)", p)
@@ -176,42 +141,38 @@ func (s *scalarFilterStage) process(ctx *shared.PlannerContext, alias string, pr
 		AndWhere(rawCond("n_present > 0 AND NOT isNaN(value) AND " + s.comparison("value"))), nil
 }
 
-// values reads the number of every span of base that has one: num, is_int
-// (whether the stored value is an integer) and present, 1; a span left out
-// reads present 0 through the left join. Base spans start in the query range,
-// which bounds the read.
-func (s *scalarFilterStage) values(ctx *shared.PlannerContext, base *sql.With) sql.ISelect {
-	baseSpans := sql.NewSelect().Select(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id")).From(sql.NewWithRef(base))
-	if s.arg == argDuration {
-		tsFrom, tsTo := timerange.SpanStart("traces.timestamp_ns", ctx.From.UnixNano(), ctx.To.UnixNano())
-		return sql.NewSelect().
-			Select(
-				sql.NewSimpleCol("traces.trace_id", "trace_id"),
-				sql.NewSimpleCol("traces.span_id", "span_id"),
-				sql.NewSimpleCol("toFloat64(any(traces.duration_ns))", "num"),
-				sql.NewSimpleCol("1", "is_int"),
-				sql.NewSimpleCol("1", "present")).
-			From(sql.NewSimpleCol(tracesTable(ctx), "traces")).
-			AndWhere(tsFrom, tsTo, inSubquery(ctx, sql.NewRawObject("(traces.trace_id, traces.span_id)"), baseSpans)).
-			GroupBy(sql.NewRawObject("traces.trace_id"), sql.NewRawObject("traces.span_id"))
+// values reads the argument of every span of base that has one: num, is_int
+// (whether it is an integer) and present, 1; a span left out reads present 0
+// through the left join. Base spans start in the query range, which bounds the
+// read.
+func (s *scalarFilterStage) values(ctx *shared.PlannerContext, alias string, base *sql.With) (sql.ISelect, error) {
+	keys, err := fieldKeys(s.agg.Arg)
+	if err != nil {
+		return nil, err
 	}
-	tsFrom, tsTo := timerange.SpanStart("traces_idx.timestamp_ns", ctx.From.UnixNano(), ctx.To.UnixNano())
+	pivot := &fieldPivot{keys: keys}
+	num, err := pivot.sql().number(s.agg.Arg)
+	if err != nil {
+		return nil, err
+	}
+	baseSpans := sql.NewSelect().Select(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id")).From(sql.NewWithRef(base))
+	spans := pivot.spans(ctx)
+	table := "traces_idx"
+	if len(keys) == 0 {
+		table = "traces"
+	}
+	spans.AndWhere(inSubquery(ctx, sql.NewRawObject(fmt.Sprintf("(%s.trace_id, %s.span_id)", table, table)), baseSpans))
+	withSpans := sql.NewWith(spans, alias+"_pivot")
 	return sql.NewSelect().
+		With(withSpans).
 		Select(
-			sql.NewSimpleCol("traces_idx.trace_id", "trace_id"),
-			sql.NewSimpleCol("traces_idx.span_id", "span_id"),
-			sql.NewSimpleCol("toFloat64(any(traces_idx.val))", "num"),
-			sql.NewSimpleCol("isNotNull(toInt64OrNull(any(traces_idx.val)))", "is_int"),
+			sql.NewSimpleCol("trace_id", "trace_id"),
+			sql.NewSimpleCol("span_id", "span_id"),
+			sql.NewSimpleCol("ifNull("+num.val+", 0)", "num"),
+			sql.NewSimpleCol(num.isInt, "is_int"),
 			sql.NewSimpleCol("1", "present")).
-		From(sql.NewSimpleCol(attrsTable(ctx), "traces_idx")).
-		AndWhere(
-			sql.Eq(sql.NewRawObject("traces_idx.key"), sql.NewStringVal(s.key)),
-			sql.Ge(sql.NewRawObject("traces_idx.date"), sql.NewStringVal(ctx.From.Format("2006-01-02"))),
-			sql.Le(sql.NewRawObject("traces_idx.date"), sql.NewStringVal(ctx.To.Format("2006-01-02"))),
-			tsFrom, tsTo,
-			rawCond("isNotNull(toFloat64OrNull(traces_idx.val))"),
-			inSubquery(ctx, sql.NewRawObject("(traces_idx.trace_id, traces_idx.span_id)"), baseSpans)).
-		GroupBy(sql.NewRawObject("traces_idx.trace_id"), sql.NewRawObject("traces_idx.span_id"))
+		From(sql.NewWithRef(withSpans)).
+		AndWhere(rawCond("isNotNull(" + num.val + ")")), nil
 }
 
 // aggregate returns the aggregate over the present values of v per spanset,
@@ -221,7 +182,7 @@ func (s *scalarFilterStage) values(ctx *shared.PlannerContext, base *sql.With) s
 func (s *scalarFilterStage) aggregate(v, window string) (value string, typ string) {
 	num, present, isInt := v+".num", v+".present = 1", v+".is_int"
 	numeric := func(intExpr string) string {
-		if s.arg == argDuration {
+		if s.duration {
 			return sqlString(AttrDuration)
 		}
 		return fmt.Sprintf("if(%s %s = 1, %s, %s)", intExpr, window, sqlString(AttrInt), sqlString(AttrFloat))
@@ -234,7 +195,7 @@ func (s *scalarFilterStage) aggregate(v, window string) (value string, typ strin
 	case "max":
 		return fmt.Sprintf("maxIf(%s, %s) %s", num, present, window), numeric(fmt.Sprintf("argMaxIf(%s, %s, %s)", isInt, num, present))
 	}
-	if s.arg == argDuration {
+	if s.duration {
 		return fmt.Sprintf("toFloat64(intDivOrZero(sumIf(toInt64(%s), %s) %s, countIf(%s) %s))", num, present, window, present, window), sqlString(AttrDuration)
 	}
 	return fmt.Sprintf("avgIf(%s, %s) %s", num, present, window), sqlString(AttrFloat)

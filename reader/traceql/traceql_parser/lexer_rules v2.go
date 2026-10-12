@@ -31,6 +31,7 @@ var TraceQLLexerRulesV2 = []lexer.SimpleRule{
 	{"Neq", `!=`},
 	{"Re", `=~`},
 	{"Nre", `!~`},
+	{"Not", `!`},
 	{"Eq", `=`},
 
 	{"UnionDescendant", `&>>`},

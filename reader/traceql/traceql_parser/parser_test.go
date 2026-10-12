@@ -1,25 +1,49 @@
 package traceql_parser
 
 import (
+	"strings"
 	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func term(label, op string, val Value) *AttrSelectorExp {
-	return &AttrSelectorExp{Head: &AttrSelector{Label: label, Op: op, Val: val}}
+func name(n string) FieldOperand { return FieldOperand{Atom: FieldAtom{Name: n}} }
+
+func str(s string) FieldOperand { return FieldOperand{Atom: FieldAtom{Str: &QuotedString{Str: s}}} }
+
+func num(n string) FieldOperand { return FieldOperand{Atom: FieldAtom{Number: &NumberLiteral{Num: n}}} }
+
+func dur(n, unit string) FieldOperand {
+	return FieldOperand{Atom: FieldAtom{Number: &NumberLiteral{Num: n, Unit: unit}}}
 }
 
-func join(head *AttrSelectorExp, andOr string, tail *AttrSelectorExp) *AttrSelectorExp {
-	head.AndOr = andOr
-	head.Tail = tail
-	return head
+func unary(ops string, o FieldOperand) FieldOperand {
+	o.Unary = strings.Split(ops, "")
+	return o
 }
 
-func str(s string) Value { return Value{StrVal: &QuotedString{Str: s}} }
+func parenField(e *FieldExpr) FieldOperand { return FieldOperand{Atom: FieldAtom{Paren: e}} }
 
-func sel(exp *AttrSelectorExp) Operand { return Operand{Selector: Selector{AttrSelector: exp}} }
+// field is head followed by alternating operators and operands.
+func field(head FieldOperand, rest ...any) *FieldExpr {
+	res := &FieldExpr{Head: head}
+	for i := 0; i < len(rest); i += 2 {
+		res.Ops = append(res.Ops, FieldBinary{Op: rest[i].(string), Operand: rest[i+1].(FieldOperand)})
+	}
+	return res
+}
+
+func term(label, op string, val FieldOperand) *FieldExpr { return field(name(label), op, val) }
+
+// join appends op and tail to head, as written.
+func join(head *FieldExpr, op string, tail *FieldExpr) *FieldExpr {
+	res := *head
+	res.Ops = append(append(append([]FieldBinary{}, head.Ops...), FieldBinary{Op: op, Operand: tail.Head}), tail.Ops...)
+	return &res
+}
+
+func sel(exp *FieldExpr) Operand { return Operand{Selector: Selector{Filter: exp}} }
 
 func expr(head Operand, ops ...SpansetOperation) *SpansetExpr {
 	return &SpansetExpr{Head: head, Ops: ops}
@@ -45,7 +69,11 @@ func scalar(atom ScalarAtom) ScalarExpr {
 }
 
 func agg(fn, attr string) ScalarExpr {
-	return scalar(ScalarAtom{Aggregate: &Aggregate{Fn: fn, Attr: attr}})
+	a := &Aggregate{Fn: fn}
+	if attr != "" {
+		a.Arg = field(name(attr))
+	}
+	return scalar(ScalarAtom{Aggregate: a})
 }
 
 func lit(num, unit string) ScalarExpr {
@@ -63,46 +91,86 @@ func i64(i int64) *int64 { return &i }
 func TestParseSelectors(t *testing.T) {
 	for _, c := range []struct {
 		query string
-		want  *AttrSelectorExp
+		want  *FieldExpr
 	}{
 		{`{}`, nil},
 		{`{.a = "b"}`, term(".a", "=", str(`"b"`))},
 		{"{.a = `b`}", term(".a", "=", str("`b`"))},
-		{`{span.http.status_code != 200}`, term("span.http.status_code", "!=", Value{FVal: "200"})},
+		{`{span.http.status_code != 200}`, term("span.http.status_code", "!=", num("200"))},
 		{`{resource.service.name =~ "api-.*"}`, term("resource.service.name", "=~", str(`"api-.*"`))},
 		{`{.a !~ "x"}`, term(".a", "!~", str(`"x"`))},
-		{`{.a > -3}`, term(".a", ">", Value{FVal: "-3"})},
-		{`{.a >= 1.5}`, term(".a", ">=", Value{FVal: "1.5"})},
-		{`{.a < 1 . 5}`, term(".a", "<", Value{FVal: "1.5"})},
-		{`{.a <= 0}`, term(".a", "<=", Value{FVal: "0"})},
-		{`{duration > 1.5ms}`, term("duration", ">", Value{TimeVal: "1.5ms"})},
-		{`{span:duration < 2s}`, term("span:duration", "<", Value{TimeVal: "2s"})},
-		{`{.a = nil}`, term(".a", "=", Value{NilVal: "nil"})},
-		{`{.a != nil}`, term(".a", "!=", Value{NilVal: "nil"})},
-		{`{.a = true}`, term(".a", "=", Value{BoolVal: "true"})},
-		{`{status = error}`, term("status", "=", Value{UnquotVal: "error"})},
-		{`{kind = server}`, term("kind", "=", Value{UnquotVal: "server"})},
+		{`{.a > -3}`, term(".a", ">", unary("-", num("3")))},
+		{`{.a >= 1.5}`, term(".a", ">=", num("1.5"))},
+		{`{.a < 1 . 5}`, term(".a", "<", num("1.5"))},
+		{`{.a <= 0}`, term(".a", "<=", num("0"))},
+		{`{duration > 1.5ms}`, term("duration", ">", dur("1.5", "ms"))},
+		{`{span:duration < 2s}`, term("span:duration", "<", dur("2", "s"))},
+		{`{.a = nil}`, term(".a", "=", name("nil"))},
+		{`{.a != nil}`, term(".a", "!=", name("nil"))},
+		{`{.a = true}`, term(".a", "=", name("true"))},
+		{`{status = error}`, term("status", "=", name("error"))},
+		{`{kind = server}`, term("kind", "=", name("server"))},
 		{`{.a-b.c = "x"}`, term(".a-b.c", "=", str(`"x"`))},
-		{`{.a}`, term(".a", "", Value{})},
-		{`{.a = }`, term(".a", "=", Value{})},
-		{`{.a = .b}`, term(".a", "=", Value{UnquotVal: ".b"})},
-		{`{ true }`, term("true", "", Value{})},
+		{`{.a}`, field(name(".a"))},
+		{`{.a = .b}`, term(".a", "=", name(".b"))},
+		{`{ true }`, field(name("true"))},
 		{`{.a = "b" && .c = "d"}`,
 			join(term(".a", "=", str(`"b"`)), "&&", term(".c", "=", str(`"d"`)))},
 		{`{.a = "b" || .c = "d" && .e = "f"}`,
-			join(term(".a", "=", str(`"b"`)), "||",
-				join(term(".c", "=", str(`"d"`)), "&&", term(".e", "=", str(`"f"`))))},
+			join(join(term(".a", "=", str(`"b"`)), "||", term(".c", "=", str(`"d"`))), "&&", term(".e", "=", str(`"f"`)))},
 		{`{(.a = 1 || .b = 2) && .c = 3}`,
-			&AttrSelectorExp{
-				ComplexHead: join(term(".a", "=", Value{FVal: "1"}), "||", term(".b", "=", Value{FVal: "2"})),
-				AndOr:       "&&",
-				Tail:        term(".c", "=", Value{FVal: "3"}),
-			}},
+			field(parenField(join(term(".a", "=", num("1")), "||", term(".b", "=", num("2")))), "&&", name(".c"), "=", num("3"))},
 	} {
 		t.Run(c.query, func(t *testing.T) {
 			got, err := Parse(c.query)
 			require.NoError(t, err)
 			require.Equal(t, script(expr(sel(c.want))), got)
+		})
+	}
+}
+
+// Field expressions parse as written; lowering groups them by precedence.
+func TestParseFieldExpressions(t *testing.T) {
+	for _, c := range []struct {
+		query string
+		want  *FieldExpr
+	}{
+		// A hyphen inside an unquoted name is part of it; binary - needs whitespace.
+		{`{.a-.b > 3}`, term(".a-.b", ">", num("3"))},
+		{`{.a - .b > 3}`, field(name(".a"), "-", name(".b"), ">", num("3"))},
+		{`{.a -.b > 3}`, field(name(".a"), "-", name(".b"), ">", num("3"))},
+		{`{.a-1 = 2}`, term(".a-1", "=", num("2"))},
+		{`{.a + .b * .c / .d % .e ^ .f = 1}`,
+			field(name(".a"), "+", name(".b"), "*", name(".c"), "/", name(".d"), "%", name(".e"), "^", name(".f"), "=", num("1"))},
+		{`{.a+.b*2>3}`, field(name(".a"), "+", name(".b"), "*", num("2"), ">", num("3"))},
+		{`{-.a * 2 = -4}`, field(unary("-", name(".a")), "*", num("2"), "=", unary("-", num("4")))},
+		{`{1 - -2 = 3}`, field(num("1"), "-", unary("-", num("2")), "=", num("3"))},
+		{`{!(.a = 1)}`, field(unary("!", parenField(term(".a", "=", num("1")))))},
+		{`{!.a}`, field(unary("!", name(".a")))},
+		{`{! ! .a}`, field(unary("!!", name(".a")))},
+		{`{!-.a > 1}`, field(unary("!-", name(".a")), ">", num("1"))},
+		{`{nil != .a}`, field(name("nil"), "!=", name(".a"))},
+		{`{.a = .b || .c <= .d}`, field(name(".a"), "=", name(".b"), "||", name(".c"), "<=", name(".d"))},
+		{`{(.a + .b) * 2 >= 1ms}`, field(parenField(field(name(".a"), "+", name(".b"))), "*", num("2"), ">=", dur("1", "ms"))},
+	} {
+		t.Run(c.query, func(t *testing.T) {
+			got, err := Parse(c.query)
+			require.NoError(t, err)
+			require.Equal(t, script(expr(sel(c.want))), got)
+		})
+	}
+
+	t.Run("aggregate argument", func(t *testing.T) {
+		got, err := Parse(`{} | avg(.a + -.b) > 2`)
+		require.NoError(t, err)
+		arg := field(name(".a"), "+", unary("-", name(".b")))
+		require.Equal(t, script(expr(sel(nil)), filter(scalar(ScalarAtom{Aggregate: &Aggregate{Fn: "avg", Arg: arg}}), ">", lit("2", ""))), got)
+	})
+
+	for _, q := range []string{`{.a = }`, `{.a + }`, `{!}`, `{.a = 1 !}`, `{.a ** 2}`, `{.a = ()}`} {
+		t.Run("rejects "+q, func(t *testing.T) {
+			_, err := Parse(q)
+			require.Error(t, err)
 		})
 	}
 }
@@ -144,13 +212,13 @@ func TestParseSpansetOperators(t *testing.T) {
 		want  *TraceQLScript
 	}{
 		{`{ .x > 3 } > { .y !~ "a.*" }`, script(expr(
-			sel(term(".x", ">", Value{FVal: "3"})), then(">", sel(term(".y", "!~", str(`"a.*"`))))))},
+			sel(term(".x", ">", num("3"))), then(">", sel(term(".y", "!~", str(`"a.*"`))))))},
 		{`{.x<3}<{.y<4}`, script(expr(
-			sel(term(".x", "<", Value{FVal: "3"})), then("<", sel(term(".y", "<", Value{FVal: "4"})))))},
+			sel(term(".x", "<", num("3"))), then("<", sel(term(".y", "<", num("4"))))))},
 		{`{ .x !~ "a" } !~ { .y =~ "b" }`, script(expr(
 			sel(term(".x", "!~", str(`"a"`))), then("!~", sel(term(".y", "=~", str(`"b"`))))))},
 		{`{ .x >= 1 } &> { .y <= 2 }`, script(expr(
-			sel(term(".x", ">=", Value{FVal: "1"})), then("&>", sel(term(".y", "<=", Value{FVal: "2"})))))},
+			sel(term(".x", ">=", num("1"))), then("&>", sel(term(".y", "<=", num("2"))))))},
 		{`{ .x = "<<&" } > {}`, script(expr(sel(term(".x", "=", str(`"<<&"`))), then(">", sel(nil))))},
 	} {
 		t.Run(c.query, func(t *testing.T) {
@@ -220,7 +288,7 @@ func TestParseScalarFilters(t *testing.T) {
 		{`{} | 2 < count()`, script(expr(sel(nil)), filter(lit("2", ""), "<", agg("count", "")))},
 		{`{} | count() > count()`, script(expr(sel(nil)), filter(agg("count", ""), ">", agg("count", "")))},
 		{`{} | sum(.a) + 1 > 0`, script(expr(sel(nil)), filter(ScalarExpr{
-			Head: ScalarTerm{Head: ScalarFactor{Base: ScalarAtom{Aggregate: &Aggregate{Fn: "sum", Attr: ".a"}}}},
+			Head: ScalarTerm{Head: ScalarFactor{Base: ScalarAtom{Aggregate: &Aggregate{Fn: "sum", Arg: field(name(".a"))}}}},
 			Ops:  []ScalarSumOp{{Op: "+", Term: ScalarTerm{Head: ScalarFactor{Base: ScalarAtom{Literal: &ScalarLiteral{Num: "1"}}}}}},
 		}, ">", lit("0", "")))},
 	} {
@@ -317,7 +385,7 @@ func TestParseMetricsFunctions(t *testing.T) {
 		{`{} | histogram_over_time(duration)`, metrics(empty(),
 			&MetricsPipelineStage{Fn: "histogram_over_time", Attr: "duration"})},
 		{`{} | compare({.a = "b"}, 10, 1, 2)`, metrics(empty(), &MetricsPipelineStage{Fn: "compare", CompSel: &CompareSelector{
-			AttrSelector: term(".a", "=", str(`"b"`)), Count: 10, BaselineFrom: i64(1), BaselineTo: i64(2),
+			Filter: term(".a", "=", str(`"b"`)), Count: 10, BaselineFrom: i64(1), BaselineTo: i64(2),
 		}})},
 		{`{} | compare({})`, metrics(empty(), &MetricsPipelineStage{Fn: "compare", CompSel: &CompareSelector{}})},
 		{`{.a = "b"} | count() > 2 | rate()`, metrics(a(), &MetricsPipelineStage{Fn: "rate"},
@@ -394,8 +462,6 @@ func TestParseRejects(t *testing.T) {
 		``,
 		`{`,
 		`{.a = "b"`,
-		`{.a + .b > 3}`,
-		`{!(.a = 1)}`,
 		`{.a = "b"} {.c = "d"}`,
 		`({.a = "b"}) ({.c = "d"})`,
 	} {

@@ -13,7 +13,7 @@ import (
 
 type AttrConditionPlanner struct {
 	Main  shared.SQLRequestPlanner
-	Terms []*traceql_ir.Comparison
+	Terms []*attrComparison
 	Conds *condition
 
 	sqlConds  []sql.SQLCondition
@@ -57,6 +57,8 @@ func (a *AttrConditionPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect,
 }
 
 // createWhere builds the terms on ctx; their traces-table conditions go to ctx.
+// The rows read are those of the terms that read an attribute key, or every
+// row when the condition can hold without any of them.
 func (a *AttrConditionPlanner) createWhere(ctx *shared.PlannerContext) error {
 	a.sqlConds, a.where = nil, nil
 	for _, t := range a.Terms {
@@ -65,16 +67,42 @@ func (a *AttrConditionPlanner) createWhere(ctx *shared.PlannerContext) error {
 			return err
 		}
 		a.sqlConds = append(a.sqlConds, sqlTerm)
-
-		if !strings.HasPrefix(t.Attr, "span.") &&
-			!strings.HasPrefix(t.Attr, "resource.") &&
-			!strings.HasPrefix(t.Attr, ".") &&
-			t.Attr != "name" {
-			continue
+		if readsKey(t) {
+			a.where = append(a.where, sqlTerm)
 		}
-		a.where = append(a.where, sqlTerm)
+	}
+	if a.holdsWithoutKeys(a.Conds) {
+		a.where = nil
 	}
 	return nil
+}
+
+// readsKey reports whether term t holds only on the rows of one attribute
+// key; the other terms hold on every row of a span or none.
+func readsKey(t *attrComparison) bool {
+	switch t.Attr {
+	case "duration", "span:duration", "true", "false":
+		return false
+	}
+	return !strings.HasPrefix(t.Attr, "nestedSet")
+}
+
+// holdsWithoutKeys reports whether c can hold for a span none of whose rows
+// satisfy a term that reads a key.
+func (a *AttrConditionPlanner) holdsWithoutKeys(c *condition) bool {
+	if c.simpleIdx != -1 {
+		return !readsKey(a.Terms[c.simpleIdx])
+	}
+	for _, sub := range c.complex {
+		holds := a.holdsWithoutKeys(sub)
+		if c.op == "&&" && !holds {
+			return false
+		}
+		if c.op != "&&" && holds {
+			return true
+		}
+	}
+	return c.op == "&&"
 }
 
 func (a *AttrConditionPlanner) getCond(c *condition) (sql.SQLCondition, error) {
@@ -105,7 +133,7 @@ func (a *AttrConditionPlanner) getCond(c *condition) (sql.SQLCondition, error) {
 	return sql.Neq(&bitAnd{left, sql.NewIntVal(int64(1) << c.simpleIdx)}, sql.NewIntVal(0)), nil
 }
 
-func (a *AttrConditionPlanner) getTerm(t *traceql_ir.Comparison, ctx *shared.PlannerContext) (sql.SQLCondition, error) {
+func (a *AttrConditionPlanner) getTerm(t *attrComparison, ctx *shared.PlannerContext) (sql.SQLCondition, error) {
 	key := t.Attr
 	// Normalize span: colon-intrinsic aliases to their canonical names.
 	if key == "span:duration" {
@@ -204,7 +232,7 @@ func (a *AttrConditionPlanner) getTerm(t *traceql_ir.Comparison, ctx *shared.Pla
 	return nil, fmt.Errorf("unsupported statement `%s`", t.String())
 }
 
-func (a *AttrConditionPlanner) getTermNum(t *traceql_ir.Comparison, key string) (sql.SQLCondition, error) {
+func (a *AttrConditionPlanner) getTermNum(t *attrComparison, key string) (sql.SQLCondition, error) {
 	var fn func(left sql.SQLObject, right sql.SQLObject) *sql.LogicalOp
 	switch t.Op {
 	case "=":
@@ -234,7 +262,7 @@ func (a *AttrConditionPlanner) getTermNum(t *traceql_ir.Comparison, key string) 
 	), nil
 }
 
-func (a *AttrConditionPlanner) getTermStr(t *traceql_ir.Comparison, key string) (sql.SQLCondition, error) {
+func (a *AttrConditionPlanner) getTermStr(t *attrComparison, key string) (sql.SQLCondition, error) {
 	switch t.Op {
 	case "=":
 		strVal, err := t.Value.Unquote()
@@ -276,7 +304,7 @@ func (a *AttrConditionPlanner) getTermStr(t *traceql_ir.Comparison, key string) 
 	return nil, &shared.NotSupportedError{Msg: "not supported operator: " + t.Op}
 }
 
-func (a *AttrConditionPlanner) getTermDuration(t *traceql_ir.Comparison) (sql.SQLCondition, error) {
+func (a *AttrConditionPlanner) getTermDuration(t *attrComparison) (sql.SQLCondition, error) {
 	if t.Value.Kind != traceql_ir.ValueDuration {
 		return nil, fmt.Errorf(" is not a time duration value (%s)", t.String())
 	}

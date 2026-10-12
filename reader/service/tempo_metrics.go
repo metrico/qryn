@@ -648,7 +648,7 @@ func executeCompareInstant(
 // queryCompare runs the compare() query of tq, passing each row to add.
 func queryCompare(tq *traceql_ir.Query, planCtx *shared.PlannerContext, add func(tempo.CompareResultRow)) error {
 	creq := compareRequest(tq.Metrics, planCtx)
-	var selection traceql_ir.FilterExpr
+	var selection traceql_ir.FieldExpr
 	if tq.Metrics.Compare != nil {
 		selection = tq.Metrics.Compare.Filter
 	}

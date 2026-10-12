@@ -105,14 +105,14 @@ func (p ParenPipeline) String() string {
 }
 
 type Selector struct {
-	AttrSelector *AttrSelectorExp `"{" @@? "}"`
+	Filter *FieldExpr `"{" @@? "}"`
 }
 
 func (s Selector) String() string {
-	if s.AttrSelector == nil {
+	if s.Filter == nil {
 		return "{}"
 	}
-	return "{" + s.AttrSelector.String() + "}"
+	return "{" + s.Filter.String() + "}"
 }
 
 // ScalarFilter is `LHS Op RHS` over scalar expressions.
@@ -195,14 +195,17 @@ func (a ScalarAtom) String() string {
 	return "(" + a.Paren.String() + ")"
 }
 
-// Aggregate is `count()` or `avg|min|max|sum(attribute)`.
+// Aggregate is `count()` or `avg|min|max|sum(fieldexpr)`.
 type Aggregate struct {
-	Fn   string `( @"count" "(" ")" | @("avg"|"min"|"max"|"sum") "("`
-	Attr string `  @Label_name ")" )`
+	Fn  string     `( @"count" "(" ")" | @("avg"|"min"|"max"|"sum") "("`
+	Arg *FieldExpr `  @@ ")" )`
 }
 
 func (a Aggregate) String() string {
-	return a.Fn + "(" + a.Attr + ")"
+	if a.Arg == nil {
+		return a.Fn + "()"
+	}
+	return a.Fn + "(" + a.Arg.String() + ")"
 }
 
 // ScalarLiteral is a number, with its duration unit if any.
@@ -215,82 +218,66 @@ func (l ScalarLiteral) String() string {
 	return l.Num + l.Unit
 }
 
-type AttrSelectorExp struct {
-	Head        *AttrSelector    `(@@`
-	BoolLiteral string           `| @("true"|"false")`
-	ComplexHead *AttrSelectorExp `| "(" @@ ")" )`
-	AndOr       string           `@(And|Or)?`
-	Tail        *AttrSelectorExp `@@?`
+// FieldExpr is a field expression as written: operands joined by binary
+// operators, which lowering groups by precedence.
+type FieldExpr struct {
+	Head FieldOperand  `@@`
+	Ops  []FieldBinary `@@*`
 }
 
-func (a AttrSelectorExp) String() string {
-	res := ""
-	if a.Head != nil {
-		res += a.Head.String()
-	}
-	if a.BoolLiteral != "" {
-		res += a.BoolLiteral
-	}
-	if a.ComplexHead != nil {
-		res += "(" + a.ComplexHead.String() + ")"
-	}
-	if a.AndOr != "" {
-		res += " " + a.AndOr + " " + a.Tail.String()
+func (e FieldExpr) String() string {
+	res := e.Head.String()
+	for _, op := range e.Ops {
+		res += " " + op.Op + " " + op.Operand.String()
 	}
 	return res
 }
 
-type Aggregator struct {
-	Fn          string `"|" @("count"|"sum"|"min"|"max"|"avg")`
-	Attr        string `"(" @Label_name? ")"`
-	Cmp         string `@("="|"!="|"<"|"<="|">"|">=")`
-	Num         string `@Minus? (@Float | @Integer @Dot? @Integer?)`
-	Measurement string `@("ns"|"us"|"ms"|"s"|"m"|"h"|"d")?`
+// FieldBinary is a binary operator and the operand after it.
+type FieldBinary struct {
+	Op      string       `@("+"|"-"|"*"|"/"|"%"|"^"|"="|"!="|"<"|"<="|">"|">="|"=~"|"!~"|"&&"|"||")`
+	Operand FieldOperand `@@`
 }
 
-func (a Aggregator) String() string {
-	return "| " + a.Fn + "(" + a.Attr + ") " + a.Cmp + " " + a.Num + a.Measurement
+// FieldOperand is an atom after its unary operators, outermost first.
+type FieldOperand struct {
+	Unary []string  `@("-"|"!")*`
+	Atom  FieldAtom `@@`
 }
 
-type AttrSelector struct {
-	Label string `@Label_name`
-	Op    string `@("="|"!="|"<"|"<="|">"|">="|"=~"|"!~")?`
-	Val   Value  `@@?`
+func (o FieldOperand) String() string {
+	return strings.Join(o.Unary, "") + o.Atom.String()
 }
 
-func (a AttrSelector) String() string {
-	return a.Label + " " + a.Op + " " + a.Val.String()
+// FieldAtom is a parenthesised field expression, a literal or a name: an
+// attribute, an intrinsic or a keyword.
+type FieldAtom struct {
+	Paren  *FieldExpr     `  "(" @@ ")"`
+	Str    *QuotedString  `| @@`
+	Number *NumberLiteral `| @@`
+	Name   string         `| @Label_name`
 }
 
-type Value struct {
-	NilVal    string        `@"nil"`
-	BoolVal   string        `| @("true"|"false")`
-	TimeVal   string        `| (@Float | @Integer @Dot? @Integer?) @("ns"|"us"|"ms"|"s"|"m"|"h"|"d")`
-	FVal      string        `| @Minus? (@Float | @Integer @Dot? @Integer?)`
-	StrVal    *QuotedString `| @@`
-	UnquotVal string        `| @Label_name`
+func (a FieldAtom) String() string {
+	switch {
+	case a.Paren != nil:
+		return "(" + a.Paren.String() + ")"
+	case a.Str != nil:
+		return a.Str.Str
+	case a.Number != nil:
+		return a.Number.String()
+	}
+	return a.Name
 }
 
-func (v Value) String() string {
-	if v.NilVal != "" {
-		return "nil"
-	}
-	if v.BoolVal != "" {
-		return v.BoolVal
-	}
-	if v.StrVal != nil {
-		return v.StrVal.Str
-	}
-	if v.FVal != "" {
-		return v.FVal
-	}
-	if v.TimeVal != "" {
-		return v.TimeVal
-	}
-	if v.UnquotVal != "" {
-		return v.UnquotVal
-	}
-	return ""
+// NumberLiteral is an unsigned number, with its duration unit if any.
+type NumberLiteral struct {
+	Num  string `(@Float | @Integer @Dot? @Integer?)`
+	Unit string `@("ns"|"us"|"ms"|"s"|"m"|"h"|"d")?`
+}
+
+func (l NumberLiteral) String() string {
+	return l.Num + l.Unit
 }
 
 type QuotedString struct {
@@ -345,17 +332,17 @@ func (m MetricsPipelineStage) String() string {
 //	compare({selector}, N)
 //	compare({selector}, N, baselineStartNs, baselineEndNs)
 type CompareSelector struct {
-	AttrSelector *AttrSelectorExp `"{" @@? "}"`
-	Comma        *struct{}        `","?`
-	Count        int              `@Integer?`
-	BaselineFrom *int64           `("," @Integer)?`
-	BaselineTo   *int64           `("," @Integer)?`
+	Filter       *FieldExpr `"{" @@? "}"`
+	Comma        *struct{}  `","?`
+	Count        int        `@Integer?`
+	BaselineFrom *int64     `("," @Integer)?`
+	BaselineTo   *int64     `("," @Integer)?`
 }
 
 func (c CompareSelector) String() string {
 	sel := ""
-	if c.AttrSelector != nil {
-		sel = c.AttrSelector.String()
+	if c.Filter != nil {
+		sel = c.Filter.String()
 	}
 	s := fmt.Sprintf("{%s}, %d", sel, c.Count)
 	if c.BaselineFrom != nil {

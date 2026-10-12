@@ -34,7 +34,7 @@ func PlanMetrics(query *traceql_ir.Query, build MetricsBuild) (shared.SQLRequest
 // PlanCompare plans compare(): the query's result spans over
 // [baselineFrom, baselineTo] are the baseline, and the spans of the selection
 // filter over the query range are the selection.
-func PlanCompare(query *traceql_ir.Query, selection traceql_ir.FilterExpr,
+func PlanCompare(query *traceql_ir.Query, selection traceql_ir.FieldExpr,
 	baselineFrom, baselineTo time.Time, build CompareBuild) (shared.SQLRequestPlanner, error) {
 	p := &planner{query: query}
 	baseline, err := p.metricsSpans()
@@ -43,8 +43,12 @@ func PlanCompare(query *traceql_ir.Query, selection traceql_ir.FilterExpr,
 	}
 	res := &comparePlanner{Baseline: baseline, BaselineFrom: baselineFrom, BaselineTo: baselineTo, Build: build}
 	if selection != nil {
+		expr, err := p.operand(&traceql_ir.Selector{Filter: selection}).planner()
+		if err != nil {
+			return nil, err
+		}
 		filter := &pipelinePlanner{
-			Stages: []pipelineStage{&spansetStage{Expr: p.operand(&traceql_ir.Selector{Filter: selection}).planner()}},
+			Stages: []pipelineStage{&spansetStage{Expr: expr}},
 			Prefix: p.getPrefix(),
 		}
 		res.Selection = &metricsSpansPlanner{Result: filter, Prefix: p.getPrefix()}

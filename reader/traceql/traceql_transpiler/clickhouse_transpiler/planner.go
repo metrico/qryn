@@ -99,7 +99,10 @@ func (p *planner) planEval() (shared.SQLRequestPlanner, error) {
 	var res shared.SQLRequestPlanner
 	if selector, ok := loneSelector(&p.query.Pipeline); ok {
 		op := &simpleExpressionPlanner{selector: selector, prefix: p.getPrefix(), operand: selector.Filter != nil}
-		res = op.planEval()
+		var err error
+		if res, err = op.planEval(); err != nil {
+			return nil, err
+		}
 	} else {
 		operands, err := p.pipelineEvals(&p.query.Pipeline)
 		if err != nil {
@@ -113,7 +116,7 @@ func (p *planner) planEval() (shared.SQLRequestPlanner, error) {
 // planSpansetExpr plans a spanset operator tree into span rows.
 func (p *planner) planSpansetExpr(expr traceql_ir.SpansetExpr) (shared.SQLRequestPlanner, error) {
 	return planSpansetTree(p, expr,
-		func(op *simpleExpressionPlanner) (shared.SQLRequestPlanner, error) { return op.planner(), nil },
+		func(op *simpleExpressionPlanner) (shared.SQLRequestPlanner, error) { return op.planner() },
 		p.planPipeline,
 		func(op traceql_ir.SpansetOperator, lhs, rhs shared.SQLRequestPlanner) shared.SQLRequestPlanner {
 			switch op {
@@ -140,7 +143,8 @@ func (p *planner) pipelineEvals(pipeline *traceql_ir.Pipeline) ([]shared.SQLRequ
 		if e, ok := element.(traceql_ir.SpansetExpr); ok {
 			operands, err := planSpansetTree(p, e,
 				func(op *simpleExpressionPlanner) ([]shared.SQLRequestPlanner, error) {
-					return []shared.SQLRequestPlanner{op.planEval()}, nil
+					res, err := op.planEval()
+					return []shared.SQLRequestPlanner{res}, err
 				},
 				p.pipelineEvals,
 				func(_ traceql_ir.SpansetOperator, lhs, rhs []shared.SQLRequestPlanner) []shared.SQLRequestPlanner {

@@ -2,10 +2,6 @@
 // metrics and autocomplete planners consume.
 package traceql_ir
 
-import (
-	traceql_parser "github.com/metrico/qryn/v5/reader/traceql/traceql_parser"
-)
-
 // Query is a lowered TraceQL query: a pipeline followed by the optional
 // metrics function, hints and second stage.
 type Query struct {
@@ -36,7 +32,7 @@ type SpansetExpr interface {
 // Selector is `{filter}`.
 type Selector struct {
 	// Filter is nil for `{}`.
-	Filter FilterExpr
+	Filter FieldExpr
 }
 
 // Group is a parenthesised spanset expression.
@@ -137,38 +133,11 @@ func (*Group) isSpansetExpr()     {}
 func (*Pipeline) isSpansetExpr()  {}
 func (*SpansetOp) isSpansetExpr() {}
 
-// FilterExpr is the condition inside `{…}`.
-type FilterExpr interface {
-	isFilterExpr()
-}
-
-// FilterOp is `LHS Op RHS` with Op `&&` or `||`.
-type FilterOp struct {
-	Op  string
-	LHS FilterExpr
-	RHS FilterExpr
-}
-
-// Comparison is `Attr Op Value`. Op and Value are empty for a bare attribute.
-type Comparison struct {
-	Attr  string
-	Op    string
-	Value Value
-}
-
-func (*FilterOp) isFilterExpr()   {}
-func (*Comparison) isFilterExpr() {}
-
-func (c *Comparison) String() string {
-	return c.Attr + " " + c.Op + " " + c.Value.Text
-}
-
-// ValueKind is the lexical kind of a comparison's right-hand side.
+// ValueKind is the lexical kind of a literal.
 type ValueKind int
 
 const (
 	ValueNone ValueKind = iota
-	ValueNil
 	ValueBool
 	ValueDuration
 	ValueNumber
@@ -176,17 +145,6 @@ const (
 	// ValueIdent is an unquoted word such as `error` in `status = error`.
 	ValueIdent
 )
-
-// Value is a comparison's right-hand side as written. Strings keep their quotes.
-type Value struct {
-	Kind ValueKind
-	Text string
-}
-
-// Unquote returns the content of a quoted string value.
-func (v Value) Unquote() (string, error) {
-	return (&traceql_parser.QuotedString{Str: v.Text}).Unquote()
-}
 
 // ScalarFilter is the pipeline stage `LHS Op RHS` over scalar expressions.
 type ScalarFilter struct {
@@ -205,25 +163,18 @@ type ScalarExpr interface {
 	String() string
 }
 
-// Aggregate is `Fn(Attr)` over a spanset's spans; Attr is empty for count().
+// Aggregate is `Fn(Arg)` over a spanset's spans; Arg is nil for count().
 type Aggregate struct {
-	Fn   string
-	Attr string
+	Fn  string
+	Arg FieldExpr
 }
 
 // String is the aggregate's canonical form, which names its value in results.
 func (a *Aggregate) String() string {
-	return a.Fn + "(" + a.Attr + ")"
-}
-
-// Static is a number literal as written: an integer, a float or a duration.
-type Static struct {
-	Kind ValueKind
-	Text string
-}
-
-func (s *Static) String() string {
-	return s.Text
+	if a.Arg == nil {
+		return a.Fn + "()"
+	}
+	return a.Fn + "(" + a.Arg.String() + ")"
 }
 
 // ScalarOp is `LHS Op RHS` with an arithmetic Op.
@@ -253,7 +204,7 @@ type MetricsFn struct {
 // CompareArgs are the arguments of `compare({filter}, count, from, to)`.
 type CompareArgs struct {
 	// Filter is nil for `{}`.
-	Filter       FilterExpr
+	Filter       FieldExpr
 	Count        int
 	BaselineFrom *int64
 	BaselineTo   *int64

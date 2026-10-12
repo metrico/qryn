@@ -6,13 +6,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func cmp(attr, op string, kind ValueKind, text string) *Comparison {
-	return &Comparison{Attr: attr, Op: op, Value: Value{Kind: kind, Text: text}}
+func cmp(attr, op string, kind ValueKind, text string) *BinaryOp {
+	return &BinaryOp{Op: op, LHS: &Attribute{Name: attr}, RHS: &Static{Kind: kind, Text: text}}
 }
 
-func strCmp(attr, op, text string) *Comparison { return cmp(attr, op, ValueString, text) }
+func strCmp(attr, op, text string) *BinaryOp { return cmp(attr, op, ValueString, text) }
 
-func sel(f FilterExpr) *Selector { return &Selector{Filter: f} }
+func bin(op string, lhs, rhs FieldExpr) *BinaryOp { return &BinaryOp{Op: op, LHS: lhs, RHS: rhs} }
+
+func sel(f FieldExpr) *Selector { return &Selector{Filter: f} }
 
 func a() *Selector { return sel(strCmp(".a", "=", `"a"`)) }
 func b() *Selector { return sel(strCmp(".b", "=", `"b"`)) }
@@ -35,33 +37,87 @@ func mustParse(t *testing.T, q string) *Query {
 func TestLowerFilters(t *testing.T) {
 	for _, tc := range []struct {
 		query string
-		want  FilterExpr
+		want  FieldExpr
 	}{
 		{`{}`, nil},
 		{`{.a = "b"}`, strCmp(".a", "=", `"b"`)},
 		{"{.a = `b`}", strCmp(".a", "=", "`b`")},
 		{`{span.x != 200}`, cmp("span.x", "!=", ValueNumber, "200")},
 		{`{.a > -3}`, cmp(".a", ">", ValueNumber, "-3")},
+		{`{.a > - -3}`, cmp(".a", ">", ValueNumber, "3")},
 		{`{.a < 1 . 5}`, cmp(".a", "<", ValueNumber, "1.5")},
 		{`{duration > 1.5ms}`, cmp("duration", ">", ValueDuration, "1.5ms")},
-		{`{.a = nil}`, cmp(".a", "=", ValueNil, "nil")},
+		{`{duration > -1ms}`, cmp("duration", ">", ValueDuration, "-1ms")},
 		{`{.a = true}`, cmp(".a", "=", ValueBool, "true")},
 		{`{status = error}`, cmp("status", "=", ValueIdent, "error")},
-		{`{.a}`, cmp(".a", "", ValueNone, "")},
-		{`{ false }`, cmp("false", "", ValueNone, "")},
-		{`{.a = "b" && .c = "d"}`,
-			&FilterOp{Op: "&&", LHS: strCmp(".a", "=", `"b"`), RHS: strCmp(".c", "=", `"d"`)}},
-		{`{.a = "b" && .c = "d" || .e = "f"}`,
-			&FilterOp{Op: "&&", LHS: strCmp(".a", "=", `"b"`),
-				RHS: &FilterOp{Op: "||", LHS: strCmp(".c", "=", `"d"`), RHS: strCmp(".e", "=", `"f"`)}}},
+		{`{span.foo = bar}`, cmp("span.foo", "=", ValueIdent, "bar")},
+		{`{.a}`, &Attribute{Name: ".a"}},
+		{`{ false }`, &Static{Kind: ValueBool, Text: "false"}},
+		{`{.a = .b}`, bin("=", &Attribute{Name: ".a"}, &Attribute{Name: ".b"})},
+		{`{.a-.b = 1}`, cmp(".a-.b", "=", ValueNumber, "1")},
+		{`{.a - .b = 1}`, bin("=", bin("-", &Attribute{Name: ".a"}, &Attribute{Name: ".b"}), &Static{Kind: ValueNumber, Text: "1"})},
+		{`{.a = nil}`, &NilTest{Expr: &Attribute{Name: ".a"}}},
+		{`{nil != span.a}`, &NilTest{Expr: &Attribute{Name: "span.a"}, Exists: true}},
+		{`{nil = nil}`, &Static{Kind: ValueBool, Text: "false"}},
+		{`{!(.a = 1)}`, &UnaryOp{Op: "!", Expr: cmp(".a", "=", ValueNumber, "1")}},
+		{`{name = "x" && span:duration > 1s && rootServiceName = "y"}`,
+			bin("&&", bin("&&", strCmp("name", "=", `"x"`), cmp("span:duration", ">", ValueDuration, "1s")),
+				strCmp("rootServiceName", "=", `"y"`))},
 		{`{(.a = 1 || .b = 2) && .c = 3}`,
-			&FilterOp{Op: "&&",
-				LHS: &FilterOp{Op: "||", LHS: cmp(".a", "=", ValueNumber, "1"), RHS: cmp(".b", "=", ValueNumber, "2")},
-				RHS: cmp(".c", "=", ValueNumber, "3")}},
+			bin("&&", bin("||", cmp(".a", "=", ValueNumber, "1"), cmp(".b", "=", ValueNumber, "2")),
+				cmp(".c", "=", ValueNumber, "3"))},
 	} {
 		t.Run(tc.query, func(t *testing.T) {
 			require.Equal(t, &Query{Pipeline: pipeline(sel(tc.want))}, mustParse(t, tc.query))
 		})
+	}
+}
+
+// Field expressions group by Tempo's precedence: `!` binds tighter than the
+// comparisons and looser than `* / %`; unary `-` binds like binary `-`.
+func TestLowerFieldPrecedence(t *testing.T) {
+	for query, want := range map[string]string{
+		`{.x || .y && .z}`:           `(.x || .y) && .z`,
+		`{.x && .y || .z}`:           `(.x && .y) || .z`,
+		`{.a + .b * .c > 1}`:         `(.a + (.b * .c)) > 1`,
+		`{.a - .b - .c > 1}`:         `((.a - .b) - .c) > 1`,
+		`{.a % .b * .c > 1}`:         `((.a % .b) * .c) > 1`,
+		`{.a ^ .b ^ .c > 1}`:         `(.a ^ (.b ^ .c)) > 1`,
+		`{.a * .b ^ .c > 1}`:         `(.a * (.b ^ .c)) > 1`,
+		`{.a / .b + .c ^ 2 > 1}`:     `((.a / .b) + (.c ^ 2)) > 1`,
+		`{.a = 1 = true}`:            `(.a = 1) = true`,
+		`{-.a + 1 > 0}`:              `((-.a) + 1) > 0`,
+		`{-.a * 2 > 0}`:              `(-(.a * 2)) > 0`,
+		`{-2 ^ 2 = -4}`:              `(-(2 ^ 2)) = -4`,
+		`{- - .a > 0}`:               `(-(-.a)) > 0`,
+		`{.a * -.b + 1 > 0}`:         `((.a * (-.b)) + 1) > 0`,
+		`{.a * -.b * 3 > 0}`:         `(.a * (-(.b * 3))) > 0`,
+		`{!.a = 1}`:                  `(!.a) = 1`,
+		`{!.a * 2}`:                  `!(.a * 2)`,
+		`{!.x && .y}`:                `(!.x) && .y`,
+		`{! ! .x}`:                   `!(!.x)`,
+		`{!(.a = 1) || .b = 2}`:      `(!(.a = 1)) || (.b = 2)`,
+		`{.a + 1 = nil}`:             `(.a + 1) = nil`,
+		`{nil = .a + 1}`:             `(.a + 1) = nil`,
+		`{.a = nil && .b != nil}`:    `(.a = nil) && (.b != nil)`,
+		`{.a =~ "x" || .b !~ "y"}`:   "(.a =~ \"x\") || (.b !~ \"y\")",
+		`{.a <= 1 || .a >= 2}`:       `(.a <= 1) || (.a >= 2)`,
+		`{(.a + .b) * .c < 1}`:       `((.a + .b) * .c) < 1`,
+		`{.a-.b + .c-.d > 1}`:        `(.a-.b + .c-.d) > 1`,
+		`{duration * 2 > 1s}`:        `(duration * 2) > 1s`,
+		`{.a / 2 = 2 || .a % 2 = 1}`: `((.a / 2) = 2) || ((.a % 2) = 1)`,
+	} {
+		t.Run(query, func(t *testing.T) {
+			require.Equal(t, want, mustParse(t, query).Pipeline.Elements[0].(*Selector).Filter.String())
+		})
+	}
+}
+
+func TestLowerRejectsNil(t *testing.T) {
+	for _, q := range []string{`{nil}`, `{.a > nil}`, `{.a + nil = 1}`, `{-nil = 1}`, `{!nil}`, `{.a =~ nil}`,
+		`{} | avg(nil) > 1`, `{(nil) = .a}`} {
+		_, err := Parse(q)
+		require.EqualError(t, err, errUnexpectedNil.Error(), q)
 	}
 }
 
@@ -77,14 +133,14 @@ func TestLowerScalarFilters(t *testing.T) {
 		want  Pipeline
 	}{
 		{`{.a = "a"} | avg(duration) >= 1.5ms`, stages(a(), &ScalarFilter{Op: ">=",
-			LHS: &Aggregate{Fn: "avg", Attr: "duration"}, RHS: &Static{Kind: ValueDuration, Text: "1.5ms"}})},
+			LHS: &Aggregate{Fn: "avg", Arg: &Attribute{Name: "duration"}}, RHS: &Static{Kind: ValueDuration, Text: "1.5ms"}})},
 		{`count() > 2`, stages(count(">", "2"))},
 		{`{.a = "a"} >> {.b = "b"} | count() > 2 | max(span.x) < -3`, stages(op(OpDescendant, a(), b()), count(">", "2"),
-			&ScalarFilter{Op: "<", LHS: &Aggregate{Fn: "max", Attr: "span.x"}, RHS: &Static{Kind: ValueNumber, Text: "-3"}})},
+			&ScalarFilter{Op: "<", LHS: &Aggregate{Fn: "max", Arg: &Attribute{Name: "span.x"}}, RHS: &Static{Kind: ValueNumber, Text: "-3"}})},
 		{`{} | 2 < count()`, stages(sel(nil), &ScalarFilter{Op: "<", LHS: &Static{Kind: ValueNumber, Text: "2"}, RHS: &Aggregate{Fn: "count"}})},
 		// Arithmetic: `^` binds tightest and is right-associative, then `* / %`, then `+ -`.
 		{`{} | sum(.a) - 1 * 2 ^ 3 ^ 4 > (count() + 1) % 2`, stages(sel(nil), &ScalarFilter{Op: ">",
-			LHS: &ScalarOp{Op: "-", LHS: &Aggregate{Fn: "sum", Attr: ".a"}, RHS: &ScalarOp{Op: "*",
+			LHS: &ScalarOp{Op: "-", LHS: &Aggregate{Fn: "sum", Arg: &Attribute{Name: ".a"}}, RHS: &ScalarOp{Op: "*",
 				LHS: &Static{Kind: ValueNumber, Text: "1"},
 				RHS: &ScalarOp{Op: "^", LHS: &Static{Kind: ValueNumber, Text: "2"},
 					RHS: &ScalarOp{Op: "^", LHS: &Static{Kind: ValueNumber, Text: "3"}, RHS: &Static{Kind: ValueNumber, Text: "4"}}}}},
@@ -122,6 +178,11 @@ func TestAggregateCanonicalForm(t *testing.T) {
 		`{} | sum(span.a) > 1`:          "sum(span.a)",
 		`{} | min(.a) > 1`:              "min(.a)",
 		`{} | max(span:duration) > 1ms`: "max(span:duration)",
+		`{} | avg(spanN) > 1`:           "avg(spanN)",
+		`{} | avg(.a + .b) > 1`:         "avg(.a + .b)",
+		`{} | sum(.a*(.b - 1)) > 1`:     "sum(.a * (.b - 1))",
+		`{} | sum(.a*(.b-1)) > 1`:       "sum(.a * .b-1)",
+		`{} | max(-duration) > 1`:       "max(-duration)",
 	} {
 		f := mustParse(t, query).Pipeline.Elements[1].(*ScalarFilter)
 		require.Equal(t, want, f.LHS.String(), query)
@@ -238,9 +299,9 @@ func TestLowerMetrics(t *testing.T) {
 	}
 }
 
-func TestValueUnquote(t *testing.T) {
+func TestStaticUnquote(t *testing.T) {
 	for raw, want := range map[string]string{`"a\"b"`: `a"b`, "`a\\b`": `a\b`} {
-		got, err := Value{Kind: ValueString, Text: raw}.Unquote()
+		got, err := (&Static{Kind: ValueString, Text: raw}).Unquote()
 		require.NoError(t, err)
 		require.Equal(t, want, got)
 	}

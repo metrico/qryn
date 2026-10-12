@@ -26,6 +26,10 @@ var plainSearchQueries = []string{
 	`count() > 1`,
 	`{.a = 1} | count() > 1 | avg(duration) > 1ms | max(.b) < 3`,
 	`{nestedSetParent < 0 && .a = 1}`,
+	`{.a = .b}`,
+	`{!(.a = 1) || duration > 100}`,
+	`{duration * 2 > 1s}`,
+	`{.a = 1} | avg(.b + .c) > 1`,
 }
 
 // oneHopQueries relate spans to their parent or siblings.
@@ -42,6 +46,7 @@ var transitiveQueries = []string{
 	`{} &>> {.b = 2} && {.c = 3}`,
 	`{.a = 1} &<< ({.b = 2} !>> {.c = 3})`,
 	`{.a = 1} >> {.b = 2} | sum(.c) > 1`,
+	`{.a = .b} >> {.c = nil}`,
 }
 
 // structuralQueries hold operators evaluated on the span tree.

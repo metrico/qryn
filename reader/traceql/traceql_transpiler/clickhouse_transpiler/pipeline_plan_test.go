@@ -179,7 +179,7 @@ func TestScalarFilterValuesReadTheQueryRange(t *testing.T) {
 		if slices.Contains(spanStartBounds(res), ">=86390") {
 			t.Errorf("%s reads spans starting at from:\n%s", query, res)
 		}
-		if !regexp.MustCompile(`_\d+stage1_values as \(.*IN \( SELECT trace_id, span_id FROM _\d+stage0\)`).MatchString(res) {
+		if !regexp.MustCompile(`_\d+stage1_pivot as \(.*IN \( SELECT trace_id, span_id FROM _\d+stage0\)`).MatchString(res) {
 			t.Errorf("%s: values are not read for the spans of the spanset stage:\n%s", query, res)
 		}
 	}
