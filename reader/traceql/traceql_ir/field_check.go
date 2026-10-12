@@ -93,18 +93,18 @@ func TypeOf(e FieldExpr) FieldType {
 		if t := TypeOf(e.LHS); t != TypeAttribute {
 			return t
 		}
-		return numeric(TypeOf(e.RHS))
+		return arithmeticType(TypeOf(e.RHS))
 	case *UnaryOp:
 		if e.Op == "!" {
 			return TypeBool
 		}
-		return numeric(TypeOf(e.Expr))
+		return arithmeticType(TypeOf(e.Expr))
 	}
 	return TypeBool
 }
 
-// numeric is the type of an arithmetic result whose operand has type t.
-func numeric(t FieldType) FieldType {
+// arithmeticType is the type of an arithmetic result whose operand has type t.
+func arithmeticType(t FieldType) FieldType {
 	if t == TypeAttribute {
 		return TypeFloat
 	}
