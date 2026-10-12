@@ -73,7 +73,7 @@ func TestLowerFilters(t *testing.T) {
 	}
 }
 
-// Field expressions group by Tempo's precedence: `!` binds tighter than the
+// Field expressions group by precedence: `!` binds tighter than the
 // comparisons and looser than `* / %`; unary `-` binds like binary `-`.
 func TestLowerFieldPrecedence(t *testing.T) {
 	for query, want := range map[string]string{

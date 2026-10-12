@@ -60,8 +60,7 @@ func (a *Attribute) String() string { return a.Name }
 
 func (s *Static) String() string { return s.Text }
 
-// String prints the operation the way Tempo does: operands other than
-// attributes and literals are parenthesised.
+// String parenthesises operands other than attributes and literals.
 func (o *BinaryOp) String() string {
 	return wrapField(o.LHS) + " " + o.Op + " " + wrapField(o.RHS)
 }
@@ -91,6 +90,12 @@ func IsComparison(op string) bool {
 	}
 	return false
 }
+
+// IsRegex reports whether op is a regex match.
+func IsRegex(op string) bool { return op == "=~" || op == "!~" }
+
+// IsLogical reports whether op is `&&` or `||`.
+func IsLogical(op string) bool { return op == "&&" || op == "||" }
 
 // IsArithmetic reports whether op is an arithmetic operator.
 func IsArithmetic(op string) bool {

@@ -87,7 +87,7 @@ func (p *simpleExpressionPlanner) analyze() bool {
 }
 
 func (p *simpleExpressionPlanner) analyzeCond(exp traceql_ir.FieldExpr) *condition {
-	if op, ok := exp.(*traceql_ir.BinaryOp); ok && (op.Op == "&&" || op.Op == "||") {
+	if op, ok := exp.(*traceql_ir.BinaryOp); ok && traceql_ir.IsLogical(op.Op) {
 		lhs := p.analyzeCond(op.LHS)
 		rhs := p.analyzeCond(op.RHS)
 		if lhs == nil || rhs == nil {
@@ -132,7 +132,7 @@ func attrComparisonOf(e traceql_ir.FieldExpr) *attrComparison {
 // attrComparable reports whether the attribute-condition planner evaluates
 // `name op literal` with a literal of the given kind.
 func attrComparable(name, op string, kind traceql_ir.ValueKind) bool {
-	isRegex := op == "=~" || op == "!~"
+	isRegex := traceql_ir.IsRegex(op)
 	isEquality := op == "=" || op == "!="
 	isString := kind == traceql_ir.ValueString && (isEquality || isRegex) ||
 		kind == traceql_ir.ValueIdent && isEquality

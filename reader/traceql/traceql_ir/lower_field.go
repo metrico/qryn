@@ -9,8 +9,8 @@ import (
 
 var errUnexpectedNil = errors.New("syntax error: nil compares only with = or !=")
 
-// binaryPrecedence is Tempo's precedence of the binary field operators,
-// lowest first. `^` is right-associative, the rest left-associative.
+// binaryPrecedence is the precedence of the binary field operators, lowest
+// first. `^` is right-associative, the rest left-associative.
 var binaryPrecedence = map[string]int{
 	"&&": 1, "||": 1,
 	"=": 2, "!=": 2, "<": 2, "<=": 2, ">": 2, ">=": 2, "=~": 2, "!~": 2,

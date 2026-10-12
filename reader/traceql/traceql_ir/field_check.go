@@ -62,7 +62,8 @@ var EnumKeywords = map[FieldType][]string{
 }
 
 // TypeOf is the type of e before it reads a span: an arithmetic result has
-// the type of its first operand that is not an attribute.
+// the type of its first operand that is not an attribute, and is a float
+// when every operand is an attribute.
 func TypeOf(e FieldExpr) FieldType {
 	switch e := e.(type) {
 	case *Attribute:
@@ -92,11 +93,22 @@ func TypeOf(e FieldExpr) FieldType {
 		if t := TypeOf(e.LHS); t != TypeAttribute {
 			return t
 		}
-		return TypeOf(e.RHS)
+		return numeric(TypeOf(e.RHS))
 	case *UnaryOp:
-		return TypeOf(e.Expr)
+		if e.Op == "!" {
+			return TypeBool
+		}
+		return numeric(TypeOf(e.Expr))
 	}
 	return TypeBool
+}
+
+// numeric is the type of an arithmetic result whose operand has type t.
+func numeric(t FieldType) FieldType {
+	if t == TypeAttribute {
+		return TypeFloat
+	}
+	return t
 }
 
 // ReferencesSpan reports whether e reads an attribute or an intrinsic.
@@ -187,7 +199,12 @@ func checkBinary(e *BinaryOp) error {
 	if !binaryTypeValid(e.Op, lt) || !binaryTypeValid(e.Op, rt) {
 		return fmt.Errorf("illegal operation for the given types: %s", e)
 	}
-	if e.Op == "=~" || e.Op == "!~" {
+	for _, side := range [][2]FieldExpr{{e.LHS, e.RHS}, {e.RHS, e.LHS}} {
+		if s, ok := side[0].(*Static); ok && s.Kind == ValueIdent && !ReferencesSpan(side[1]) {
+			return fmt.Errorf("unknown identifier: %s", s)
+		}
+	}
+	if IsRegex(e.Op) {
 		re, ok := e.RHS.(*Static)
 		if !ok || re.Kind != ValueString {
 			return fmt.Errorf("invalid type for =~ or !~: %s", e.RHS)
@@ -241,9 +258,9 @@ func binaryTypeValid(op string, t FieldType) bool {
 	case TypeAttribute:
 		return true
 	case TypeBool:
-		return op == "&&" || op == "||" || op == "=" || op == "!="
+		return IsLogical(op) || op == "=" || op == "!="
 	case TypeInt, TypeFloat, TypeDuration:
-		return IsArithmetic(op) || (IsComparison(op) && op != "=~" && op != "!~")
+		return IsArithmetic(op) || (IsComparison(op) && !IsRegex(op))
 	case TypeString, TypeIdent:
 		return IsComparison(op)
 	case TypeStatus, TypeKind:

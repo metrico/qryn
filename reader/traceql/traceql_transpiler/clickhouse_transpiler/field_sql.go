@@ -123,8 +123,7 @@ func (c *fieldSQL) boolean(e traceql_ir.FieldExpr) (string, error) {
 			return "0", nil
 		}
 	case *traceql_ir.BinaryOp:
-		switch e.Op {
-		case "&&", "||":
+		if traceql_ir.IsLogical(e.Op) {
 			l, err := c.boolean(e.LHS)
 			if err != nil {
 				return "", err
@@ -271,7 +270,7 @@ func (c *fieldSQL) comparison(e *traceql_ir.BinaryOp) (string, error) {
 	case domainBool:
 		cmp, err = c.compareWith(e, c.boolean)
 	case domainString:
-		if e.Op == "=~" || e.Op == "!~" {
+		if traceql_ir.IsRegex(e.Op) {
 			cmp, err = c.regex(e)
 		} else {
 			cmp, err = c.compareWith(e, c.text)
@@ -329,20 +328,6 @@ func (c *fieldSQL) compareAttributes(e *traceql_ir.BinaryOp) (string, error) {
 // domainOf is the type e has in SQL, or domainAny for an attribute whose
 // type is known only per span.
 func domainOf(e traceql_ir.FieldExpr) domain {
-	switch e := e.(type) {
-	case *traceql_ir.BinaryOp:
-		if traceql_ir.IsArithmetic(e.Op) {
-			return domainNumber
-		}
-		return domainBool
-	case *traceql_ir.UnaryOp:
-		if e.Op == "-" {
-			return domainNumber
-		}
-		return domainBool
-	case *traceql_ir.NilTest:
-		return domainBool
-	}
 	switch traceql_ir.TypeOf(e) {
 	case traceql_ir.TypeInt, traceql_ir.TypeFloat, traceql_ir.TypeDuration:
 		return domainNumber
