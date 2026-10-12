@@ -10,7 +10,7 @@ import (
 
 	"github.com/metrico/qryn/v5/reader/model"
 	"github.com/metrico/qryn/v5/reader/tempo"
-	traceql_parser "github.com/metrico/qryn/v5/reader/traceql/traceql_parser"
+	traceql_ir "github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
 	sql "github.com/metrico/qryn/v5/reader/utils/sql_select"
 	"github.com/metrico/qryn/v5/reader/utils/tables"
 )
@@ -30,12 +30,12 @@ func (t *TempoService) MetricsQueryRange(ctx context.Context, req *model.Metrics
 		attrsTable = fmt.Sprintf("`%s`.%s", conn.Config.Name, tables.GetTableName("tempo_traces_attrs_gin_dist"))
 	}
 
-	script, err := traceql_parser.Parse(req.Query)
+	tq, err := traceql_ir.Parse(req.Query)
 	if err != nil {
 		return nil, fmt.Errorf("invalid query: %w", err)
 	}
 
-	metricsFn := script.ResolvedMetricsFn()
+	metricsFn := tq.Metrics
 	if metricsFn == nil {
 		return nil, fmt.Errorf("query must contain a metrics function (e.g. | rate())")
 	}
@@ -46,19 +46,16 @@ func (t *TempoService) MetricsQueryRange(ctx context.Context, req *model.Metrics
 
 	// compare() has its own query and response format
 	if metricsFn.Fn == "compare" {
-		return t.executeCompareRange(ctx, script, metricsFn, req, conn, tracesTable, attrsTable)
+		return t.executeCompareRange(ctx, tq, metricsFn, req, conn, tracesTable, attrsTable)
 	}
 
 	// histogram_over_time has its own query and response format (heatmap buckets)
 	if metricsFn.Fn == "histogram_over_time" {
-		return t.executeHistogramRange(ctx, script, metricsFn, req, conn, tracesTable, attrsTable)
+		return t.executeHistogramRange(ctx, tq, metricsFn, req, conn, tracesTable, attrsTable)
 	}
 
-	filterKeys, filterOps, filterVals := metricsExtractAllFilters(script)
-	var byLabels []string
-	if metricsFn.By != nil {
-		byLabels = metricsFn.By.Labels
-	}
+	filterKeys, filterOps, filterVals := metricsExtractAllFilters(tq)
+	byLabels := metricsFn.By
 
 	fromNS := planCtx.From.UnixNano()
 	toNS := planCtx.To.UnixNano()
@@ -337,12 +334,12 @@ func (t *TempoService) MetricsQueryInstant(ctx context.Context, req *model.Metri
 		attrsTable = fmt.Sprintf("`%s`.%s", conn.Config.Name, tables.GetTableName("tempo_traces_attrs_gin_dist"))
 	}
 
-	script, err := traceql_parser.Parse(req.Query)
+	tq, err := traceql_ir.Parse(req.Query)
 	if err != nil {
 		return nil, fmt.Errorf("invalid query: %w", err)
 	}
 
-	metricsFn := script.ResolvedMetricsFn()
+	metricsFn := tq.Metrics
 	if metricsFn == nil {
 		return nil, fmt.Errorf("query must contain a metrics function (e.g. | rate())")
 	}
@@ -352,18 +349,15 @@ func (t *TempoService) MetricsQueryInstant(ctx context.Context, req *model.Metri
 	}
 
 	if metricsFn.Fn == "compare" {
-		return t.executeCompareInstant(ctx, script, metricsFn, req, conn, tracesTable, attrsTable)
+		return t.executeCompareInstant(ctx, tq, metricsFn, req, conn, tracesTable, attrsTable)
 	}
 
 	if metricsFn.Fn == "histogram_over_time" {
 		return &model.MetricsQueryInstantResponse{Series: []model.MetricsInstantSeries{}}, nil
 	}
 
-	filterKeys, filterOps, filterVals := metricsExtractAllFilters(script)
-	var byLabels []string
-	if metricsFn.By != nil {
-		byLabels = metricsFn.By.Labels
-	}
+	filterKeys, filterOps, filterVals := metricsExtractAllFilters(tq)
+	byLabels := metricsFn.By
 
 	fromNS := planCtx.From.UnixNano()
 	toNS := planCtx.To.UnixNano()
@@ -431,71 +425,65 @@ func (t *TempoService) MetricsQueryInstant(ctx context.Context, req *model.Metri
 	}, nil
 }
 
-// metricsExtractAllFilters walks both sides of structural queries to collect all filters.
-func metricsExtractAllFilters(script *traceql_parser.TraceQLScript) (keys []string, ops []string, vals []string) {
-	if script == nil {
-		return
-	}
-	if script.ParenExpr != nil {
-		k, o, v := metricsExtractAllFilters(script.ParenExpr)
-		keys = append(keys, k...)
-		ops = append(ops, o...)
-		vals = append(vals, v...)
-	}
-	if script.Head.AttrSelector != nil {
-		metricsWalkAttrSelector(script.Head.AttrSelector, &keys, &ops, &vals)
-	}
-	if script.Tail != nil {
-		k, o, v := metricsExtractAllFilters(script.Tail)
-		keys = append(keys, k...)
-		ops = append(ops, o...)
-		vals = append(vals, v...)
+// metricsExtractAllFilters flattens the filters of every selector in the
+// query into one AND list.
+func metricsExtractAllFilters(tq *traceql_ir.Query) (keys []string, ops []string, vals []string) {
+	for _, element := range tq.Pipeline.Elements {
+		if expr, ok := element.(traceql_ir.SpansetExpr); ok {
+			metricsWalkSpansetExpr(expr, &keys, &ops, &vals)
+		}
 	}
 	return
 }
 
-func metricsWalkAttrSelector(exp *traceql_parser.AttrSelectorExp, keys *[]string, ops *[]string, vals *[]string) {
-	if exp == nil {
-		return
+func metricsWalkSpansetExpr(expr traceql_ir.SpansetExpr, keys *[]string, ops *[]string, vals *[]string) {
+	switch expr := expr.(type) {
+	case *traceql_ir.Selector:
+		metricsWalkFilter(expr.Filter, keys, ops, vals)
+	case *traceql_ir.Group:
+		metricsWalkSpansetExpr(expr.Expr, keys, ops, vals)
+	case *traceql_ir.SpansetOp:
+		metricsWalkSpansetExpr(expr.LHS, keys, ops, vals)
+		metricsWalkSpansetExpr(expr.RHS, keys, ops, vals)
 	}
-	if exp.Head != nil {
-		if exp.Head.Op == "" {
-			if exp.Head.Label == "false" {
+}
+
+func metricsWalkFilter(filter traceql_ir.FilterExpr, keys *[]string, ops *[]string, vals *[]string) {
+	switch filter := filter.(type) {
+	case *traceql_ir.Comparison:
+		if filter.Op == "" {
+			if filter.Attr == "false" {
 				*keys = append(*keys, "__false__")
 				*ops = append(*ops, "=")
 				*vals = append(*vals, "0")
 			}
-		} else {
-			valStr := exp.Head.Val.String()
-			if exp.Head.Val.StrVal != nil {
-				unquoted, err := exp.Head.Val.StrVal.Unquote()
-				if err == nil {
-					valStr = unquoted
-				}
-			}
-			*keys = append(*keys, exp.Head.Label)
-			*ops = append(*ops, exp.Head.Op)
-			*vals = append(*vals, valStr)
+			return
 		}
-	}
-	if exp.ComplexHead != nil {
-		metricsWalkAttrSelector(exp.ComplexHead, keys, ops, vals)
-	}
-	if exp.Tail != nil {
-		metricsWalkAttrSelector(exp.Tail, keys, ops, vals)
+		valStr := filter.Value.Text
+		if filter.Value.Kind == traceql_ir.ValueString {
+			if unquoted, err := filter.Value.Unquote(); err == nil {
+				valStr = unquoted
+			}
+		}
+		*keys = append(*keys, filter.Attr)
+		*ops = append(*ops, filter.Op)
+		*vals = append(*vals, valStr)
+	case *traceql_ir.FilterOp:
+		metricsWalkFilter(filter.LHS, keys, ops, vals)
+		metricsWalkFilter(filter.RHS, keys, ops, vals)
 	}
 }
 
 // executeHistogramRange handles histogram_over_time() queries.
 func (t *TempoService) executeHistogramRange(
 	ctx context.Context,
-	script *traceql_parser.TraceQLScript,
-	metricsFn *traceql_parser.MetricsPipelineStage,
+	tq *traceql_ir.Query,
+	metricsFn *traceql_ir.MetricsFn,
 	req *model.MetricsQueryRequest,
 	conn *model.DataDatabasesMap,
 	tracesTable, attrsTable string,
 ) (*model.MetricsQueryRangeResponse, error) {
-	filterKeys, filterOps, filterVals := metricsExtractAllFilters(script)
+	filterKeys, filterOps, filterVals := metricsExtractAllFilters(tq)
 
 	histReq := &tempo.HistogramRequest{
 		FromNS:      req.From.UnixNano(),
@@ -659,13 +647,13 @@ func (t *TempoService) executeHistogramRange(
 // executeCompareRange handles compare() queries for range endpoint.
 func (t *TempoService) executeCompareRange(
 	ctx context.Context,
-	script *traceql_parser.TraceQLScript,
-	metricsFn *traceql_parser.MetricsPipelineStage,
+	tq *traceql_ir.Query,
+	metricsFn *traceql_ir.MetricsFn,
 	req *model.MetricsQueryRequest,
 	conn *model.DataDatabasesMap,
 	tracesTable, attrsTable string,
 ) (*model.MetricsQueryRangeResponse, error) {
-	compareReq := t.metricsCompareRequest(script, metricsFn, req, tracesTable, attrsTable)
+	compareReq := t.metricsCompareRequest(tq, metricsFn, req, tracesTable, attrsTable)
 
 	compareQuery, err := tempo.BuildCompareQuery(compareReq)
 	if err != nil {
@@ -724,13 +712,13 @@ func (t *TempoService) executeCompareRange(
 // executeCompareInstant handles compare() queries for instant endpoint.
 func (t *TempoService) executeCompareInstant(
 	ctx context.Context,
-	script *traceql_parser.TraceQLScript,
-	metricsFn *traceql_parser.MetricsPipelineStage,
+	tq *traceql_ir.Query,
+	metricsFn *traceql_ir.MetricsFn,
 	req *model.MetricsQueryRequest,
 	conn *model.DataDatabasesMap,
 	tracesTable, attrsTable string,
 ) (*model.MetricsQueryInstantResponse, error) {
-	compareReq := t.metricsCompareRequest(script, metricsFn, req, tracesTable, attrsTable)
+	compareReq := t.metricsCompareRequest(tq, metricsFn, req, tracesTable, attrsTable)
 
 	compareQuery, err := tempo.BuildCompareQuery(compareReq)
 	if err != nil {
@@ -785,30 +773,30 @@ func (t *TempoService) executeCompareInstant(
 
 // metricsCompareRequest constructs the CompareRequest from parsed query components.
 func (t *TempoService) metricsCompareRequest(
-	script *traceql_parser.TraceQLScript,
-	metricsFn *traceql_parser.MetricsPipelineStage,
+	tq *traceql_ir.Query,
+	metricsFn *traceql_ir.MetricsFn,
 	req *model.MetricsQueryRequest,
 	tracesTable, attrsTable string,
 ) *tempo.CompareRequest {
-	outerKeys, outerOps, outerVals := metricsExtractAllFilters(script)
+	outerKeys, outerOps, outerVals := metricsExtractAllFilters(tq)
 
 	var innerKeys, innerOps, innerVals []string
-	if metricsFn.CompSel != nil && metricsFn.CompSel.AttrSelector != nil {
-		metricsWalkAttrSelector(metricsFn.CompSel.AttrSelector, &innerKeys, &innerOps, &innerVals)
+	if metricsFn.Compare != nil {
+		metricsWalkFilter(metricsFn.Compare.Filter, &innerKeys, &innerOps, &innerVals)
 	}
 
 	topN := 10
-	if metricsFn.CompSel != nil && metricsFn.CompSel.Count > 0 {
-		topN = metricsFn.CompSel.Count
+	if metricsFn.Compare != nil && metricsFn.Compare.Count > 0 {
+		topN = metricsFn.Compare.Count
 	}
 
 	baselineFromNS := int64(0)
 	baselineToNS := int64(0)
-	if metricsFn.CompSel != nil && metricsFn.CompSel.BaselineFrom != nil {
-		baselineFromNS = *metricsFn.CompSel.BaselineFrom
+	if metricsFn.Compare != nil && metricsFn.Compare.BaselineFrom != nil {
+		baselineFromNS = *metricsFn.Compare.BaselineFrom
 	}
-	if metricsFn.CompSel != nil && metricsFn.CompSel.BaselineTo != nil {
-		baselineToNS = *metricsFn.CompSel.BaselineTo
+	if metricsFn.Compare != nil && metricsFn.Compare.BaselineTo != nil {
+		baselineToNS = *metricsFn.Compare.BaselineTo
 	}
 
 	return &tempo.CompareRequest{

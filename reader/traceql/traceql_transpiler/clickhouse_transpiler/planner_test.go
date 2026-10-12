@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
-	traceql_parser "github.com/metrico/qryn/v5/reader/traceql/traceql_parser"
+	traceql_ir "github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
 	sql "github.com/metrico/qryn/v5/reader/utils/sql_select"
 )
 
 func TestPlanner(t *testing.T) {
-	script, err := traceql_parser.Parse(`{.randomContainer=~"admiring" && .randomFloat > 10}`)
+	script, err := traceql_ir.Parse(`{.randomContainer=~"admiring" && .randomFloat > 10}`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestPlanner(t *testing.T) {
 // division) for _duration_ms rather than toFloat64, which would produce fractional
 // values that Grafana's Tempo datasource cannot unmarshal into uint32 (issue #782).
 func TestTracesDataDurationMsSQL(t *testing.T) {
-	script, err := traceql_parser.Parse(`{.service.name="test"}`)
+	script, err := traceql_ir.Parse(`{.service.name="test"}`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func TestTracesDataDurationMsSQL(t *testing.T) {
 }
 
 func TestComplexPlanner(t *testing.T) {
-	script, err := traceql_parser.Parse(`{.randomContainer=~"admiring" && .randomFloat > 10} | count() > 2 || {.randomContainer=~"boring" && .randomFloat < 10}`)
+	script, err := traceql_ir.Parse(`{.randomContainer=~"admiring" && .randomFloat > 10} | count() > 2 || {.randomContainer=~"boring" && .randomFloat < 10}`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,4 +118,59 @@ func TestComplexPlanner(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println(res)
+}
+
+func TestChainChecks(t *testing.T) {
+	for _, c := range []struct {
+		query            string
+		planErr, evalErr error
+	}{
+		{`{.a = 1} && {.b = 2} || {.c = 3}`, nil, nil},
+		{`{} && {.a = 1}`, errEmptyChainHead, errEmptyChainHead},
+		{`{} | count() > 1 && {.a = 1}`, errEmptyAggregated, errEmptyAggregated},
+		{`{.a = 1} || {}`, errEmptyChainTail, errEmptyChainTail},
+		{`{.a = 1} && ({.b = 2})`, errEmptyChainTail, errEmptyChainTail},
+		{`({.a = 1} || {.b = 2}) && {.c = 3}`, errEmptyChainHead, errEmptyChainHead},
+		{`({.a = 1}) && {.b = 2}`, errEmptyChainHead, nil},
+		{`({.a = 1}) && {}`, errEmptyChainTail, errEmptyChainTail},
+	} {
+		t.Run(c.query, func(t *testing.T) {
+			q, err := traceql_ir.Parse(c.query)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Plan(q); err != c.planErr {
+				t.Errorf("Plan error = %v, want %v", err, c.planErr)
+			}
+			if _, err := PlanEval(q); err != c.evalErr {
+				t.Errorf("PlanEval error = %v, want %v", err, c.evalErr)
+			}
+		})
+	}
+}
+
+func TestAutocompleteRejectsChains(t *testing.T) {
+	q, err := traceql_ir.Parse(`{.a = 1} && {.b = 2}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := PlanTagsV2(q); err != errComplexAutocomp {
+		t.Errorf("PlanTagsV2 error = %v, want %v", err, errComplexAutocomp)
+	}
+	if _, err := PlanValuesV2(q, "x"); err != errComplexAutocomp {
+		t.Errorf("PlanValuesV2 error = %v, want %v", err, errComplexAutocomp)
+	}
+}
+
+func TestPlanRejectsPipelineStages(t *testing.T) {
+	sel := &traceql_ir.Selector{Filter: &traceql_ir.Comparison{
+		Attr: ".a", Op: "=", Value: traceql_ir.Value{Kind: traceql_ir.ValueNumber, Text: "1"}}}
+	q := &traceql_ir.Query{Pipeline: traceql_ir.Pipeline{Elements: []traceql_ir.Element{sel, sel}}}
+	if _, err := Plan(q); err == nil {
+		t.Error("Plan accepted a two-stage pipeline")
+	}
+	q.Pipeline.Elements = q.Pipeline.Elements[:1]
+	if _, err := Plan(q); err != nil {
+		t.Errorf("Plan rejected a lowered selector: %v", err)
+	}
 }

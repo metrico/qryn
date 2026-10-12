@@ -11,7 +11,7 @@ import (
 	"github.com/metrico/qryn/v5/reader/model"
 	"github.com/metrico/qryn/v5/reader/plugins"
 	"github.com/metrico/qryn/v5/reader/tempo"
-	traceql_parser "github.com/metrico/qryn/v5/reader/traceql/traceql_parser"
+	traceql_ir "github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
 	traceql_transpiler "github.com/metrico/qryn/v5/reader/traceql/traceql_transpiler"
 	"github.com/metrico/qryn/v5/reader/utils/dbVersion"
 	sqlselect "github.com/metrico/qryn/v5/reader/utils/sql_select"
@@ -205,9 +205,9 @@ func (t *TempoService) TagsV2(ctx context.Context, query string, from time.Time,
 	if err != nil {
 		return nil, err
 	}
-	var oScript *traceql_parser.TraceQLScript
+	var oQuery *traceql_ir.Query
 	if query != "" {
-		oScript, err = traceql_parser.Parse(query)
+		oQuery, err = traceql_ir.Parse(query)
 		if err != nil {
 			return nil, err
 		}
@@ -218,7 +218,7 @@ func (t *TempoService) TagsV2(ctx context.Context, query string, from time.Time,
 		return nil, err
 	}
 
-	planner, err := traceql_transpiler.PlanTagsV2(oScript)
+	planner, err := traceql_transpiler.PlanTagsV2(oQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -247,9 +247,9 @@ func (t *TempoService) ValuesV2(ctx context.Context, key string, query string, f
 	if err != nil {
 		return nil, err
 	}
-	var oScript *traceql_parser.TraceQLScript
+	var oQuery *traceql_ir.Query
 	if query != "" {
-		oScript, err = traceql_parser.Parse(query)
+		oQuery, err = traceql_ir.Parse(query)
 		if err != nil {
 			return nil, err
 		}
@@ -260,7 +260,7 @@ func (t *TempoService) ValuesV2(ctx context.Context, key string, query string, f
 		return nil, err
 	}
 
-	planner, err := traceql_transpiler.PlanValuesV2(oScript, key)
+	planner, err := traceql_transpiler.PlanValuesV2(oQuery, key)
 	if err != nil {
 		return nil, err
 	}

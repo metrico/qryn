@@ -6,7 +6,7 @@ import (
 
 	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
 	"github.com/metrico/qryn/v5/reader/model"
-	traceql_parser "github.com/metrico/qryn/v5/reader/traceql/traceql_parser"
+	traceql_ir "github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
 	traceql_transpiler "github.com/metrico/qryn/v5/reader/traceql/traceql_transpiler"
 	"github.com/metrico/qryn/v5/reader/utils/dbVersion"
 	"github.com/metrico/qryn/v5/reader/utils/tables"
@@ -18,11 +18,11 @@ func (t *TempoService) SearchTraceQL(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	script, err := traceql_parser.Parse(q)
+	query, err := traceql_ir.Parse(q)
 	if err != nil {
 		return nil, err
 	}
-	planner, err := traceql_transpiler.Plan(script)
+	planner, err := traceql_transpiler.Plan(query)
 	if err != nil {
 		return nil, err
 	}

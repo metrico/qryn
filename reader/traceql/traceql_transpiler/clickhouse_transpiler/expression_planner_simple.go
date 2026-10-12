@@ -1,22 +1,18 @@
 package clickhouse_transpiler
 
 import (
-	"fmt"
-
 	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
-	traceql_parser "github.com/metrico/qryn/v5/reader/traceql/traceql_parser"
+	traceql_ir "github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
 )
 
 type simpleExpressionPlanner struct {
-	script *traceql_parser.TraceQLScript
-	prefix string
+	selector *traceql_ir.Selector
+	prefix   string
 
 	//Analyze results
-	termIdx []*traceql_parser.AttrSelector
+	termIdx []*traceql_ir.Comparison
 	cond    *condition
-	aggFn   string
 	aggAttr string
-	cmpVal  string
 
 	terms map[string]int
 }
@@ -35,10 +31,7 @@ func (p *simpleExpressionPlanner) operands() []iExpressionPlanner {
 	return nil
 }
 
-func (p *simpleExpressionPlanner) tagsV2Planner() (shared.SQLRequestPlanner, error) {
-	if p.script.Tail != nil {
-		return nil, fmt.Errorf("complex requests `{} || {} ...` are not supported")
-	}
+func (p *simpleExpressionPlanner) tagsV2Planner()(shared.SQLRequestPlanner, error) {
 	err := p.check()
 	if err != nil {
 		return nil, err
@@ -57,9 +50,6 @@ func (p *simpleExpressionPlanner) tagsV2Planner() (shared.SQLRequestPlanner, err
 }
 
 func (p *simpleExpressionPlanner) valuesV2Planner(key string) (shared.SQLRequestPlanner, error) {
-	if p.script.Tail != nil {
-		return nil, fmt.Errorf("complex requests `{} || {} ...` are not supported")
-	}
 	err := p.check()
 	if err != nil {
 		return nil, err
@@ -92,7 +82,7 @@ func (p *simpleExpressionPlanner) planner() (shared.SQLRequestPlanner, error) {
 
 	p.analyze()
 	var res shared.SQLRequestPlanner
-	if p.script.Head.AttrSelector != nil {
+	if p.selector.Filter != nil {
 		res = &AttrConditionPlanner{
 			Main:           NewInitIndexPlanner(false),
 			Terms:          p.termIdx,
@@ -105,13 +95,13 @@ func (p *simpleExpressionPlanner) planner() (shared.SQLRequestPlanner, error) {
 
 	res = &IndexGroupByPlanner{Main: res, Prefix: p.prefix}
 
-	if p.aggFn != "" {
+	if agg := p.selector.Aggregator; agg != nil {
 		res = &AggregatorPlanner{
 			Main:       res,
-			Fn:         p.aggFn,
+			Fn:         agg.Fn,
 			Attr:       p.aggAttr,
-			CompareFn:  p.script.Head.Aggregator.Cmp,
-			CompareVal: p.script.Head.Aggregator.Num + p.script.Head.Aggregator.Measurement,
+			CompareFn:  agg.Cmp,
+			CompareVal: agg.Value,
 			Prefix:     p.prefix,
 		}
 	}
@@ -126,7 +116,7 @@ func (p *simpleExpressionPlanner) planEval() (shared.SQLRequestPlanner, error) {
 
 	p.analyze()
 	var res shared.SQLRequestPlanner
-	if p.script.Head.AttrSelector != nil {
+	if p.selector.Filter != nil {
 		res = &AttrConditionEvaluatorPlanner{
 			Main: &AttrConditionPlanner{
 				Main:           NewInitIndexPlanner(true),
@@ -146,64 +136,36 @@ func (p *simpleExpressionPlanner) planEval() (shared.SQLRequestPlanner, error) {
 }
 
 func (p *simpleExpressionPlanner) check() error {
-	if p.script.Head.AttrSelector == nil {
-		if p.script.Head.Aggregator != nil {
-			return fmt.Errorf("requests like `{} | ....` are not supported")
-		}
-		if p.script.Tail != nil {
-			return fmt.Errorf("requests like `{} || .....` are not supported")
-		}
-	}
-	tail := p.script.Tail
-	for tail != nil {
-		if tail.Head.AttrSelector == nil {
-			return fmt.Errorf("requests like `... || {}` are not supported")
-		}
-		tail = tail.Tail
+	if p.selector.Filter == nil && p.selector.Aggregator != nil {
+		return errEmptyAggregated
 	}
 	return nil
 }
 
 func (p *simpleExpressionPlanner) analyze() {
 	p.terms = make(map[string]int)
-	p.cond = p.analyzeCond(p.script.Head.AttrSelector)
-	p.analyzeAgg()
+	p.cond = p.analyzeCond(p.selector.Filter)
+	if p.selector.Aggregator != nil {
+		p.aggAttr = p.selector.Aggregator.Attr
+	}
 }
 
-func (p *simpleExpressionPlanner) analyzeCond(exp *traceql_parser.AttrSelectorExp) *condition {
-	var res *condition
-	if exp == nil {
-		return nil
-	}
-	if exp.ComplexHead != nil {
-		res = p.analyzeCond(exp.ComplexHead)
-	} else if exp.Head != nil {
-		term := exp.Head.String()
+func (p *simpleExpressionPlanner) analyzeCond(exp traceql_ir.FilterExpr) *condition {
+	switch exp := exp.(type) {
+	case *traceql_ir.Comparison:
+		term := exp.String()
 		if p.terms[term] != 0 {
-			res = &condition{simpleIdx: p.terms[term] - 1}
-		} else {
-			p.termIdx = append(p.termIdx, exp.Head)
-			p.terms[term] = len(p.termIdx)
-			res = &condition{simpleIdx: len(p.termIdx) - 1}
+			return &condition{simpleIdx: p.terms[term] - 1}
 		}
-	}
-	if exp.Tail != nil {
-		res = &condition{
+		p.termIdx = append(p.termIdx, exp)
+		p.terms[term] = len(p.termIdx)
+		return &condition{simpleIdx: len(p.termIdx) - 1}
+	case *traceql_ir.FilterOp:
+		return &condition{
 			simpleIdx: -1,
-			op:        exp.AndOr,
-			complex:   []*condition{res, p.analyzeCond(exp.Tail)},
+			op:        exp.Op,
+			complex:   []*condition{p.analyzeCond(exp.LHS), p.analyzeCond(exp.RHS)},
 		}
 	}
-	return res
-}
-
-func (p *simpleExpressionPlanner) analyzeAgg() {
-	if p.script.Head.Aggregator == nil {
-		return
-	}
-
-	p.aggFn = p.script.Head.Aggregator.Fn
-	p.aggAttr = p.script.Head.Aggregator.Attr
-
-	p.cmpVal = p.script.Head.Aggregator.Num + p.script.Head.Aggregator.Measurement
+	return nil
 }
