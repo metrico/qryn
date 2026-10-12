@@ -114,7 +114,11 @@ func TestMetricsSpanStartIsLeftOpenRightClosed(t *testing.T) {
 }
 
 func TestMetricsRootFilterAppliesToTheResultSpans(t *testing.T) {
-	res := renderPlan(t, planMetrics(t, `{nestedSetParent < 0 && .a = 1}`), testPlannerContext(3))
+	ctx := testPlannerContext(3)
+	res := renderPlan(t, planMetrics(t, `{nestedSetParent < 0 && .a = 1}`), ctx)
+	if len(ctx.TracesIntrinsicWhere) != 0 {
+		t.Errorf("metrics planning left %d conditions on the caller's context", len(ctx.TracesIntrinsicWhere))
+	}
 	if !strings.Contains(res, "(_2result_spans.trace_id, _2result_spans.span_id) IN (") ||
 		!strings.Contains(res, "traces.parent_id") {
 		t.Errorf("root filter missing from the metrics spans:\n%s", res)

@@ -58,6 +58,9 @@ func TestMetricsQueriesReadOnlyTheSpans(t *testing.T) {
 	}
 	for _, q := range queries {
 		res := render(t, q)
+		if strings.Contains(res, "any(main.") && !strings.Contains(res, exemplarSpan) {
+			t.Errorf("exemplar columns are not read from one span:\n%s", res)
+		}
 		if !strings.Contains(res, "FROM metrics_spans as main") || !strings.HasPrefix(res, "WITH metrics_spans as (") {
 			t.Errorf("does not read the spans:\n%s", res)
 		}

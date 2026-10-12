@@ -261,7 +261,7 @@ func histogramBucket(attr string) (string, error) {
 
 // BuildHistogramRangeQuery builds a ClickHouse SQL query for histogram_over_time().
 // Returns rows of (ts, bucket_ns, count) where bucket_ns is the power-of-2
-// upper bound of each span's duration, computed inline.
+// upper bound of each span's attribute value, computed inline.
 func BuildHistogramRangeQuery(req *MetricsRequest) (sql.ISelect, error) {
 	bucket, err := histogramBucket(req.Attr)
 	if err != nil {
@@ -281,7 +281,7 @@ func BuildHistogramRangeQuery(req *MetricsRequest) (sql.ISelect, error) {
 		), nil
 }
 
-// BuildHistogramExemplarsQuery builds a query to sample one span per (ts_bucket, duration_bucket)
+// BuildHistogramExemplarsQuery builds a query to sample one span per (ts, bucket_ns)
 // for use as exemplars in the histogram response.
 func BuildHistogramExemplarsQuery(req *MetricsRequest) (sql.ISelect, error) {
 	bucket, err := histogramBucket(req.Attr)
@@ -293,15 +293,23 @@ func BuildHistogramExemplarsQuery(req *MetricsRequest) (sql.ISelect, error) {
 		Select(
 			sql.NewCol(sql.NewRawObject(tsBucket), "ts"),
 			sql.NewCol(sql.NewRawObject(bucket), "bucket_ns"),
-			sql.NewCol(sql.NewRawObject("any(lower(hex(main.trace_id)))"), "trace_id"),
-			sql.NewCol(sql.NewRawObject("any(main.duration_ns)"), "dur_ns"),
-			sql.NewCol(sql.NewRawObject("any(main.timestamp_ns)"), "span_ts"),
+			exemplarCols[0], exemplarCols[1], exemplarCols[2],
 		).
 		GroupBy(sql.NewRawObject("ts"), sql.NewRawObject("bucket_ns")).
 		OrderBy(
 			sql.NewOrderBy(sql.NewRawObject("ts"), sql.ORDER_BY_DIRECTION_ASC),
 			sql.NewOrderBy(sql.NewRawObject("bucket_ns"), sql.ORDER_BY_DIRECTION_ASC),
 		), nil
+}
+
+// exemplarSpan picks one span of a group; exemplarCols read its trace id,
+// duration and start time.
+const exemplarSpan = "any((lower(hex(main.trace_id)), main.duration_ns, main.timestamp_ns))"
+
+var exemplarCols = []sql.SQLObject{
+	sql.NewCol(sql.NewRawObject("tupleElement("+exemplarSpan+", 1)"), "trace_id"),
+	sql.NewCol(sql.NewRawObject("tupleElement("+exemplarSpan+", 2)"), "dur_ns"),
+	sql.NewCol(sql.NewRawObject("tupleElement("+exemplarSpan+", 3)"), "span_ts"),
 }
 
 // HistogramExemplar represents a single exemplar data point for histogram series.
@@ -318,9 +326,7 @@ func BuildGenericExemplarsQuery(req *MetricsRequest) (sql.ISelect, []string, err
 	tsBucket := fmt.Sprintf("intDiv(main.timestamp_ns, %d) * %d", req.StepNS, req.StepNS)
 	query := spansQuery(req.Spans).Select(
 		sql.NewCol(sql.NewRawObject(tsBucket), "ts"),
-		sql.NewCol(sql.NewRawObject("any(lower(hex(main.trace_id)))"), "trace_id"),
-		sql.NewCol(sql.NewRawObject("any(main.duration_ns)"), "dur_ns"),
-		sql.NewCol(sql.NewRawObject("any(main.timestamp_ns)"), "span_ts"),
+		exemplarCols[0], exemplarCols[1], exemplarCols[2],
 	)
 	groupBy := []sql.SQLObject{sql.NewRawObject("ts")}
 	resolvedByLabels := addByLabels(query, &groupBy, req.By, req.FromNS, req.ToNS, req.AttrsTable)

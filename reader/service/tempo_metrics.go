@@ -39,7 +39,7 @@ func (t *TempoService) MetricsQueryRange(ctx context.Context, req *model.Metrics
 	mreq := metricsRequest(metricsFn, req, planCtx)
 	var resolvedByLabels []string
 	planner, err := clickhouse_transpiler.PlanMetrics(tq, func(spans *sql.With) (sql.ISelect, error) {
-		query, byLabels, err := tempo.BuildMetricsRangeQuery(mreq.over(spans))
+		query, byLabels, err := tempo.BuildMetricsRangeQuery(over(mreq, spans))
 		resolvedByLabels = byLabels
 		return query, err
 	})
@@ -169,7 +169,7 @@ func (t *TempoService) MetricsQueryRange(ctx context.Context, req *model.Metrics
 	var exemplarRows []exRow
 	var exByLabels []string
 	exPlanner, err := clickhouse_transpiler.PlanMetrics(tq, func(spans *sql.With) (sql.ISelect, error) {
-		query, byLabels, err := tempo.BuildGenericExemplarsQuery(mreq.over(spans))
+		query, byLabels, err := tempo.BuildGenericExemplarsQuery(over(mreq, spans))
 		exByLabels = byLabels
 		return query, err
 	})
@@ -293,7 +293,7 @@ func (t *TempoService) MetricsQueryInstant(ctx context.Context, req *model.Metri
 	mreq := metricsRequest(metricsFn, req, planCtx)
 	var resolvedByLabels []string
 	planner, err := clickhouse_transpiler.PlanMetrics(tq, func(spans *sql.With) (sql.ISelect, error) {
-		query, byLabels, err := tempo.BuildMetricsInstantQuery(mreq.over(spans))
+		query, byLabels, err := tempo.BuildMetricsInstantQuery(over(mreq, spans))
 		resolvedByLabels = byLabels
 		return query, err
 	})
@@ -369,8 +369,8 @@ func (t *TempoService) metricsPlannerContext(ctx context.Context, req *model.Met
 }
 
 // metricsRequest is the metrics request of fn over the planner context's range.
-func metricsRequest(fn *traceql_ir.MetricsFn, req *model.MetricsQueryRequest, planCtx *shared.PlannerContext) metricsReq {
-	return metricsReq{
+func metricsRequest(fn *traceql_ir.MetricsFn, req *model.MetricsQueryRequest, planCtx *shared.PlannerContext) tempo.MetricsRequest {
+	return tempo.MetricsRequest{
 		Fn:         fn.Fn,
 		Attr:       fn.Attr,
 		By:         fn.By,
@@ -382,16 +382,13 @@ func metricsRequest(fn *traceql_ir.MetricsFn, req *model.MetricsQueryRequest, pl
 	}
 }
 
-type metricsReq tempo.MetricsRequest
-
-// over returns the request reading spans.
-func (m metricsReq) over(spans *sql.With) *tempo.MetricsRequest {
-	res := tempo.MetricsRequest(m)
-	res.Spans = spans
-	return &res
+// over returns req reading spans.
+func over(req tempo.MetricsRequest, spans *sql.With) *tempo.MetricsRequest {
+	req.Spans = spans
+	return &req
 }
 
-// attrsTable is the span attributes table metrics read: Distributed on a cluster.
+// attrsTable is the span attributes table metrics read, the distributed one on a cluster.
 func attrsTable(planCtx *shared.PlannerContext) string {
 	if planCtx.IsCluster {
 		return planCtx.TracesAttrsDistTable
@@ -430,7 +427,7 @@ func executeHistogramRange(
 ) (*model.MetricsQueryRangeResponse, error) {
 	mreq := metricsRequest(tq.Metrics, req, planCtx)
 	planner, err := clickhouse_transpiler.PlanMetrics(tq, func(spans *sql.With) (sql.ISelect, error) {
-		return tempo.BuildHistogramRangeQuery(mreq.over(spans))
+		return tempo.BuildHistogramRangeQuery(over(mreq, spans))
 	})
 	if err != nil {
 		return nil, err
@@ -509,7 +506,7 @@ func executeHistogramRange(
 	}
 	var exemplarRows []exRow
 	exPlanner, err := clickhouse_transpiler.PlanMetrics(tq, func(spans *sql.With) (sql.ISelect, error) {
-		return tempo.BuildHistogramExemplarsQuery(mreq.over(spans))
+		return tempo.BuildHistogramExemplarsQuery(over(mreq, spans))
 	})
 	if err == nil {
 		_ = queryMetrics(planCtx, exPlanner, func(exRows *stdsql.Rows) error {
@@ -683,12 +680,9 @@ func compareRequest(fn *traceql_ir.MetricsFn, planCtx *shared.PlannerContext) te
 		BaselineFromNS: planCtx.From.UnixNano(),
 		BaselineToNS:   planCtx.To.UnixNano(),
 		AttrsTable:     attrsTable(planCtx),
-		TopN:           10,
 	}
 	if c := fn.Compare; c != nil {
-		if c.Count > 0 {
-			res.TopN = c.Count
-		}
+		res.TopN = c.Count
 		if c.BaselineFrom != nil && *c.BaselineFrom > 0 {
 			res.BaselineFromNS = *c.BaselineFrom
 		}

@@ -1,7 +1,6 @@
 package clickhouse_transpiler
 
 import (
-	"slices"
 	"time"
 
 	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
@@ -70,7 +69,8 @@ func (p *planner) metricsSpans() (*metricsSpansPlanner, error) {
 	return &metricsSpansPlanner{Result: result, Prefix: p.getPrefix()}, nil
 }
 
-// metricsQuery gates a metrics plan with structural operators.
+// metricsQuery wraps res in StructuralQueryPlanner when the query has
+// structural operators.
 func (p *planner) metricsQuery(res shared.SQLRequestPlanner) shared.SQLRequestPlanner {
 	if p.query.HasStructural() {
 		return &StructuralQueryPlanner{Main: res}
@@ -86,6 +86,10 @@ type metricsSpansPlanner struct {
 }
 
 func (m *metricsSpansPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, error) {
+	// Result's selectors set their traces-table conditions on a context of its own.
+	resultCtx := *ctx
+	resultCtx.TracesIntrinsicWhere = nil
+	ctx = &resultCtx
 	main, err := m.Result.Process(ctx)
 	if err != nil {
 		return nil, err
@@ -144,7 +148,6 @@ type comparePlanner struct {
 func (c *comparePlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, error) {
 	baselineCtx := *ctx
 	baselineCtx.From, baselineCtx.To = c.BaselineFrom, c.BaselineTo
-	baselineCtx.TracesIntrinsicWhere = slices.Clip(ctx.TracesIntrinsicWhere)
 	baseline, err := c.Baseline.Process(&baselineCtx)
 	if err != nil {
 		return nil, err
