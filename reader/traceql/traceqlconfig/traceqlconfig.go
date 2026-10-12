@@ -8,9 +8,8 @@ import (
 )
 
 const (
-	// AncestryRoundsEnv sets the pointer-jumping rounds that resolve span
-	// ancestry for structural operators: R rounds resolve traces up to 2^R
-	// spans deep.
+	// AncestryRoundsEnv sets the ancestry rounds R of structural operators:
+	// traces up to 2^R spans deep resolve.
 	AncestryRoundsEnv = "GIGAPIPE_TRACEQL_ANCESTRY_ROUNDS"
 	// DefaultAncestryRounds applies when AncestryRoundsEnv is unset.
 	DefaultAncestryRounds = 20

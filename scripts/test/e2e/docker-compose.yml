@@ -28,8 +28,7 @@ services:
       METRICS_15S_ENABLED: "${METRICS_15S_ENABLED:-true}"
       BULK_MAX_AGE_MS: "100"
       PORT: "9080"
-      # Ancestry resolves up to 8 spans deep, so the TraceQL grid's
-      # 9-span chain hits the round limit.
+      # Ancestry resolves up to 8 spans deep.
       GIGAPIPE_TRACEQL_ANCESTRY_ROUNDS: "3"
     command:
       - sh

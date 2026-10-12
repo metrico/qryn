@@ -84,12 +84,13 @@ func (p *planner) planSpansetExpr(expr traceql_ir.SpansetExpr) (shared.SQLReques
 	return planSpansetTree(p, expr,
 		func(op *simpleExpressionPlanner) (shared.SQLRequestPlanner, error) { return op.planner() },
 		func(op traceql_ir.SpansetOperator, lhs, rhs shared.SQLRequestPlanner) shared.SQLRequestPlanner {
-			switch {
-			case op == traceql_ir.OpAnd:
+			switch op {
+			case traceql_ir.OpAnd:
 				return &TraceAndPlanner{LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
-			case op == traceql_ir.OpOr:
+			case traceql_ir.OpOr:
 				return &TraceOrPlanner{LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
-			case op.IsOneHop():
+			}
+			if op.IsOneHop() {
 				return &OneHopPlanner{Op: op, LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
 			}
 			return &TransitivePlanner{Op: op, LHS: lhs, RHS: rhs, Prefix: p.getPrefix()}
