@@ -13,39 +13,41 @@ import (
 // by the stage, to its spanset attributes.
 type groupByStage struct {
 	by *traceql_ir.GroupBy
+	// pivot reads the expression's attribute keys; it holds every span
+	// unless nilWhenAbsent.
+	pivot *fieldPivot
 }
 
 func newGroupByStage(g *traceql_ir.GroupBy) (*groupByStage, error) {
 	if err := traceql_ir.CheckGroupBy(g); err != nil {
 		return nil, err
 	}
-	if _, err := fieldKeys(g.Expr); err != nil {
-		return nil, err
-	}
-	return &groupByStage{by: g}, nil
-}
-
-func (s *groupByStage) process(ctx *shared.PlannerContext, alias string, prev, _ *sql.With) (sql.ISelect, error) {
-	keys, err := fieldKeys(s.by.Expr)
+	keys, err := fieldKeys(g.Expr)
 	if err != nil {
 		return nil, err
 	}
-	// The pivot holds every span unless the key is nil for spans lacking all its keys.
-	if len(keys) > 0 && !nilWhenAbsent(s.by.Expr) && !containsKey(keys, anchorKey) {
+	if len(keys) > 0 && !nilWhenAbsent(g.Expr) && !containsKey(keys, anchorKey) {
 		keys = append(keys, anchorKey)
 	}
-	pivot := &fieldPivot{keys: keys}
+	return &groupByStage{by: g, pivot: &fieldPivot{keys: keys}}, nil
+}
+
+func (s *groupByStage) process(ctx *shared.PlannerContext, alias string, prev, _ *sql.With) (sql.ISelect, error) {
+	pivot := s.pivot
 	key, err := groupKey(pivot.sql(), s.by.Expr)
 	if err != nil {
 		return nil, err
 	}
 	spans := pivot.spans(ctx)
 	table := "traces_idx"
-	if len(keys) == 0 {
+	if len(pivot.keys) == 0 {
 		table = "traces"
 	}
+	prevTraces := sql.NewSelect().Select(sql.NewRawObject("trace_id")).From(sql.NewWithRef(prev))
 	prevSpans := sql.NewSelect().Select(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id")).From(sql.NewWithRef(prev))
-	spans.AndWhere(inSubquery(ctx, sql.NewRawObject(fmt.Sprintf("(%s.trace_id, %s.span_id)", table, table)), prevSpans))
+	spans.AndWhere(
+		inSubquery(ctx, sql.NewRawObject(table+".trace_id"), prevTraces),
+		inSubquery(ctx, sql.NewRawObject(fmt.Sprintf("(%s.trace_id, %s.span_id)", table, table)), prevSpans))
 	withPivot := sql.NewWith(spans, alias+"_pivot")
 	withKeys := sql.NewWith(sql.NewSelect().
 		Select(

@@ -10,12 +10,10 @@ import (
 // DefaultSpansPerSpanSet is the spanset span cap when the request sets none.
 const DefaultSpansPerSpanSet = 3
 
-// SearchSpansetPlanner groups the result span rows into spansets, the spans
-// of a trace with one group key, and the spansets by trace. Each spanset lists
-// its newest spss spans (ties by span id), the count of all of them as
-// matched, and its attributes; a trace lists its spansets by group key.
-// Traces come newest-span first. Columns: trace_id, span_id (the listed spans
-// of every spanset) and spansets, (grp, span ids, matched, attrs) tuples.
+// SearchSpansetPlanner groups the result span rows into spansets, one per
+// trace and group key, each listing its newest spss spans (ties by span id)
+// and matched, the count of all. A trace lists its spansets by group key;
+// traces come newest-span first.
 type SearchSpansetPlanner struct {
 	Main shared.SQLRequestPlanner
 }

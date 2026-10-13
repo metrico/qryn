@@ -90,8 +90,9 @@ type PlannerContext struct {
 	// (e.g., nestedSetParent < 0 → parent_id = '').
 	TracesIntrinsicWhere []sql.SQLCondition
 
-	// TracesOperandSpans, when set, holds the only span rows TraceQL selectors
-	// may match: the previous pipeline stage's.
+	// TracesOperandSpans, when set, holds the previous pipeline stage's span
+	// rows: the only ones TraceQL selectors may match, and the input of a
+	// nested pipeline.
 	TracesOperandSpans *sql.With
 }
 

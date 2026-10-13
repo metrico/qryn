@@ -76,7 +76,7 @@ func (p *planner) planPipeline(pipeline *traceql_ir.Pipeline) (shared.SQLRequest
 			if err != nil {
 				return nil, err
 			}
-			stages = append(stages, &spansetStage{Expr: expr, OwnAttrs: isPipeline(e)})
+			stages = append(stages, &spansetStage{Expr: expr, Pipeline: isPipeline(e)})
 		}
 	}
 	return &pipelinePlanner{Stages: stages, Prefix: p.getPrefix()}, nil
@@ -147,9 +147,9 @@ func stageRowCols(alias, attrs, grp string) []sql.SQLObject {
 // it keeps.
 type spansetStage struct {
 	Expr shared.SQLRequestPlanner
-	// OwnAttrs is set when Expr is a pipeline, whose rows carry the
-	// attributes and group keys the stage keeps.
-	OwnAttrs bool
+	// Pipeline is set when Expr is a nested pipeline, which reads the
+	// previous stage itself and whose rows carry the attributes and group keys.
+	Pipeline bool
 }
 
 func (s *spansetStage) process(ctx *shared.PlannerContext, alias string, prev, _ *sql.With) (sql.ISelect, error) {
@@ -167,7 +167,7 @@ func (s *spansetStage) process(ctx *shared.PlannerContext, alias string, prev, _
 	e := withExpr.GetAlias()
 	attrs, grp := emptyAttrs, emptyGroup
 	switch {
-	case s.OwnAttrs:
+	case s.Pipeline:
 		attrs, grp = e+".attrs", e+".grp"
 	case prev != nil:
 		attrs, grp = prev.GetAlias()+".attrs", prev.GetAlias()+".grp"
@@ -176,7 +176,7 @@ func (s *spansetStage) process(ctx *shared.PlannerContext, alias string, prev, _
 		With(withExpr).
 		Select(stageRowCols(e, attrs, grp)...).
 		From(sql.NewWithRef(withExpr))
-	if prev != nil && !s.OwnAttrs {
+	if prev != nil && !s.Pipeline {
 		res.Join(sql.NewJoin("inner", sql.NewWithRef(prev), sameSpan(prev.GetAlias()+".span_id", e+".span_id")))
 	}
 	if cond := intrinsicFilter(&exprCtx, withExpr); cond != nil {
