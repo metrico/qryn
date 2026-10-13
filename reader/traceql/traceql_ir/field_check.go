@@ -156,6 +156,14 @@ func CheckAggregate(a *Aggregate) error {
 	return nil
 }
 
+// CheckGroupBy validates the expression of a by() stage, which must read the span.
+func CheckGroupBy(g *GroupBy) error {
+	if !ReferencesSpan(g.Expr) {
+		return fmt.Errorf("grouping field expressions must reference the span: %s", g)
+	}
+	return checkField(g.Expr)
+}
+
 func checkField(e FieldExpr) error {
 	switch e := e.(type) {
 	case *BinaryOp:

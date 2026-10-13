@@ -23,10 +23,14 @@ const (
 	AttrInt      = "int"
 	AttrFloat    = "float"
 	AttrDuration = "duration"
+	AttrBool     = "bool"
+	AttrString   = "string"
+	AttrNil      = "nil"
 )
 
 // scalarFilterStage keeps the spansets whose aggregate over their spans passes
-// `agg op value` and appends the aggregate to their attributes.
+// `agg op value` and appends the aggregate to their attributes. A spanset is
+// the spans of a trace with one group key.
 type scalarFilterStage struct {
 	agg   *traceql_ir.Aggregate
 	op    string
@@ -97,11 +101,12 @@ func (s *scalarFilterStage) process(ctx *shared.PlannerContext, alias string, pr
 		withs  []*sql.With
 		valued sql.ISelect
 	)
-	window := "OVER (PARTITION BY trace_id)"
+	window := "OVER (PARTITION BY trace_id, grp)"
 	if s.agg.Arg == nil {
 		valued = sql.NewSelect().
 			Select(append(spanRowCols(),
 				sql.NewSimpleCol("attrs", "prev_attrs"),
+				sql.NewSimpleCol("grp", "grp"),
 				sql.NewSimpleCol("toFloat64(uniqExact(span_id) "+window+")", "value"),
 				sql.NewSimpleCol("1", "n_present"),
 				sql.NewSimpleCol(sqlString(AttrInt), "type"))...).
@@ -114,7 +119,7 @@ func (s *scalarFilterStage) process(ctx *shared.PlannerContext, alias string, pr
 		values := sql.NewWith(sel, alias+"_values")
 		withs = append(withs, values)
 		p, v := prev.GetAlias(), values.GetAlias()
-		window = fmt.Sprintf("OVER (PARTITION BY %s.trace_id)", p)
+		window = fmt.Sprintf("OVER (PARTITION BY %s.trace_id, %s.grp)", p, p)
 		value, typ := s.aggregate(v, window)
 		valued = sql.NewSelect().
 			Select(
@@ -122,6 +127,7 @@ func (s *scalarFilterStage) process(ctx *shared.PlannerContext, alias string, pr
 				sql.NewSimpleCol(p+".span_id", "span_id"),
 				sql.NewSimpleCol(p+".timestamp_ns", "timestamp_ns"),
 				sql.NewSimpleCol(p+".attrs", "prev_attrs"),
+				sql.NewSimpleCol(p+".grp", "grp"),
 				sql.NewSimpleCol(value, "value"),
 				sql.NewSimpleCol(fmt.Sprintf("countIf(%s.present = 1) %s", v, window), "n_present"),
 				sql.NewSimpleCol(typ, "type")).
@@ -134,9 +140,9 @@ func (s *scalarFilterStage) process(ctx *shared.PlannerContext, alias string, pr
 	withs = append(withs, withValued)
 	return sql.NewSelect().
 		With(withs...).
-		Select(append(spanRowCols(), sql.NewCol(
-			sql.NewRawObject(fmt.Sprintf("arrayPushBack(prev_attrs, tuple(%s, type, value))", sqlString(s.agg.String()))),
-			"attrs"))...).
+		Select(stageRowCols("",
+			fmt.Sprintf("arrayPushBack(prev_attrs, tuple(%s, type, value, ''))", sqlString(s.agg.String())),
+			"grp")...).
 		From(sql.NewWithRef(withValued)).
 		AndWhere(rawCond("n_present > 0 AND NOT isNaN(value) AND " + s.comparison("value"))), nil
 }

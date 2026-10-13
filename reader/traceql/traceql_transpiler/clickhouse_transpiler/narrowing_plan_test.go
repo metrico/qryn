@@ -78,13 +78,16 @@ func TestSpansetStageIsASpanLevelIntersection(t *testing.T) {
 	}
 }
 
-// A narrowed stage keeps the attributes of the spans it returns from the
-// previous stage, and adds those of a lone parenthesised pipeline.
+// A narrowed stage keeps the attributes and group keys of the spans it
+// returns from the previous stage. A lone parenthesised pipeline starts from
+// them and its rows carry its own.
 func TestNarrowedStagesCarryThePreviousStageAttributes(t *testing.T) {
 	for _, c := range []struct{ query, attrs string }{
-		{`{.a = 1} | count() > 1 | {.b = 2}`, `arrayConcat\(_\d+stage1\.attrs, CAST\(\[\]`},
-		{`{.a = 1} | count() > 1 | ({.b = 2} | avg(.c) > 1)`, `arrayConcat\(_\d+stage1\.attrs, _\d+stage2_expr\.attrs\)`},
-		{`({.b = 2} | avg(.c) > 1)`, `arrayConcat\(CAST\(\[\], 'Array\(Tuple\(String, String, Float64\)\)'\), _\d+stage0_expr\.attrs\)`},
+		{`{.a = 1} | count() > 1 | {.b = 2}`, `_\d+stage1\.attrs as attrs, _\d+stage1\.grp as grp`},
+		{`{.a = 1} | count() > 1 | ({.b = 2} | avg(.c) > 1)`,
+			`_\d+stage0 as \( SELECT [^()]*_(\d+)stage1\.attrs as attrs, _\d+stage1\.grp as grp FROM _\d+stage0_expr inner JOIN _\d+stage1 ` +
+				`.*_\d+stage2 as \( SELECT [^()]*_\d+stage2_expr\.attrs as attrs, _\d+stage2_expr\.grp as grp FROM _\d+stage2_expr\)`},
+		{`({.b = 2} | avg(.c) > 1)`, `_\d+stage0_expr\.attrs as attrs, _\d+stage0_expr\.grp as grp FROM _\d+stage0_expr\)`},
 	} {
 		t.Run(c.query, func(t *testing.T) {
 			res := renderPlan(t, planSearch(t, c.query), testPlannerContext(3))

@@ -17,7 +17,8 @@ type Pipeline struct {
 	Elements []Element
 }
 
-// Element is one stage of a pipeline: a spanset expression or a scalar filter.
+// Element is one stage of a pipeline: a spanset expression, a scalar filter,
+// a GroupBy or a Coalesce.
 type Element interface {
 	isElement()
 }
@@ -127,6 +128,8 @@ func (*Group) isElement()        {}
 func (*Pipeline) isElement()     {}
 func (*SpansetOp) isElement()    {}
 func (*ScalarFilter) isElement() {}
+func (*GroupBy) isElement()      {}
+func (*Coalesce) isElement()     {}
 
 func (*Selector) isSpansetExpr()  {}
 func (*Group) isSpansetExpr()     {}
@@ -191,6 +194,21 @@ func (o *ScalarOp) String() string {
 func (*Aggregate) isScalarExpr() {}
 func (*Static) isScalarExpr()    {}
 func (*ScalarOp) isScalarExpr()  {}
+
+// GroupBy is the pipeline stage `by(Expr)`: it splits each spanset by the
+// value of Expr per span.
+type GroupBy struct {
+	Expr FieldExpr
+}
+
+// String is the stage's canonical form, which names the group key in results.
+func (g *GroupBy) String() string {
+	return "by(" + g.Expr.String() + ")"
+}
+
+// Coalesce is the pipeline stage `coalesce()`: it merges the spansets of
+// each trace into one without attributes.
+type Coalesce struct{}
 
 // MetricsFn is the terminal metrics function, e.g. `| rate() by (name)`.
 type MetricsFn struct {

@@ -84,6 +84,10 @@ func filter(lhs ScalarExpr, op string, rhs ScalarExpr) PipelineElement {
 	return PipelineElement{ScalarFilter: &ScalarFilter{LHS: lhs, Op: op, RHS: rhs}}
 }
 
+func groupBy(e *FieldExpr) PipelineElement { return PipelineElement{GroupBy: &GroupBy{Expr: *e}} }
+
+func coalesce() PipelineElement { return PipelineElement{Coalesce: &Coalesce{Fn: "coalesce"}} }
+
 func f64(f float64) *float64 { return &f }
 
 func i64(i int64) *int64 { return &i }
@@ -365,6 +369,47 @@ func TestParsePipelines(t *testing.T) {
 	}
 }
 
+func TestParseGroupingStages(t *testing.T) {
+	a := func() Operand { return sel(term(".a", "=", str(`"b"`))) }
+	count := filter(agg("count", ""), ">", lit("2", ""))
+	for _, tc := range []struct {
+		query string
+		want  *TraceQLScript
+	}{
+		{`{.a = "b"} | by(.x)`, script(expr(a()), groupBy(field(name(".x"))))},
+		{`{} | by(resource.service.name) | by(.x + 1) | count() > 2`, script(expr(sel(nil)),
+			groupBy(field(name("resource.service.name"))), groupBy(field(name(".x"), "+", num("1"))), count)},
+		{`{} | by(.x) | coalesce() | count() > 2`, script(expr(sel(nil)), groupBy(field(name(".x"))), coalesce(), count)},
+		{`{} | by(.x = nil)`, script(expr(sel(nil)), groupBy(term(".x", "=", name("nil"))))},
+		{`({.a = "b"} | by(.x))`, script(expr(paren(expr(a()), groupBy(field(name(".x"))))))},
+		{`({.a = "b"} | by(.x) | coalesce()) >> {}`, script(expr(paren(expr(a()), groupBy(field(name(".x"))), coalesce()),
+			then(">>", sel(nil))))},
+		{`by(.x)`, &TraceQLScript{Pipeline: Pipeline{Head: groupBy(field(name(".x")))}}},
+		{`by(.x) | {.a = "b"}`, &TraceQLScript{Pipeline: Pipeline{Head: groupBy(field(name(".x"))), Stages: []PipelineElement{spanset(expr(a()))}}}},
+		// A leading coalesce() parses; lowering rejects it.
+		{`coalesce()`, &TraceQLScript{Pipeline: Pipeline{Head: coalesce()}}},
+	} {
+		t.Run(tc.query, func(t *testing.T) {
+			got, err := Parse(tc.query)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
+			require.Equal(t, tc.query, got.String())
+		})
+	}
+
+	for _, q := range []string{
+		`{} | by(.a, .b)`,
+		`{} | by .a`,
+		`{} | by(.a) && {}`,
+		`(by(.a) | {})`,
+	} {
+		t.Run("rejects "+q, func(t *testing.T) {
+			_, err := Parse(q)
+			require.Error(t, err)
+		})
+	}
+}
+
 func TestParseMetricsFunctions(t *testing.T) {
 	a := func() *SpansetExpr { return expr(sel(term(".a", "=", str(`"b"`)))) }
 	empty := func() *SpansetExpr { return expr(sel(nil)) }
@@ -396,8 +441,10 @@ func TestParseMetricsFunctions(t *testing.T) {
 		}},
 		{`({} &>> {}) | rate()`, metrics(expr(paren(expr(sel(nil), then("&>>", sel(nil))))),
 			&MetricsPipelineStage{Fn: "rate"})},
-		{`{} | by(.a)`, metrics(empty(), &MetricsPipelineStage{Fn: "by", Attr: ".a"})},
-		{`{} | coalesce()`, metrics(empty(), &MetricsPipelineStage{Fn: "coalesce"})},
+		{`{} | by(.a) | rate() by (name)`, metrics(empty(),
+			&MetricsPipelineStage{Fn: "rate", By: &ByClause{Labels: []string{"name"}}}, groupBy(field(name(".a"))))},
+		{`{} | by(.a) | coalesce() | count_over_time()`, metrics(empty(),
+			&MetricsPipelineStage{Fn: "count_over_time"}, groupBy(field(name(".a"))), coalesce())},
 		{`{} | select(.a)`, metrics(empty(), &MetricsPipelineStage{Fn: "select", Attr: ".a"})},
 		{`{} && {} | rate()`, metrics(expr(sel(nil), then("&&", sel(nil))), &MetricsPipelineStage{Fn: "rate"})},
 	} {

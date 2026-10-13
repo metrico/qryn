@@ -9,8 +9,14 @@ import (
 )
 
 // emptyAttrs is the spanset attributes column of a stage that sets none:
-// (name, type, value) per aggregate, type one of AttrInt, AttrFloat and AttrDuration.
-const emptyAttrs = "CAST([], 'Array(Tuple(String, String, Float64))')"
+// (name, type, value, text) per aggregate or group key. type is one of the
+// Attr* types; a number or a bool is in value, a duration in nanoseconds,
+// and a string in text.
+const emptyAttrs = "CAST([], 'Array(Tuple(String, String, Float64, String))')"
+
+// emptyGroup is the group key column of an ungrouped stage. A group key is
+// one (rank, value, text, type) tuple per by() stage; see groupKey.
+const emptyGroup = "CAST([], 'Array(Tuple(UInt8, Float64, String, String))')"
 
 // planResult plans the result span rows of the query's pipeline. With
 // prepick, a lone `{}` reads only the ctx.Limit traces with the newest spans.
@@ -21,14 +27,26 @@ func (p *planner) planResult(prepick bool) (shared.SQLRequestPlanner, error) {
 			Prefix: p.getPrefix(),
 		}, nil
 	}
-	return p.planPipeline(&p.query.Pipeline)
+	return p.planQuery()
 }
 
-// readsEverySpan reports whether a pipeline starts with a scalar filter, which
-// reads every span in range.
+// readsEverySpan reports whether a pipeline starts with a scalar filter or a
+// by(), which read every span in range.
 func readsEverySpan(pipeline *traceql_ir.Pipeline) bool {
-	_, ok := pipeline.Elements[0].(*traceql_ir.ScalarFilter)
-	return ok
+	switch pipeline.Elements[0].(type) {
+	case *traceql_ir.ScalarFilter, *traceql_ir.GroupBy:
+		return true
+	}
+	return false
+}
+
+// planQuery plans the query's pipeline into its result span rows, rejecting
+// spanset operators over grouped spansets.
+func (p *planner) planQuery() (shared.SQLRequestPlanner, error) {
+	if err := traceql_ir.CheckGrouping(&p.query.Pipeline); err != nil {
+		return nil, err
+	}
+	return p.planPipeline(&p.query.Pipeline)
 }
 
 // planPipeline plans a pipeline into its result span rows.
@@ -45,6 +63,14 @@ func (p *planner) planPipeline(pipeline *traceql_ir.Pipeline) (shared.SQLRequest
 				return nil, err
 			}
 			stages = append(stages, stage)
+		case *traceql_ir.GroupBy:
+			stage, err := newGroupByStage(e)
+			if err != nil {
+				return nil, err
+			}
+			stages = append(stages, stage)
+		case *traceql_ir.Coalesce:
+			stages = append(stages, coalesceStage{})
 		case traceql_ir.SpansetExpr:
 			expr, err := p.planSpansetExpr(e)
 			if err != nil {
@@ -71,21 +97,25 @@ func isPipeline(expr traceql_ir.SpansetExpr) bool {
 }
 
 // pipelineStage plans one stage over prev, the previous stage's rows, and
-// base, the rows of the last spanset stage before it. Both are nil for the
-// first stage.
+// base, the rows of the last spanset stage before it. base is nil for the
+// first stage, and prev too unless the pipeline is nested.
 type pipelineStage interface {
 	process(ctx *shared.PlannerContext, alias string, prev, base *sql.With) (sql.ISelect, error)
 }
 
 // pipelinePlanner evaluates its stages in order, one CTE each, into span
-// rows: trace_id, span_id, timestamp_ns and attrs, the spanset attributes.
+// rows: trace_id, span_id, timestamp_ns, attrs, the spanset attributes, and
+// grp, the group key. The rows of a trace with the same group key form one
+// spanset. A nested pipeline reads ctx.TracesOperandSpans as the stage before
+// its first.
 type pipelinePlanner struct {
 	Stages []pipelineStage
 	Prefix string
 }
 
 func (p *pipelinePlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, error) {
-	var prev, base *sql.With
+	prev := ctx.TracesOperandSpans
+	var base *sql.With
 	withs := make([]*sql.With, len(p.Stages))
 	for i, stage := range p.Stages {
 		alias := fmt.Sprintf("%sstage%d", p.Prefix, i)
@@ -101,17 +131,24 @@ func (p *pipelinePlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, erro
 	}
 	return sql.NewSelect().
 		With(withs...).
-		Select(append(spanRowCols(), sql.NewSimpleCol("attrs", "attrs"))...).
+		Select(stageRowCols("", "attrs", "grp")...).
 		From(sql.NewWithRef(prev)), nil
+}
+
+// stageRowCols are the columns of a stage row: the span-row columns of the
+// given table alias, attrs and grp.
+func stageRowCols(alias, attrs, grp string) []sql.SQLObject {
+	return append(spanRowColsOf(alias), sql.NewSimpleCol(attrs, "attrs"), sql.NewSimpleCol(grp, "grp"))
 }
 
 // spansetStage is the span rows of a spanset expression that pass the
 // traces-table conditions of its selectors. After another stage, its
-// selectors match only that stage's spans, whose attributes it keeps.
+// selectors match only that stage's spans, whose attributes and group keys
+// it keeps.
 type spansetStage struct {
 	Expr shared.SQLRequestPlanner
-	// OwnAttrs is set when Expr's rows carry an attrs column, appended to
-	// the kept attributes.
+	// OwnAttrs is set when Expr is a pipeline, whose rows carry the
+	// attributes and group keys the stage keeps.
 	OwnAttrs bool
 }
 
@@ -128,22 +165,18 @@ func (s *spansetStage) process(ctx *shared.PlannerContext, alias string, prev, _
 	}
 	withExpr := sql.NewWith(main, alias+"_expr")
 	e := withExpr.GetAlias()
-	attrs := emptyAttrs
-	if prev != nil || s.OwnAttrs {
-		kept, own := emptyAttrs, emptyAttrs
-		if prev != nil {
-			kept = prev.GetAlias() + ".attrs"
-		}
-		if s.OwnAttrs {
-			own = e + ".attrs"
-		}
-		attrs = fmt.Sprintf("arrayConcat(%s, %s)", kept, own)
+	attrs, grp := emptyAttrs, emptyGroup
+	switch {
+	case s.OwnAttrs:
+		attrs, grp = e+".attrs", e+".grp"
+	case prev != nil:
+		attrs, grp = prev.GetAlias()+".attrs", prev.GetAlias()+".grp"
 	}
 	res := sql.NewSelect().
 		With(withExpr).
-		Select(append(spanRowColsOf(e), sql.NewSimpleCol(attrs, "attrs"))...).
+		Select(stageRowCols(e, attrs, grp)...).
 		From(sql.NewWithRef(withExpr))
-	if prev != nil {
+	if prev != nil && !s.OwnAttrs {
 		res.Join(sql.NewJoin("inner", sql.NewWithRef(prev), sameSpan(prev.GetAlias()+".span_id", e+".span_id")))
 	}
 	if cond := intrinsicFilter(&exprCtx, withExpr); cond != nil {

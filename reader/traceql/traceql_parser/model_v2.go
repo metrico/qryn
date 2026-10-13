@@ -47,17 +47,42 @@ func pipelineString(head string, stages []PipelineElement) string {
 	return res
 }
 
-// PipelineElement is a spanset expression or a scalar filter.
+// PipelineElement is a spanset expression, a scalar filter, `by()` or `coalesce()`.
 type PipelineElement struct {
 	Spanset      *SpansetExpr  `  @@`
 	ScalarFilter *ScalarFilter `| @@`
+	GroupBy      *GroupBy      `| @@`
+	Coalesce     *Coalesce     `| @@`
 }
 
 func (e PipelineElement) String() string {
-	if e.ScalarFilter != nil {
+	switch {
+	case e.ScalarFilter != nil:
 		return e.ScalarFilter.String()
+	case e.GroupBy != nil:
+		return e.GroupBy.String()
+	case e.Coalesce != nil:
+		return e.Coalesce.String()
 	}
 	return e.Spanset.String()
+}
+
+// GroupBy is `by(fieldexpr)`.
+type GroupBy struct {
+	Expr FieldExpr `"by" "(" @@ ")"`
+}
+
+func (g GroupBy) String() string {
+	return "by(" + g.Expr.String() + ")"
+}
+
+// Coalesce is `coalesce()`.
+type Coalesce struct {
+	Fn string `@"coalesce" "(" ")"`
+}
+
+func (Coalesce) String() string {
+	return "coalesce()"
 }
 
 // SpansetExpr is operands joined by spanset operators, in written order.

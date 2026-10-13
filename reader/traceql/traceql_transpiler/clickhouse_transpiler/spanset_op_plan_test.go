@@ -34,6 +34,10 @@ func describePlan(t *testing.T, p shared.SQLRequestPlanner) string {
 				stages[i] = describePlan(t, stage.Expr)
 			case *scalarFilterStage:
 				stages[i] = fmt.Sprintf("%s %s %g", stage.agg, stage.op, stage.value)
+			case *groupByStage:
+				stages[i] = stage.by.String()
+			case coalesceStage:
+				stages[i] = "coalesce()"
 			}
 		}
 		return strings.Join(stages, "|")

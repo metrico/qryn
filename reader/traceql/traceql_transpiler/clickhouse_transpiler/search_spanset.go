@@ -10,9 +10,12 @@ import (
 // DefaultSpansPerSpanSet is the spanset span cap when the request sets none.
 const DefaultSpansPerSpanSet = 3
 
-// SearchSpansetPlanner groups the result span rows by trace. Each trace lists
-// its newest spss spans (ties by span id), the count of all of them as matched
-// and its spanset attributes. Traces come newest-span first.
+// SearchSpansetPlanner groups the result span rows into spansets, the spans
+// of a trace with one group key, and the spansets by trace. Each spanset lists
+// its newest spss spans (ties by span id), the count of all of them as
+// matched, and its attributes; a trace lists its spansets by group key.
+// Traces come newest-span first. Columns: trace_id, span_id (the listed spans
+// of every spanset) and spansets, (grp, span ids, matched, attrs) tuples.
 type SearchSpansetPlanner struct {
 	Main shared.SQLRequestPlanner
 }
@@ -28,19 +31,28 @@ func (s *SearchSpansetPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect,
 	}
 
 	withSpans := sql.NewWith(main, "result_spans")
-	res := sql.NewSelect().
-		With(withSpans).
+	withSpansets := sql.NewWith(sql.NewSelect().
 		Select(
-			sql.NewSimpleCol("trace_id", "trace_id"),
+			sql.NewSimpleCol("result_spans.trace_id", "trace_id"),
+			sql.NewSimpleCol("result_spans.grp", "grp"),
 			sql.NewSimpleCol(fmt.Sprintf(
 				"arrayMap(x -> x.2, arraySlice(arrayReverseSort(groupUniqArray((result_spans.timestamp_ns, result_spans.span_id))), 1, %d))", spss),
-				"span_id"),
+				"span_ids"),
 			sql.NewSimpleCol("toInt64(count(DISTINCT result_spans.span_id))", "matched"),
-			sql.NewSimpleCol("any(result_spans.attrs)", "attrs")).
+			sql.NewSimpleCol("any(result_spans.attrs)", "attrs"),
+			sql.NewSimpleCol("max(result_spans.timestamp_ns)", "newest")).
 		From(sql.NewWithRef(withSpans)).
+		GroupBy(sql.NewRawObject("trace_id"), sql.NewRawObject("grp")), "result_spansets")
+	res := sql.NewSelect().
+		With(withSpans, withSpansets).
+		Select(
+			sql.NewSimpleCol("trace_id", "trace_id"),
+			sql.NewSimpleCol("arrayFlatten(arrayMap(x -> x.2, spansets))", "span_id"),
+			sql.NewSimpleCol("arraySort(x -> x.1, groupArray((grp, span_ids, matched, attrs)))", "spansets")).
+		From(sql.NewWithRef(withSpansets)).
 		GroupBy(sql.NewRawObject("trace_id")).
 		OrderBy(
-			sql.NewOrderBy(sql.NewRawObject("max(timestamp_ns)"), sql.ORDER_BY_DIRECTION_DESC),
+			sql.NewOrderBy(sql.NewRawObject("max(newest)"), sql.ORDER_BY_DIRECTION_DESC),
 			sql.NewOrderBy(sql.NewRawObject("trace_id"), sql.ORDER_BY_DIRECTION_DESC))
 	return res, nil
 }

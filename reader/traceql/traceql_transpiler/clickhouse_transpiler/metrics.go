@@ -58,7 +58,7 @@ func PlanCompare(query *traceql_ir.Query, selection traceql_ir.FieldExpr,
 
 // metricsSpans plans the metrics spans of the query's pipeline.
 func (p *planner) metricsSpans() (*metricsSpansPlanner, error) {
-	result, err := p.planPipeline(&p.query.Pipeline)
+	result, err := p.planQuery()
 	if err != nil {
 		return nil, err
 	}

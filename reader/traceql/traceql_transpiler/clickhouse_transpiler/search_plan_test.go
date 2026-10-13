@@ -30,6 +30,8 @@ var plainSearchQueries = []string{
 	`{!(.a = 1) || duration > 100}`,
 	`{duration * 2 > 1s}`,
 	`{.a = 1} | avg(.b + .c) > 1`,
+	`{.a = 1} | by(.b) | count() > 1 | coalesce()`,
+	`by(.b * 2) | by(duration)`,
 }
 
 // oneHopQueries relate spans to their parent or siblings.

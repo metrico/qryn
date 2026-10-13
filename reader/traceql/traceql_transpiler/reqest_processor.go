@@ -64,22 +64,32 @@ func (t TraceQLRequestProcessor) read(ctx *shared.PlannerContext, strReq string)
 			traceDurationMs   int64
 			rootServiceName   string
 			rootTraceName     string
-			matched           int64
-			attrNames         []string
-			attrTypes         []string
-			attrValues        []float64
+			spansetSpanIds    [][]string
+			matched           []int64
+			attrNames         [][]string
+			attrTypes         [][]string
+			attrValues        [][]float64
+			attrTexts         [][]string
 		)
 		err = rows.Scan(&traceId, &spanIds, &durationsNs, &timestampsNs,
-			&startTimeUnixNano, &traceDurationMs, &rootServiceName, &rootTraceName, &matched,
-			&attrNames, &attrTypes, &attrValues)
+			&startTimeUnixNano, &traceDurationMs, &rootServiceName, &rootTraceName,
+			&spansetSpanIds, &matched, &attrNames, &attrTypes, &attrValues, &attrTexts)
 		if err != nil {
 			logger.Error("ERROR[TRP#1]: ", err)
 			return nil, err
 		}
-		for i := range durationsNs {
-			if durationsNs[i] == timestampsNs[i] {
-				durationsNs[i] = -1
+		spans := make(map[string]model.SpanInfo, len(spanIds))
+		for i, spanId := range spanIds {
+			span := model.SpanInfo{
+				SpanID:            spanId,
+				DurationNanos:     fmt.Sprintf("%d", durationsNs[i]),
+				StartTimeUnixNano: fmt.Sprintf("%d", timestampsNs[i]),
+				Attributes:        make([]model.SpanAttr, 0),
 			}
+			if durationsNs[i] == timestampsNs[i] {
+				span.DurationNanos = "n/a"
+			}
+			spans[spanId] = span
 		}
 		trace := model.TraceInfo{
 			TraceID:           traceId,
@@ -87,30 +97,33 @@ func (t TraceQLRequestProcessor) read(ctx *shared.PlannerContext, strReq string)
 			RootTraceName:     rootTraceName,
 			StartTimeUnixNano: fmt.Sprintf("%d", startTimeUnixNano),
 			DurationMs:        traceDurationMs,
-			SpanSet: model.SpanSet{
-				Spans: make([]model.SpanInfo, len(spanIds)),
-			},
+			SpanSets:          make([]model.SpanSet, len(spansetSpanIds)),
 		}
-		for i, spanId := range spanIds {
-			trace.SpanSet.Spans[i].SpanID = spanId
-			trace.SpanSet.Spans[i].DurationNanos = fmt.Sprintf("%d", durationsNs[i])
-			if durationsNs[i] == -1 {
-				trace.SpanSet.Spans[i].DurationNanos = "n/a"
+		for i, ids := range spansetSpanIds {
+			set := model.SpanSet{
+				Spans:      make([]model.SpanInfo, 0, len(ids)),
+				Matched:    int(matched[i]),
+				Attributes: spanSetAttrs(attrNames[i], attrTypes[i], attrValues[i], attrTexts[i]),
 			}
-			trace.SpanSet.Spans[i].StartTimeUnixNano = fmt.Sprintf("%d", timestampsNs[i])
-			trace.SpanSet.Spans[i].Attributes = make([]model.SpanAttr, 0)
+			for _, id := range ids {
+				if span, ok := spans[id]; ok {
+					set.Spans = append(set.Spans, span)
+				}
+			}
+			sortSpans(set.Spans)
+			trace.SpanSets[i] = set
 		}
-		trace.SpanSet.Matched = int(matched)
-		trace.SpanSet.Attributes = spanSetAttrs(attrNames, attrTypes, attrValues)
-		trace.SpanSets = []model.SpanSet{trace.SpanSet}
-		sortSpans(trace.SpanSet.Spans)
+		if len(trace.SpanSets) > 0 {
+			trace.SpanSet = trace.SpanSets[0]
+		}
 		res = append(res, trace)
 	}
 	return res, rows.Err()
 }
 
-// spanSetAttrs builds spanset attributes from their names, types and values.
-func spanSetAttrs(names, types []string, values []float64) []model.SpanSetAttr {
+// spanSetAttrs builds spanset attributes from their names, types, values
+// and texts.
+func spanSetAttrs(names, types []string, values []float64, texts []string) []model.SpanSetAttr {
 	if len(names) == 0 {
 		return nil
 	}
@@ -123,6 +136,15 @@ func spanSetAttrs(names, types []string, values []float64) []model.SpanSetAttr {
 			res[i].Value.IntValue = &v
 		case clickhouse_transpiler.AttrDuration:
 			v := time.Duration(int64(values[i])).String()
+			res[i].Value.StringValue = &v
+		case clickhouse_transpiler.AttrBool:
+			v := values[i] != 0
+			res[i].Value.BoolValue = &v
+		case clickhouse_transpiler.AttrString:
+			v := texts[i]
+			res[i].Value.StringValue = &v
+		case clickhouse_transpiler.AttrNil:
+			v := "nil"
 			res[i].Value.StringValue = &v
 		default:
 			v := model.Double(values[i])

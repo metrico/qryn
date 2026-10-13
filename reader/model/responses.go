@@ -72,6 +72,7 @@ type AnyValue struct {
 	StringValue *string `json:"stringValue,omitempty"`
 	IntValue    *string `json:"intValue,omitempty"`
 	DoubleValue *Double `json:"doubleValue,omitempty"`
+	BoolValue   *bool   `json:"boolValue,omitempty"`
 }
 
 // Double is a float that encodes infinities and NaN as protobuf JSON strings.

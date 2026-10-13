@@ -1,6 +1,8 @@
 package traceql_ir
 
 import (
+	"errors"
+
 	traceql_parser "github.com/metrico/qryn/v5/reader/traceql/traceql_parser"
 )
 
@@ -30,7 +32,12 @@ func Lower(script *traceql_parser.TraceQLScript) (*Query, error) {
 	return q, nil
 }
 
+var errLeadingCoalesce = errors.New("syntax error: unexpected coalesce()")
+
 func lowerPipeline(head traceql_parser.PipelineElement, stages []traceql_parser.PipelineElement) (Pipeline, error) {
+	if head.Coalesce != nil {
+		return Pipeline{}, errLeadingCoalesce
+	}
 	element, err := lowerElement(head)
 	if err != nil {
 		return Pipeline{}, err
@@ -51,8 +58,17 @@ func lowerStages(head Element, stages []traceql_parser.PipelineElement) (Pipelin
 }
 
 func lowerElement(e traceql_parser.PipelineElement) (Element, error) {
-	if e.ScalarFilter != nil {
+	switch {
+	case e.ScalarFilter != nil:
 		return lowerScalarFilter(e.ScalarFilter)
+	case e.GroupBy != nil:
+		expr, err := lowerField(&e.GroupBy.Expr)
+		if err != nil {
+			return nil, err
+		}
+		return &GroupBy{Expr: expr}, nil
+	case e.Coalesce != nil:
+		return &Coalesce{}, nil
 	}
 	return lowerSpansetExpr(e.Spanset)
 }

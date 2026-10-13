@@ -7,8 +7,9 @@ import (
 )
 
 // TracesDataPlanner reads the listed spans and trace summaries of Main's
-// (trace_id, span_id[], matched, attrs) rows. The spanset attributes come out
-// as three arrays: names, types and values.
+// (trace_id, span_id[], spansets) rows, as SearchSpansetPlanner returns them.
+// Each spanset comes out as an element of six arrays: its span ids, matched,
+// and its attributes' names, types, values and texts.
 type TracesDataPlanner struct {
 	Main shared.SQLRequestPlanner
 }
@@ -68,10 +69,12 @@ func (t *TracesDataPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, er
 			sql.NewSimpleCol("min(_duration_ms)", "duration_ms"),
 			sql.NewSimpleCol("min(_root_service_name)", "root_service_name"),
 			sql.NewSimpleCol("min(_root_trace_name)", "root_trace_name"),
-			sql.NewSimpleCol("min(index_grouped.matched)", "matched"),
-			sql.NewSimpleCol("arrayMap(x -> x.1, any(index_grouped.attrs))", "attr_names"),
-			sql.NewSimpleCol("arrayMap(x -> x.2, any(index_grouped.attrs))", "attr_types"),
-			sql.NewSimpleCol("arrayMap(x -> x.3, any(index_grouped.attrs))", "attr_values"),
+			sql.NewSimpleCol("arrayMap(s -> arrayMap(x -> lower(hex(x)), s.2), any(index_grouped.spansets))", "spanset_span_ids"),
+			sql.NewSimpleCol("arrayMap(s -> s.3, any(index_grouped.spansets))", "matched"),
+			sql.NewSimpleCol("arrayMap(s -> arrayMap(x -> x.1, s.4), any(index_grouped.spansets))", "attr_names"),
+			sql.NewSimpleCol("arrayMap(s -> arrayMap(x -> x.2, s.4), any(index_grouped.spansets))", "attr_types"),
+			sql.NewSimpleCol("arrayMap(s -> arrayMap(x -> x.3, s.4), any(index_grouped.spansets))", "attr_values"),
+			sql.NewSimpleCol("arrayMap(s -> arrayMap(x -> x.4, s.4), any(index_grouped.spansets))", "attr_texts"),
 		).
 		From(sql.NewSimpleCol(table, "traces")).
 		Join(sql.NewJoin(

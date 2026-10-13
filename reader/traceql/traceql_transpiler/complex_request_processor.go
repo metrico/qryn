@@ -32,10 +32,6 @@ func (t *ComplexRequestProcessor) Process(ctx *shared.PlannerContext,
 		}
 	}
 
-	for i := range res {
-		sortSpans(res[i].SpanSet.Spans)
-	}
-
 	ch := make(chan []model.TraceInfo)
 	go func() {
 		defer close(ch)
