@@ -6,8 +6,8 @@ import (
 	sql "github.com/metrico/qryn/v5/reader/utils/sql_select"
 )
 
-// AllSpansPlanner is `{}` as an operand of a spanset operator: every span
-// starting in range.
+// AllSpansPlanner is `{}` as an operand of a spanset operator or a pipeline
+// stage: every candidate span starting in range.
 type AllSpansPlanner struct{}
 
 func (a *AllSpansPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, error) {
@@ -20,9 +20,7 @@ func (a *AllSpansPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, erro
 		From(sql.NewSimpleCol(tracesTable(ctx), "traces")).
 		AndWhere(tsFrom, tsTo).
 		GroupBy(sql.NewRawObject("traces.trace_id"), sql.NewRawObject("traces.span_id"))
-	if cond := randomFilter(ctx); cond != nil {
-		res.AndWhere(cond)
-	}
+	restrictOperand(ctx, res)
 	return res, nil
 }
 

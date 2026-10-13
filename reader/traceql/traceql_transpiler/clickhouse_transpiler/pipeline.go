@@ -37,7 +37,7 @@ func (p *planner) planPipeline(pipeline *traceql_ir.Pipeline) (shared.SQLRequest
 	if readsEverySpan(pipeline) {
 		stages = append(stages, &spansetStage{Expr: &AllSpansPlanner{}})
 	}
-	for i, element := range pipeline.Elements {
+	for _, element := range pipeline.Elements {
 		switch e := element.(type) {
 		case *traceql_ir.ScalarFilter:
 			stage, err := newScalarFilterStage(e)
@@ -46,17 +46,28 @@ func (p *planner) planPipeline(pipeline *traceql_ir.Pipeline) (shared.SQLRequest
 			}
 			stages = append(stages, stage)
 		case traceql_ir.SpansetExpr:
-			if i > 0 {
-				return nil, &shared.NotSupportedError{Msg: "a spanset filter after a pipeline stage is not supported"}
-			}
 			expr, err := p.planSpansetExpr(e)
 			if err != nil {
 				return nil, err
 			}
-			stages = append(stages, &spansetStage{Expr: expr})
+			stages = append(stages, &spansetStage{Expr: expr, Attrs: isPipeline(e)})
 		}
 	}
 	return &pipelinePlanner{Stages: stages, Prefix: p.getPrefix()}, nil
+}
+
+// isPipeline reports whether expr is a parenthesised pipeline.
+func isPipeline(expr traceql_ir.SpansetExpr) bool {
+	for {
+		switch e := expr.(type) {
+		case *traceql_ir.Group:
+			expr = e.Expr
+		case *traceql_ir.Pipeline:
+			return true
+		default:
+			return false
+		}
+	}
 }
 
 // pipelineStage plans one stage over prev, the previous stage's rows, and
@@ -95,24 +106,50 @@ func (p *pipelinePlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, erro
 }
 
 // spansetStage is the span rows of a spanset expression that pass the
-// traces-table conditions of its selectors.
+// traces-table conditions of its selectors. After another stage, its
+// selectors match only that stage's spans, whose attributes it keeps.
 type spansetStage struct {
 	Expr shared.SQLRequestPlanner
+	// Attrs is whether Expr's rows carry attributes of their own, appended
+	// to the kept ones.
+	Attrs bool
 }
 
-func (s *spansetStage) process(ctx *shared.PlannerContext, alias string, _, _ *sql.With) (sql.ISelect, error) {
+func (s *spansetStage) process(ctx *shared.PlannerContext, alias string, prev, _ *sql.With) (sql.ISelect, error) {
 	// The selectors set their traces-table conditions on a context of their own.
 	exprCtx := *ctx
 	exprCtx.TracesIntrinsicWhere = nil
+	if prev != nil {
+		exprCtx.TracesOperandSpans = prev
+	}
 	main, err := s.Expr.Process(&exprCtx)
 	if err != nil {
 		return nil, err
 	}
 	withExpr := sql.NewWith(main, alias+"_expr")
+	e := withExpr.GetAlias()
+	attrs := emptyAttrs
+	if prev != nil || s.Attrs {
+		kept, own := emptyAttrs, emptyAttrs
+		if prev != nil {
+			kept = prev.GetAlias() + ".attrs"
+		}
+		if s.Attrs {
+			own = e + ".attrs"
+		}
+		attrs = fmt.Sprintf("arrayConcat(%s, %s)", kept, own)
+	}
 	res := sql.NewSelect().
 		With(withExpr).
-		Select(append(spanRowCols(), sql.NewSimpleCol(emptyAttrs, "attrs"))...).
+		Select(
+			sql.NewSimpleCol(e+".trace_id", "trace_id"),
+			sql.NewSimpleCol(e+".span_id", "span_id"),
+			sql.NewSimpleCol(e+".timestamp_ns", "timestamp_ns"),
+			sql.NewSimpleCol(attrs, "attrs")).
 		From(sql.NewWithRef(withExpr))
+	if prev != nil {
+		res.Join(sql.NewJoin("inner", sql.NewWithRef(prev), sameSpan(prev.GetAlias()+".span_id", e+".span_id")))
+	}
 	if cond := intrinsicFilter(&exprCtx, withExpr); cond != nil {
 		res.AndWhere(cond)
 	}

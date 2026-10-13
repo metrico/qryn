@@ -111,9 +111,7 @@ func (f *FieldFilterPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, e
 		return nil, err
 	}
 	spans := pivot.spans(ctx)
-	if cond := randomFilter(ctx); cond != nil {
-		spans.AndWhere(cond)
-	}
+	restrictOperand(ctx, spans)
 	withSpans := sql.NewWith(spans, f.Prefix+"_pivot")
 	return sql.NewSelect().
 		With(withSpans).

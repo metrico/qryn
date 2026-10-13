@@ -89,6 +89,10 @@ type PlannerContext struct {
 	// TracesIntrinsicWhere holds extra WHERE conditions for the tempo_traces table
 	// (e.g., nestedSetParent < 0 → parent_id = '').
 	TracesIntrinsicWhere []sql.SQLCondition
+
+	// TracesOperandSpans, when set, holds the only span rows TraceQL selectors
+	// may match: the previous pipeline stage's.
+	TracesOperandSpans *sql.With
 }
 
 func (p *PlannerContext) Id() int {

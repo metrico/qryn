@@ -90,6 +90,31 @@ func randomFilter(ctx *shared.PlannerContext) sql.SQLCondition {
 	return sql.Or(portion, sql.NewIn(sql.NewRawObject("trace_id"), cached...))
 }
 
+// restrictOperand keeps the rows of sel, an operand read, in the current
+// complexity portion and among the spans of ctx.TracesOperandSpans.
+func restrictOperand(ctx *shared.PlannerContext, sel sql.ISelect) {
+	for _, cond := range []sql.SQLCondition{randomFilter(ctx), narrowFilter(ctx)} {
+		if cond != nil {
+			sel.AndWhere(cond)
+		}
+	}
+}
+
+// narrowFilter keeps the rows of the spans in ctx.TracesOperandSpans, or is
+// nil when every span is a candidate.
+func narrowFilter(ctx *shared.PlannerContext) sql.SQLCondition {
+	if ctx.TracesOperandSpans == nil {
+		return nil
+	}
+	traces := sql.NewSelect().Select(sql.NewRawObject("trace_id")).From(sql.NewWithRef(ctx.TracesOperandSpans))
+	spans := sql.NewSelect().
+		Select(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id")).
+		From(sql.NewWithRef(ctx.TracesOperandSpans))
+	return sql.And(
+		inSubquery(ctx, sql.NewRawObject("trace_id"), traces),
+		inSubquery(ctx, sql.NewRawObject("(trace_id, span_id)"), spans))
+}
+
 // rawCond is a condition written as SQL.
 type rawCond string
 

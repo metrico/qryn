@@ -119,16 +119,3 @@ func TestComplexPlanner(t *testing.T) {
 	}
 	fmt.Println(res)
 }
-
-func TestPlanRejectsPipelineStages(t *testing.T) {
-	sel := &traceql_ir.Selector{Filter: &traceql_ir.BinaryOp{Op: "=",
-		LHS: &traceql_ir.Attribute{Name: ".a"}, RHS: &traceql_ir.Static{Kind: traceql_ir.ValueNumber, Text: "1"}}}
-	q := &traceql_ir.Query{Pipeline: traceql_ir.Pipeline{Elements: []traceql_ir.Element{sel, sel}}}
-	if _, err := Plan(q); err == nil {
-		t.Error("Plan accepted a two-stage pipeline")
-	}
-	q.Pipeline.Elements = q.Pipeline.Elements[:1]
-	if _, err := Plan(q); err != nil {
-		t.Errorf("Plan rejected a lowered selector: %v", err)
-	}
-}

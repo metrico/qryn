@@ -47,9 +47,7 @@ func (a *AttrConditionPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect,
 		res = res.AndHaving(having)
 	}
 
-	if cond := randomFilter(ctx); cond != nil {
-		res.AndWhere(cond)
-	}
+	restrictOperand(ctx, res)
 
 	a.isAliased = false
 

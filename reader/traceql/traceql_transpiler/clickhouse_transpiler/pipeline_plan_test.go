@@ -1,7 +1,6 @@
 package clickhouse_transpiler
 
 import (
-	"errors"
 	"regexp"
 	"slices"
 	"strings"
@@ -149,17 +148,6 @@ func TestScalarFilterErrors(t *testing.T) {
 				t.Errorf("PlanTagsV2 error = %v, want %s", err, c.err)
 			}
 		})
-	}
-}
-
-func TestSpansetFilterAfterAStageIsNotSupported(t *testing.T) {
-	q, err := traceql_ir.Parse(`{.a = 1} | {.b = 2}`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var notSupported *shared.NotSupportedError
-	if _, err := Plan(q); !errors.As(err, &notSupported) {
-		t.Errorf("Plan error = %v, want not supported", err)
 	}
 }
 
