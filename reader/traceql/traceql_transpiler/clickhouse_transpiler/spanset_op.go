@@ -72,10 +72,19 @@ func processSides(ctx *shared.PlannerContext, lhs, rhs shared.SQLRequestPlanner,
 
 // spanRowCols are the span-row columns every spanset planner returns.
 func spanRowCols() []sql.SQLObject {
+	return spanRowColsOf("")
+}
+
+// spanRowColsOf are the span-row columns read from the given table alias.
+func spanRowColsOf(alias string) []sql.SQLObject {
+	prefix := ""
+	if alias != "" {
+		prefix = alias + "."
+	}
 	return []sql.SQLObject{
-		sql.NewSimpleCol("trace_id", "trace_id"),
-		sql.NewSimpleCol("span_id", "span_id"),
-		sql.NewSimpleCol("timestamp_ns", "timestamp_ns"),
+		sql.NewSimpleCol(prefix+"trace_id", "trace_id"),
+		sql.NewSimpleCol(prefix+"span_id", "span_id"),
+		sql.NewSimpleCol(prefix+"timestamp_ns", "timestamp_ns"),
 	}
 }
 

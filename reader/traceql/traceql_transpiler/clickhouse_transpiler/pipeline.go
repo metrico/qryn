@@ -50,7 +50,7 @@ func (p *planner) planPipeline(pipeline *traceql_ir.Pipeline) (shared.SQLRequest
 			if err != nil {
 				return nil, err
 			}
-			stages = append(stages, &spansetStage{Expr: expr, Attrs: isPipeline(e)})
+			stages = append(stages, &spansetStage{Expr: expr, OwnAttrs: isPipeline(e)})
 		}
 	}
 	return &pipelinePlanner{Stages: stages, Prefix: p.getPrefix()}, nil
@@ -110,9 +110,9 @@ func (p *pipelinePlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, erro
 // selectors match only that stage's spans, whose attributes it keeps.
 type spansetStage struct {
 	Expr shared.SQLRequestPlanner
-	// Attrs is whether Expr's rows carry attributes of their own, appended
-	// to the kept ones.
-	Attrs bool
+	// OwnAttrs is set when Expr's rows carry an attrs column, appended to
+	// the kept attributes.
+	OwnAttrs bool
 }
 
 func (s *spansetStage) process(ctx *shared.PlannerContext, alias string, prev, _ *sql.With) (sql.ISelect, error) {
@@ -129,23 +129,19 @@ func (s *spansetStage) process(ctx *shared.PlannerContext, alias string, prev, _
 	withExpr := sql.NewWith(main, alias+"_expr")
 	e := withExpr.GetAlias()
 	attrs := emptyAttrs
-	if prev != nil || s.Attrs {
+	if prev != nil || s.OwnAttrs {
 		kept, own := emptyAttrs, emptyAttrs
 		if prev != nil {
 			kept = prev.GetAlias() + ".attrs"
 		}
-		if s.Attrs {
+		if s.OwnAttrs {
 			own = e + ".attrs"
 		}
 		attrs = fmt.Sprintf("arrayConcat(%s, %s)", kept, own)
 	}
 	res := sql.NewSelect().
 		With(withExpr).
-		Select(
-			sql.NewSimpleCol(e+".trace_id", "trace_id"),
-			sql.NewSimpleCol(e+".span_id", "span_id"),
-			sql.NewSimpleCol(e+".timestamp_ns", "timestamp_ns"),
-			sql.NewSimpleCol(attrs, "attrs")).
+		Select(append(spanRowColsOf(e), sql.NewSimpleCol(attrs, "attrs"))...).
 		From(sql.NewWithRef(withExpr))
 	if prev != nil {
 		res.Join(sql.NewJoin("inner", sql.NewWithRef(prev), sameSpan(prev.GetAlias()+".span_id", e+".span_id")))

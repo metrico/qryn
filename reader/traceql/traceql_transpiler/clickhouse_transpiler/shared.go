@@ -101,7 +101,7 @@ func restrictOperand(ctx *shared.PlannerContext, sel sql.ISelect) {
 }
 
 // narrowFilter keeps the rows of the spans in ctx.TracesOperandSpans, or is
-// nil when every span is a candidate.
+// nil when every span is a candidate: a semi-join on the trace, then on the span.
 func narrowFilter(ctx *shared.PlannerContext) sql.SQLCondition {
 	if ctx.TracesOperandSpans == nil {
 		return nil
