@@ -21,6 +21,8 @@ func TestSampleFraction(t *testing.T) {
 		{` with(sample=0)`, 0, false},
 		{` with(sample=1.5)`, 0, false},
 		{` with(sample=x)`, 0, false},
+		{` with(sample=NaN)`, 0, false},
+		{` with(sample=Inf)`, 0, false},
 		{` with(sample=true, sample=0.5)`, 0.5, true},
 		{` with(sample=0.5, sample=0.1)`, 0.5, true},
 		{` with(most_recent=true, foo=0.5)`, 0, false},

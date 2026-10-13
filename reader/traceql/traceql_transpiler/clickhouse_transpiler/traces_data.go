@@ -14,7 +14,7 @@ const emptySelected = "CAST([], 'Array(Array(String))')"
 // (trace_id, span_id[], spansets) rows, as SearchSpansetPlanner returns them.
 // Each spanset comes out as an element of six arrays: its span ids, matched,
 // and its attributes' names, types, values and texts. Each listed span also
-// comes with the keys and values of its Selected attributes it has, sorted by key.
+// comes with the keys and values of the Selected attributes it has, sorted by key.
 type TracesDataPlanner struct {
 	Main     shared.SQLRequestPlanner
 	Selected []string
@@ -64,6 +64,12 @@ func (t *TracesDataPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, er
 			AndWhere(inSubquery(ctx, sql.NewRawObject("traces.trace_id"), withTraceIdsRef)).
 			GroupBy(sql.NewRawObject("traces.trace_id")),
 		"traces_info")
+	keysCol, valsCol := emptySelected, emptySelected
+	var withValues, withSelected *sql.With
+	if len(t.Selected) > 0 {
+		withValues, withSelected = t.selectedAttrs(ctx, withTraceIdsRef, withTraceIdsSpanIdsRef)
+		keysCol, valsCol = "groupArray(selected_attrs.keys)", "groupArray(selected_attrs.vals)"
+	}
 	res := sql.NewSelect().
 		With(withMain, withTraceIds, withTraceIdsSpanIds, withTracesInfo).
 		Select(
@@ -81,8 +87,8 @@ func (t *TracesDataPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, er
 			sql.NewSimpleCol("arrayMap(s -> arrayMap(x -> x.2, s.4), any(index_grouped.spansets))", "attr_types"),
 			sql.NewSimpleCol("arrayMap(s -> arrayMap(x -> x.3, s.4), any(index_grouped.spansets))", "attr_values"),
 			sql.NewSimpleCol("arrayMap(s -> arrayMap(x -> x.4, s.4), any(index_grouped.spansets))", "attr_texts"),
-			sql.NewSimpleCol(emptySelected, "span_attr_keys"),
-			sql.NewSimpleCol(emptySelected, "span_attr_vals"),
+			sql.NewSimpleCol(keysCol, "span_attr_keys"),
+			sql.NewSimpleCol(valsCol, "span_attr_vals"),
 		).
 		From(sql.NewSimpleCol(table, "traces")).
 		Join(sql.NewJoin(
@@ -99,16 +105,20 @@ func (t *TracesDataPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, er
 			inSubquery(ctx, sql.NewRawObject("(traces.trace_id, traces.span_id)"), withTraceIdsSpanIdsRef)).
 		GroupBy(sql.NewRawObject("traces.trace_id")).
 		OrderBy(sql.NewOrderBy(sql.NewRawObject("start_time_unix_nano"), sql.ORDER_BY_DIRECTION_DESC))
-	if len(t.Selected) > 0 {
-		t.joinSelected(ctx, res, join, withTraceIdsRef, withTraceIdsSpanIdsRef)
+	if withSelected != nil {
+		res.AddWith(withValues, withSelected)
+		res.AddJoin(sql.NewJoin(join, sql.NewWithRef(withSelected), sql.And(
+			sql.Eq(sql.NewRawObject("traces.trace_id"), sql.NewRawObject("selected_attrs.trace_id")),
+			sql.Eq(sql.NewRawObject("traces.span_id"), sql.NewRawObject("selected_attrs.span_id")))))
 	}
 	return res, nil
 }
 
-// joinSelected reads the selected attributes of the listed spans in
-// trace_span_ids and replaces res's empty selected-value columns with them.
-func (t *TracesDataPlanner) joinSelected(ctx *shared.PlannerContext, res sql.ISelect, join string,
-	traceIds, spanIds sql.SQLObject) {
+// selectedAttrs reads the selected attributes of the listed spans in
+// spanIds, of the traces in traceIds: one selected_attrs row per span with
+// its keys and values.
+func (t *TracesDataPlanner) selectedAttrs(ctx *shared.PlannerContext, traceIds, spanIds sql.SQLObject) (
+	withValues, withSelected *sql.With) {
 	keys := make([]sql.SQLObject, len(t.Selected))
 	for i, key := range t.Selected {
 		keys[i] = sql.NewStringVal(key)
@@ -130,8 +140,8 @@ func (t *TracesDataPlanner) joinSelected(ctx *shared.PlannerContext, res sql.ISe
 			inSubquery(ctx, sql.NewRawObject("(traces_idx.trace_id, traces_idx.span_id)"), spanIds),
 			sql.NewIn(sql.NewRawObject("key"), keys...)).
 		GroupBy(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id"), sql.NewRawObject("key"))
-	withValues := sql.NewWith(values, "selected_values")
-	withSelected := sql.NewWith(
+	withValues = sql.NewWith(values, "selected_values")
+	withSelected = sql.NewWith(
 		sql.NewSelect().
 			Select(
 				sql.NewRawObject("trace_id"),
@@ -142,12 +152,5 @@ func (t *TracesDataPlanner) joinSelected(ctx *shared.PlannerContext, res sql.ISe
 			From(sql.NewWithRef(withValues)).
 			GroupBy(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id")),
 		"selected_attrs")
-	res.AddWith(withValues, withSelected)
-	cols := res.GetSelect()
-	cols[len(cols)-2] = sql.NewSimpleCol("groupArray(selected_attrs.keys)", "span_attr_keys")
-	cols[len(cols)-1] = sql.NewSimpleCol("groupArray(selected_attrs.vals)", "span_attr_vals")
-	res.Select(cols...)
-	res.AddJoin(sql.NewJoin(join, sql.NewWithRef(withSelected), sql.And(
-		sql.Eq(sql.NewRawObject("traces.trace_id"), sql.NewRawObject("selected_attrs.trace_id")),
-		sql.Eq(sql.NewRawObject("traces.span_id"), sql.NewRawObject("selected_attrs.span_id")))))
+	return withValues, withSelected
 }

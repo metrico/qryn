@@ -1,9 +1,6 @@
 package traceql_ir
 
-import (
-	"strconv"
-	"strings"
-)
+import "strconv"
 
 // hint returns the value of the first hint named key that parse accepts,
 // from the hints after the metrics function, then those after the second stage.
@@ -31,7 +28,7 @@ func (q *Query) SampleFraction() (float64, bool) {
 		f, err := strconv.ParseFloat(v, 64)
 		return f, err == nil
 	})
-	if !ok || f <= 0 || f >= 1 {
+	if !ok || !(f > 0 && f < 1) {
 		return 0, false
 	}
 	return f, true
@@ -43,9 +40,6 @@ func (q *Query) ExemplarLimit() (int, bool) {
 	return hint(q, "exemplars", func(v string) (int, bool) {
 		if v == "false" {
 			return 0, true
-		}
-		if strings.Contains(v, ".") {
-			return 0, false
 		}
 		n, err := strconv.Atoi(v)
 		return max(n, 0), err == nil
