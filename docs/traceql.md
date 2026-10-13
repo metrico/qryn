@@ -31,9 +31,9 @@ ones.
 
 A span is in range when it **starts** in `(from, to]`: a span starting exactly
 at `from` is excluded, one starting exactly at `to` is included. The rule is
-the same for search, metrics and autocomplete with a query, so adjacent
-windows never count a span twice. Autocomplete without a query reads whole
-days.
+the same for search, metrics and autocomplete with a filtering query, so
+adjacent windows never count a span twice. Autocomplete without a query, or
+with `{}`, reads whole days.
 
 Only spans in range can be operands or results. The structural context of a
 span — its parent, ancestors, siblings and roots — is read from the whole
@@ -72,7 +72,7 @@ TraceQL operators and fail with a parse error naming the spelling to use
 
 - A span takes part in a structural relation only when its parent chain
   reaches a root span (a span without a parent).
-- Spans that can't reach a root - an orphan subtree whose parent was never
+- Spans that can't reach a root — an orphan subtree whose parent was never
   ingested, or every span of a trace with no root — never match a positive or
   `&` operator, and always match a `!` operator.
 - A span whose ancestor hasn't been ingested yet starts matching once that
@@ -357,9 +357,10 @@ groups contribute; the spans of every passing group feed the metric.
 Tag and value autocomplete (`/api/v2/search/tags`,
 `/api/v2/search/tag/{tag}/values`) suggest only from the spans a search for
 `q` returns, so suggestions narrow as a structural expression is typed.
-Queries with `&&`, `||` and structural operators are supported. Without a query, or with `{}`, the tags and
-values are listed unfiltered. The `{tag}` of value autocomplete may be scoped
-(`span.x`, `resource.x`, `.x`); it is looked up by its attribute name.
+Queries with `&&`, `||` and structural operators are supported. Without a
+query, or with `{}`, the tags and values are listed unfiltered. The `{tag}`
+of value autocomplete may be scoped (`span.x`, `resource.x`, `.x`); it is
+looked up by its attribute name.
 
 ## Differences from Tempo
 
@@ -393,10 +394,10 @@ gigapipe returns the spans Tempo returns, except where listed here.
   unscoped `.a = nil` also matches spans that have `.a`.
 - Int, float and duration values aren't distinguished in storage, so
   `.a = "200"` and `.a = 200` both match a stored `200`.
-- `int ^ int` doesn't swap base and exponent, as Tempo does.
+- `int ^ int` is evaluated as written; Tempo swaps base and exponent.
 - Integer division and modulo by zero are nil, not an error.
 - `&&` and `||` treat a nil operand as false and evaluate the other side;
-  Tempo makes the whole operation false.
+  Tempo usually makes the whole operation false.
 - Typing is stricter: a filter that can't be boolean or an aggregate argument
   that can't be numeric, built only from attributes (`{ -.a }`,
   `{ .a * .b }`, `{ !.a = 1 }`, `{ .a + .b = "x" }`, `avg(!.a)`), is
@@ -408,7 +409,7 @@ gigapipe returns the spans Tempo returns, except where listed here.
 - In aggregate arguments, a span where the expression is nil (`.a + nil`) is
   skipped; Tempo counts it.
 - `sum()` over a mix of ints and floats adds every value as a float; Tempo
-  drops values whose type differs.
+  drops values whose type differs from the first value's.
 - Literal arithmetic isn't folded: `count() > 1 + 2` is rejected.
 - `count() > count()` is rejected with Tempo's right-hand-side error text.
 - `(count() > 2) && {B}` is a parse error; Tempo accepts it.

@@ -53,10 +53,10 @@ Saved dashboards and alerts that use them will see different numbers.
   evaluated, which dropped true matches in large traces. Operands are now
   uncapped. Search lists **3 spans per spanset by default** (was up to 100);
   set `spss` for more. `matched` reports the true number of matched spans.
-- **Time range.** TraceQL search, metrics and autocomplete with a query now
-  count spans that start in **`(from, to]`**: a span starting exactly at
-  `from` is excluded, one starting exactly at `to` is included. Search and metrics
-  previously used `[from, to)`.
+- **Time range.** TraceQL search, metrics and autocomplete with a filtering
+  query now count spans that start in **`(from, to]`**: a span starting
+  exactly at `from` is excluded, one starting exactly at `to` is included.
+  Search and metrics previously used `[from, to)`.
 - **`metrics by (...)` labels.** `by (span.x, name)` could attach values to
   the wrong label names; labels now match their values.
 - **Filters mixing intrinsics and attributes.** Filters combining `status`,
@@ -146,17 +146,17 @@ gigapipe returns what Tempo returns except for these, also listed in
   matches only spans without `a`.
 - Int, float and duration aren't distinguished in storage: `.a = "200"` and
   `.a = 200` both match a stored `200`.
-- `int ^ int` doesn't swap base and exponent, as Tempo does.
+- `int ^ int` is evaluated as written; Tempo swaps base and exponent.
 - Integer division and modulo by zero are nil, not an error.
 - `&&` and `||` treat a nil operand as false and evaluate the other side;
-  Tempo makes the whole operation false.
+  Tempo usually makes the whole operation false.
 - Typing is stricter: non-boolean filters and non-numeric aggregate
   arguments built only from attributes are rejected before the query runs.
 - Literal arithmetic in scalar filters isn't folded (`count() > 1 + 2` is
   rejected); `count() > count()` reports Tempo's right-hand-side error text.
 - `(count() > 2) && {B}` is a parse error.
 - `sum()` over a mix of ints and floats adds every value as a float; Tempo
-  drops values whose type differs.
+  drops values whose type differs from the first value's.
 - A bare word as an aggregate argument (`avg(spanN)`) reads that attribute;
   Tempo rejects it.
 - `select()` values are strings, and attributes named `name`, `status` or
