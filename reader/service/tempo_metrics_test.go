@@ -1,6 +1,7 @@
 package service
 
 import (
+	"slices"
 	"testing"
 	"time"
 
@@ -32,4 +33,35 @@ func TestMetricsCompareRequest(t *testing.T) {
 	require.Equal(t, int64(150e9), got.BaselineToNS)
 	require.Equal(t, int64(100e9), got.FromNS)
 	require.Equal(t, "attrs_dist", got.AttrsTable)
+}
+
+// exemplars=N keeps N exemplars per series, evenly spread over those in
+// time order; false and N < 1 keep none; no hint keeps all.
+func TestCapExemplars(t *testing.T) {
+	ten := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+	for _, c := range []struct {
+		hints string
+		in    []int
+		want  []int
+	}{
+		{``, ten, ten},
+		{` with(exemplars=true)`, ten, ten},
+		{` with(exemplars=false)`, ten, nil},
+		{` with(exemplars=0)`, ten, nil},
+		{` with(exemplars=10)`, ten, ten},
+		{` with(exemplars=20)`, ten, ten},
+		{` with(exemplars=1)`, ten, []int{5}},
+		{` with(exemplars=2)`, ten, []int{2, 7}},
+		{` with(exemplars=3)`, ten, []int{1, 5, 8}},
+		{` with(exemplars=4)`, []int{0, 1, 2, 3, 4, 5}, []int{0, 2, 3, 5}},
+		{` with(exemplars=2)`, nil, nil},
+	} {
+		q, err := traceql_ir.Parse(`{} | rate()` + c.hints)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := capExemplars(q, c.in); !slices.Equal(got, c.want) {
+			t.Errorf("%s of %v = %v, want %v", c.hints, c.in, got, c.want)
+		}
+	}
 }

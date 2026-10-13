@@ -48,6 +48,7 @@ type TraceInfo struct {
 
 type SpanInfo struct {
 	SpanID            string     `json:"spanID"`
+	Name              string     `json:"name,omitempty"`
 	StartTimeUnixNano string     `json:"startTimeUnixNano"`
 	DurationNanos     string     `json:"durationNanos"`
 	Attributes        []SpanAttr `json:"attributes"`

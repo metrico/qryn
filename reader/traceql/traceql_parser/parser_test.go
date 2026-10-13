@@ -88,6 +88,14 @@ func groupBy(e *FieldExpr) PipelineElement { return PipelineElement{GroupBy: &Gr
 
 func coalesce() PipelineElement { return PipelineElement{Coalesce: &Coalesce{Fn: "coalesce"}} }
 
+func selectOf(fields ...*FieldExpr) PipelineElement {
+	res := &Select{}
+	for _, f := range fields {
+		res.Fields = append(res.Fields, *f)
+	}
+	return PipelineElement{Select: res}
+}
+
 func f64(f float64) *float64 { return &f }
 
 func i64(i int64) *int64 { return &i }
@@ -410,6 +418,39 @@ func TestParseGroupingStages(t *testing.T) {
 	}
 }
 
+// select() is a pipeline element at any position; its arguments parse as
+// field expressions, which lowering restricts to attributes and intrinsics.
+func TestParseSelectStages(t *testing.T) {
+	a := func() Operand { return sel(term(".a", "=", str(`"b"`))) }
+	for _, tc := range []struct {
+		query string
+		want  *TraceQLScript
+	}{
+		{`{.a = "b"} | select(.x)`, script(expr(a()), selectOf(field(name(".x"))))},
+		{`{} | select(span.x, resource.y, duration, span:name) | count() > 2`, script(expr(sel(nil)),
+			selectOf(field(name("span.x")), field(name("resource.y")), field(name("duration")), field(name("span:name"))),
+			filter(agg("count", ""), ">", lit("2", "")))},
+		{`select(.x)`, &TraceQLScript{Pipeline: Pipeline{Head: selectOf(field(name(".x")))}}},
+		{`select(.x) | {.a = "b"}`, &TraceQLScript{Pipeline: Pipeline{Head: selectOf(field(name(".x"))), Stages: []PipelineElement{spanset(expr(a()))}}}},
+		{`({.a = "b"} | select(.x)) >> {}`, script(expr(paren(expr(a()), selectOf(field(name(".x")))), then(">>", sel(nil))))},
+		{`{} | select(.x + 1)`, script(expr(sel(nil)), selectOf(field(name(".x"), "+", num("1"))))},
+	} {
+		t.Run(tc.query, func(t *testing.T) {
+			got, err := Parse(tc.query)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
+			require.Equal(t, tc.query, got.String())
+		})
+	}
+
+	for _, q := range []string{`{} | select .a`, `{} | select(.a) && {}`, `select()`} {
+		t.Run("rejects "+q, func(t *testing.T) {
+			_, err := Parse(q)
+			require.Error(t, err)
+		})
+	}
+}
+
 func TestParseMetricsFunctions(t *testing.T) {
 	a := func() *SpansetExpr { return expr(sel(term(".a", "=", str(`"b"`)))) }
 	empty := func() *SpansetExpr { return expr(sel(nil)) }
@@ -445,7 +486,7 @@ func TestParseMetricsFunctions(t *testing.T) {
 			&MetricsPipelineStage{Fn: "rate", By: &ByClause{Labels: []string{"name"}}}, groupBy(field(name(".a"))))},
 		{`{} | by(.a) | coalesce() | count_over_time()`, metrics(empty(),
 			&MetricsPipelineStage{Fn: "count_over_time"}, groupBy(field(name(".a"))), coalesce())},
-		{`{} | select(.a)`, metrics(empty(), &MetricsPipelineStage{Fn: "select", Attr: ".a"})},
+		{`{} | select(.a) | rate()`, metrics(empty(), &MetricsPipelineStage{Fn: "rate"}, selectOf(field(name(".a"))))},
 		{`{} && {} | rate()`, metrics(expr(sel(nil), then("&&", sel(nil))), &MetricsPipelineStage{Fn: "rate"})},
 	} {
 		t.Run(c.query, func(t *testing.T) {

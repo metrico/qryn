@@ -47,3 +47,23 @@ func TestSpanSetWithoutAttrsOmitsThem(t *testing.T) {
 		t.Errorf("got %s", got)
 	}
 }
+
+// Selected values serialise as string attributes of the span; the span name
+// is its name.
+func TestSelectedValuesJSON(t *testing.T) {
+	span := model.SpanInfo{SpanID: "01", StartTimeUnixNano: "1", DurationNanos: "2", Attributes: make([]model.SpanAttr, 0)}
+	addSelected(&span, []string{"a", "name", "status"}, []string{"200", "GET /", "error"})
+	got, err := json.Marshal(span)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `{"spanID":"01","name":"GET /","startTimeUnixNano":"1","durationNanos":"2","attributes":[` +
+		`{"key":"a","value":{"stringValue":"200"}},{"key":"status","value":{"stringValue":"error"}}]}`
+	if string(got) != want {
+		t.Errorf("got  %s\nwant %s", got, want)
+	}
+	plain, _ := json.Marshal(model.SpanInfo{SpanID: "01", Attributes: make([]model.SpanAttr, 0)})
+	if string(plain) != `{"spanID":"01","startTimeUnixNano":"","durationNanos":"","attributes":[]}` {
+		t.Errorf("got %s", plain)
+	}
+}

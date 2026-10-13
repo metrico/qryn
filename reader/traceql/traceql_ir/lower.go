@@ -32,7 +32,10 @@ func Lower(script *traceql_parser.TraceQLScript) (*Query, error) {
 	return q, nil
 }
 
-var errLeadingCoalesce = errors.New("syntax error: unexpected coalesce()")
+var (
+	errLeadingCoalesce = errors.New("syntax error: unexpected coalesce()")
+	errSelectField     = errors.New("syntax error: select() takes attributes and intrinsics only")
+)
 
 func lowerPipeline(head traceql_parser.PipelineElement, stages []traceql_parser.PipelineElement) (Pipeline, error) {
 	if head.Coalesce != nil {
@@ -69,6 +72,8 @@ func lowerElement(e traceql_parser.PipelineElement) (Element, error) {
 		return &GroupBy{Expr: expr}, nil
 	case e.Coalesce != nil:
 		return &Coalesce{}, nil
+	case e.Select != nil:
+		return lowerSelect(e.Select)
 	}
 	return lowerSpansetExpr(e.Spanset)
 }
@@ -245,4 +250,17 @@ func lowerHints(w *traceql_parser.WithClause) []Hint {
 		res[i] = Hint{Key: h.Key, Value: h.Value}
 	}
 	return res
+}
+
+// lowerSelect lowers select(); each argument is a lone attribute or intrinsic.
+func lowerSelect(s *traceql_parser.Select) (*Select, error) {
+	res := &Select{}
+	for _, f := range s.Fields {
+		atom := f.Head.Atom
+		if len(f.Ops) > 0 || len(f.Head.Unary) > 0 || atom.Name == "" || !isFieldName(atom.Name) {
+			return nil, errSelectField
+		}
+		res.Fields = append(res.Fields, &Attribute{Name: atom.Name})
+	}
+	return res, nil
 }

@@ -30,11 +30,11 @@ func (p *planner) planResult(prepick bool) (shared.SQLRequestPlanner, error) {
 	return p.planQuery()
 }
 
-// readsEverySpan reports whether a pipeline starts with a scalar filter or a
-// by(), which read every span in range.
+// readsEverySpan reports whether a pipeline starts with a scalar filter, a
+// by() or a select(), which read every span in range.
 func readsEverySpan(pipeline *traceql_ir.Pipeline) bool {
 	switch pipeline.Elements[0].(type) {
-	case *traceql_ir.ScalarFilter, *traceql_ir.GroupBy:
+	case *traceql_ir.ScalarFilter, *traceql_ir.GroupBy, *traceql_ir.Select:
 		return true
 	}
 	return false
@@ -71,6 +71,8 @@ func (p *planner) planPipeline(pipeline *traceql_ir.Pipeline) (shared.SQLRequest
 			stages = append(stages, stage)
 		case *traceql_ir.Coalesce:
 			stages = append(stages, coalesceStage{})
+		case *traceql_ir.Select:
+			// The selected values are read for the listed spans of the result.
 		case traceql_ir.SpansetExpr:
 			expr, err := p.planSpansetExpr(e)
 			if err != nil {

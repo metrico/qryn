@@ -94,6 +94,10 @@ type PlannerContext struct {
 	// rows: the only ones TraceQL selectors may match, and the input of a
 	// nested pipeline.
 	TracesOperandSpans *sql.With
+
+	// TracesSample, when set, keeps the sampled rows of every TraceQL
+	// operand read.
+	TracesSample sql.SQLCondition
 }
 
 func (p *PlannerContext) Id() int {

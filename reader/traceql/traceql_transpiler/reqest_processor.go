@@ -70,10 +70,13 @@ func (t TraceQLRequestProcessor) read(ctx *shared.PlannerContext, strReq string)
 			attrTypes         [][]string
 			attrValues        [][]float64
 			attrTexts         [][]string
+			spanAttrKeys      [][]string
+			spanAttrVals      [][]string
 		)
 		err = rows.Scan(&traceId, &spanIds, &durationsNs, &timestampsNs,
 			&startTimeUnixNano, &traceDurationMs, &rootServiceName, &rootTraceName,
-			&spansetSpanIds, &matched, &attrNames, &attrTypes, &attrValues, &attrTexts)
+			&spansetSpanIds, &matched, &attrNames, &attrTypes, &attrValues, &attrTexts,
+			&spanAttrKeys, &spanAttrVals)
 		if err != nil {
 			logger.Error("ERROR[TRP#1]: ", err)
 			return nil, err
@@ -88,6 +91,9 @@ func (t TraceQLRequestProcessor) read(ctx *shared.PlannerContext, strReq string)
 			}
 			if durationsNs[i] == timestampsNs[i] {
 				span.DurationNanos = "n/a"
+			}
+			if i < len(spanAttrKeys) {
+				addSelected(&span, spanAttrKeys[i], spanAttrVals[i])
 			}
 			spans[spanId] = span
 		}
@@ -119,6 +125,20 @@ func (t TraceQLRequestProcessor) read(ctx *shared.PlannerContext, strReq string)
 		res = append(res, trace)
 	}
 	return res, rows.Err()
+}
+
+// addSelected adds a span's selected values: the span name as its name, any
+// other value as an attribute.
+func addSelected(span *model.SpanInfo, keys, vals []string) {
+	for i, key := range keys {
+		if key == "name" {
+			span.Name = vals[i]
+			continue
+		}
+		attr := model.SpanAttr{Key: key}
+		attr.Value.StringValue = vals[i]
+		span.Attributes = append(span.Attributes, attr)
+	}
 }
 
 // spanSetAttrs builds spanset attributes from their names, types, values

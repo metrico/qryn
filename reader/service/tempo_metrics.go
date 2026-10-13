@@ -173,7 +173,7 @@ func (t *TempoService) MetricsQueryRange(ctx context.Context, req *model.Metrics
 		exByLabels = byLabels
 		return query, err
 	})
-	if err == nil {
+	if err == nil && wantsExemplars(tq) {
 		_ = queryMetrics(planCtx, exPlanner, func(exRows *stdsql.Rows) error {
 			var ts int64
 			var traceID string
@@ -221,6 +221,7 @@ func (t *TempoService) MetricsQueryRange(ctx context.Context, req *model.Metrics
 			if len(exByLabels) == 0 {
 				groupExemplars = exemplarRows
 			}
+			groupExemplars = capExemplars(tq, groupExemplars)
 
 			tsToValue := make(map[int64]float64)
 			for _, sample := range result[i].Samples {
@@ -508,7 +509,7 @@ func executeHistogramRange(
 	exPlanner, err := clickhouse_transpiler.PlanMetrics(tq, func(spans *sql.With) (sql.ISelect, error) {
 		return tempo.BuildHistogramExemplarsQuery(over(mreq, spans))
 	})
-	if err == nil {
+	if err == nil && wantsExemplars(tq) {
 		_ = queryMetrics(planCtx, exPlanner, func(exRows *stdsql.Rows) error {
 			var ts int64
 			var bucketNs uint64
@@ -542,6 +543,7 @@ func executeHistogramRange(
 				TimestampMs: strconv.FormatInt(ex.spanTs/1e6, 10),
 			})
 		}
+		exList = capExemplars(tq, exList)
 		if len(exList) > 0 {
 			result[i].Exemplars = exList
 		}
@@ -562,6 +564,30 @@ func executeHistogramRange(
 		Series:  result,
 		Metrics: []byte(`{"completedJobs":1}`),
 	}, nil
+}
+
+// wantsExemplars reports whether tq's exemplars hint allows any exemplar.
+func wantsExemplars(tq *traceql_ir.Query) bool {
+	limit, ok := tq.ExemplarLimit()
+	return !ok || limit > 0
+}
+
+// capExemplars applies tq's exemplars hint to a series' exemplars, in time
+// order: N of them, spread evenly, under exemplars=N, and every one without
+// the hint.
+func capExemplars[T any](tq *traceql_ir.Query, exemplars []T) []T {
+	limit, ok := tq.ExemplarLimit()
+	if !ok || len(exemplars) <= limit {
+		return exemplars
+	}
+	if limit == 0 {
+		return nil
+	}
+	res := make([]T, limit)
+	for i := range res {
+		res[i] = exemplars[(2*i+1)*len(exemplars)/(2*limit)]
+	}
+	return res
 }
 
 // executeCompareRange handles compare() queries for range endpoint.

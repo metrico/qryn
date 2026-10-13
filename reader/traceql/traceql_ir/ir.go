@@ -2,6 +2,8 @@
 // metrics and autocomplete planners consume.
 package traceql_ir
 
+import "strings"
+
 // Query is a lowered TraceQL query: a pipeline followed by the optional
 // metrics function, hints and second stage.
 type Query struct {
@@ -18,7 +20,7 @@ type Pipeline struct {
 }
 
 // Element is one stage of a pipeline: a spanset expression, a scalar filter,
-// a GroupBy or a Coalesce.
+// a GroupBy, a Coalesce or a Select.
 type Element interface {
 	isElement()
 }
@@ -130,6 +132,7 @@ func (*SpansetOp) isElement()    {}
 func (*ScalarFilter) isElement() {}
 func (*GroupBy) isElement()      {}
 func (*Coalesce) isElement()     {}
+func (*Select) isElement()       {}
 
 func (*Selector) isSpansetExpr()  {}
 func (*Group) isSpansetExpr()     {}
@@ -209,6 +212,20 @@ func (g *GroupBy) String() string {
 // Coalesce is the pipeline stage `coalesce()`: it merges the spansets of
 // each trace into one without attributes.
 type Coalesce struct{}
+
+// Select is the pipeline stage `select(Fields...)`: it adds the values of
+// its attributes and intrinsics to every result span and filters nothing.
+type Select struct {
+	Fields []*Attribute
+}
+
+func (s *Select) String() string {
+	fields := make([]string, len(s.Fields))
+	for i, f := range s.Fields {
+		fields[i] = f.Name
+	}
+	return "select(" + strings.Join(fields, ", ") + ")"
+}
 
 // MetricsFn is the terminal metrics function, e.g. `| rate() by (name)`.
 type MetricsFn struct {

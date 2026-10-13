@@ -48,12 +48,22 @@ func planAutocomplete(query *traceql_ir.Query,
 	return p.structuralGate(attrs(result, p.getPrefix())), nil
 }
 
-// AllSpans reports whether query selects every span: no query, or a lone `{}`.
+// AllSpans reports whether query selects every span: no query, or a lone
+// `{}`, select() stages aside.
 func AllSpans(query *traceql_ir.Query) bool {
 	if query == nil {
 		return true
 	}
-	selector, ok := loneSelector(&query.Pipeline)
+	var elements []traceql_ir.Element
+	for _, e := range query.Pipeline.Elements {
+		if _, ok := e.(*traceql_ir.Select); !ok {
+			elements = append(elements, e)
+		}
+	}
+	if len(elements) == 0 {
+		return true
+	}
+	selector, ok := loneSelector(&traceql_ir.Pipeline{Elements: elements})
 	return ok && selector.Filter == nil
 }
 
@@ -80,6 +90,10 @@ type planner struct {
 }
 
 func (p *planner) plan() (shared.SQLRequestPlanner, error) {
+	selected, err := selectedKeys(p.query)
+	if err != nil {
+		return nil, err
+	}
 	res, err := p.planResult(true)
 	if err != nil {
 		return nil, err
@@ -88,7 +102,7 @@ func (p *planner) plan() (shared.SQLRequestPlanner, error) {
 
 	res = &IndexLimitPlanner{res}
 
-	res = NewTracesDataPlanner(res)
+	res = NewTracesDataPlanner(res, selected)
 
 	res = &IndexLimitPlanner{res}
 
