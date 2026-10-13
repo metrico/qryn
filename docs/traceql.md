@@ -31,11 +31,12 @@ ones.
 
 A span is in range when it **starts** in `(from, to]`: a span starting exactly
 at `from` is excluded, one starting exactly at `to` is included. The rule is
-the same for search, autocomplete and metrics, so adjacent windows never count
-a span twice.
+the same for search, metrics and autocomplete with a query, so adjacent
+windows never count a span twice. Autocomplete without a query reads whole
+days.
 
 Only spans in range can be operands or results. The structural context of a
-span - its parent, ancestors, siblings and roots - is read from the whole
+span — its parent, ancestors, siblings and roots — is read from the whole
 trace, whatever time those spans started. A long-running root that started
 before `from` still links its descendants inside the range.
 
@@ -72,7 +73,7 @@ TraceQL operators and fail with a parse error naming the spelling to use
 - A span takes part in a structural relation only when its parent chain
   reaches a root span (a span without a parent).
 - Spans that can't reach a root - an orphan subtree whose parent was never
-  ingested, or every span of a trace with no root - never match a positive or
+  ingested, or every span of a trace with no root — never match a positive or
   `&` operator, and always match a `!` operator.
 - A span whose ancestor hasn't been ingested yet starts matching once that
   ancestor lands. No action is needed.
@@ -115,8 +116,8 @@ Between spansets, from loosest to tightest:
 2. `&&` and `||`, at the same level
 3. the 15 structural operators
 
-All operators are left-associative. So `{a} || {b} && {c}` is
-`({a} || {b}) && {c}`, and `{A} > {B} > {C}` is `({A} > {B}) > {C}`: C spans
+All operators are left-associative. So `{A} || {B} && {C}` is
+`({A} || {B}) && {C}`, and `{A} > {B} > {C}` is `({A} > {B}) > {C}`: C spans
 whose parent is a B span whose parent is an A span. Parentheses change the
 grouping: `{A} > ({B} > {C})` returns C spans whose parent matches both A and
 B.
@@ -327,7 +328,7 @@ of either side. Spans are bucketed by start time within `(from, to]`.
 
 Scalar filters and `by()` before the metrics function decide which traces and
 groups contribute; the spans of every passing group feed the metric.
-`by()` groups never become series labels - use the metrics function's
+`by()` groups never become series labels; use the metrics function's
 `by (...)` for that.
 
 ### Hints
@@ -356,7 +357,7 @@ groups contribute; the spans of every passing group feed the metric.
 Tag and value autocomplete (`/api/v2/search/tags`,
 `/api/v2/search/tag/{tag}/values`) suggest only from the spans a search for
 `q` returns, so suggestions narrow as a structural expression is typed.
-Queries with `||` are supported. Without a query, or with `{}`, the tags and
+Queries with `&&`, `||` and structural operators are supported. Without a query, or with `{}`, the tags and
 values are listed unfiltered. The `{tag}` of value autocomplete may be scoped
 (`span.x`, `resource.x`, `.x`); it is looked up by its attribute name.
 
@@ -368,8 +369,8 @@ gigapipe returns the spans Tempo returns, except where listed here.
 
 - Operands must start in the query range. Tempo draws operands from every
   span of a trace that overlaps the range.
-- Traces in which three or more spans share a span ID are evaluated as
-  stored. Tempo returns nothing for such a trace.
+- Tempo's rule that returns nothing for a trace in which three or more spans
+  share a span ID is not reproduced; such traces are evaluated as stored.
 
 **Grouping**
 
@@ -392,8 +393,10 @@ gigapipe returns the spans Tempo returns, except where listed here.
   unscoped `.a = nil` also matches spans that have `.a`.
 - Int, float and duration values aren't distinguished in storage, so
   `.a = "200"` and `.a = 200` both match a stored `200`.
-- `int ^ int` is evaluated as written; Tempo swaps base and exponent.
+- `int ^ int` doesn't swap base and exponent, as Tempo does.
 - Integer division and modulo by zero are nil, not an error.
+- `&&` and `||` treat a nil operand as false and evaluate the other side;
+  Tempo makes the whole operation false.
 - Typing is stricter: a filter that can't be boolean or an aggregate argument
   that can't be numeric, built only from attributes (`{ -.a }`,
   `{ .a * .b }`, `{ !.a = 1 }`, `{ .a + .b = "x" }`, `avg(!.a)`), is
@@ -404,6 +407,8 @@ gigapipe returns the spans Tempo returns, except where listed here.
 
 - In aggregate arguments, a span where the expression is nil (`.a + nil`) is
   skipped; Tempo counts it.
+- `sum()` over a mix of ints and floats adds every value as a float; Tempo
+  drops values whose type differs.
 - Literal arithmetic isn't folded: `count() > 1 + 2` is rejected.
 - `count() > count()` is rejected with Tempo's right-hand-side error text.
 - `(count() > 2) && {B}` is a parse error; Tempo accepts it.

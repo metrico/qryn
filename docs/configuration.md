@@ -101,7 +101,7 @@ Variables that are not Gigapipe-specific — `CLICKHOUSE_*`, `PORT`, `HOST`,
 
 ## TraceQL
 
-- **`GIGAPIPE_TRACEQL_ANCESTRY_ROUNDS`** - Number of rounds used to resolve span ancestry for TraceQL structural operators, an integer from `1` to `32` (default: `20`). With `R` rounds, traces up to `2^R` spans deep resolve; a structural query that meets a deeper trace, or one whose parent links form a cycle, fails with an error naming this setting instead of returning partial results. Raise it only for unusually deep traces: each round adds work to every query using `>>` or `<<`. An invalid value stops gigapipe at start-up. See [TraceQL](traceql.md#depth-limit).
+- **`GIGAPIPE_TRACEQL_ANCESTRY_ROUNDS`** - Number of rounds used to resolve span ancestry for TraceQL structural operators, an integer from `1` to `32` (default: `20`). With `R` rounds, traces up to `2^R` spans deep resolve; deeper or cyclic traces make the query fail. Each round adds work to every query using `>>` or `<<`. An invalid value stops Gigapipe at start-up. See [TraceQL](traceql.md#depth-limit).
 
 Structural TraceQL queries need ClickHouse 24.9 or newer; see [TraceQL](traceql.md#requirements).
 
