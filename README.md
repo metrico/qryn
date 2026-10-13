@@ -33,6 +33,8 @@
 
 - [Configuration & Docker](docs/configuration.md) — environment variables, Docker quickstart, cross-cluster setup
 - [Table Ordering](docs/table-ordering.md) — ClickHouse sort keys, `ADVANCED_SAMPLES_ORDERING`, changing the ordering of an existing deployment
+- [TraceQL](docs/traceql.md) — structural operators, pipelines, field expressions, differences from Tempo
+- [Release Notes](docs/release-notes.md) — behaviour changes to note before upgrading
 - [Profiling API](docs/profiling-api.md) — profiling endpoints, DOT format export, Graphviz visualization
 - [OTLP Profiles Ingestion](docs/otlp-profiles.md) — OpenTelemetry profiles signal ingestion via `/v1development/profiles`
 - [OTLP Metrics Ingestion](docs/otlp-metrics.md) — OpenTelemetry metrics signal ingestion via `/v1/metrics` (protobuf + JSON)

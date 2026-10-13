@@ -99,6 +99,12 @@ Variables that are not Gigapipe-specific — `CLICKHOUSE_*`, `PORT`, `HOST`,
 - **`LOG_PATTERN_SIMILARITY`** - Similarity threshold for pattern grouping, range 0-1 (default: `0.7`). Higher values require more similarity.
 - **`LOG_PATTERN_READ_LIMIT`** - Maximum number of log patterns to read per request (default: `300`)
 
+## TraceQL
+
+- **`GIGAPIPE_TRACEQL_ANCESTRY_ROUNDS`** - Number of rounds used to resolve span ancestry for TraceQL structural operators, an integer from `1` to `32` (default: `20`). With `R` rounds, traces up to `2^R` spans deep resolve; a structural query that meets a deeper trace, or one whose parent links form a cycle, fails with an error naming this setting instead of returning partial results. Raise it only for unusually deep traces: each round adds work to every query using `>>` or `<<`. An invalid value stops gigapipe at start-up. See [TraceQL](traceql.md#depth-limit).
+
+Structural TraceQL queries need ClickHouse 24.9 or newer; see [TraceQL](traceql.md#requirements).
+
 ## Recording Rules (Ruler)
 
 The ruler evaluates LogQL and PromQL recording rules on a schedule and writes
