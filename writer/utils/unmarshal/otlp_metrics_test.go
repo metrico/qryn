@@ -184,28 +184,158 @@ func TestOTLPMetrics_MonotonicSumBecomesCounter(t *testing.T) {
 	}
 }
 
+// TestOTLPMetrics_NonMonotonicSumIsGaugeForEitherTemporality asserts a
+// non-monotonic Sum is stored the same way whether it is cumulative or delta.
+func TestOTLPMetrics_NonMonotonicSumIsGaugeForEitherTemporality(t *testing.T) {
+	sum := func(temporality metricsv1.AggregationTemporality) *metricsv1.MetricsData {
+		return wrapMetrics(testResource(), &metricsv1.Metric{
+			Name: "queue.change", Unit: "{items}", Description: "net queue change",
+			Data: &metricsv1.Metric_Sum{Sum: &metricsv1.Sum{
+				AggregationTemporality: temporality,
+				DataPoints: []*metricsv1.NumberDataPoint{
+					{
+						StartTimeUnixNano: testTS - 1_000_000_000,
+						TimeUnixNano:      testTS,
+						Value:             &metricsv1.NumberDataPoint_AsInt{AsInt: -3},
+						Exemplars: []*metricsv1.Exemplar{{
+							TimeUnixNano: testTS,
+							Value:        &metricsv1.Exemplar_AsDouble{AsDouble: -1},
+							TraceId:      []byte("0123456789abcdef"),
+						}},
+					},
+					{
+						StartTimeUnixNano: testTS,
+						TimeUnixNano:      testTS + 1_000_000_000,
+						Value:             &metricsv1.NumberDataPoint_AsDouble{AsDouble: 5.5},
+					},
+				},
+			}},
+		})
+	}
+	cases := []struct {
+		name        string
+		temporality metricsv1.AggregationTemporality
+	}{
+		{"cumulative", metricsv1.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE},
+		{"delta", metricsv1.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA},
+	}
+	cols := make([]*metricsCollector, len(cases))
+	for i, c := range cases {
+		stats := &OTLPMetricsStats{}
+		col := collectMetrics(t, sum(c.temporality), stats)
+		cols[i] = col
+		got := col.find(`"__name__":"queue_change"`)
+		if len(got) != 2 || got[0].ts != testTSMs || got[0].value != -3 ||
+			got[1].ts != testTSMs+1000 || got[1].value != 5.5 {
+			t.Errorf("%s: queue_change samples: got %+v, want -3 then 5.5", c.name, got)
+		}
+		if len(col.find("_total")) != 0 {
+			t.Errorf("%s: non-monotonic sum must not get _total: %+v", c.name, col.samples)
+		}
+		want := metadataRow{"queue_change", "gauge", "net queue change", ""}
+		if m := col.metadata["queue_change"]; m != want {
+			t.Errorf("%s: queue_change metadata: got %+v, want %+v", c.name, m, want)
+		}
+		if len(col.exemplars) != 1 || col.exemplars[0].value != -1 ||
+			!strings.Contains(col.fpLabels[col.exemplars[0].fp], `"__name__":"queue_change"`) {
+			t.Errorf("%s: exemplars: got %+v, want one -1 exemplar on queue_change", c.name, col.exemplars)
+		}
+		if stats.RejectedDataPoints() != 0 {
+			t.Errorf("%s: expected 0 rejected, got %d: %s", c.name, stats.RejectedDataPoints(), stats.ErrorMessage())
+		}
+	}
+	cum, delta := cols[0], cols[1]
+	if !slices.Equal(cum.samples, delta.samples) {
+		t.Errorf("samples differ:\ncumulative %+v\ndelta      %+v", cum.samples, delta.samples)
+	}
+	if !slices.Equal(cum.metadataRows, delta.metadataRows) {
+		t.Errorf("metadata differs:\ncumulative %+v\ndelta      %+v", cum.metadataRows, delta.metadataRows)
+	}
+	if !slices.Equal(cum.exemplars, delta.exemplars) {
+		t.Errorf("exemplars differ:\ncumulative %+v\ndelta      %+v", cum.exemplars, delta.exemplars)
+	}
+}
+
 func TestOTLPMetrics_DeltaSumRejected(t *testing.T) {
+	delta := metricsv1.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA
+	cases := []struct {
+		name   string
+		metric *metricsv1.Metric
+		points int64
+	}{
+		{"monotonic sum", &metricsv1.Metric{
+			Name: "delta.counter",
+			Data: &metricsv1.Metric_Sum{Sum: &metricsv1.Sum{
+				AggregationTemporality: delta,
+				IsMonotonic:            true,
+				DataPoints: []*metricsv1.NumberDataPoint{
+					{TimeUnixNano: testTS, Value: &metricsv1.NumberDataPoint_AsInt{AsInt: 1}},
+					{TimeUnixNano: testTS + 1, Value: &metricsv1.NumberDataPoint_AsInt{AsInt: 2}},
+				},
+			}},
+		}, 2},
+		{"histogram", &metricsv1.Metric{
+			Name: "delta.histogram",
+			Data: &metricsv1.Metric_Histogram{Histogram: &metricsv1.Histogram{
+				AggregationTemporality: delta,
+				DataPoints: []*metricsv1.HistogramDataPoint{
+					{TimeUnixNano: testTS, Count: 1, ExplicitBounds: []float64{1}, BucketCounts: []uint64{1, 0}},
+					{TimeUnixNano: testTS + 1, Count: 2, ExplicitBounds: []float64{1}, BucketCounts: []uint64{1, 1}},
+					{TimeUnixNano: testTS + 2, Count: 0},
+				},
+			}},
+		}, 3},
+		{"exponential histogram", &metricsv1.Metric{
+			Name: "delta.exphistogram",
+			Data: &metricsv1.Metric_ExponentialHistogram{ExponentialHistogram: &metricsv1.ExponentialHistogram{
+				AggregationTemporality: delta,
+				DataPoints: []*metricsv1.ExponentialHistogramDataPoint{
+					{TimeUnixNano: testTS, Count: 1, ZeroCount: 1},
+				},
+			}},
+		}, 1},
+	}
+	for _, c := range cases {
+		stats := &OTLPMetricsStats{}
+		col := collectMetrics(t, wrapMetrics(testResource(), c.metric), stats)
+		if len(col.samples) != 0 || len(col.metadataRows) != 0 || len(col.exemplars) != 0 {
+			t.Errorf("%s: expected nothing stored, got samples %+v metadata %+v exemplars %+v",
+				c.name, col.samples, col.metadataRows, col.exemplars)
+		}
+		if stats.RejectedDataPoints() != c.points {
+			t.Errorf("%s: expected %d rejected, got %d", c.name, c.points, stats.RejectedDataPoints())
+		}
+		want := `metric "` + c.metric.Name + `": delta temporality is only supported for non-monotonic sums`
+		if msg := stats.ErrorMessage(); msg != want {
+			t.Errorf("%s: reason: got %q, want %q", c.name, msg, want)
+		}
+	}
+}
+
+func TestOTLPMetrics_UnspecifiedTemporalityNonMonotonicSumRejected(t *testing.T) {
 	md := wrapMetrics(testResource(), &metricsv1.Metric{
-		Name: "delta.counter",
+		Name: "unspecified.updown",
 		Data: &metricsv1.Metric_Sum{Sum: &metricsv1.Sum{
-			AggregationTemporality: metricsv1.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA,
-			IsMonotonic:            true,
+			AggregationTemporality: metricsv1.AggregationTemporality_AGGREGATION_TEMPORALITY_UNSPECIFIED,
 			DataPoints: []*metricsv1.NumberDataPoint{
-				{TimeUnixNano: testTS, Value: &metricsv1.NumberDataPoint_AsInt{AsInt: 1}},
-				{TimeUnixNano: testTS + 1, Value: &metricsv1.NumberDataPoint_AsInt{AsInt: 2}},
+				{TimeUnixNano: testTS, Value: &metricsv1.NumberDataPoint_AsInt{AsInt: -1}},
 			},
 		}},
 	})
 	stats := &OTLPMetricsStats{}
 	col := collectMetrics(t, md, stats)
 	if len(col.samples) != 0 {
-		t.Fatalf("expected no samples for delta sum, got %+v", col.samples)
+		t.Fatalf("expected no samples for unspecified temporality, got %+v", col.samples)
 	}
-	if stats.RejectedDataPoints() != 2 {
-		t.Errorf("expected 2 rejected, got %d", stats.RejectedDataPoints())
+	if stats.RejectedDataPoints() != 1 {
+		t.Errorf("expected 1 rejected, got %d", stats.RejectedDataPoints())
 	}
-	if !strings.Contains(stats.ErrorMessage(), "temporality") {
-		t.Errorf("error message should mention temporality: %q", stats.ErrorMessage())
+	want := `metric "unspecified.updown": unsupported aggregation temporality AGGREGATION_TEMPORALITY_UNSPECIFIED`
+	if msg := stats.ErrorMessage(); msg != want {
+		t.Errorf("reason: got %q, want %q", msg, want)
+	}
+	if strings.Contains(stats.ErrorMessage(), "delta") {
+		t.Errorf("unspecified temporality must not get the delta reason: %q", stats.ErrorMessage())
 	}
 }
 
