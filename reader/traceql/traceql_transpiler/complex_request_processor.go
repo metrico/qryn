@@ -32,10 +32,6 @@ func (t *ComplexRequestProcessor) Process(ctx *shared.PlannerContext,
 		}
 	}
 
-	for i := range res {
-		sortSpans(res[i].SpanSet.Spans)
-	}
-
 	ch := make(chan []model.TraceInfo)
 	go func() {
 		defer close(ch)
@@ -60,8 +56,9 @@ func (t *ComplexRequestProcessor) ProcessComplexReqIteration(ctx *shared.Planner
 			if err != nil {
 				return nil, from, cachedTraceIDs, err
 			}
-			if from.Nanosecond() == 0 || from.After(time.Unix(0, startTimeUnixNano)) {
-				from = time.Unix(0, startTimeUnixNano)
+			// The range is (from, to], so from sits just before the trace start.
+			if from.Nanosecond() == 0 || from.After(time.Unix(0, startTimeUnixNano-1)) {
+				from = time.Unix(0, startTimeUnixNano-1)
 			}
 			res = append(res, _info)
 			cachedTraceIDs = append(cachedTraceIDs, _info.TraceID)
