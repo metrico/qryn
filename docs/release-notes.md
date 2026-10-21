@@ -120,11 +120,11 @@ Saved dashboards and alerts that use them will see different numbers.
 - **Schema migration.** The upgrade creates the `tempo_traces_nested_set`
   and `tempo_traces_touched` tables, the `tempo_traces_touched_mv`
   materialized view on `tempo_traces` and, on clusters, the Distributed
-  `tempo_traces_nested_set_dist`, plus its read-path table on a separate read
-  cluster (see
+  `tempo_traces_nested_set_dist`, plus a Distributed read-path table over
+  the read cluster when one is configured (see
   [Cross-Cluster Deployment](configuration.md#cross-cluster-deployment)).
-  Their engines follow `tempo_traces`. Structural queries alone need no
-  migration, writer change or backfill.
+  The local tables' engines follow `tempo_traces`. Structural queries alone
+  need no migration, writer change or backfill.
 - **New nested-set numberer**, off by default. Enable it on exactly one
   instance with `GIGAPIPE_NESTED_SET_NUMBERER_ENABLED`; `_IDLE` (10s),
   `_INTERVAL` (5s) and `_MAX_SPANS` (200000, per shard on clusters) tune it.
