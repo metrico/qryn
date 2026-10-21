@@ -105,7 +105,7 @@ Variables that are not Gigapipe-specific — `CLICKHOUSE_*`, `PORT`, `HOST`,
 
 Structural TraceQL queries need ClickHouse 24.9 or newer; see [TraceQL](traceql.md#requirements).
 
-The nested-set numberer stores `nestedSetLeft`, `nestedSetRight` and `nestedSetParent` for each span; see [TraceQL](traceql.md#the-numberer). Enable it on exactly one instance: a second one duplicates the work but can't corrupt the results. It needs ClickHouse 24.9 or newer; on an older server it logs an error and doesn't start, and every span reads `0`/`0`/`0`. With the defaults, values appear about 15s after a trace's last span. An invalid value stops Gigapipe at start-up; the settings other than `GIGAPIPE_NESTED_SET_NUMBERER_ENABLED` are validated only when the numberer is enabled.
+The nested-set numberer stores `nestedSetLeft`, `nestedSetRight` and `nestedSetParent` for each span; see [TraceQL](traceql.md#the-numberer). Enable it on exactly one instance: a second one duplicates the work but can't corrupt the results. It needs ClickHouse 24.9 or newer; on an older server it logs an error and doesn't start, and every span reads `0`/`0`/`0`. With the defaults, values appear about 15s after a trace's last span. An unrecognised `GIGAPIPE_NESTED_SET_NUMBERER_ENABLED` value logs a warning and leaves the numberer off. When it is enabled, an invalid value of another setting stops Gigapipe at start-up.
 
 - **`GIGAPIPE_NESTED_SET_NUMBERER_ENABLED`** - Run the numberer (`1`, `true`, `yes`, `on`; default: disabled).
 - **`GIGAPIPE_NESTED_SET_NUMBERER_IDLE`** - How long a trace must receive no spans before it is numbered, as a Go duration (default: `10s`).

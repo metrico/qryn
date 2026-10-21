@@ -26,9 +26,10 @@ type Config struct {
 	MaxSpans       int
 }
 
-// ConfigFromEnv reads the settings. Values other than EnabledEnv are
-// validated only when the numberer is enabled.
-func ConfigFromEnv() (Config, error) {
+// ConfigFromEnv reads the settings. An unrecognised EnabledEnv value is a
+// warning and leaves the numberer disabled; the other values are validated
+// only when it is enabled.
+func ConfigFromEnv(warn func(args ...any)) (Config, error) {
 	cfg := Config{Idle: 10 * time.Second, Interval: 5 * time.Second, MaxSpans: 200000}
 	switch v := strings.ToLower(strings.TrimSpace(os.Getenv(EnabledEnv))); v {
 	case "1", "true", "yes", "on":
@@ -36,7 +37,8 @@ func ConfigFromEnv() (Config, error) {
 	case "", "0", "false", "no", "off":
 		return cfg, nil
 	default:
-		return cfg, fmt.Errorf("%s=%q: want true or false", EnabledEnv, v)
+		warn(fmt.Sprintf("%s=%q: want true or false; nested-set numberer disabled", EnabledEnv, v))
+		return cfg, nil
 	}
 	for _, d := range []struct {
 		env string

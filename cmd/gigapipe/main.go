@@ -390,9 +390,10 @@ var listener net.Listener
 var numberer *nestedset.Numberer
 
 // startNestedSetNumberer runs the nested-set numberer when it is enabled.
-// Invalid settings fail startup; a server it can't run on only logs an error.
+// Invalid settings of an enabled numberer fail startup; a server it can't run
+// on only logs an error.
 func startNestedSetNumberer(cfg *clconfig.ClokiConfig) {
-	nsCfg, err := nestedset.ConfigFromEnv()
+	nsCfg, err := nestedset.ConfigFromEnv(logger.Logger.Warn)
 	if err != nil {
 		panic(err)
 	}
