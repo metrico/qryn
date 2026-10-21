@@ -29,6 +29,14 @@ real span tree, in search, metrics and autocomplete alike. See
 - The `sample` and `exemplars` hints for TraceQL metrics.
 - Tag and value autocomplete suggest only from the spans the query returns,
   and accept queries with `&&`, `||` and structural operators.
+- The nested-set intrinsics `nestedSetLeft`, `nestedSetRight` and
+  `nestedSetParent`, as ints, in filters, field expressions, `select()`,
+  `by()`, aggregates and metrics, returned as `intValue`. An opt-in
+  background numberer computes them; see
+  [Nested-set intrinsics](traceql.md#nested-set-intrinsics). Grafana's Traces
+  Drilldown "Service structure" tab works.
+- Every search response echoes the fields of the query's spanset filters
+  onto the listed spans, as if they were selected with `select()`.
 
 #### Results that change
 
@@ -53,6 +61,9 @@ Saved dashboards and alerts that use them will see different numbers.
   evaluated, which dropped true matches in large traces. Operands are now
   uncapped. Search lists **3 spans per spanset by default** (was up to 100);
   set `spss` for more. `matched` reports the true number of matched spans.
+- **`durationNanos`** is always the span duration in nanoseconds. A span
+  whose duration equalled its start timestamp reported `"n/a"`, which Grafana
+  failed to parse.
 - **Time range.** TraceQL search, metrics and autocomplete with a filtering
   query now count spans that start in **`(from, to]`**: a span starting
   exactly at `from` is excluded, one starting exactly at `to` is included.
@@ -92,6 +103,9 @@ Saved dashboards and alerts that use them will see different numbers.
 - TraceQL search reads the whole (limit-bounded) result before responding, so
   errors raised during the query reach the client.
 - `{}` can be an operand of `&&`, `||` and structural operators.
+- Each search spanset lists its **earliest-starting** spans, earliest first
+  (ties by span id), where it listed the newest. A plain search shows the
+  first spans of each trace instead of the last.
 - Value autocomplete (`/api/v2/search/tag/{tag}/values`) accepts scoped tags
   (`span.x`, `resource.x`, `.x`), as Grafana sends them, and without a query
   lists the tag's values. Tag autocomplete accepts a lone `{}` query.
@@ -103,8 +117,17 @@ Saved dashboards and alerts that use them will see different numbers.
 - **ClickHouse 24.9 or newer** is required for structural queries. Other
   TraceQL queries are unaffected. Structural queries run with
   `enable_analyzer=1`.
-- **No migration.** There is no schema change, writer change or backfill;
-  upgrading the reader is enough.
+- **Schema migration.** The upgrade creates the `tempo_traces_nested_set`
+  and `tempo_traces_touched` tables, the `tempo_traces_touched_mv`
+  materialized view on `tempo_traces` and, on clusters,
+  `tempo_traces_nested_set_dist`. Their engines follow `tempo_traces`.
+  Structural queries alone need no migration, writer change or backfill.
+- **New nested-set numberer**, off by default. Enable it on exactly one
+  instance with `GIGAPIPE_NESTED_SET_NUMBERER_ENABLED`; `_IDLE` (10s),
+  `_INTERVAL` (5s) and `_MAX_SPANS` (200000, per shard on clusters) tune it.
+  It needs ClickHouse 24.9 or newer; on an older server it doesn't start and
+  every span reads `0`/`0`/`0`. Traces stored before it ran are not
+  backfilled. See [Configuration](configuration.md#traceql).
 - **New setting `GIGAPIPE_TRACEQL_ANCESTRY_ROUNDS`** (1 to 32, default 20).
   Traces up to `2^R` spans deep resolve. See
   [Configuration](configuration.md#traceql).
@@ -115,7 +138,8 @@ Saved dashboards and alerts that use them will see different numbers.
     `spanset_span_ids`, `matched`, `attr_names`, `attr_types`, `attr_values`,
     `attr_texts` (one element per spanset), `span_attr_keys` and
     `span_attr_vals` (one element per listed span). Plugins don't receive the
-    `select()` fields, so `select()` returns no values through a plugin.
+    `select()` or echoed filter fields, so neither returns values through a
+    plugin.
   - An `InitIndexPlannerPlugin`'s select must expose unqualified `trace_id`
     and `span_id` columns.
 - **Query cost.** Structural operators read the parent links of their
@@ -159,8 +183,26 @@ gigapipe returns what Tempo returns except for these, also listed in
   drops values whose type differs from the first value's.
 - A bare word as an aggregate argument (`avg(spanN)`) reads that attribute;
   Tempo rejects it.
-- `select()` values are strings, and attributes named `name`, `status` or
-  `kind` share storage with the intrinsics of the same name.
+- Nested-set siblings are numbered by start time, then span id; Tempo
+  numbers them in its storage order, so the absolute values can differ.
+- Spans sharing a span id form one nested-set node, placed by the
+  earliest-starting copy; Tempo matches two copies by kind and zeroes a trace
+  in which three or more share an id.
+- Every pass renumbers whole traces, so merges leave no stale nested-set
+  numbers, as they can in Tempo.
+- A trace reads `0`/`0`/`0` until the numberer has numbered it, about 15s
+  after its last span with the defaults, and traces stored before the
+  numberer ran may never be numbered.
+- Each spanset lists its `spss` earliest-starting spans; Tempo lists the
+  first spans in its storage order. Under clock skew, a child can be kept
+  ahead of its parent.
+- The filter echo uses the union of the query's keys:
+  `{ .a = 1 } >> { .b = 2 }` shows `.a` on returned spans that carry it,
+  where Tempo shows only `.b`.
+- Fields read only by a scalar filter or `by()` aren't echoed; Tempo
+  returns them too.
+- `select()` attribute values are strings, and attributes named `name`,
+  `status` or `kind` share storage with the intrinsics of the same name.
 - `sample` is a hash of the trace or span id; Tempo keeps one item in N with
   a counter.
 - Sampled metrics values are returned unscaled; Tempo scales them up by the
