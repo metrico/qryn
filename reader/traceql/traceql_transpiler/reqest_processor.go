@@ -83,15 +83,7 @@ func (t TraceQLRequestProcessor) read(ctx *shared.PlannerContext, strReq string)
 		}
 		spans := make(map[string]model.SpanInfo, len(spanIds))
 		for i, spanId := range spanIds {
-			span := model.SpanInfo{
-				SpanID:            spanId,
-				DurationNanos:     fmt.Sprintf("%d", durationsNs[i]),
-				StartTimeUnixNano: fmt.Sprintf("%d", timestampsNs[i]),
-				Attributes:        make([]model.SpanAttr, 0),
-			}
-			if durationsNs[i] == timestampsNs[i] {
-				span.DurationNanos = "n/a"
-			}
+			span := searchSpan(spanId, durationsNs[i], timestampsNs[i])
 			if i < len(spanAttrKeys) {
 				addSelected(&span, spanAttrKeys[i], spanAttrVals[i])
 			}
@@ -125,6 +117,16 @@ func (t TraceQLRequestProcessor) read(ctx *shared.PlannerContext, strReq string)
 		res = append(res, trace)
 	}
 	return res, rows.Err()
+}
+
+// searchSpan builds a search-result span without selected values.
+func searchSpan(spanId string, durationNs, timestampNs int64) model.SpanInfo {
+	return model.SpanInfo{
+		SpanID:            spanId,
+		DurationNanos:     strconv.FormatInt(durationNs, 10),
+		StartTimeUnixNano: strconv.FormatInt(timestampNs, 10),
+		Attributes:        make([]model.SpanAttr, 0),
+	}
 }
 
 // addSelected adds a span's selected values: the span name as its name, any
