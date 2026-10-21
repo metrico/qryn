@@ -14,12 +14,11 @@ import (
 // lacking all the keys it reads reads this one too.
 const anchorKey = "name"
 
-// fieldPivot reads one row per span starting in range: its span-row columns,
-// the attribute keys (NULL when absent), the stored nested-set columns and,
-// with root, _root. With no keys it reads the traces table.
+// fieldPivot reads one row per span starting in range with the values its
+// filter reads; an absent attribute is NULL.
 type fieldPivot struct {
 	keys      []string
-	nestedSet []string
+	nestedSet []nestedSetCol
 	root      bool
 }
 
@@ -32,14 +31,8 @@ func (p *fieldPivot) column(key string) string {
 	return "NULL"
 }
 
-// pivotNestedSetColumn is the pivot column of a stored nested-set column, 0
-// for an unnumbered span.
-func pivotNestedSetColumn(col string) string {
-	return "_ns_" + col
-}
-
 func (p *fieldPivot) sql() *fieldSQL {
-	return &fieldSQL{attr: p.column, duration: "duration", nestedSet: pivotNestedSetColumn, root: "_root"}
+	return &fieldSQL{attr: p.column, duration: "duration", nestedSet: nestedSetCol.pivot, root: "_root"}
 }
 
 // spans plans the attribute rows of the pivot over the spans that start in
@@ -92,26 +85,19 @@ func (p *fieldPivot) read(ctx *shared.PlannerContext, spans sql.ISelect, alias s
 	}
 	withAttrs := sql.NewWith(spans, alias+"_attrs")
 	a := withAttrs.GetAlias()
-	traceIds := sql.NewSelect().Select(sql.NewRawObject("trace_id")).From(sql.NewWithRef(withAttrs))
-	cols := []sql.SQLObject{
-		sql.NewSimpleCol(a+".trace_id", "trace_id"),
-		sql.NewSimpleCol(a+".span_id", "span_id"),
-		sql.NewSimpleCol(a+".timestamp_ns", "timestamp_ns"),
-		sql.NewSimpleCol(a+".duration", "duration"),
-	}
+	traceIds := traceIdsOf(withAttrs)
+	names := []string{"trace_id", "span_id", "timestamp_ns", "duration"}
 	for _, k := range p.keys {
-		cols = append(cols, sql.NewSimpleCol(a+"."+p.column(k), p.column(k)))
+		names = append(names, p.column(k))
 	}
+	cols := columnsOf(a, names...)
 	withs = []*sql.With{withAttrs}
 	var joins []*sql.Join
 	if len(p.nestedSet) > 0 {
-		withValues := nestedSetValues(ctx, p.nestedSet, traceIds, nil, alias+"_ns")
-		v := withValues.GetAlias()
-		for _, col := range p.nestedSet {
-			cols = append(cols, sql.NewSimpleCol(nestedSetValue(v, col), pivotNestedSetColumn(col)))
-		}
-		withs = append(withs, withValues)
-		joins = append(joins, sql.NewJoin("left", sql.NewWithRef(withValues), sameSpan(a+".span_id", v+".span_id")))
+		ns := joinNestedSet(ctx, p.nestedSet, traceIds, nil, a, alias+"_ns", nestedSetCol.pivot)
+		cols = append(cols, ns.cols...)
+		withs = append(withs, ns.with)
+		joins = append(joins, ns.join)
 	}
 	switch {
 	case joinsRoot:

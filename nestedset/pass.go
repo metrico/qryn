@@ -40,9 +40,7 @@ func quote(s string) string {
 	return "'" + strings.NewReplacer(`\`, `\\`, `'`, `\'`).Replace(s) + "'"
 }
 
-// passSelect returns the SELECT of one pass: the rows for
-// tempo_traces_nested_set, in its column order. delay is an SQL expression
-// for the replica delay in seconds.
+// passSelect returns the SELECT of one pass; delay is an SQL expression.
 func passSelect(t tables, idle time.Duration, maxSpans int, delay string) string {
 	return strings.NewReplacer(
 		"{DB}", t.prefix(),

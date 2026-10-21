@@ -12,21 +12,8 @@ var listedIntrinsics = map[string]bool{
 	"rootName": true, "trace:rootName": true, "rootServiceName": true, "trace:rootService": true,
 }
 
-// nestedSetColumns maps the nested-set intrinsics to their columns in the
-// side table. Selected, they keep their names as keys.
-var nestedSetColumns = map[string]string{
-	"nestedSetLeft": "left", "nestedSetRight": "right", "nestedSetParent": "parent",
-}
-
-// IsNestedSetKey reports whether a selected key holds a nested-set value.
-func IsNestedSetKey(key string) bool {
-	_, ok := nestedSetColumns[key]
-	return ok
-}
-
-// spanValueKeys lists the keys search reads for each listed span, each once in
-// order: those of the select() stages, then those the spanset filters read.
-// An attribute named like a nested-set intrinsic shares its key.
+// spanValueKeys lists the keys search reads per listed span, each once: the
+// select() keys, then the spanset filters' keys.
 func spanValueKeys(q *traceql_ir.Query) ([]string, error) {
 	var keys []string
 	seen := map[string]bool{}
@@ -35,7 +22,7 @@ func spanValueKeys(q *traceql_ir.Query) ([]string, error) {
 			continue
 		}
 		key := f.Name
-		if !IsNestedSetKey(key) {
+		if !traceql_ir.IsNestedSet(key) {
 			ref, err := fieldRefOf(f.Name)
 			if err != nil {
 				return nil, err
@@ -53,7 +40,7 @@ func spanValueKeys(q *traceql_ir.Query) ([]string, error) {
 // splitSelected separates the nested-set keys from the attribute keys.
 func splitSelected(keys []string) (attrKeys, nestedSet []string) {
 	for _, key := range keys {
-		if IsNestedSetKey(key) {
+		if traceql_ir.IsNestedSet(key) {
 			nestedSet = append(nestedSet, key)
 		} else {
 			attrKeys = append(attrKeys, key)

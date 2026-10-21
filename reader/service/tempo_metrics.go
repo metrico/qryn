@@ -344,7 +344,7 @@ func (t *TempoService) MetricsQueryInstant(ctx context.Context, req *model.Metri
 // byLabel is a series label of a by() field: an int for a nested-set field,
 // else a string.
 func byLabel(key, val string) model.MetricsKeyValue {
-	if clickhouse_transpiler.IsNestedSetKey(key) {
+	if traceql_ir.IsNestedSet(key) {
 		return model.MetricsKeyValue{Key: key, Value: model.MetricsLabelValue{IntValue: val}}
 	}
 	return model.MetricsKeyValue{Key: key, Value: model.MetricsLabelValue{StringValue: val}}

@@ -2,6 +2,7 @@ package clickhouse_transpiler
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 type fieldRef struct {
 	key       string
 	duration  bool
-	nestedSet string
+	nestedSet nestedSetCol
 }
 
 // fieldRefOf maps an attribute or intrinsic to what it reads. An unscoped
@@ -32,7 +33,7 @@ func fieldRefOf(name string) (fieldRef, error) {
 	case "rootServiceName":
 		return fieldRef{key: "service.name"}, nil
 	}
-	if col, ok := nestedSetColumns[name]; ok {
+	if col, ok := nestedSetColOf(name); ok {
 		return fieldRef{nestedSet: col}, nil
 	}
 	if traceql_ir.IsIntrinsic(name) {
@@ -55,7 +56,7 @@ func pivotOf(e traceql_ir.FieldExpr) (*fieldPivot, error) {
 			}
 			switch {
 			case ref.nestedSet != "":
-				if !containsKey(p.nestedSet, ref.nestedSet) {
+				if !slices.Contains(p.nestedSet, ref.nestedSet) {
 					p.nestedSet = append(p.nestedSet, ref.nestedSet)
 				}
 			case !ref.duration && !containsKey(p.keys, ref.key):
@@ -84,7 +85,7 @@ func pivotOf(e traceql_ir.FieldExpr) (*fieldPivot, error) {
 // `nestedSetParent = -1`, which hold for the spans without a parent id.
 func isRootFilter(e *traceql_ir.BinaryOp) bool {
 	attr, ok := e.LHS.(*traceql_ir.Attribute)
-	if !ok || attr.Name != "nestedSetParent" {
+	if !ok || attr.Name != traceql_ir.NestedSetParent {
 		return false
 	}
 	lit, ok := e.RHS.(*traceql_ir.Static)
@@ -108,9 +109,9 @@ type fieldSQL struct {
 	attr func(key string) string
 	// duration is the column holding the span duration in nanoseconds.
 	duration string
-	// nestedSet is the column holding a stored nested-set column, 0 for a
+	// nestedSet is the pivot column of a stored nested-set column, 0 for a
 	// span without one.
-	nestedSet func(col string) string
+	nestedSet func(col nestedSetCol) string
 	// root is the column that is 1 for a span without a parent id.
 	root string
 }

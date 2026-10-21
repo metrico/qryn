@@ -1,6 +1,5 @@
 -- One numbering pass: the rows for tempo_traces_nested_set, in its column order.
--- Tokens: {DB} = empty or the quoted database and a dot, {IDLE_MS} = idle period, {MAX_SPANS} = span cap,
--- {REPLICA_DELAY} = seconds this node's tempo_traces lags its replicas (0 when not replicated).
+-- Tokens: {DB} table prefix, {IDLE_MS}, {MAX_SPANS}, {REPLICA_DELAY} (seconds).
 WITH RECURSIVE
 -- Traces touched at least the idle period ago and not before their newest numbering.
 -- On a lagging replica they must also be touched before now - delay - 2s.
@@ -47,8 +46,7 @@ rounds AS (
     SELECT toUInt32(greatest(1, ceil(log2(max(n))))) AS r
     FROM (SELECT count() AS n FROM edges GROUP BY oid, trace_id)
 ),
--- anc = 2^k-th ancestor (zero past a root or missing parent), cut = a missing parent on the chain,
--- cnt = descendants-or-self closer than 2^k. Reachable after R rounds: cut = 0 and anc zero.
+-- anc = 2^k-th ancestor, cut = a missing parent on the way, cnt = descendants-or-self closer than 2^k.
 up AS (
     SELECT oid, trace_id, span_id AS node,
            if(is_root = 1 OR dangling = 1, toFixedString('', 8), parent) AS anc,

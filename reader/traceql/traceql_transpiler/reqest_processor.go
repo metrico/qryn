@@ -7,6 +7,7 @@ import (
 
 	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
 	"github.com/metrico/qryn/v5/reader/model"
+	traceql_ir "github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
 	"github.com/metrico/qryn/v5/reader/traceql/traceql_transpiler/clickhouse_transpiler"
 	"github.com/metrico/qryn/v5/reader/utils/logger"
 	"github.com/metrico/qryn/v5/reader/utils/sql_select"
@@ -138,7 +139,7 @@ func addSelected(span *model.SpanInfo, keys, vals []string) {
 			continue
 		}
 		attr := model.SpanAttr{Key: key}
-		if clickhouse_transpiler.IsNestedSetKey(key) {
+		if traceql_ir.IsNestedSet(key) {
 			attr.Value.IntValue = &vals[i]
 		} else {
 			attr.Value.StringValue = &vals[i]
