@@ -46,13 +46,12 @@ type PlannerContext struct {
 	Metrics15sDistTableName    string
 	PatternsTable              string
 
-	TracesAttrsTable     string
-	TracesAttrsDistTable string
-	TracesTable          string
-	TracesDistTable      string
-	TracesKVTable        string
-	TracesKVDistTable    string
-	// TracesNestedSetTable holds the stored nested-set values of numbered spans.
+	TracesAttrsTable         string
+	TracesAttrsDistTable     string
+	TracesTable              string
+	TracesDistTable          string
+	TracesKVTable            string
+	TracesKVDistTable        string
 	TracesNestedSetTable     string
 	TracesNestedSetDistTable string
 

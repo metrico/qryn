@@ -43,6 +43,7 @@ func openTraces(t *testing.T) (clickhouse.Conn, model.ISqlxDB) {
 	return conn, &dsn.StableSqlxDBWrapper{DB: sqlDB, GetDB: func() *sqlx.DB { return sqlDB }}
 }
 
+// execSQL runs q or fails the test.
 func execSQL(t *testing.T, conn clickhouse.Conn, q string) {
 	t.Helper()
 	if err := conn.Exec(context.Background(), q); err != nil {
@@ -99,10 +100,12 @@ func search(t *testing.T, db model.ISqlxDB, query string) map[string]map[string]
 
 const selectNestedSet = `{} | select(nestedSetLeft, nestedSetRight, nestedSetParent)`
 
+// zeros is a span's selected values before numbering.
 func zeros() map[string]string {
 	return map[string]string{"nestedSetLeft": "int:0", "nestedSetRight": "int:0", "nestedSetParent": "int:0"}
 }
 
+// assertSpans compares search() results.
 func assertSpans(t *testing.T, got, want map[string]map[string]string) {
 	t.Helper()
 	if fmt.Sprint(got) != fmt.Sprint(want) {

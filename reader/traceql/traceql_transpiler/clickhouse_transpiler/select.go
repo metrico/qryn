@@ -25,7 +25,8 @@ func IsNestedSetKey(key string) bool {
 }
 
 // selectedKeys lists the attribute keys the select() stages of q read for
-// each listed span, each once in order.
+// each listed span, each once in order. An attribute named like a nested-set
+// intrinsic shares its key.
 func selectedKeys(q *traceql_ir.Query) ([]string, error) {
 	var keys []string
 	seen := map[string]bool{}
@@ -33,17 +34,30 @@ func selectedKeys(q *traceql_ir.Query) ([]string, error) {
 		if listedIntrinsics[f.Name] {
 			continue
 		}
-		ref := fieldRef{key: f.Name}
-		if !IsNestedSetKey(f.Name) {
-			var err error
-			if ref, err = fieldRefOf(f.Name); err != nil {
+		key := f.Name
+		if !IsNestedSetKey(key) {
+			ref, err := fieldRefOf(f.Name)
+			if err != nil {
 				return nil, err
 			}
+			key = ref.key
 		}
-		if !seen[ref.key] {
-			seen[ref.key] = true
-			keys = append(keys, ref.key)
+		if !seen[key] {
+			seen[key] = true
+			keys = append(keys, key)
 		}
 	}
 	return keys, nil
+}
+
+// splitSelected separates the nested-set keys from the attribute keys.
+func splitSelected(keys []string) (attrKeys, nestedSet []string) {
+	for _, key := range keys {
+		if IsNestedSetKey(key) {
+			nestedSet = append(nestedSet, key)
+		} else {
+			attrKeys = append(attrKeys, key)
+		}
+	}
+	return attrKeys, nestedSet
 }

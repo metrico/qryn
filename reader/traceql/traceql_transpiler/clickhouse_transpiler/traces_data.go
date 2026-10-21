@@ -68,14 +68,7 @@ func (t *TracesDataPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, er
 			AndWhere(inSubquery(ctx, sql.NewRawObject("traces.trace_id"), withTraceIdsRef)).
 			GroupBy(sql.NewRawObject("traces.trace_id")),
 		"traces_info")
-	var attrKeys, nestedSet []string
-	for _, key := range t.Selected {
-		if IsNestedSetKey(key) {
-			nestedSet = append(nestedSet, key)
-		} else {
-			attrKeys = append(attrKeys, key)
-		}
-	}
+	attrKeys, nestedSet := splitSelected(t.Selected)
 	keysCol, valsCol := emptySelected, emptySelected
 	var withValues, withSelected, withNestedSet *sql.With
 	if len(attrKeys) > 0 {
@@ -169,7 +162,7 @@ func selectedNestedSet(ctx *shared.PlannerContext, fields []string, traceIds, sp
 func nestedSetKV(fields []string) string {
 	kv := make([]string, len(fields))
 	for i, f := range fields {
-		kv[i] = fmt.Sprintf("('%s', toString(selected_nested_set.%s_))", f, nestedSetColumns[f])
+		kv[i] = fmt.Sprintf("('%s', toString(ifNull(selected_nested_set.%s_, 0)))", f, nestedSetColumns[f])
 	}
 	return "[" + strings.Join(kv, ", ") + "]"
 }
