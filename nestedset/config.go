@@ -37,7 +37,7 @@ func ConfigFromEnv(warn func(args ...any)) (Config, error) {
 	case "", "0", "false", "no", "off":
 		return cfg, nil
 	default:
-		warn(fmt.Sprintf("%s=%q: want true or false; nested-set numberer disabled", EnabledEnv, v))
+		warn(fmt.Sprintf("%s=%q: want true or false; nested-set numberer disabled", EnabledEnv, os.Getenv(EnabledEnv)))
 		return cfg, nil
 	}
 	for _, d := range []struct {

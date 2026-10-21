@@ -241,7 +241,7 @@ func (t *TempoService) MetricsQueryRange(ctx context.Context, req *model.Metrics
 					}
 				} else {
 					labels = append(labels, model.MetricsKeyValue{
-						Key: "nestedSetParent", Value: model.MetricsLabelValue{IntValue: "-1"},
+						Key: traceql_ir.NestedSetParent, Value: model.MetricsLabelValue{IntValue: "-1"},
 					})
 				}
 				exTsMs := ex.spanTs / 1e6
@@ -547,7 +547,7 @@ func executeHistogramRange(
 			exList = append(exList, tempo.HistogramExemplar{
 				Labels: []model.MetricsKeyValue{
 					{Key: "trace:id", Value: model.MetricsLabelValue{StringValue: ex.traceID}},
-					{Key: "nestedSetParent", Value: model.MetricsLabelValue{IntValue: "-1"}},
+					{Key: traceql_ir.NestedSetParent, Value: model.MetricsLabelValue{IntValue: "-1"}},
 					{Key: "duration", Value: model.MetricsLabelValue{StringValue: metricsFormatDuration(ex.durNs)}},
 				},
 				Value:       1,

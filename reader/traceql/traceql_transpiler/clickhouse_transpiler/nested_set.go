@@ -12,14 +12,9 @@ import (
 // columns that carry its value through a query.
 type nestedSetCol string
 
+// nestedSetCols maps the nested-set intrinsics to their side-table columns.
 var nestedSetCols = map[string]nestedSetCol{
 	traceql_ir.NestedSetLeft: "left", traceql_ir.NestedSetRight: "right", traceql_ir.NestedSetParent: "parent",
-}
-
-// nestedSetColOf is the side-table column of a nested-set intrinsic.
-func nestedSetColOf(field string) (nestedSetCol, bool) {
-	col, ok := nestedSetCols[field]
-	return col, ok
 }
 
 // newest is the nestedSetValues column of the newest stored value.
@@ -40,7 +35,7 @@ func (c nestedSetCol) valueIn(alias string) string {
 // MetricsNestedSetColumn is the metrics spans column of a nested-set field,
 // or false for any other field.
 func MetricsNestedSetColumn(field string) (string, bool) {
-	col, ok := nestedSetColOf(field)
+	col, ok := nestedSetCols[field]
 	return col.metrics(), ok
 }
 
@@ -66,8 +61,8 @@ func nestedSetValues(ctx *shared.PlannerContext, cols []nestedSetCol, traceIds, 
 	return sql.NewWith(res, alias)
 }
 
-// nestedSetJoin left-joins the nestedSetValues of cols onto the spans of a
-// CTE: with reads them, cols are the values named by the caller.
+// nestedSetJoin is a nestedSetValues CTE, its value columns and its left
+// join onto a CTE of spans.
 type nestedSetJoin struct {
 	with *sql.With
 	cols []sql.SQLObject

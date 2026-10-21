@@ -33,7 +33,7 @@ func fieldRefOf(name string) (fieldRef, error) {
 	case "rootServiceName":
 		return fieldRef{key: "service.name"}, nil
 	}
-	if col, ok := nestedSetColOf(name); ok {
+	if col, ok := nestedSetCols[name]; ok {
 		return fieldRef{nestedSet: col}, nil
 	}
 	if traceql_ir.IsIntrinsic(name) {

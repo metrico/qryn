@@ -133,11 +133,12 @@ func (t *TracesDataPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, er
 }
 
 // selectedNestedSet reads the newest stored values of the nested-set fields
-// of the listed spans in spanIds: one selected_nested_set row per numbered span.
+// (nested-set keys) of the listed spans in spanIds: one selected_nested_set
+// row per numbered span.
 func selectedNestedSet(ctx *shared.PlannerContext, fields []string, traceIds, spanIds sql.SQLObject) *sql.With {
 	cols := make([]nestedSetCol, len(fields))
 	for i, f := range fields {
-		cols[i], _ = nestedSetColOf(f)
+		cols[i] = nestedSetCols[f]
 	}
 	return nestedSetValues(ctx, cols, traceIds, spanIds, "selected_nested_set")
 }
@@ -146,8 +147,7 @@ func selectedNestedSet(ctx *shared.PlannerContext, fields []string, traceIds, sp
 func nestedSetKV(fields []string) string {
 	kv := make([]string, len(fields))
 	for i, f := range fields {
-		col, _ := nestedSetColOf(f)
-		kv[i] = fmt.Sprintf("('%s', toString(%s))", f, col.valueIn("selected_nested_set"))
+		kv[i] = fmt.Sprintf("('%s', toString(%s))", f, nestedSetCols[f].valueIn("selected_nested_set"))
 	}
 	return "[" + strings.Join(kv, ", ") + "]"
 }

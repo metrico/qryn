@@ -109,7 +109,7 @@ func metricsNestedSet(fn *traceql_ir.MetricsFn) []nestedSetCol {
 	}
 	var cols []nestedSetCol
 	for _, f := range append([]string{fn.Attr}, fn.By...) {
-		if col, ok := nestedSetColOf(f); ok && !slices.Contains(cols, col) {
+		if col, ok := nestedSetCols[f]; ok && !slices.Contains(cols, col) {
 			cols = append(cols, col)
 		}
 	}

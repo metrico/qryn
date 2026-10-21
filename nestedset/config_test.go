@@ -58,14 +58,14 @@ func TestConfigRejectsInvalidValuesOnlyWhenEnabled(t *testing.T) {
 }
 
 func TestConfigTreatsAnUnrecognisedEnabledValueAsDisabled(t *testing.T) {
-	t.Setenv(EnabledEnv, "maybe")
+	t.Setenv(EnabledEnv, " Maybe")
 	t.Setenv(IdleEnv, "soon")
 	var warnings []string
 	got, err := ConfigFromEnv(func(args ...any) { warnings = append(warnings, fmt.Sprint(args...)) })
 	if err != nil || got.Enabled {
 		t.Errorf("got %+v, %v; want disabled without an error", got, err)
 	}
-	if len(warnings) != 1 || !strings.Contains(warnings[0], EnabledEnv) || !strings.Contains(warnings[0], "maybe") {
+	if len(warnings) != 1 || !strings.Contains(warnings[0], EnabledEnv) || !strings.Contains(warnings[0], `" Maybe"`) {
 		t.Errorf("got warnings %q, want one naming %s and the value", warnings, EnabledEnv)
 	}
 }
