@@ -58,15 +58,17 @@ var searchQueries = append(append([]string{}, plainSearchQueries...), structural
 
 func testPlannerContext(spss int64) *shared.PlannerContext {
 	return &shared.PlannerContext{
-		From:                 time.Unix(86390, 0).UTC(),
-		To:                   time.Unix(86410, 0).UTC(),
-		Limit:                5,
-		SpansPerSpanSet:      spss,
-		TracesAttrsTable:     "tempo_traces_attrs_gin",
-		TracesAttrsDistTable: "tempo_traces_attrs_gin_dist",
-		TracesTable:          "tempo_traces",
-		TracesDistTable:      "tempo_traces_dist",
-		VersionInfo:          map[string]int64{dbversion.CapStructuralQueries: 0},
+		From:                     time.Unix(86390, 0).UTC(),
+		To:                       time.Unix(86410, 0).UTC(),
+		Limit:                    5,
+		SpansPerSpanSet:          spss,
+		TracesAttrsTable:         "tempo_traces_attrs_gin",
+		TracesAttrsDistTable:     "tempo_traces_attrs_gin_dist",
+		TracesTable:              "tempo_traces",
+		TracesDistTable:          "tempo_traces_dist",
+		TracesNestedSetTable:     "tempo_traces_nested_set",
+		TracesNestedSetDistTable: "tempo_traces_nested_set_dist",
+		VersionInfo:              map[string]int64{dbversion.CapStructuralQueries: 0},
 	}
 }
 

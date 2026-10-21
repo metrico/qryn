@@ -12,6 +12,18 @@ var listedIntrinsics = map[string]bool{
 	"rootName": true, "trace:rootName": true, "rootServiceName": true, "trace:rootService": true,
 }
 
+// nestedSetColumns maps the nested-set intrinsics to their columns in the
+// side table. Selected, they keep their names as keys.
+var nestedSetColumns = map[string]string{
+	"nestedSetLeft": "left", "nestedSetRight": "right", "nestedSetParent": "parent",
+}
+
+// IsNestedSetKey reports whether a selected key holds a nested-set value.
+func IsNestedSetKey(key string) bool {
+	_, ok := nestedSetColumns[key]
+	return ok
+}
+
 // selectedKeys lists the attribute keys the select() stages of q read for
 // each listed span, each once in order.
 func selectedKeys(q *traceql_ir.Query) ([]string, error) {
@@ -21,9 +33,12 @@ func selectedKeys(q *traceql_ir.Query) ([]string, error) {
 		if listedIntrinsics[f.Name] {
 			continue
 		}
-		ref, err := fieldRefOf(f.Name)
-		if err != nil {
-			return nil, err
+		ref := fieldRef{key: f.Name}
+		if !IsNestedSetKey(f.Name) {
+			var err error
+			if ref, err = fieldRefOf(f.Name); err != nil {
+				return nil, err
+			}
 		}
 		if !seen[ref.key] {
 			seen[ref.key] = true

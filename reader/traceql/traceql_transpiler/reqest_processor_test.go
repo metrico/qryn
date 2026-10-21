@@ -68,6 +68,22 @@ func TestSelectedValuesJSON(t *testing.T) {
 	}
 }
 
+// Selected nested-set values serialise as int attributes, among string ones.
+func TestSelectedNestedSetValuesJSON(t *testing.T) {
+	span := model.SpanInfo{SpanID: "01", StartTimeUnixNano: "1", DurationNanos: "2", Attributes: make([]model.SpanAttr, 0)}
+	addSelected(&span, []string{"a", "nestedSetLeft", "nestedSetParent", "nestedSetRight"}, []string{"7", "3", "-1", "0"})
+	got, err := json.Marshal(span)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `{"spanID":"01","startTimeUnixNano":"1","durationNanos":"2","attributes":[` +
+		`{"key":"a","value":{"stringValue":"7"}},{"key":"nestedSetLeft","value":{"intValue":"3"}},` +
+		`{"key":"nestedSetParent","value":{"intValue":"-1"}},{"key":"nestedSetRight","value":{"intValue":"0"}}]}`
+	if string(got) != want {
+		t.Errorf("got  %s\nwant %s", got, want)
+	}
+}
+
 // A span's duration serialises as its nanoseconds.
 func TestSearchSpanDurationEqualsTimestamp(t *testing.T) {
 	got, err := json.Marshal(searchSpan("01", 1700000000000000000, 1700000000000000000))

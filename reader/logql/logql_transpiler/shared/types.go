@@ -52,6 +52,9 @@ type PlannerContext struct {
 	TracesDistTable      string
 	TracesKVTable        string
 	TracesKVDistTable    string
+	// TracesNestedSetTable holds the stored nested-set values of numbered spans.
+	TracesNestedSetTable     string
+	TracesNestedSetDistTable string
 
 	ProfilesSeriesGinTable     string
 	ProfilesSeriesGinDistTable string
