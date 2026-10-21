@@ -119,7 +119,7 @@ func (t TraceQLRequestProcessor) read(ctx *shared.PlannerContext, strReq string)
 	return res, rows.Err()
 }
 
-// searchSpan is a search-result span without selected values.
+// searchSpan builds a search-result span without selected values.
 func searchSpan(spanId string, durationNs, timestampNs int64) model.SpanInfo {
 	return model.SpanInfo{
 		SpanID:            spanId,

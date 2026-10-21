@@ -68,8 +68,7 @@ func TestSelectedValuesJSON(t *testing.T) {
 	}
 }
 
-// A span's duration serialises as its nanoseconds, also when it equals the
-// span's start timestamp.
+// A span's duration serialises as its nanoseconds.
 func TestSearchSpanDurationEqualsTimestamp(t *testing.T) {
 	got, err := json.Marshal(searchSpan("01", 1700000000000000000, 1700000000000000000))
 	if err != nil {
