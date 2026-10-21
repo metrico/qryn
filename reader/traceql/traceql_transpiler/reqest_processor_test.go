@@ -67,3 +67,16 @@ func TestSelectedValuesJSON(t *testing.T) {
 		t.Errorf("got %s", plain)
 	}
 }
+
+// A span's duration serialises as its nanoseconds, also when it equals the
+// span's start timestamp.
+func TestSearchSpanDurationEqualsTimestamp(t *testing.T) {
+	got, err := json.Marshal(searchSpan("01", 1700000000000000000, 1700000000000000000))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `{"spanID":"01","startTimeUnixNano":"1700000000000000000","durationNanos":"1700000000000000000","attributes":[]}`
+	if string(got) != want {
+		t.Errorf("got  %s\nwant %s", got, want)
+	}
+}
