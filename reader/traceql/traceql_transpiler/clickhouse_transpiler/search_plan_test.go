@@ -168,10 +168,10 @@ func TestSearchSpanCapComesFromSpss(t *testing.T) {
 }
 
 func TestSearchSpanCapKeepsEarliestStarts(t *testing.T) {
-	const cap = "arraySlice(arraySort(groupUniqArray((result_spans.timestamp_ns, result_spans.span_id))), 1, 3)"
+	const earliestCap = "arraySlice(arraySort(groupUniqArray((result_spans.timestamp_ns, result_spans.span_id))), 1, 3)"
 	for _, query := range searchQueries {
 		res := renderPlan(t, planSearch(t, query), testPlannerContext(3))
-		if !strings.Contains(res, cap) {
+		if !strings.Contains(res, earliestCap) {
 			t.Errorf("%s: span cap is not earliest start, ties by span id:\n%s", query, res)
 		}
 	}
