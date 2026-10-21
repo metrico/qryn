@@ -12,8 +12,7 @@ Search and metrics are also served under the `/tempo` prefix.
 This page covers the parts of TraceQL that relate spans to each other
 (structural operators, `&&`/`||` between spansets, pipelines, the nested-set
 intrinsics) and the field expressions used inside spanset filters. Where
-gigapipe deliberately differs
-from Tempo, the difference is listed in
+gigapipe deliberately differs from Tempo, the difference is listed in
 [Differences from Tempo](#differences-from-tempo).
 
 ## Requirements
@@ -370,9 +369,9 @@ default; enable it with `GIGAPIPE_NESTED_SET_NUMBERER_ENABLED` (see
 - Each pass numbers at most `GIGAPIPE_NESTED_SET_NUMBERER_MAX_SPANS` spans,
   oldest traces first; the rest wait for the next pass. On a cluster, each
   shard numbers its own traces and the cap applies per shard.
-- There is no backfill. A trace that receives no spans after the upgrade
-  that adds the table is never numbered, and one whose last span arrived
-  more than a day before the numberer was enabled may not be.
+- There is no backfill. A trace that receives no spans once the
+  `tempo_traces_touched` table exists is never numbered, and one whose last
+  span arrived more than a day before the numberer was enabled may not be.
 
 ### Unnumbered spans
 
@@ -383,9 +382,10 @@ unreachable spans look the same.
 The root filter is the exception: `{ nestedSetParent < 0 }` and
 `{ nestedSetParent = -1 }` find roots through the span's parent id, so they
 match the roots of every trace, numbered or not. An unnumbered root still
-selects and echoes `nestedSetParent = 0`. Only these literal forms read the
-parent id; other spellings such as `-1 = nestedSetParent` or
-`nestedSetParent <= -1` read the stored value and miss unnumbered roots.
+selects and echoes `nestedSetParent = 0`. Only these forms, with the number
+on the right, read the parent id; other spellings such as
+`-1 = nestedSetParent` or `nestedSetParent <= -1` read the stored value and
+miss unnumbered roots.
 
 Structural operators never read the stored values; they resolve the tree at
 query time. A span that matches `>>` can therefore carry `0`/`0`/`0`, or
@@ -408,11 +408,12 @@ stale numbers when its trace received a late span after it was numbered.
 ### Filter echo
 
 Listed spans carry the attributes and intrinsics the query's spanset filters
-`{...}` read, as if they were added to a `select()`. `{ .a = 1 } >> { .b = 2 }`
-returns `.a` and `.b` on each listed span that has them. The keys are the
-union over the whole query, and values follow the `select()` rules above.
-Fields read only by a scalar filter (`| avg(.x) > 1`) or by `by()` are not
-echoed. Metrics and autocomplete are unaffected.
+`{...}` read, as if they were added to a `select()`.
+`{ .a = 1 } >> { .b = 2 }` returns `.a` and `.b` on each listed span that has
+them. The keys are the union over the whole query, and values follow the
+`select()` rules above. Fields read only by a scalar filter
+(`| avg(.x) > 1`) or by `by()` are not echoed. Metrics and autocomplete are
+unaffected.
 
 ## Metrics
 
@@ -424,7 +425,7 @@ of either side. Spans are bucketed by start time within `(from, to]`.
 Scalar filters and `by()` before the metrics function decide which traces and
 groups contribute; the spans of every passing group feed the metric.
 `by()` groups never become series labels; use the metrics function's
-`by (...)` for that. Series labels are strings, except the nested-set
+`by (...)` for that. `by (...)` labels are strings, except the nested-set
 intrinsics, which are `intValue`.
 
 ### Hints

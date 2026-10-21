@@ -62,7 +62,7 @@ Saved dashboards and alerts that use them will see different numbers.
   uncapped. Search lists **3 spans per spanset by default** (was up to 100);
   set `spss` for more. `matched` reports the true number of matched spans.
 - **`durationNanos`** is always the span duration in nanoseconds. A span
-  whose duration equalled its start timestamp reported `"n/a"`, which Grafana
+  whose duration equaled its start timestamp reported `"n/a"`, which Grafana
   failed to parse.
 - **Time range.** TraceQL search, metrics and autocomplete with a filtering
   query now count spans that start in **`(from, to]`**: a span starting
@@ -119,15 +119,19 @@ Saved dashboards and alerts that use them will see different numbers.
   `enable_analyzer=1`.
 - **Schema migration.** The upgrade creates the `tempo_traces_nested_set`
   and `tempo_traces_touched` tables, the `tempo_traces_touched_mv`
-  materialized view on `tempo_traces` and, on clusters,
-  `tempo_traces_nested_set_dist`. Their engines follow `tempo_traces`.
-  Structural queries alone need no migration, writer change or backfill.
+  materialized view on `tempo_traces` and, on clusters, the Distributed
+  `tempo_traces_nested_set_dist`, plus its read-path table on a separate read
+  cluster (see
+  [Cross-Cluster Deployment](configuration.md#cross-cluster-deployment)).
+  Their engines follow `tempo_traces`. Structural queries alone need no
+  migration, writer change or backfill.
 - **New nested-set numberer**, off by default. Enable it on exactly one
   instance with `GIGAPIPE_NESTED_SET_NUMBERER_ENABLED`; `_IDLE` (10s),
   `_INTERVAL` (5s) and `_MAX_SPANS` (200000, per shard on clusters) tune it.
   It needs ClickHouse 24.9 or newer; on an older server it doesn't start and
-  every span reads `0`/`0`/`0`. Traces stored before it ran are not
-  backfilled. See [Configuration](configuration.md#traceql).
+  every span reads `0`/`0`/`0`. There is no backfill: traces stored before
+  it ran may never be numbered. See
+  [Configuration](configuration.md#traceql).
 - **New setting `GIGAPIPE_TRACEQL_ANCESTRY_ROUNDS`** (1 to 32, default 20).
   Traces up to `2^R` spans deep resolve. See
   [Configuration](configuration.md#traceql).
