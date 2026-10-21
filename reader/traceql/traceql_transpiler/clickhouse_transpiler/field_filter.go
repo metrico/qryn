@@ -14,11 +14,9 @@ import (
 // lacking all the keys it reads reads this one too.
 const anchorKey = "name"
 
-// fieldPivot reads one row per span starting in range: trace_id, span_id,
-// timestamp_ns, duration, one column per attribute key, NULL when the span
-// lacks it, one per stored nested-set column, 0 for an unnumbered span, and
-// _root, 1 for a span without a parent id, when root is set. With no keys it
-// reads the traces table.
+// fieldPivot reads one row per span starting in range: its span-row columns,
+// the attribute keys (NULL when absent), the stored nested-set columns and,
+// with root, _root. With no keys it reads the traces table.
 type fieldPivot struct {
 	keys      []string
 	nestedSet []string
@@ -34,13 +32,14 @@ func (p *fieldPivot) column(key string) string {
 	return "NULL"
 }
 
-// nestedSetColumn is the pivot column of a stored nested-set column.
-func nestedSetColumn(col string) string {
+// pivotNestedSetColumn is the pivot column of a stored nested-set column, 0
+// for an unnumbered span.
+func pivotNestedSetColumn(col string) string {
 	return "_ns_" + col
 }
 
 func (p *fieldPivot) sql() *fieldSQL {
-	return &fieldSQL{attr: p.column, duration: "duration", nestedSet: nestedSetColumn, root: "_root"}
+	return &fieldSQL{attr: p.column, duration: "duration", nestedSet: pivotNestedSetColumn, root: "_root"}
 }
 
 // spans plans the attribute rows of the pivot over the spans that start in
@@ -83,12 +82,13 @@ func (p *fieldPivot) spans(ctx *shared.PlannerContext) sql.ISelect {
 // rootColumn is 1 for a span any copy of which has no parent id.
 const rootColumn = "max(traces.parent_id = '')"
 
-// read returns the CTEs that read the pivot of spans, from spans(), the last
-// of them named alias and holding every pivot column.
-func (p *fieldPivot) read(ctx *shared.PlannerContext, spans sql.ISelect, alias string) []*sql.With {
+// read returns the CTEs that read the pivot of spans, from spans(), and the
+// last of them, named alias, which holds every pivot column.
+func (p *fieldPivot) read(ctx *shared.PlannerContext, spans sql.ISelect, alias string) (withs []*sql.With, pivot *sql.With) {
 	joinsRoot := p.root && len(p.keys) > 0
 	if len(p.nestedSet) == 0 && !joinsRoot {
-		return []*sql.With{sql.NewWith(spans, alias)}
+		pivot = sql.NewWith(spans, alias)
+		return []*sql.With{pivot}, pivot
 	}
 	withAttrs := sql.NewWith(spans, alias+"_attrs")
 	a := withAttrs.GetAlias()
@@ -102,13 +102,13 @@ func (p *fieldPivot) read(ctx *shared.PlannerContext, spans sql.ISelect, alias s
 	for _, k := range p.keys {
 		cols = append(cols, sql.NewSimpleCol(a+"."+p.column(k), p.column(k)))
 	}
-	withs := []*sql.With{withAttrs}
+	withs = []*sql.With{withAttrs}
 	var joins []*sql.Join
 	if len(p.nestedSet) > 0 {
 		withValues := nestedSetValues(ctx, p.nestedSet, traceIds, nil, alias+"_ns")
 		v := withValues.GetAlias()
 		for _, col := range p.nestedSet {
-			cols = append(cols, sql.NewSimpleCol(fmt.Sprintf("ifNull(%s.%s_, 0)", v, col), nestedSetColumn(col)))
+			cols = append(cols, sql.NewSimpleCol(nestedSetValue(v, col), pivotNestedSetColumn(col)))
 		}
 		withs = append(withs, withValues)
 		joins = append(joins, sql.NewJoin("left", sql.NewWithRef(withValues), sameSpan(a+".span_id", v+".span_id")))
@@ -134,7 +134,8 @@ func (p *fieldPivot) read(ctx *shared.PlannerContext, spans sql.ISelect, alias s
 	for _, j := range joins {
 		res.AddJoin(j)
 	}
-	return append(withs, sql.NewWith(res, alias))
+	pivot = sql.NewWith(res, alias)
+	return append(withs, pivot), pivot
 }
 
 // attrsWhere selects the attribute rows of the pivot's keys in range.
@@ -163,7 +164,7 @@ type FieldFilterPlanner struct {
 // newFieldPivotFor plans the pivot filter reads. The pivot reads every span
 // unless the filter is false for spans lacking all its keys.
 func newFieldPivotFor(filter traceql_ir.FieldExpr) (*fieldPivot, error) {
-	pivot, err := fieldReads(filter)
+	pivot, err := pivotOf(filter)
 	if err != nil {
 		return nil, err
 	}
@@ -184,11 +185,11 @@ func (f *FieldFilterPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, e
 	}
 	spans := pivot.spans(ctx)
 	restrictOperand(ctx, spans)
-	withs := pivot.read(ctx, spans, f.Prefix+"_pivot")
+	withs, withPivot := pivot.read(ctx, spans, f.Prefix+"_pivot")
 	return sql.NewSelect().
 		With(withs...).
 		Select(append(spanRowCols(), sql.NewSimpleCol("duration", "duration"))...).
-		From(sql.NewWithRef(withs[len(withs)-1])).
+		From(sql.NewWithRef(withPivot)).
 		AndWhere(rawCond(cond)), nil
 }
 

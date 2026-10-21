@@ -29,7 +29,7 @@ func (a *AttrConditionPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect,
 	}
 	a.alias = "bsCond"
 
-	err = a.createWhere(ctx)
+	err = a.createWhere()
 	if err != nil {
 		return nil, err
 	}
@@ -54,13 +54,12 @@ func (a *AttrConditionPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect,
 	return res, nil
 }
 
-// createWhere builds the terms on ctx; their traces-table conditions go to ctx.
-// The rows read are those of the terms that read an attribute key, or every
+// createWhere builds the terms. The rows read are those of the terms that read an attribute key, or every
 // row when the condition can hold without any of them.
-func (a *AttrConditionPlanner) createWhere(ctx *shared.PlannerContext) error {
+func (a *AttrConditionPlanner) createWhere() error {
 	a.sqlConds, a.where = nil, nil
 	for _, t := range a.Terms {
-		sqlTerm, err := a.getTerm(t, ctx)
+		sqlTerm, err := a.getTerm(t)
 		if err != nil {
 			return err
 		}
@@ -131,7 +130,7 @@ func (a *AttrConditionPlanner) getCond(c *condition) (sql.SQLCondition, error) {
 	return sql.Neq(&bitAnd{left, sql.NewIntVal(int64(1) << c.simpleIdx)}, sql.NewIntVal(0)), nil
 }
 
-func (a *AttrConditionPlanner) getTerm(t *attrComparison, ctx *shared.PlannerContext) (sql.SQLCondition, error) {
+func (a *AttrConditionPlanner) getTerm(t *attrComparison) (sql.SQLCondition, error) {
 	key := t.Attr
 	// Normalize span: colon-intrinsic aliases to their canonical names.
 	if key == "span:duration" {

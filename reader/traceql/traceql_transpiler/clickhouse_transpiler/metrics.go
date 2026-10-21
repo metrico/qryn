@@ -12,9 +12,8 @@ import (
 )
 
 // MetricsBuild builds a metrics query reading spans, a CTE with one row per
-// span the metrics function counts: trace_id, span_id, timestamp_ns,
-// duration_ns, name, service_name and, per nested-set field the function
-// reads, its stored value under MetricsNestedSetColumn, 0 when unnumbered.
+// span: trace_id, span_id, timestamp_ns, duration_ns, name, service_name and
+// the MetricsNestedSetColumn of each nested-set field the function reads.
 type MetricsBuild func(spans *sql.With) (sql.ISelect, error)
 
 // CompareBuild builds compare() from two CTEs shaped like MetricsBuild's:
@@ -108,6 +107,8 @@ func MetricsNestedSetColumn(field string) (string, bool) {
 	return metricsNestedSetColumn(col), ok
 }
 
+// metricsNestedSetColumn is the metrics spans column of a stored nested-set
+// column, 0 for an unnumbered span.
 func metricsNestedSetColumn(col string) string {
 	return "nested_set_" + col
 }
@@ -170,7 +171,7 @@ func (m *metricsSpansPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, 
 		cols = append(cols, sql.NewSimpleCol(s+"."+col, col))
 	}
 	for _, col := range m.NestedSet {
-		cols = append(cols, sql.NewSimpleCol(fmt.Sprintf("ifNull(%s.%s_, 0)", v, col), metricsNestedSetColumn(col)))
+		cols = append(cols, sql.NewSimpleCol(nestedSetValue(v, col), metricsNestedSetColumn(col)))
 	}
 	return sql.NewSelect().
 		With(withResult, withIds, withSpans, withValues).

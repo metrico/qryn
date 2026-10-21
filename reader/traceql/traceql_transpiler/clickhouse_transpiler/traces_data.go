@@ -145,9 +145,8 @@ func selectedNestedSet(ctx *shared.PlannerContext, fields []string, traceIds, sp
 	return nestedSetValues(ctx, cols, traceIds, spanIds, "selected_nested_set")
 }
 
-// nestedSetValues reads the newest stored values of the nested-set columns
-// of the traces in traceIds, and of the spans in spanIds unless it is nil:
-// one row per numbered span, with each column suffixed by _.
+// nestedSetValues reads the newest stored nested-set columns of the traces in
+// traceIds (and the spans in spanIds unless nil): one row per numbered span.
 func nestedSetValues(ctx *shared.PlannerContext, cols []string, traceIds, spanIds sql.SQLObject, alias string) *sql.With {
 	table := ctx.TracesNestedSetTable
 	if ctx.IsCluster {
@@ -168,11 +167,17 @@ func nestedSetValues(ctx *shared.PlannerContext, cols []string, traceIds, spanId
 	return sql.NewWith(res, alias)
 }
 
+// nestedSetValue is a column of a nestedSetValues row joined as alias, 0 for
+// a span without a row.
+func nestedSetValue(alias, col string) string {
+	return fmt.Sprintf("ifNull(%s.%s_, 0)", alias, col)
+}
+
 // nestedSetKV is a listed span's (key, value) pairs of the nested-set fields.
 func nestedSetKV(fields []string) string {
 	kv := make([]string, len(fields))
 	for i, f := range fields {
-		kv[i] = fmt.Sprintf("('%s', toString(ifNull(selected_nested_set.%s_, 0)))", f, nestedSetColumns[f])
+		kv[i] = fmt.Sprintf("('%s', toString(%s))", f, nestedSetValue("selected_nested_set", nestedSetColumns[f]))
 	}
 	return "[" + strings.Join(kv, ", ") + "]"
 }

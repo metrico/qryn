@@ -77,7 +77,7 @@ func checkAggregates(e traceql_ir.ScalarExpr) error {
 			return err
 		}
 		if e.Arg != nil {
-			_, err := fieldReads(e.Arg)
+			_, err := pivotOf(e.Arg)
 			return err
 		}
 	}
@@ -152,7 +152,7 @@ func (s *scalarFilterStage) process(ctx *shared.PlannerContext, alias string, pr
 // through the left join. Base spans start in the query range, which bounds the
 // read.
 func (s *scalarFilterStage) values(ctx *shared.PlannerContext, alias string, base *sql.With) (sql.ISelect, error) {
-	pivot, err := fieldReads(s.agg.Arg)
+	pivot, err := pivotOf(s.agg.Arg)
 	if err != nil {
 		return nil, err
 	}
@@ -167,8 +167,7 @@ func (s *scalarFilterStage) values(ctx *shared.PlannerContext, alias string, bas
 		table = "traces"
 	}
 	spans.AndWhere(inSubquery(ctx, sql.NewRawObject(fmt.Sprintf("(%s.trace_id, %s.span_id)", table, table)), baseSpans))
-	withs := pivot.read(ctx, spans, alias+"_pivot")
-	withSpans := withs[len(withs)-1]
+	withs, withSpans := pivot.read(ctx, spans, alias+"_pivot")
 	return sql.NewSelect().
 		With(withs...).
 		Select(

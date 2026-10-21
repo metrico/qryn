@@ -22,7 +22,7 @@ func newGroupByStage(g *traceql_ir.GroupBy) (*groupByStage, error) {
 	if err := traceql_ir.CheckGroupBy(g); err != nil {
 		return nil, err
 	}
-	pivot, err := fieldReads(g.Expr)
+	pivot, err := pivotOf(g.Expr)
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +48,7 @@ func (s *groupByStage) process(ctx *shared.PlannerContext, alias string, prev, _
 	spans.AndWhere(
 		inSubquery(ctx, sql.NewRawObject(table+".trace_id"), prevTraces),
 		inSubquery(ctx, sql.NewRawObject(fmt.Sprintf("(%s.trace_id, %s.span_id)", table, table)), prevSpans))
-	withs := pivot.read(ctx, spans, alias+"_pivot")
-	withPivot := withs[len(withs)-1]
+	withs, withPivot := pivot.read(ctx, spans, alias+"_pivot")
 	withKeys := sql.NewWith(sql.NewSelect().
 		Select(
 			sql.NewSimpleCol("trace_id", "trace_id"),

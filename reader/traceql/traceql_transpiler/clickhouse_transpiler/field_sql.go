@@ -41,9 +41,9 @@ func fieldRefOf(name string) (fieldRef, error) {
 	return fieldRef{key: name}, nil
 }
 
-// fieldReads plans the pivot of what e reads: its attribute keys, each once
+// pivotOf plans the pivot of what e reads: its attribute keys, each once
 // in order, its nested-set columns and whether it holds a root filter.
-func fieldReads(e traceql_ir.FieldExpr) (*fieldPivot, error) {
+func pivotOf(e traceql_ir.FieldExpr) (*fieldPivot, error) {
 	p := &fieldPivot{}
 	var walk func(e traceql_ir.FieldExpr) error
 	walk = func(e traceql_ir.FieldExpr) error {
