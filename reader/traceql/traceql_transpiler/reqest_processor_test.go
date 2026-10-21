@@ -3,6 +3,7 @@ package traceql_transpiler
 import (
 	"encoding/json"
 	"math"
+	"slices"
 	"testing"
 
 	"github.com/metrico/qryn/v5/reader/model"
@@ -93,5 +94,24 @@ func TestSearchSpanDurationEqualsTimestamp(t *testing.T) {
 	want := `{"spanID":"01","startTimeUnixNano":"1700000000000000000","durationNanos":"1700000000000000000","attributes":[]}`
 	if string(got) != want {
 		t.Errorf("got  %s\nwant %s", got, want)
+	}
+}
+
+// A spanset lists its spans earliest-first, ties by span id.
+func TestSortSpansEarliestFirst(t *testing.T) {
+	spans := []model.SpanInfo{
+		{SpanID: "0e", StartTimeUnixNano: "20"},
+		{SpanID: "0b", StartTimeUnixNano: "9"},
+		{SpanID: "0c", StartTimeUnixNano: "20"},
+		{SpanID: "0a", StartTimeUnixNano: "100"},
+		{SpanID: "0d", StartTimeUnixNano: "20"},
+	}
+	sortSpans(spans)
+	var got []string
+	for _, s := range spans {
+		got = append(got, s.SpanID)
+	}
+	if want := []string{"0b", "0c", "0d", "0e", "0a"}; !slices.Equal(got, want) {
+		t.Errorf("order = %v, want %v", got, want)
 	}
 }
