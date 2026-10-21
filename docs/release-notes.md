@@ -63,7 +63,9 @@ Saved dashboards and alerts that use them will see different numbers.
   set `spss` for more. `matched` reports the true number of matched spans.
 - **`durationNanos`** is always the span duration in nanoseconds. A span
   whose duration equaled its start timestamp reported `"n/a"`, which Grafana
-  failed to parse.
+  failed to parse. OTLP spans whose end is before their start, or unset, are
+  stored with duration 0; rows stored earlier keep their value until
+  retention drops them.
 - **Time range.** TraceQL search, metrics and autocomplete with a filtering
   query now count spans that start in **`(from, to]`**: a span starting
   exactly at `from` is excluded, one starting exactly at `to` is included.
