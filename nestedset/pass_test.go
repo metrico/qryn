@@ -46,6 +46,7 @@ func insert(t *testing.T, conn clickhouse.Conn, spans ...span) {
 	insertInto(t, conn, "tempo_traces", spans...)
 }
 
+// insertInto is insert into the named table.
 func insertInto(t *testing.T, conn clickhouse.Conn, table string, spans ...span) {
 	t.Helper()
 	rows := make([]string, len(spans))

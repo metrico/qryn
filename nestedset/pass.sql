@@ -3,7 +3,7 @@
 -- {REPLICA_DELAY} = seconds this node's tempo_traces lags its replicas (0 when not replicated).
 WITH RECURSIVE
 -- Traces touched at least the idle period ago and not before their newest numbering.
--- On a lagging replica they must also be touched before now - delay - 2s (delay has 1s resolution).
+-- On a lagging replica they must also be touched before now - delay - 2s.
 eligible AS (
     SELECT t.oid AS oid, t.trace_id AS trace_id, t.touched AS touched
     FROM (SELECT oid, trace_id, max(inserted_at) AS touched FROM {DB}tempo_traces_touched GROUP BY oid, trace_id) AS t

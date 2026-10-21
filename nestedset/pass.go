@@ -55,17 +55,17 @@ func passSelect(t tables, idle time.Duration, maxSpans int, delay string) string
 // passSettings are the settings the pass needs.
 const passSettings = "SETTINGS enable_analyzer = 1, join_use_nulls = 0"
 
-const columns = "(oid, trace_id, span_id, date, left, right, parent, version)"
+const nestedSetColumns = "(oid, trace_id, span_id, date, left, right, parent, version)"
 
 // insertLocal inserts the rows of a pass SELECT into the local table.
 func insertLocal(sel string) string {
-	return "INSERT INTO tempo_traces_nested_set " + columns + "\n" + sel + "\n" + passSettings
+	return "INSERT INTO tempo_traces_nested_set " + nestedSetColumns + "\n" + sel + "\n" + passSettings
 }
 
 // insertCluster runs a pass SELECT on every shard of cluster, each shard
 // inserting its rows into its own local table.
 func insertCluster(t tables, cluster, sel string) string {
-	return "INSERT INTO " + t.prefix() + "tempo_traces_nested_set_dist " + columns + "\n" +
+	return "INSERT INTO " + t.prefix() + "tempo_traces_nested_set_dist " + nestedSetColumns + "\n" +
 		"SELECT * FROM cluster(" + quote(cluster) + ", view(\n" + sel + "\n))\n" +
 		passSettings + ", parallel_distributed_insert_select = 2"
 }
