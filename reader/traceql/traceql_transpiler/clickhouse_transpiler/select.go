@@ -24,10 +24,10 @@ func IsNestedSetKey(key string) bool {
 	return ok
 }
 
-// selectedKeys lists the keys search reads for each listed span, each once in
+// spanValueKeys lists the keys search reads for each listed span, each once in
 // order: those of the select() stages, then those the spanset filters read.
 // An attribute named like a nested-set intrinsic shares its key.
-func selectedKeys(q *traceql_ir.Query) ([]string, error) {
+func spanValueKeys(q *traceql_ir.Query) ([]string, error) {
 	var keys []string
 	seen := map[string]bool{}
 	for _, f := range append(q.SelectedFields(), q.FilteredFields()...) {

@@ -90,15 +90,16 @@ func TestSearchEchoesFilteredFields(t *testing.T) {
 		`{.a = 1} | count() > 1 | {kind = server && .a != nil}`:                 `a,kind`,
 		`{nestedSetParent < 0} &>> {nestedSetRight - nestedSetLeft = 1}`:        `nestedSetParent,nestedSetRight,nestedSetLeft`,
 		`{duration > 1s && rootServiceName = "s" && traceDuration > 1s}`:        ``,
+		`{.nestedSetLeft = "x"}`: `nestedSetLeft`,
 	} {
-		keys, err := selectedKeys(mustParseQuery(t, query))
+		keys, err := spanValueKeys(mustParseQuery(t, query))
 		if err != nil || strings.Join(keys, ",") != want {
-			t.Errorf("selectedKeys(%s) = %v, %v; want %s", query, keys, err, want)
+			t.Errorf("spanValueKeys(%s) = %v, %v; want %s", query, keys, err, want)
 		}
 	}
 }
 
-// A filtered root filter echoes nestedSetParent from the side table.
+// A root filter echoes nestedSetParent from the side table.
 func TestSearchEchoesRootFilter(t *testing.T) {
 	res := renderPlan(t, planSearch(t, `{nestedSetParent < 0 && .a = 1}`), testPlannerContext(3))
 	for _, want := range []string{
@@ -138,14 +139,14 @@ func TestSelectUnsupportedIntrinsics(t *testing.T) {
 	}
 }
 
-func TestSelectedKeys(t *testing.T) {
+func TestSpanValueKeysSkipListedIntrinsics(t *testing.T) {
 	q, err := traceql_ir.Parse(`{} | select(rootName, duration, trace:rootService, span:duration, traceDuration, trace:id, span:id)`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	keys, err := selectedKeys(q)
+	keys, err := spanValueKeys(q)
 	if err != nil || len(keys) != 0 {
-		t.Errorf("selectedKeys = %v, %v; want none", keys, err)
+		t.Errorf("spanValueKeys = %v, %v; want none", keys, err)
 	}
 }
 
@@ -202,8 +203,8 @@ func TestSelectedAttributeSharesNestedSetKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	keys, err := selectedKeys(q)
+	keys, err := spanValueKeys(q)
 	if err != nil || strings.Join(keys, ",") != "nestedSetLeft,nestedSetRight" {
-		t.Errorf("selectedKeys = %v, %v", keys, err)
+		t.Errorf("spanValueKeys = %v, %v", keys, err)
 	}
 }
