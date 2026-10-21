@@ -35,3 +35,14 @@ CREATE TABLE IF NOT EXISTS {{.DB}}.tempo_traces_attrs_gin_dist {{.OnCluster}} (
     timestamp_ns Int64,
     duration Int64
 ) ENGINE = Distributed('{{.CLUSTER}}','{{.DB}}', 'tempo_traces_attrs_gin', sipHash64(oid, trace_id)) {{.DIST_CREATE_SETTINGS}};
+
+CREATE TABLE IF NOT EXISTS {{.DB}}.tempo_traces_nested_set_dist {{.OnCluster}} (
+    oid String,
+    trace_id FixedString(16),
+    span_id FixedString(8),
+    date Date,
+    left Int32,
+    right Int32,
+    parent Int32,
+    version UInt64
+) ENGINE = Distributed('{{.CLUSTER}}','{{.DB}}', 'tempo_traces_nested_set', sipHash64(oid, trace_id)) {{.DIST_CREATE_SETTINGS}};

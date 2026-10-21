@@ -33,6 +33,23 @@ func (s ConnStore) Pass(ctx context.Context, idle time.Duration, maxSpans int) e
 	return Pass(ctx, s.Conn, idle, maxSpans)
 }
 
+// ClusterStore is a Store over a connection to one node of a cluster whose
+// traces tables are sharded on (oid, trace_id).
+type ClusterStore struct {
+	Conn              clickhouse.Conn
+	Cluster, Database string
+}
+
+// Version returns the server version of the connected node.
+func (s ClusterStore) Version(ctx context.Context) (string, error) {
+	return ConnStore{Conn: s.Conn}.Version(ctx)
+}
+
+// Pass runs one pass on every shard.
+func (s ClusterStore) Pass(ctx context.Context, idle time.Duration, maxSpans int) error {
+	return ClusterPass(ctx, s.Conn, s.Cluster, s.Database, idle, maxSpans)
+}
+
 // minVersion is the oldest ClickHouse the pass runs on.
 var minVersion = [2]int{24, 9}
 

@@ -400,16 +400,16 @@ func startNestedSetNumberer(cfg *clconfig.ClokiConfig) {
 		return
 	}
 	db := cfg.Setting.DATABASE_DATA[0]
-	if db.ClusterName != "" {
-		logger.Error("nested-set numberer not started: it runs on single-node ClickHouse only")
-		return
-	}
 	conn, err := ctrlmaintenance.ConnectV2(&db, true)
 	if err != nil {
 		logger.Error("nested-set numberer not started: ", err.Error())
 		return
 	}
-	numberer = nestedset.Start(context.Background(), nestedset.ConnStore{Conn: conn}, nsCfg, logger.Logger)
+	var store nestedset.Store = nestedset.ConnStore{Conn: conn}
+	if db.ClusterName != "" {
+		store = nestedset.ClusterStore{Conn: conn, Cluster: db.ClusterName, Database: db.Name}
+	}
+	numberer = nestedset.Start(context.Background(), store, nsCfg, logger.Logger)
 }
 
 func stop() {

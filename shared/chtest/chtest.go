@@ -15,13 +15,38 @@ import (
 // tests use. Tests that need it skip when it is unset.
 const AddrEnv = "GIGAPIPE_TEST_CLICKHOUSE"
 
+// ClusterEnv names a cluster of the AddrEnv server, with at least two shards
+// and no replicas. Tests that need it skip when it is unset.
+const ClusterEnv = "GIGAPIPE_TEST_CLICKHOUSE_CLUSTER"
+
 // Open creates an empty database and returns a connection that uses it by
 // default. The database is dropped when the test ends.
 func Open(t *testing.T) (clickhouse.Conn, string) {
 	t.Helper()
+	return open(t, "")
+}
+
+// OpenCluster is Open with the database created on every node of the
+// ClusterEnv cluster, whose name it also returns.
+func OpenCluster(t *testing.T) (clickhouse.Conn, string, string) {
+	t.Helper()
+	cluster := os.Getenv(ClusterEnv)
+	if cluster == "" {
+		t.Skipf("%s is not set", ClusterEnv)
+	}
+	conn, db := open(t, cluster)
+	return conn, db, cluster
+}
+
+func open(t *testing.T, cluster string) (clickhouse.Conn, string) {
+	t.Helper()
 	addr := os.Getenv(AddrEnv)
 	if addr == "" {
 		t.Skipf("%s is not set", AddrEnv)
+	}
+	onCluster := ""
+	if cluster != "" {
+		onCluster = " ON CLUSTER `" + cluster + "`"
 	}
 	ctx := context.Background()
 	admin, err := clickhouse.Open(&clickhouse.Options{Addr: []string{addr}})
@@ -29,7 +54,7 @@ func Open(t *testing.T) (clickhouse.Conn, string) {
 		t.Fatal(err)
 	}
 	db := fmt.Sprintf("chtest_%d", rand.Uint64())
-	if err := admin.Exec(ctx, "CREATE DATABASE "+db); err != nil {
+	if err := admin.Exec(ctx, "CREATE DATABASE "+db+onCluster); err != nil {
 		t.Fatal(err)
 	}
 	conn, err := clickhouse.Open(&clickhouse.Options{Addr: []string{addr}, Auth: clickhouse.Auth{Database: db}})
@@ -38,7 +63,7 @@ func Open(t *testing.T) (clickhouse.Conn, string) {
 	}
 	t.Cleanup(func() {
 		_ = conn.Close()
-		_ = admin.Exec(ctx, "DROP DATABASE IF EXISTS "+db+" SYNC")
+		_ = admin.Exec(ctx, "DROP DATABASE IF EXISTS "+db+onCluster+" SYNC")
 		_ = admin.Close()
 	})
 	return conn, db

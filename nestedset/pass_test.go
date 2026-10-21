@@ -43,6 +43,11 @@ func exec(t *testing.T, conn clickhouse.Conn, q string) {
 // insert writes spans in one insert block; start is in seconds after 2026-10-01.
 func insert(t *testing.T, conn clickhouse.Conn, spans ...span) {
 	t.Helper()
+	insertInto(t, conn, "tempo_traces", spans...)
+}
+
+func insertInto(t *testing.T, conn clickhouse.Conn, table string, spans ...span) {
+	t.Helper()
 	rows := make([]string, len(spans))
 	for i, s := range spans {
 		parent := "''"
@@ -51,7 +56,7 @@ func insert(t *testing.T, conn clickhouse.Conn, spans ...span) {
 		}
 		rows[i] = fmt.Sprintf("('0', %s, %s, %s, %d)", traceID(s.trace), spanID(s.id), parent, (1790812800+s.start)*1e9)
 	}
-	exec(t, conn, "INSERT INTO tempo_traces (oid, trace_id, span_id, parent_id, timestamp_ns) VALUES "+strings.Join(rows, ", "))
+	exec(t, conn, "INSERT INTO "+table+" (oid, trace_id, span_id, parent_id, timestamp_ns) VALUES "+strings.Join(rows, ", "))
 }
 
 // touch replaces the touched times: trace -> age at the time of the call.
@@ -224,5 +229,18 @@ func TestPassRenumbersATraceAfterALateSpan(t *testing.T) {
 	second := assertNumbers(t, conn, 1, map[int]numbers{1: {1, 6, -1}, 3: {2, 3, 1}, 2: {4, 5, 1}})
 	if second <= first {
 		t.Errorf("renumbered with version %d, not newer than %d", second, first)
+	}
+}
+
+func TestPassSkipsTracesTouchedWithinTheReplicaDelayPlusTwoSeconds(t *testing.T) {
+	conn := open(t)
+	for trace := 1; trace <= 3; trace++ {
+		insert(t, conn, chain(trace, 2)...)
+	}
+	// A replica 5s behind: traces touched within the last 7s wait.
+	touch(t, conn, map[int]time.Duration{1: 6 * time.Second, 2: 8 * time.Second, 3: 2 * time.Second})
+	exec(t, conn, insertLocal(passSelect(tables{}, time.Second, 1000, "toUInt64(5)")))
+	if got := numberedTraces(t, conn, 1, 2, 3); fmt.Sprint(got) != "[2]" {
+		t.Errorf("numbered %v, want [2]", got)
 	}
 }

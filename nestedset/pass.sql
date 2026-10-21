@@ -1,13 +1,16 @@
 -- One numbering pass: the rows for tempo_traces_nested_set, in its column order.
--- Tokens: {IDLE_MS} = idle period, {MAX_SPANS} = span cap.
+-- Tokens: {DB} = empty or the quoted database and a dot, {IDLE_MS} = idle period, {MAX_SPANS} = span cap,
+-- {REPLICA_DELAY} = seconds this node's tempo_traces lags its replicas (0 when not replicated).
 WITH RECURSIVE
 -- Traces touched at least the idle period ago and not before their newest numbering.
+-- On a lagging replica they must also be touched before now - delay - 2s (delay has 1s resolution).
 eligible AS (
     SELECT t.oid AS oid, t.trace_id AS trace_id, t.touched AS touched
-    FROM (SELECT oid, trace_id, max(inserted_at) AS touched FROM tempo_traces_touched GROUP BY oid, trace_id) AS t
-    LEFT JOIN (SELECT oid, trace_id, max(version) AS v FROM tempo_traces_nested_set GROUP BY oid, trace_id) AS n
+    FROM (SELECT oid, trace_id, max(inserted_at) AS touched FROM {DB}tempo_traces_touched GROUP BY oid, trace_id) AS t
+    LEFT JOIN (SELECT oid, trace_id, max(version) AS v FROM {DB}tempo_traces_nested_set GROUP BY oid, trace_id) AS n
       ON n.oid = t.oid AND n.trace_id = t.trace_id
     WHERE t.touched <= now64(3) - toIntervalMillisecond({IDLE_MS})
+      AND t.touched < now64(3) - toIntervalSecond((SELECT if(d > 0, d + 2, 0) FROM (SELECT {REPLICA_DELAY} AS d)))
       AND toUInt64(toUnixTimestamp64Milli(t.touched)) >= n.v
 ),
 -- Oldest first while the running span total stays within the cap; the first trace always.
@@ -16,7 +19,7 @@ cand AS (
         SELECT e.oid AS oid, e.trace_id AS trace_id, c.n AS n,
                sum(c.n) OVER (ORDER BY e.touched, e.oid, e.trace_id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS cum
         FROM eligible AS e
-        INNER JOIN (SELECT oid, trace_id, count() AS n FROM tempo_traces
+        INNER JOIN (SELECT oid, trace_id, count() AS n FROM {DB}tempo_traces
                     WHERE (oid, trace_id) IN (SELECT oid, trace_id FROM eligible)
                     GROUP BY oid, trace_id) AS c
           ON c.oid = e.oid AND c.trace_id = e.trace_id
@@ -27,7 +30,7 @@ edges AS (
     SELECT oid, trace_id, span_id,
            argMin(toFixedString(substring(parent_id, 1, 8), 8), timestamp_ns) AS parent,
            min(timestamp_ns) AS ts
-    FROM tempo_traces
+    FROM {DB}tempo_traces
     WHERE (oid, trace_id) IN (SELECT oid, trace_id FROM cand)
     GROUP BY oid, trace_id, span_id
 ),
