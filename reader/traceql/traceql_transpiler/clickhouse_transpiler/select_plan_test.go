@@ -55,7 +55,7 @@ func TestSearchReadsTheSelectedValuesOfTheListedSpans(t *testing.T) {
 		`{.a = 1} | select(.x, span.y, resource.y, name, span:name, status, kind, statusMessage, duration, rootName, rootServiceName) | select(.z)`),
 		testPlannerContext(3))
 	for _, want := range []string{
-		`key IN ('x','y','name','status','kind','statusMessage','z')`,
+		`key IN ('x','y','name','status','kind','statusMessage','z','a')`,
 		`((traces_idx.trace_id, traces_idx.span_id) IN (trace_span_ids))`,
 		`((traces_idx.timestamp_ns) > (86390000000000)) and ((traces_idx.timestamp_ns) <= (86410000000000)) and (traces_idx.trace_id IN (trace_ids))`,
 		`any left JOIN selected_attrs ON ((traces.trace_id) == (selected_attrs.trace_id)) and ((traces.span_id) == (selected_attrs.span_id))`,
@@ -68,14 +68,45 @@ func TestSearchReadsTheSelectedValuesOfTheListedSpans(t *testing.T) {
 	}
 }
 
-func TestSearchWithoutSelectReadsNoValues(t *testing.T) {
-	for _, query := range searchQueries {
+// Search without select() or filtered fields reads no values.
+func TestSearchWithoutKeysReadsNoValues(t *testing.T) {
+	for _, query := range []string{`{}`, `count() > 1`, `by(.b * 2) | by(duration)`, `{duration > 1s} | avg(.b) > 1`, `{rootName = "r"} !~ {}`} {
 		res := renderPlan(t, planSearch(t, query), testPlannerContext(3))
-		if strings.Contains(res, "selected_attrs") {
+		if strings.Contains(res, "selected_attrs") || strings.Contains(res, "selected_nested_set") {
 			t.Errorf("%s reads selected values:\n%s", query, res)
 		}
 		if !strings.Contains(res, `CAST([], 'Array(Array(String))') as span_attr_keys, CAST([], 'Array(Array(String))') as span_attr_vals`) {
 			t.Errorf("%s lacks the empty selected-value columns:\n%s", query, res)
+		}
+	}
+}
+
+// Search echoes the fields every spanset filter reads as if selected: the
+// union across the query, next to the select() fields.
+func TestSearchEchoesFilteredFields(t *testing.T) {
+	for query, want := range map[string]string{
+		`{.a = 1}`: `a`,
+		`{.a = 1 && name = "n"} >> {span.b = 2 || status = error} | select(.x)`: `x,a,name,b,status`,
+		`{.a = 1} | count() > 1 | {kind = server && .a != nil}`:                 `a,kind`,
+		`{nestedSetParent < 0} &>> {nestedSetRight - nestedSetLeft = 1}`:        `nestedSetParent,nestedSetRight,nestedSetLeft`,
+		`{duration > 1s && rootServiceName = "s" && traceDuration > 1s}`:        ``,
+	} {
+		keys, err := selectedKeys(mustParseQuery(t, query))
+		if err != nil || strings.Join(keys, ",") != want {
+			t.Errorf("selectedKeys(%s) = %v, %v; want %s", query, keys, err, want)
+		}
+	}
+}
+
+// A filtered root filter echoes nestedSetParent from the side table.
+func TestSearchEchoesRootFilter(t *testing.T) {
+	res := renderPlan(t, planSearch(t, `{nestedSetParent < 0 && .a = 1}`), testPlannerContext(3))
+	for _, want := range []string{
+		`(key IN ('a'))`,
+		`arraySort(arrayConcat(selected_attrs.kv, [('nestedSetParent', toString(ifNull(selected_nested_set.parent_, 0)))]))`,
+	} {
+		if !strings.Contains(res, want) {
+			t.Errorf("%q missing:\n%s", want, res)
 		}
 	}
 }
@@ -123,7 +154,7 @@ func TestSelectedKeys(t *testing.T) {
 func TestSearchReadsSelectedNestedSetValues(t *testing.T) {
 	res := renderPlan(t, planSearch(t, `{.a = 1} | select(nestedSetRight, .x, nestedSetLeft)`), testPlannerContext(3))
 	for _, want := range []string{
-		`key IN ('x')`,
+		`key IN ('x','a')`,
 		`argMax(ns.left, ns.version) as left_`,
 		`FROM tempo_traces_nested_set as ns WHERE (ns.trace_id IN (trace_ids)) and ((ns.trace_id, ns.span_id) IN (trace_span_ids))`,
 		`any left JOIN selected_nested_set ON ((traces.trace_id) == (selected_nested_set.trace_id)) and ((traces.span_id) == (selected_nested_set.span_id))`,

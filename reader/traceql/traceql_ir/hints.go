@@ -106,3 +106,46 @@ func (q *Query) SelectedFields() []*Attribute {
 	walk(q.Pipeline.Elements)
 	return res
 }
+
+// FilteredFields lists the attributes and intrinsics every spanset filter of
+// q reads, across operators and nested pipelines, each once in first-seen order.
+func (q *Query) FilteredFields() []*Attribute {
+	var res []*Attribute
+	seen := map[string]bool{}
+	var field func(e FieldExpr)
+	field = func(e FieldExpr) {
+		switch e := e.(type) {
+		case *Attribute:
+			if !seen[e.Name] {
+				seen[e.Name] = true
+				res = append(res, e)
+			}
+		case *BinaryOp:
+			field(e.LHS)
+			field(e.RHS)
+		case *UnaryOp:
+			field(e.Expr)
+		case *NilTest:
+			field(e.Expr)
+		}
+	}
+	var walk func(elements []Element)
+	walk = func(elements []Element) {
+		for _, element := range elements {
+			switch e := element.(type) {
+			case *Selector:
+				if e.Filter != nil {
+					field(e.Filter)
+				}
+			case *Group:
+				walk([]Element{e.Expr})
+			case *Pipeline:
+				walk(e.Elements)
+			case *SpansetOp:
+				walk([]Element{e.LHS, e.RHS})
+			}
+		}
+	}
+	walk(q.Pipeline.Elements)
+	return res
+}
