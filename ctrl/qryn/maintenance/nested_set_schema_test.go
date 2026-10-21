@@ -2,6 +2,7 @@ package maintenance
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"testing"
 
@@ -10,10 +11,6 @@ import (
 	"github.com/metrico/qryn/v5/ctrl/qryn/sql"
 	"github.com/metrico/qryn/v5/shared/chtest"
 )
-
-// nestedSetStatements is the number of statements traces.sql gains for the
-// nested-set tables and the touched view.
-const nestedSetStatements = 3
 
 func showCreate(t *testing.T, conn clickhouse.Conn, table string) string {
 	t.Helper()
@@ -71,7 +68,9 @@ func TestNestedSetSchemaOnUpgrade(t *testing.T) {
 	if err := updateScripts(conn, db, "", 1, sql.LogScript, false, 7, "", "", false, logger.Logger); err != nil {
 		t.Fatal(err)
 	}
-	previous := strings.Join(stmts[:len(stmts)-nestedSetStatements], ";\n\n")
+	// The schema before the first nested-set statement.
+	first := slices.IndexFunc(stmts, func(s string) bool { return strings.Contains(s, "tempo_traces_nested_set") })
+	previous := strings.Join(stmts[:first], ";\n\n")
 	if err := updateScripts(conn, db, "", 2, previous, false, 7, "", "", false, logger.Logger); err != nil {
 		t.Fatal(err)
 	}

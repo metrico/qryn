@@ -16,7 +16,7 @@ import (
 // span is a seeded span: ids are small integers, parent 0 is a root.
 type span struct {
 	trace, id, parent int
-	start            int64
+	start             int64
 }
 
 type numbers struct{ left, right, parent int32 }
@@ -117,8 +117,8 @@ func TestPassNumbersDepthFirst(t *testing.T) {
 		span{1, 8, 99, 11}, span{1, 9, 8, 12},
 		span{1, 10, 11, 13}, span{1, 11, 10, 14}, span{1, 12, 11, 15},
 		span{1, 13, 13, 16},
-		// A duplicate id: placed by its earliest copy, before span 1.
-		span{1, 14, 0, 70}, span{1, 14, 0, 5}, span{1, 15, 14, 80},
+		// A duplicate id: placed by its earliest copy, a root before span 1.
+		span{1, 14, 7, 70}, span{1, 14, 0, 5}, span{1, 15, 14, 80},
 	)
 	insert(t, conn,
 		// Root-less.

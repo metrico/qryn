@@ -1,24 +1,22 @@
 -- One numbering pass: the rows for tempo_traces_nested_set, in its column order.
--- Tokens: {TRACES}, {TOUCHED}, {NESTED_SET} = tables read; {IDLE_MS} = idle period; {MAX_SPANS} = span cap.
--- A trace qualifies when it was touched at least the idle period ago and not before its newest numbering.
--- Oldest touched first; traces are taken while the running span total stays within the cap,
--- and the first trace is always taken. Siblings and roots are ordered by (start, span_id).
--- Rounds come from the largest trace (2^R >= its span count), so a span still unresolved after R rounds is on a cycle.
+-- Tokens: {IDLE_MS} = idle period, {MAX_SPANS} = span cap.
 WITH RECURSIVE
+-- Traces touched at least the idle period ago and not before their newest numbering.
 eligible AS (
     SELECT t.oid AS oid, t.trace_id AS trace_id, t.touched AS touched
-    FROM (SELECT oid, trace_id, max(inserted_at) AS touched FROM {TOUCHED} GROUP BY oid, trace_id) AS t
-    LEFT JOIN (SELECT oid, trace_id, max(version) AS v FROM {NESTED_SET} GROUP BY oid, trace_id) AS n
+    FROM (SELECT oid, trace_id, max(inserted_at) AS touched FROM tempo_traces_touched GROUP BY oid, trace_id) AS t
+    LEFT JOIN (SELECT oid, trace_id, max(version) AS v FROM tempo_traces_nested_set GROUP BY oid, trace_id) AS n
       ON n.oid = t.oid AND n.trace_id = t.trace_id
     WHERE t.touched <= now64(3) - toIntervalMillisecond({IDLE_MS})
       AND toUInt64(toUnixTimestamp64Milli(t.touched)) >= n.v
 ),
+-- Oldest first while the running span total stays within the cap; the first trace always.
 cand AS (
     SELECT oid, trace_id FROM (
         SELECT e.oid AS oid, e.trace_id AS trace_id, c.n AS n,
                sum(c.n) OVER (ORDER BY e.touched, e.oid, e.trace_id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS cum
         FROM eligible AS e
-        INNER JOIN (SELECT oid, trace_id, count() AS n FROM {TRACES}
+        INNER JOIN (SELECT oid, trace_id, count() AS n FROM tempo_traces
                     WHERE (oid, trace_id) IN (SELECT oid, trace_id FROM eligible)
                     GROUP BY oid, trace_id) AS c
           ON c.oid = e.oid AND c.trace_id = e.trace_id
@@ -27,9 +25,9 @@ cand AS (
 -- One node per span id: the earliest copy places it.
 edges AS (
     SELECT oid, trace_id, span_id,
-           any(toFixedString(substring(parent_id, 1, 8), 8)) AS parent,
+           argMin(toFixedString(substring(parent_id, 1, 8), 8), timestamp_ns) AS parent,
            min(timestamp_ns) AS ts
-    FROM {TRACES}
+    FROM tempo_traces
     WHERE (oid, trace_id) IN (SELECT oid, trace_id FROM cand)
     GROUP BY oid, trace_id, span_id
 ),
@@ -41,13 +39,13 @@ links AS (
     LEFT JOIN (SELECT oid, trace_id, span_id, toUInt8(1) AS found FROM edges) AS p
       ON p.oid = e.oid AND p.trace_id = e.trace_id AND p.span_id = e.parent
 ),
+-- 2^R >= the largest trace's span count, so a span unresolved after R rounds is on a cycle.
 rounds AS (
     SELECT toUInt32(greatest(1, ceil(log2(max(n))))) AS r
     FROM (SELECT count() AS n FROM edges GROUP BY oid, trace_id)
 ),
--- Pass 1: anc = 2^k-th ancestor (zero past a root or a missing parent), cut = a missing
--- parent on the chain, cnt = descendants-or-self closer than 2^k. After R rounds a span
--- is reachable when cut = 0 and anc is zero; anc != zero means a cycle.
+-- anc = 2^k-th ancestor (zero past a root or missing parent), cut = a missing parent on the chain,
+-- cnt = descendants-or-self closer than 2^k. Reachable after R rounds: cut = 0 and anc zero.
 up AS (
     SELECT oid, trace_id, span_id AS node,
            if(is_root = 1 OR dangling = 1, toFixedString('', 8), parent) AS anc,
@@ -68,8 +66,7 @@ up AS (
     ) AS f ON f.oid = x.oid AND f.trace_id = x.trace_id AND f.node = x.node
     WHERE x.k < (SELECT r FROM rounds)
 ),
--- Reachable spans with subtree size and d = Left(span) - Left(parent):
--- 1 + 2 * the sizes of earlier siblings (for roots, of earlier roots).
+-- d = Left(span) - Left(parent) = 1 + 2 * the sizes of earlier siblings (or roots).
 sized AS (
     SELECT l.oid AS oid, l.trace_id AS trace_id, l.span_id AS node, l.parent AS parent, l.is_root AS is_root,
            u.cnt AS size,
@@ -80,7 +77,7 @@ sized AS (
                 WHERE k = (SELECT r FROM rounds) AND cut = 0 AND anc = toFixedString('', 8)) AS u
       ON u.oid = l.oid AND u.trace_id = l.trace_id AND u.node = l.span_id
 ),
--- Pass 2: acc = the sum of d over the span and its ancestors closer than 2^k.
+-- acc = the sum of d over the span and its ancestors closer than 2^k.
 down AS (
     SELECT oid, trace_id, node, if(is_root = 1, toFixedString('', 8), parent) AS anc,
            d AS acc, toUInt32(0) AS k

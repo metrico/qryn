@@ -21,12 +21,14 @@ type Store interface {
 // ConnStore is a Store over a connection to a single node.
 type ConnStore struct{ Conn clickhouse.Conn }
 
+// Version returns the server version.
 func (s ConnStore) Version(ctx context.Context) (string, error) {
 	var v string
 	err := s.Conn.QueryRow(ctx, "SELECT version()").Scan(&v)
 	return v, err
 }
 
+// Pass runs one pass.
 func (s ConnStore) Pass(ctx context.Context, idle time.Duration, maxSpans int) error {
 	return Pass(ctx, s.Conn, idle, maxSpans)
 }
@@ -34,7 +36,7 @@ func (s ConnStore) Pass(ctx context.Context, idle time.Duration, maxSpans int) e
 // minVersion is the oldest ClickHouse the pass runs on.
 var minVersion = [2]int{24, 9}
 
-// SupportedVersion reports whether a ClickHouse version string is at least 24.9.
+// SupportedVersion reports whether a ClickHouse version string is at least minVersion.
 func SupportedVersion(version string) bool {
 	parts := strings.SplitN(version, ".", 3)
 	if len(parts) < 2 {
