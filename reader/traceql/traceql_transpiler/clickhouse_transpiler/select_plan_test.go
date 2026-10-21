@@ -117,3 +117,62 @@ func TestSelectedKeys(t *testing.T) {
 		t.Errorf("selectedKeys = %v, %v; want none", keys, err)
 	}
 }
+
+// Search reads the selected nested-set values of every listed span from the
+// side table, 0 for a span without a row, next to the selected attributes.
+func TestSearchReadsSelectedNestedSetValues(t *testing.T) {
+	res := renderPlan(t, planSearch(t, `{.a = 1} | select(nestedSetRight, .x, nestedSetLeft)`), testPlannerContext(3))
+	for _, want := range []string{
+		`key IN ('x')`,
+		`argMax(ns.left, ns.version) as left_`,
+		`FROM tempo_traces_nested_set as ns WHERE (ns.trace_id IN (trace_ids)) and ((ns.trace_id, ns.span_id) IN (trace_span_ids))`,
+		`any left JOIN selected_nested_set ON ((traces.trace_id) == (selected_nested_set.trace_id)) and ((traces.span_id) == (selected_nested_set.span_id))`,
+		`arraySort(arrayConcat(selected_attrs.kv, [('nestedSetRight', toString(ifNull(selected_nested_set.right_, 0))), ('nestedSetLeft', toString(ifNull(selected_nested_set.left_, 0)))]))`,
+	} {
+		if !strings.Contains(res, want) {
+			t.Errorf("%q missing:\n%s", want, res)
+		}
+	}
+	if strings.Contains(res, "parent_") {
+		t.Errorf("reads an unselected field:\n%s", res)
+	}
+}
+
+// Without selected attributes, only the side table is read.
+func TestSearchReadsOnlySelectedNestedSetValues(t *testing.T) {
+	res := renderPlan(t, planSearch(t, `{} | select(nestedSetParent) | count() > 0`), testPlannerContext(3))
+	if strings.Contains(res, "selected_attrs") {
+		t.Errorf("reads attributes:\n%s", res)
+	}
+	want := `groupArray(arrayMap(x -> x.1, arraySort([('nestedSetParent', toString(ifNull(selected_nested_set.parent_, 0)))]))) as span_attr_keys`
+	if !strings.Contains(res, want) {
+		t.Errorf("%q missing:\n%s", want, res)
+	}
+}
+
+// On a cluster the side table is read through its Distributed table.
+func TestSelectedNestedSetValuesReadDistributedTablesOnClusters(t *testing.T) {
+	ctx := testPlannerContext(3)
+	ctx.IsCluster = true
+	res := renderPlan(t, planSearch(t, `{} | select(nestedSetLeft)`), ctx)
+	for _, want := range []string{
+		`FROM tempo_traces_nested_set_dist as ns WHERE (ns.trace_id GLOBAL IN (trace_ids))`,
+		`global any left JOIN selected_nested_set`,
+	} {
+		if !strings.Contains(res, want) {
+			t.Errorf("%q missing:\n%s", want, res)
+		}
+	}
+}
+
+// An attribute named like a nested-set intrinsic selects the intrinsic.
+func TestSelectedAttributeSharesNestedSetKey(t *testing.T) {
+	q, err := traceql_ir.Parse(`{} | select(.nestedSetLeft, span.nestedSetRight, nestedSetLeft)`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	keys, err := selectedKeys(q)
+	if err != nil || strings.Join(keys, ",") != "nestedSetLeft,nestedSetRight" {
+		t.Errorf("selectedKeys = %v, %v", keys, err)
+	}
+}

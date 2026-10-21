@@ -46,12 +46,14 @@ type PlannerContext struct {
 	Metrics15sDistTableName    string
 	PatternsTable              string
 
-	TracesAttrsTable     string
-	TracesAttrsDistTable string
-	TracesTable          string
-	TracesDistTable      string
-	TracesKVTable        string
-	TracesKVDistTable    string
+	TracesAttrsTable         string
+	TracesAttrsDistTable     string
+	TracesTable              string
+	TracesDistTable          string
+	TracesKVTable            string
+	TracesKVDistTable        string
+	TracesNestedSetTable     string
+	TracesNestedSetDistTable string
 
 	ProfilesSeriesGinTable     string
 	ProfilesSeriesGinDistTable string

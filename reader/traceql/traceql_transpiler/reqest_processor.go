@@ -129,8 +129,8 @@ func searchSpan(spanId string, durationNs, timestampNs int64) model.SpanInfo {
 	}
 }
 
-// addSelected adds a span's selected values: the span name as its name, any
-// other value as an attribute.
+// addSelected adds a span's selected values: the span name as its name, a
+// nested-set value as an int attribute, any other value as a string attribute.
 func addSelected(span *model.SpanInfo, keys, vals []string) {
 	for i, key := range keys {
 		if key == "name" {
@@ -138,7 +138,11 @@ func addSelected(span *model.SpanInfo, keys, vals []string) {
 			continue
 		}
 		attr := model.SpanAttr{Key: key}
-		attr.Value.StringValue = vals[i]
+		if clickhouse_transpiler.IsNestedSetKey(key) {
+			attr.Value.IntValue = &vals[i]
+		} else {
+			attr.Value.StringValue = &vals[i]
+		}
 		span.Attributes = append(span.Attributes, attr)
 	}
 }
