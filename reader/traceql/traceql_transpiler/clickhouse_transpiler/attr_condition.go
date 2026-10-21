@@ -54,8 +54,8 @@ func (a *AttrConditionPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect,
 	return res, nil
 }
 
-// createWhere builds the terms. The rows read are those of the terms that read an attribute key, or every
-// row when the condition can hold without any of them.
+// createWhere builds the terms. The rows read are those of the terms that
+// read an attribute key, or every row when the condition can hold without any.
 func (a *AttrConditionPlanner) createWhere() error {
 	a.sqlConds, a.where = nil, nil
 	for _, t := range a.Terms {
