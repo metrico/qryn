@@ -113,3 +113,32 @@ ALTER TABLE {{.DB}}.tempo_traces_attrs_gin {{.OnCluster}}
 ALTER TABLE {{.DB}}.tempo_traces_kv {{.OnCluster}}
     MODIFY COLUMN key String CODEC(ZSTD(1)),
     MODIFY COLUMN val String CODEC(ZSTD(1));
+
+## Nested-set numbering of each trace's spans; the newest version of a span wins.
+## date is the span's start date.
+CREATE TABLE IF NOT EXISTS {{.DB}}.tempo_traces_nested_set {{.OnCluster}} (
+    oid String,
+    trace_id FixedString(16),
+    span_id FixedString(8),
+    date Date,
+    left Int32,
+    right Int32,
+    parent Int32,
+    version UInt64
+) Engine = {{.ReplacingMergeTree}}(version)
+PARTITION BY (oid, date)
+ORDER BY (oid, trace_id, span_id) {{.CREATE_SETTINGS}};
+
+## The latest insert time of each trace's spans.
+CREATE TABLE IF NOT EXISTS {{.DB}}.tempo_traces_touched {{.OnCluster}} (
+    oid String,
+    trace_id FixedString(16),
+    inserted_at DateTime64(3)
+) Engine = {{.ReplacingMergeTree}}(inserted_at)
+ORDER BY (oid, trace_id)
+TTL toDateTime(inserted_at) + INTERVAL 1 DAY {{.CREATE_SETTINGS}};
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS {{.DB}}.tempo_traces_touched_mv {{.OnCluster}} TO {{.DB}}.tempo_traces_touched AS
+SELECT oid, trace_id, now64(3) AS inserted_at
+FROM {{.DB}}.tempo_traces
+GROUP BY oid, trace_id;
