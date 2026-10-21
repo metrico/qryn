@@ -88,10 +88,6 @@ type PlannerContext struct {
 	CachedTraceIds []string
 	VersionInfo    dbversion.VersionInfo
 
-	// TracesIntrinsicWhere holds extra WHERE conditions for the tempo_traces table
-	// (e.g., nestedSetParent < 0 → parent_id = '').
-	TracesIntrinsicWhere []sql.SQLCondition
-
 	// TracesOperandSpans, when set, holds the previous pipeline stage's span
 	// rows: the only ones TraceQL selectors may match, and the input of a
 	// nested pipeline.

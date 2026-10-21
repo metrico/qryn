@@ -15,10 +15,14 @@ import (
 const anchorKey = "name"
 
 // fieldPivot reads one row per span starting in range: trace_id, span_id,
-// timestamp_ns, duration and one column per attribute key, NULL when the span
-// lacks it. With no keys it reads the traces table.
+// timestamp_ns, duration, one column per attribute key, NULL when the span
+// lacks it, one per stored nested-set column, 0 for an unnumbered span, and
+// _root, 1 for a span without a parent id, when root is set. With no keys it
+// reads the traces table.
 type fieldPivot struct {
-	keys []string
+	keys      []string
+	nestedSet []string
+	root      bool
 }
 
 func (p *fieldPivot) column(key string) string {
@@ -30,20 +34,31 @@ func (p *fieldPivot) column(key string) string {
 	return "NULL"
 }
 
-func (p *fieldPivot) sql() *fieldSQL {
-	return &fieldSQL{attr: p.column, duration: "duration"}
+// nestedSetColumn is the pivot column of a stored nested-set column.
+func nestedSetColumn(col string) string {
+	return "_ns_" + col
 }
 
-// spans plans the pivot over the spans that start in range.
+func (p *fieldPivot) sql() *fieldSQL {
+	return &fieldSQL{attr: p.column, duration: "duration", nestedSet: nestedSetColumn, root: "_root"}
+}
+
+// spans plans the attribute rows of the pivot over the spans that start in
+// range; read completes them.
 func (p *fieldPivot) spans(ctx *shared.PlannerContext) sql.ISelect {
 	if len(p.keys) == 0 {
 		tsFrom, tsTo := timerange.SpanStart("traces.timestamp_ns", ctx.From.UnixNano(), ctx.To.UnixNano())
+		cols := []sql.SQLObject{
+			sql.NewSimpleCol("traces.trace_id", "trace_id"),
+			sql.NewSimpleCol("traces.span_id", "span_id"),
+			sql.NewSimpleCol("any(traces.timestamp_ns)", "timestamp_ns"),
+			sql.NewSimpleCol("any(traces.duration_ns)", "duration"),
+		}
+		if p.root {
+			cols = append(cols, sql.NewSimpleCol(rootColumn, "_root"))
+		}
 		return sql.NewSelect().
-			Select(
-				sql.NewSimpleCol("traces.trace_id", "trace_id"),
-				sql.NewSimpleCol("traces.span_id", "span_id"),
-				sql.NewSimpleCol("any(traces.timestamp_ns)", "timestamp_ns"),
-				sql.NewSimpleCol("any(traces.duration_ns)", "duration")).
+			Select(cols...).
 			From(sql.NewSimpleCol(tracesTable(ctx), "traces")).
 			AndWhere(tsFrom, tsTo).
 			GroupBy(sql.NewRawObject("traces.trace_id"), sql.NewRawObject("traces.span_id"))
@@ -63,6 +78,63 @@ func (p *fieldPivot) spans(ctx *shared.PlannerContext) sql.ISelect {
 		From(sql.NewSimpleCol(attrsTable(ctx), "traces_idx")).
 		AndWhere(p.attrsWhere(ctx)...).
 		GroupBy(sql.NewRawObject("traces_idx.trace_id"), sql.NewRawObject("traces_idx.span_id"))
+}
+
+// rootColumn is 1 for a span any copy of which has no parent id.
+const rootColumn = "max(traces.parent_id = '')"
+
+// read returns the CTEs that read the pivot of spans, from spans(), the last
+// of them named alias and holding every pivot column.
+func (p *fieldPivot) read(ctx *shared.PlannerContext, spans sql.ISelect, alias string) []*sql.With {
+	joinsRoot := p.root && len(p.keys) > 0
+	if len(p.nestedSet) == 0 && !joinsRoot {
+		return []*sql.With{sql.NewWith(spans, alias)}
+	}
+	withAttrs := sql.NewWith(spans, alias+"_attrs")
+	a := withAttrs.GetAlias()
+	traceIds := sql.NewSelect().Select(sql.NewRawObject("trace_id")).From(sql.NewWithRef(withAttrs))
+	cols := []sql.SQLObject{
+		sql.NewSimpleCol(a+".trace_id", "trace_id"),
+		sql.NewSimpleCol(a+".span_id", "span_id"),
+		sql.NewSimpleCol(a+".timestamp_ns", "timestamp_ns"),
+		sql.NewSimpleCol(a+".duration", "duration"),
+	}
+	for _, k := range p.keys {
+		cols = append(cols, sql.NewSimpleCol(a+"."+p.column(k), p.column(k)))
+	}
+	withs := []*sql.With{withAttrs}
+	var joins []*sql.Join
+	if len(p.nestedSet) > 0 {
+		withValues := nestedSetValues(ctx, p.nestedSet, traceIds, nil, alias+"_ns")
+		v := withValues.GetAlias()
+		for _, col := range p.nestedSet {
+			cols = append(cols, sql.NewSimpleCol(fmt.Sprintf("ifNull(%s.%s_, 0)", v, col), nestedSetColumn(col)))
+		}
+		withs = append(withs, withValues)
+		joins = append(joins, sql.NewJoin("left", sql.NewWithRef(withValues), sameSpan(a+".span_id", v+".span_id")))
+	}
+	switch {
+	case joinsRoot:
+		withRoot := sql.NewWith(sql.NewSelect().
+			Select(
+				sql.NewSimpleCol("traces.trace_id", "trace_id"),
+				sql.NewSimpleCol("traces.span_id", "span_id"),
+				sql.NewSimpleCol(rootColumn, "root")).
+			From(sql.NewSimpleCol(tracesTable(ctx), "traces")).
+			AndWhere(inSubquery(ctx, sql.NewRawObject("traces.trace_id"), traceIds)).
+			GroupBy(sql.NewRawObject("traces.trace_id"), sql.NewRawObject("traces.span_id")), alias+"_root")
+		r := withRoot.GetAlias()
+		cols = append(cols, sql.NewSimpleCol(fmt.Sprintf("ifNull(%s.root, 0)", r), "_root"))
+		withs = append(withs, withRoot)
+		joins = append(joins, sql.NewJoin("left", sql.NewWithRef(withRoot), sameSpan(a+".span_id", r+".span_id")))
+	case p.root:
+		cols = append(cols, sql.NewSimpleCol(a+"._root", "_root"))
+	}
+	res := sql.NewSelect().Select(cols...).From(sql.NewWithRef(withAttrs))
+	for _, j := range joins {
+		res.AddJoin(j)
+	}
+	return append(withs, sql.NewWith(res, alias))
 }
 
 // attrsWhere selects the attribute rows of the pivot's keys in range.
@@ -91,14 +163,14 @@ type FieldFilterPlanner struct {
 // newFieldPivotFor plans the pivot filter reads. The pivot reads every span
 // unless the filter is false for spans lacking all its keys.
 func newFieldPivotFor(filter traceql_ir.FieldExpr) (*fieldPivot, error) {
-	keys, err := fieldKeys(filter)
+	pivot, err := fieldReads(filter)
 	if err != nil {
 		return nil, err
 	}
-	if len(keys) > 0 && !falseWhenAbsent(filter) && !containsKey(keys, anchorKey) {
-		keys = append(keys, anchorKey)
+	if len(pivot.keys) > 0 && !falseWhenAbsent(filter) && !containsKey(pivot.keys, anchorKey) {
+		pivot.keys = append(pivot.keys, anchorKey)
 	}
-	return &fieldPivot{keys: keys}, nil
+	return pivot, nil
 }
 
 func (f *FieldFilterPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, error) {
@@ -112,11 +184,11 @@ func (f *FieldFilterPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, e
 	}
 	spans := pivot.spans(ctx)
 	restrictOperand(ctx, spans)
-	withSpans := sql.NewWith(spans, f.Prefix+"_pivot")
+	withs := pivot.read(ctx, spans, f.Prefix+"_pivot")
 	return sql.NewSelect().
-		With(withSpans).
+		With(withs...).
 		Select(append(spanRowCols(), sql.NewSimpleCol("duration", "duration"))...).
-		From(sql.NewWithRef(withSpans)).
+		From(sql.NewWithRef(withs[len(withs)-1])).
 		AndWhere(rawCond(cond)), nil
 }
 
@@ -182,7 +254,7 @@ func nilWhenAbsent(e traceql_ir.FieldExpr) bool {
 	switch e := e.(type) {
 	case *traceql_ir.Attribute:
 		ref, err := fieldRefOf(e.Name)
-		return err == nil && !ref.duration
+		return err == nil && !ref.duration && ref.nestedSet == ""
 	case *traceql_ir.BinaryOp:
 		if traceql_ir.IsArithmetic(e.Op) {
 			return nilWhenAbsent(e.LHS) || nilWhenAbsent(e.RHS)

@@ -15,6 +15,7 @@ import (
 	"github.com/metrico/qryn/v5/reader/logql/logql_transpiler/shared"
 	"github.com/metrico/qryn/v5/reader/model"
 	"github.com/metrico/qryn/v5/reader/traceql/traceql_ir"
+	dbversion "github.com/metrico/qryn/v5/reader/utils/dbVersion"
 	"github.com/metrico/qryn/v5/reader/utils/dsn"
 	"github.com/metrico/qryn/v5/reader/utils/tables"
 	"github.com/metrico/qryn/v5/shared/chtest"
@@ -51,9 +52,8 @@ func execSQL(t *testing.T, conn clickhouse.Conn, q string) {
 	}
 }
 
-// search runs a TraceQL search and returns each listed span's attributes as
-// key -> "int:v" or "string:v".
-func search(t *testing.T, db model.ISqlxDB, query string) map[string]map[string]string {
+// searchTraces runs a TraceQL search and returns its traces.
+func searchTraces(t *testing.T, db model.ISqlxDB, query string) []model.TraceInfo {
 	t.Helper()
 	q, err := traceql_ir.Parse(query)
 	if err != nil {
@@ -69,30 +69,41 @@ func search(t *testing.T, db model.ISqlxDB, query string) map[string]map[string]
 		From:  spanStart.Add(-time.Minute),
 		To:    spanStart.Add(time.Minute),
 		Limit: 20,
+		// The test server supports structural queries.
+		VersionInfo: dbversion.VersionInfo{dbversion.CapStructuralQueries: 0},
 	}
 	tables.PopulateTableNames(ctx, &model.DataDatabasesMap{Config: &config.ClokiBaseDataBase{}})
 	ch, err := planner.Process(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	res := map[string]map[string]string{}
+	var res []model.TraceInfo
 	for traces := range ch {
-		for _, trace := range traces {
-			if len(trace.SpanSets) != 1 {
-				t.Errorf("trace %s has %d spansets", trace.TraceID, len(trace.SpanSets))
-			}
-			for _, span := range trace.SpanSet.Spans {
-				attrs := map[string]string{}
-				for _, a := range span.Attributes {
-					switch {
-					case a.Value.IntValue != nil:
-						attrs[a.Key] = "int:" + *a.Value.IntValue
-					case a.Value.StringValue != nil:
-						attrs[a.Key] = "string:" + *a.Value.StringValue
-					}
+		res = append(res, traces...)
+	}
+	return res
+}
+
+// search runs a TraceQL search and returns each listed span's attributes as
+// key -> "int:v" or "string:v".
+func search(t *testing.T, db model.ISqlxDB, query string) map[string]map[string]string {
+	t.Helper()
+	res := map[string]map[string]string{}
+	for _, trace := range searchTraces(t, db, query) {
+		if len(trace.SpanSets) != 1 {
+			t.Errorf("trace %s has %d spansets", trace.TraceID, len(trace.SpanSets))
+		}
+		for _, span := range trace.SpanSet.Spans {
+			attrs := map[string]string{}
+			for _, a := range span.Attributes {
+				switch {
+				case a.Value.IntValue != nil:
+					attrs[a.Key] = "int:" + *a.Value.IntValue
+				case a.Value.StringValue != nil:
+					attrs[a.Key] = "string:" + *a.Value.StringValue
 				}
-				res[span.SpanID] = attrs
 			}
+			res[span.SpanID] = attrs
 		}
 	}
 	return res

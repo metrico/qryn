@@ -138,24 +138,34 @@ func (t *TracesDataPlanner) Process(ctx *shared.PlannerContext) (sql.ISelect, er
 // of the listed spans in spanIds: one selected_nested_set row per numbered
 // span, with each field's column suffixed by _.
 func selectedNestedSet(ctx *shared.PlannerContext, fields []string, traceIds, spanIds sql.SQLObject) *sql.With {
+	cols := make([]string, len(fields))
+	for i, f := range fields {
+		cols[i] = nestedSetColumns[f]
+	}
+	return nestedSetValues(ctx, cols, traceIds, spanIds, "selected_nested_set")
+}
+
+// nestedSetValues reads the newest stored values of the nested-set columns
+// of the traces in traceIds, and of the spans in spanIds unless it is nil:
+// one row per numbered span, with each column suffixed by _.
+func nestedSetValues(ctx *shared.PlannerContext, cols []string, traceIds, spanIds sql.SQLObject, alias string) *sql.With {
 	table := ctx.TracesNestedSetTable
 	if ctx.IsCluster {
 		table = ctx.TracesNestedSetDistTable
 	}
-	cols := []sql.SQLObject{sql.NewSimpleCol("ns.trace_id", "trace_id"), sql.NewSimpleCol("ns.span_id", "span_id")}
-	for _, f := range fields {
-		col := nestedSetColumns[f]
-		cols = append(cols, sql.NewSimpleCol(fmt.Sprintf("argMax(ns.%s, ns.version)", col), col+"_"))
+	sel := []sql.SQLObject{sql.NewSimpleCol("ns.trace_id", "trace_id"), sql.NewSimpleCol("ns.span_id", "span_id")}
+	for _, col := range cols {
+		sel = append(sel, sql.NewSimpleCol(fmt.Sprintf("argMax(ns.%s, ns.version)", col), col+"_"))
 	}
-	return sql.NewWith(
-		sql.NewSelect().
-			Select(cols...).
-			From(sql.NewSimpleCol(table, "ns")).
-			AndWhere(
-				inSubquery(ctx, sql.NewRawObject("ns.trace_id"), traceIds),
-				inSubquery(ctx, sql.NewRawObject("(ns.trace_id, ns.span_id)"), spanIds)).
-			GroupBy(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id")),
-		"selected_nested_set")
+	res := sql.NewSelect().
+		Select(sel...).
+		From(sql.NewSimpleCol(table, "ns")).
+		AndWhere(inSubquery(ctx, sql.NewRawObject("ns.trace_id"), traceIds)).
+		GroupBy(sql.NewRawObject("trace_id"), sql.NewRawObject("span_id"))
+	if spanIds != nil {
+		res.AndWhere(inSubquery(ctx, sql.NewRawObject("(ns.trace_id, ns.span_id)"), spanIds))
+	}
+	return sql.NewWith(res, alias)
 }
 
 // nestedSetKV is a listed span's (key, value) pairs of the nested-set fields.

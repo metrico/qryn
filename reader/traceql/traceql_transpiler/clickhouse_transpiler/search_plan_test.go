@@ -26,6 +26,9 @@ var plainSearchQueries = []string{
 	`count() > 1`,
 	`{.a = 1} | count() > 1 | avg(duration) > 1ms | max(.b) < 3`,
 	`{nestedSetParent < 0 && .a = 1}`,
+	`{nestedSetParent < 0}`,
+	`{nestedSetRight - nestedSetLeft = 1 && .a = 1}`,
+	`{.a = 1} | by(nestedSetParent) | max(nestedSetLeft) > 1`,
 	`{.a = .b}`,
 	`{!(.a = 1) || duration > 100}`,
 	`{duration * 2 > 1s}`,
@@ -183,7 +186,7 @@ func TestSearchRootFilterBeforeSpanCap(t *testing.T) {
 	const query = `{nestedSetParent < 0 && .a = 1}`
 	_, expr := searchStages(t, planSearch(t, query))
 	res := renderPlan(t, &SearchSpansetPlanner{Main: expr}, testPlannerContext(3))
-	if !strings.Contains(res, "traces.parent_id") {
+	if !strings.Contains(res, rootColumn) {
 		t.Errorf("root filter missing from the spanset stage:\n%s", res)
 	}
 	res = renderPlan(t, planSearch(t, query), testPlannerContext(3))
