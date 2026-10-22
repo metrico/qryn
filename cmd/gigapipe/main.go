@@ -21,6 +21,8 @@ import (
 	clconfig "github.com/metrico/cloki-config"
 	"github.com/metrico/cloki-config/config"
 	"github.com/metrico/qryn/v5/ctrl"
+	ctrlmaintenance "github.com/metrico/qryn/v5/ctrl/maintenance"
+	"github.com/metrico/qryn/v5/nestedset"
 	"github.com/metrico/qryn/v5/reader"
 	"github.com/metrico/qryn/v5/reader/traceql/traceqlconfig"
 	"github.com/metrico/qryn/v5/reader/utils/logger"
@@ -321,6 +323,7 @@ func start() {
 	if os.Getenv("MODE") == "init_only" {
 		return
 	}
+	startNestedSetNumberer(cfg)
 
 	app := mux.NewRouter()
 	app.Use(middleware.LoggingMiddleware("[{{.status}}] {{.method}} {{.url}} - LAT:{{.latency}}"))
@@ -383,6 +386,32 @@ func bootSequence(mode string) []bootStep {
 }
 
 var listener net.Listener
+
+var numberer *nestedset.Numberer
+
+// startNestedSetNumberer runs the nested-set numberer when it is enabled.
+// Invalid settings of an enabled numberer fail startup; a server it can't run
+// on only logs an error.
+func startNestedSetNumberer(cfg *clconfig.ClokiConfig) {
+	nsCfg, err := nestedset.ConfigFromEnv(logger.Logger.Warn)
+	if err != nil {
+		panic(err)
+	}
+	if !nsCfg.Enabled || len(cfg.Setting.DATABASE_DATA) == 0 {
+		return
+	}
+	db := cfg.Setting.DATABASE_DATA[0]
+	conn, err := ctrlmaintenance.ConnectV2(&db, true)
+	if err != nil {
+		logger.Error("nested-set numberer not started: ", err.Error())
+		return
+	}
+	var store nestedset.Store = nestedset.ConnStore{Conn: conn}
+	if db.ClusterName != "" {
+		store = nestedset.ClusterStore{Conn: conn, Cluster: db.ClusterName, Database: db.Name}
+	}
+	numberer = nestedset.Start(context.Background(), store, nsCfg, logger.Logger)
+}
 
 func stop() {
 	listener.Close()
@@ -453,6 +482,10 @@ func httpStart(server *mux.Router, httpURL string, mode string, grpcOpts writerg
 	defer cancel()
 	if err := httpServer.Shutdown(ctx); err != nil {
 		logger.Error("HTTP server shutdown error:", err)
+	}
+
+	if numberer != nil {
+		numberer.Stop()
 	}
 
 	// 2. Stop the ruler (cancels evaluation loops, waits for in-flight evals).

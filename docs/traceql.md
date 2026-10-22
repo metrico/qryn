@@ -10,9 +10,9 @@ and tag/value autocomplete:
 Search and metrics are also served under the `/tempo` prefix.
 
 This page covers the parts of TraceQL that relate spans to each other
-(structural operators, `&&`/`||` between spansets, pipelines) and the field
-expressions used inside spanset filters. Where gigapipe deliberately differs
-from Tempo, the difference is listed in
+(structural operators, `&&`/`||` between spansets, pipelines, the nested-set
+intrinsics) and the field expressions used inside spanset filters. Where
+gigapipe deliberately differs from Tempo, the difference is listed in
 [Differences from Tempo](#differences-from-tempo).
 
 ## Requirements
@@ -26,6 +26,10 @@ Structural queries need no schema migration, writer change or backfill: the
 span tree is resolved at query time from the `parent_id` of the stored spans.
 Clustered (Distributed) deployments return the same results as single-node
 ones.
+
+The nested-set intrinsics read values that a background numberer stores,
+which also needs ClickHouse 24.9 or newer; see
+[Nested-set intrinsics](#nested-set-intrinsics).
 
 ## Time range
 
@@ -224,9 +228,9 @@ before the query runs, so it rejects `({A} | by(.x)) > {B}` and
 `{A} | by(.x) | {B} > {C}` even when every trace has a single group.
 
 Group-key values: attributes are returned as `stringValue` with their stored
-text, number expressions as `intValue`/`doubleValue` (or a duration
-`stringValue`), comparisons as `boolValue`, and the nil group as
-`stringValue` `"nil"`.
+text, nested-set intrinsics and other number expressions as
+`intValue`/`doubleValue` (or a duration `stringValue`), comparisons as
+`boolValue`, and the nil group as `stringValue` `"nil"`.
 
 ### `select()`
 
@@ -235,8 +239,13 @@ as span attributes, without filtering. It can appear at any pipeline position.
 
 - Only attributes and intrinsics are accepted; a field expression such as
   `select(.a + .b)` is a parse error.
-- Values are returned as `stringValue` and sorted by key. A span without the
-  field omits it. `name` sets the span's `name` field.
+- Values are sorted by key. The nested-set intrinsics are returned as
+  `intValue` and every other field as `stringValue`. A span without the
+  field omits it; the nested-set intrinsics are never omitted. `name` sets
+  the span's `name` field.
+- An attribute named like a nested-set intrinsic selects the intrinsic:
+  `select(.nestedSetLeft)` and `select(span.nestedSetLeft)` return the
+  `nestedSetLeft` int.
 - `duration`, `rootName`, `rootServiceName`, `traceDuration` and the span
   and trace ids are already part of every search result and add nothing.
 - `select()` before a metrics function is accepted and has no effect;
@@ -258,7 +267,9 @@ Fields:
 
 - attributes: `span.x`, `resource.x`, `.x`
 - intrinsics: `duration` (`span:duration`), `name` (`span:name`), `status`,
-  `kind`, `statusMessage`, `rootName`, `rootServiceName`
+  `kind`, `statusMessage`, `rootName`, `rootServiceName`, and the ints
+  `nestedSetLeft`, `nestedSetRight`, `nestedSetParent` (see
+  [Nested-set intrinsics](#nested-set-intrinsics))
 
 Operators, from loosest to tightest:
 
@@ -308,16 +319,101 @@ Binary `-` needs whitespace: `.a-.b` is one attribute named `a-.b`, while
   `!(.a = 1)` matches spans without `.a`.
 - `&&` and `||` treat a nil operand as false.
 
+## Nested-set intrinsics
+
+`nestedSetLeft`, `nestedSetRight` and `nestedSetParent` describe a span's
+place in its trace's tree. They are ints, accepted wherever Tempo accepts
+them: spanset filters with any comparison, field expressions, `select()`,
+`by()`, aggregates, and metrics `by (...)` and `*_over_time()` arguments.
+They are returned as `intValue` in search spans, group keys and metrics
+labels. Autocomplete doesn't offer them.
+
+```
+{ nestedSetParent < 0 } | select(nestedSetLeft, nestedSetRight)
+{ nestedSetRight - nestedSetLeft > 1 }
+```
+
+The values follow Tempo's relationships, but the absolute numbers can
+differ:
+
+- A depth-first walk numbers each trace from 1, with one counter across all
+  roots. A span's descendants have their `nestedSetLeft` inside the span's
+  `[nestedSetLeft, nestedSetRight]`, and a leaf has
+  `nestedSetRight = nestedSetLeft + 1`.
+- `nestedSetParent` is the parent's `nestedSetLeft`. Roots hold `-1`.
+- Spans that can't reach a root (a missing parent, a cycle, a trace without
+  a root) read `0`/`0`/`0`.
+- Siblings, and the roots of a trace, are numbered by start time, then span
+  id.
+- Spans sharing a span id form one node, placed by the earliest-starting
+  copy. Every copy reports that node's values.
+
+In filters, an attribute named like a nested-set intrinsic
+(`.nestedSetLeft`, `span.nestedSetRight`) is an attribute. In `select()`
+and in the filter echo it selects the intrinsic.
+
+### The numberer
+
+The values are computed after ingestion by a background loop, the
+numberer, and stored in the `tempo_traces_nested_set` table. It is off by
+default; enable it with `GIGAPIPE_NESTED_SET_NUMBERER_ENABLED` (see
+[Configuration](configuration.md#traceql)).
+
+- Enable it on exactly one gigapipe instance. A second one duplicates the
+  work but can't corrupt the results.
+- It needs **ClickHouse 24.9 or newer**. On an older server it logs an error
+  and doesn't start, and every span reads `0`/`0`/`0`.
+- A trace is numbered once it has received no spans for the idle period.
+  With the defaults, values appear about 15s after a trace's last span. A
+  late span renumbers its whole trace.
+- Each pass numbers at most `GIGAPIPE_NESTED_SET_NUMBERER_MAX_SPANS` spans,
+  oldest traces first; the rest wait for the next pass. On a cluster, each
+  shard numbers its own traces and the cap applies per shard.
+- There is no backfill. A trace that receives no spans once the
+  `tempo_traces_touched` table exists is never numbered, and one whose last
+  span arrived more than a day before the numberer was enabled may not be.
+
+### Unnumbered spans
+
+A span not numbered yet, or never, reads `0`/`0`/`0` in `select()`, the
+filter echo, filters, `by()`, aggregates and metrics. Unnumbered and
+unreachable spans look the same.
+
+The root filter is the exception: `{ nestedSetParent < 0 }` and
+`{ nestedSetParent = -1 }` find roots through the span's parent id, so they
+match the roots of every trace, numbered or not. An unnumbered root still
+selects and echoes `nestedSetParent = 0`. Only these forms, with the number
+on the right, read the parent id; other spellings such as
+`-1 = nestedSetParent` or `nestedSetParent <= -1` read the stored value and
+miss unnumbered roots.
+
+Structural operators never read the stored values; they resolve the tree at
+query time. A span that matches `>>` can therefore carry `0`/`0`/`0`, or
+stale numbers when its trace received a late span after it was numbered.
+
 ## Search results
 
-- `spss` (spans per spanset) is the number of spans listed per spanset,
-  newest first. It defaults to 3. A value that isn't a positive integer is
-  rejected with `invalid spss: must be a positive number`.
+- `spss` (spans per spanset) is the number of spans listed per spanset. It
+  defaults to 3. A value that isn't a positive integer is rejected with
+  `invalid spss: must be a positive number`.
+- Each spanset lists its `spss` earliest-starting spans, earliest first,
+  ties by span id.
 - `matched` is the number of spans the spanset matched, even when `spss`
   lists fewer.
 - `limit` counts traces that satisfy the whole query.
 - No cap applies to the spans a query evaluates; ClickHouse memory limits
   apply.
+- `durationNanos` is always the span duration in nanoseconds.
+
+### Filter echo
+
+Listed spans carry the attributes and intrinsics the query's spanset filters
+`{...}` read, as if they were added to a `select()`.
+`{ .a = 1 } >> { .b = 2 }` returns `.a` and `.b` on each listed span that has
+them. The keys are the union over the whole query, and values follow the
+`select()` rules above. Fields read only by a scalar filter
+(`| avg(.x) > 1`) or by `by()` are not echoed. Metrics and autocomplete are
+unaffected.
 
 ## Metrics
 
@@ -329,7 +425,8 @@ of either side. Spans are bucketed by start time within `(from, to]`.
 Scalar filters and `by()` before the metrics function decide which traces and
 groups contribute; the spans of every passing group feed the metric.
 `by()` groups never become series labels; use the metrics function's
-`by (...)` for that.
+`by (...)` for that. `by (...)` labels are strings, except the nested-set
+intrinsics, which are `intValue`.
 
 ### Hints
 
@@ -416,9 +513,34 @@ gigapipe returns the spans Tempo returns, except where listed here.
 - A bare word as an aggregate argument (`avg(spanN)`) reads the attribute of
   that name; Tempo rejects it.
 
+**Nested-set intrinsics**
+
+- Nested-set siblings are numbered by start time, then span id; Tempo
+  numbers them in its storage order, so the absolute values can differ.
+- Spans sharing a span id form one nested-set node, placed by the
+  earliest-starting copy; Tempo matches two copies by kind and zeroes a trace
+  in which three or more share an id.
+- Every pass renumbers whole traces, so merges leave no stale nested-set
+  numbers, as they can in Tempo.
+- A trace reads `0`/`0`/`0` until the numberer has numbered it, about 15s
+  after its last span with the defaults, and traces stored before the
+  numberer ran may never be numbered.
+
+**Search results**
+
+- Each spanset lists its `spss` earliest-starting spans; Tempo lists the
+  first spans in its storage order. Under clock skew, a child can be kept
+  ahead of its parent.
+- The filter echo uses the union of the query's keys:
+  `{ .a = 1 } >> { .b = 2 }` shows `.a` on returned spans that carry it,
+  where Tempo shows only `.b`.
+- Fields read only by a scalar filter or `by()` aren't echoed; Tempo
+  returns them too.
+
 **`select()`**
 
-- Selected values are returned as strings; Tempo returns typed values.
+- Selected attribute values are returned as strings; Tempo returns typed
+  values.
 - An attribute named like an intrinsic shares its storage key: a span
   attribute `name`, `status` or `kind` is reported as the span's name,
   status or kind.
